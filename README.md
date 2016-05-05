@@ -1,6 +1,7 @@
 # reactivesocket-cpp
 C++ implementation of ReactiveSocket
 
-# Build
+# Build Status
 
-https://travis-ci.org/ReactiveSocket/reactivesocket-cpp.svg?branch=master
+<a href='https://travis-ci.org/ReactiveSocket/reactivesocket-cpp/builds'><img src='https://travis-ci.org/ReactiveSocket/reactivesocket-cpp.svg?branch=master'></a>
+
