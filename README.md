@@ -9,9 +9,10 @@ C++ implementation of ReactiveSocket
 
 After installing latest folly release with `brew install folly` and making sure that you've checked out external dependencies via `git submodule update --recursive`, you can build and run tests with:
 
+```
   mkdir -p build
   cd build
   cmake ../
   make
   ./ReactiveSocketTest
-
+```
