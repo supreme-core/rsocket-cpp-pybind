@@ -16,6 +16,7 @@ brew install folly
 After first checkout, initialize and update submodules:
 
 ```
+# inside root ./reactivesocket-cpp
 git submodule init
 git submodule update --recursive
 ```
@@ -25,6 +26,7 @@ git submodule update --recursive
 After installing dependencies as above, you can build and run tests with:
 
 ```
+# inside root ./reactivesocket-cpp
 mkdir -p build
 cd build
 cmake ../
