@@ -1,5 +1,8 @@
 # reactivesocket-cpp
+
 C++ implementation of ReactiveSocket
+
+NOTE: This is a work in progress. It is not feature complete, and does not yet comply with the protocol, so can not yet interop with any other implementation. 
 
 # Build Status
 
