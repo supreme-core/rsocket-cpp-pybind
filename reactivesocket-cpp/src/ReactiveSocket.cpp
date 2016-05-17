@@ -11,14 +11,14 @@
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
 
-#include "lithium/reactivesocket-cpp/src/DuplexConnection.h"
-#include "lithium/reactivesocket-cpp/src/Frame.h"
-#include "lithium/reactivesocket-cpp/src/Payload.h"
-#include "lithium/reactivesocket-cpp/src/RequestHandler.h"
-#include "lithium/reactivesocket-cpp/src/automata/ChannelRequester.h"
-#include "lithium/reactivesocket-cpp/src/automata/ChannelResponder.h"
-#include "lithium/reactivesocket-cpp/src/automata/SubscriptionRequester.h"
-#include "lithium/reactivesocket-cpp/src/automata/SubscriptionResponder.h"
+#include "reactivesocket-cpp/src/DuplexConnection.h"
+#include "reactivesocket-cpp/src/Frame.h"
+#include "reactivesocket-cpp/src/Payload.h"
+#include "reactivesocket-cpp/src/RequestHandler.h"
+#include "reactivesocket-cpp/src/automata/ChannelRequester.h"
+#include "reactivesocket-cpp/src/automata/ChannelResponder.h"
+#include "reactivesocket-cpp/src/automata/SubscriptionRequester.h"
+#include "reactivesocket-cpp/src/automata/SubscriptionResponder.h"
 
 namespace lithium {
 namespace reactivesocket {
