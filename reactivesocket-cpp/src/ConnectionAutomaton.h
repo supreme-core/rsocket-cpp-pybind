@@ -7,11 +7,11 @@
 #include <memory>
 #include <unordered_map>
 
-#include "lithium/reactive-streams-cpp/utilities/AllowanceSemaphore.h"
-#include "lithium/reactive-streams-cpp/utilities/SmartPointers.h"
-#include "lithium/reactivesocket-cpp/src/Payload.h"
-#include "lithium/reactivesocket-cpp/src/ReactiveStreamsCompat.h"
-#include "lithium/reactivesocket-cpp/src/mixins/IntrusiveDeleter.h"
+#include "reactive-streams-cpp/utilities/AllowanceSemaphore.h"
+#include "reactive-streams-cpp/utilities/SmartPointers.h"
+#include "reactivesocket-cpp/src/Payload.h"
+#include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
+#include "reactivesocket-cpp/src/mixins/IntrusiveDeleter.h"
 
 namespace lithium {
 namespace reactivesocket {
