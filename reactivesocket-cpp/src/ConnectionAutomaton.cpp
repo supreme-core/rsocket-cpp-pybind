@@ -9,10 +9,10 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 
-#include "lithium/reactivesocket-cpp/src/AbstractStreamAutomaton.h"
-#include "lithium/reactivesocket-cpp/src/DuplexConnection.h"
-#include "lithium/reactivesocket-cpp/src/Frame.h"
-#include "lithium/reactivesocket-cpp/src/ReactiveStreamsCompat.h"
+#include "reactivesocket-cpp/src/AbstractStreamAutomaton.h"
+#include "reactivesocket-cpp/src/DuplexConnection.h"
+#include "reactivesocket-cpp/src/Frame.h"
+#include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
 namespace lithium {
 namespace reactivesocket {

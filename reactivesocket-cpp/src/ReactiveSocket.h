@@ -7,9 +7,9 @@
 #include <functional>
 #include <memory>
 
-#include "lithium/reactivesocket-cpp/src/ConnectionAutomaton.h"
-#include "lithium/reactivesocket-cpp/src/Payload.h"
-#include "lithium/reactivesocket-cpp/src/ReactiveStreamsCompat.h"
+#include "reactivesocket-cpp/src/ConnectionAutomaton.h"
+#include "reactivesocket-cpp/src/Payload.h"
+#include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
 namespace lithium {
 namespace reactivesocket {
