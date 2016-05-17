@@ -1,7 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 
-#include "lithium/reactivesocket-cpp/src/ConnectionAutomaton.h"
+#include "reactivesocket-cpp/src/ConnectionAutomaton.h"
 
 #include <limits>
 
