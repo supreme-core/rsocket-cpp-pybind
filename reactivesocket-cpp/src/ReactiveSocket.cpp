@@ -1,7 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 
-#include "lithium/reactivesocket-cpp/src/ReactiveSocket.h"
+#include "reactivesocket-cpp/src/ReactiveSocket.h"
 
 #include <cassert>
 #include <functional>
