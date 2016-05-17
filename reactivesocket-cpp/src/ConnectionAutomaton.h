@@ -7,10 +7,11 @@
 #include <memory>
 #include <unordered_map>
 
-#include "reactive-streams-cpp/utilities/AllowanceSemaphore.h"
-#include "reactive-streams-cpp/utilities/SmartPointers.h"
-#include "reactivesocket-cpp/src/Payload.h"
-#include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
+#include "lithium/reactive-streams-cpp/utilities/AllowanceSemaphore.h"
+#include "lithium/reactive-streams-cpp/utilities/SmartPointers.h"
+#include "lithium/reactivesocket-cpp/src/Payload.h"
+#include "lithium/reactivesocket-cpp/src/ReactiveStreamsCompat.h"
+#include "lithium/reactivesocket-cpp/src/mixins/IntrusiveDeleter.h"
 
 namespace lithium {
 namespace reactivesocket {
@@ -36,7 +37,10 @@ class ConnectionAutomaton :
     /// Registered as an input in the DuplexConnection.
     public Subscriber<Payload>,
     /// Receives signals about connection writability.
-    public Subscription {
+    public Subscription,
+    /// The ConnectionAutomaton instance is shared between streams and also
+    /// ReactiveSocket class, using refcounting for lifetime management
+    public IntrusiveDeleter {
  public:
   ConnectionAutomaton(
       std::unique_ptr<DuplexConnection> connection,
@@ -48,8 +52,6 @@ class ConnectionAutomaton :
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
   void connect();
-
-  ~ConnectionAutomaton();
 
   /// @{
   /// A contract exposed to AbstractStreamAutomaton, modelled after Subscriber
@@ -91,7 +93,11 @@ class ConnectionAutomaton :
   void endStream(StreamId streamId, StreamCompletionSignal signal);
   /// @}
 
+  void close();
+
  private:
+  ~ConnectionAutomaton();
+
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.
   ///
