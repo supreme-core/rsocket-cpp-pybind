@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <utility>
 
-namespace lithium {
 namespace reactivestreams {
 
 /// A "smart pointer" to an arbitrary Subscriber.
@@ -160,6 +159,5 @@ class SubscriptionPtr {
 template <typename S>
 SubscriptionPtr<S> makeSubscriptionPtr(S* subscription) {
   return SubscriptionPtr<S>(subscription);
-}
 }
 }

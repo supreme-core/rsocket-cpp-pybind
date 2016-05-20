@@ -11,7 +11,6 @@ class exception_wrapper;
 /// This header defines aliases to the mocks provided by the ReactiveStream
 /// specification, which replace std::exception_ptr with more efficient
 /// folly::exception_wrapper.
-namespace lithium {
 namespace reactivesocket {
 
 template <typename T>
@@ -34,6 +33,5 @@ MockSubscriber<T>& makeMockSubscriber() {
 
 inline MockSubscription& makeMockSubscription() {
   return reactivestreams::makeMockSubscription();
-}
 }
 }

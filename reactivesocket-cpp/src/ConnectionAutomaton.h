@@ -11,7 +11,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 class AbstractStreamAutomaton;
@@ -146,5 +145,4 @@ class ConnectionAutomaton :
   reactivestreams::AllowanceSemaphore writeAllowance_;
   std::deque<Payload> pendingWrites_; // TODO(stupaq): two vectors?
 };
-}
 }

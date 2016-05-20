@@ -8,7 +8,6 @@
 
 #include "reactivesocket-cpp/src/mixins/IntrusiveDeleter.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 class ConnectionAutomaton;
@@ -78,5 +77,4 @@ class MixinTerminator
   /// An ID of the stream (within the connection) this automaton manages.
   const StreamId streamId_;
 };
-}
 }

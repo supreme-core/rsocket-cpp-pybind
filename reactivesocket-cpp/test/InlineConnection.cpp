@@ -10,7 +10,6 @@
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 #include "reactivesocket-cpp/test/ReactiveStreamsMocksCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 InlineConnection::InlineConnection()
@@ -135,6 +134,5 @@ Subscriber<Payload>& InlineConnection::getOutput() {
       .WillOnce(Invoke([checkpoint]() { delete checkpoint; }));
 
   return outputSink;
-}
 }
 }

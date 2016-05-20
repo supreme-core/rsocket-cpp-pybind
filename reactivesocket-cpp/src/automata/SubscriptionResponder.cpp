@@ -11,7 +11,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 void SubscriptionResponderBase::onNext(Payload response) {
@@ -95,6 +94,5 @@ void SubscriptionResponderBase::onNextFrame(Frame_CANCEL& frame) {
 std::ostream& SubscriptionResponderBase::logPrefix(std::ostream& os) {
   return os << "SubscriptionResponder(" << &connection_ << ", " << streamId_
             << "): ";
-}
 }
 }

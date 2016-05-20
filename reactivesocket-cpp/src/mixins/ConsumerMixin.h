@@ -10,7 +10,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 enum class StreamCompletionSignal;
@@ -80,7 +79,6 @@ class ConsumerMixin : public Base {
   /// REQUEST_N frames.
   reactivestreams::AllowanceSemaphore pendingAllowance_;
 };
-}
 }
 
 #include "ConsumerMixin-inl.h"

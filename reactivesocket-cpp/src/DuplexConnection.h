@@ -5,7 +5,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 /// Represents a connection of the underlying protocol, on top of which
@@ -41,5 +40,4 @@ class DuplexConnection {
   /// connection MUST manage the lifetime of provided Subscriber.
   virtual Subscriber<Payload>& getOutput() = 0;
 };
-}
 }

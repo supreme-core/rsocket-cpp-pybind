@@ -17,7 +17,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 /// Instead of calling into the respective Base methods, schedules signals
@@ -129,5 +128,4 @@ class ExecutorMixin : public Base {
   std::unique_ptr<PendingSignals> pendingSignals_{
       folly::make_unique<PendingSignals>()};
 };
-}
 }

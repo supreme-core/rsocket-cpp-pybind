@@ -24,7 +24,6 @@ namespace folly {
 class exception_wrapper;
 }
 
-namespace lithium {
 namespace reactivesocket {
 
 enum class StreamCompletionSignal;
@@ -88,5 +87,4 @@ class ChannelRequesterBase
 using ChannelRequester =
     SourceIfMixin<SinkIfMixin<StreamIfMixin<LoggingMixin<ExecutorMixin<
         LoggingMixin<MemoryMixin<LoggingMixin<ChannelRequesterBase>>>>>>>>;
-}
 }

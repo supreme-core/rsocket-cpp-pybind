@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <memory>
 
-namespace lithium {
 namespace reactivestreams {
 
 /// Deletes specified object using std::default_delete<T> the first time
@@ -92,6 +91,5 @@ template <typename T>
 typename RefCountedDeleter<T>::Handle
 RefCountedDeleter<T>::decrementDeferred() {
   return Handle(*this);
-}
 }
 }

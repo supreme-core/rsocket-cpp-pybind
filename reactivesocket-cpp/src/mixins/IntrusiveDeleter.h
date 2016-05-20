@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <memory>
 
-namespace lithium {
 namespace reactivesocket {
 
 /// Deletes itself using the first time the reference count, initially one,
@@ -32,5 +31,4 @@ class IntrusiveDeleter {
 };
 
 inline IntrusiveDeleter::~IntrusiveDeleter() = default;
-}
 }

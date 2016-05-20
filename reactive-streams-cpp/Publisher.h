@@ -4,7 +4,6 @@
 
 #include <exception>
 
-namespace lithium {
 namespace reactivestreams {
 
 template <typename T, typename E>
@@ -40,5 +39,4 @@ class Publisher {
   ///   details.
   virtual void subscribe(Subscriber<T, E>& subscriber) = 0;
 };
-}
 }

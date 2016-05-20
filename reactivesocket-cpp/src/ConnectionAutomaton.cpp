@@ -13,7 +13,6 @@
 #include "reactivesocket-cpp/src/Frame.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 ConnectionAutomaton::ConnectionAutomaton(
@@ -200,5 +199,4 @@ void ConnectionAutomaton::handleUnknownStream(
   }
 }
 /// @}
-}
 }

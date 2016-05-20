@@ -9,7 +9,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/RequestHandler.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 class MockRequestHandler : public RequestHandler {
@@ -32,5 +31,4 @@ class MockRequestHandler : public RequestHandler {
     handleRequestSubscription_(request, &response);
   }
 };
-}
 }

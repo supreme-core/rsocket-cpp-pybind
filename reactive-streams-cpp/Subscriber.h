@@ -4,7 +4,6 @@
 
 #include <exception>
 
-namespace lithium {
 namespace reactivestreams {
 
 class Subscription;
@@ -76,5 +75,4 @@ class Subscriber {
   /// after or during an invocation of ::onError.
   virtual void onError(E ex) = 0;
 };
-}
 }

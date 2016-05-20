@@ -22,7 +22,6 @@ namespace folly {
 class exception_wrapper;
 }
 
-namespace lithium {
 namespace reactivesocket {
 
 enum class StreamCompletionSignal;
@@ -75,5 +74,4 @@ class SubscriptionRequesterBase
 using SubscriptionRequester =
     SourceIfMixin<StreamIfMixin<LoggingMixin<ExecutorMixin<
         LoggingMixin<MemoryMixin<LoggingMixin<SubscriptionRequesterBase>>>>>>>;
-}
 }

@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <limits>
 
-namespace lithium {
 namespace reactivestreams {
 
 class AllowanceSemaphore {
@@ -69,5 +68,4 @@ class AllowanceSemaphore {
       "Allowance representation must be an integer type");
   ValueType value_{0};
 };
-}
 }

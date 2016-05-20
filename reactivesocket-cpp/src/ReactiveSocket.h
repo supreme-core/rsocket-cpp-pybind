@@ -9,7 +9,6 @@
 #include "reactivesocket-cpp/src/Payload.h"
 #include "reactivesocket-cpp/src/ReactiveStreamsCompat.h"
 
-namespace lithium {
 namespace reactivesocket {
 
 class ConnectionAutomaton;
@@ -62,5 +61,4 @@ class ReactiveSocket {
   std::unique_ptr<RequestHandler> handler_;
   StreamId nextStreamId_;
 };
-}
 }

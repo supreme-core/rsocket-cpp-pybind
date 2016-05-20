@@ -4,7 +4,6 @@
 
 #include <cstddef>
 
-namespace lithium {
 namespace reactivestreams {
 
 /// Represents a connection between Publisher and Subscriber established by an
@@ -74,5 +73,4 @@ class Subscription {
   /// subscription has been terminated and no other signal will be sent to it.
   virtual void cancel() = 0;
 };
-}
 }

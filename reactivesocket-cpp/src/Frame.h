@@ -20,7 +20,6 @@ class Cursor;
 }
 }
 
-namespace lithium {
 namespace reactivesocket {
 
 /// A unique identifier of a stream.
@@ -234,5 +233,4 @@ class Frame_ERROR {
 };
 std::ostream& operator<<(std::ostream&, const Frame_ERROR&);
 /// @}
-}
 }
