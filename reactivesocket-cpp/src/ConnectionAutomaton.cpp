@@ -7,6 +7,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
+#include <iostream>
 
 #include "reactivesocket-cpp/src/AbstractStreamAutomaton.h"
 #include "reactivesocket-cpp/src/DuplexConnection.h"
@@ -24,12 +25,21 @@ ConnectionAutomaton::ConnectionAutomaton(
   // ::onSubscribe.
 }
 
-void ConnectionAutomaton::connect() {
+void ConnectionAutomaton::connect(bool client) {
   connectionOutput_.reset(&connection_->getOutput());
   connectionOutput_.get()->onSubscribe(*this);
   // This may call ::onSubscribe in-line, which calls ::request on the provided
   // subscription, which might deliver frames in-line.
   connection_->setInput(*this);
+
+
+  if (client) {
+    // TODO set correct version
+    auto data = folly::IOBuf::create(0);
+    Frame_SETUP frame(0, 0, 0, std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max(),
+                      std::move(data));
+    onNext(frame.serializeOut());
+  }
 }
 
 void ConnectionAutomaton::disconnect() {
@@ -114,16 +124,21 @@ void ConnectionAutomaton::onSubscribe(Subscription& subscription) {
 }
 
 void ConnectionAutomaton::onNext(Payload frame) {
-  auto streamId = FrameHeader::peekStreamId(*frame);
-  if (!streamId) {
+  auto streamIdPtr = FrameHeader::peekStreamId(*frame);
+  if (!streamIdPtr) {
     // Failed to deserialize the frame.
     // TODO(stupaq): handle connection-level error
     assert(false);
     return;
   }
-  auto it = streams_.find(*streamId);
+  auto streamId = *streamIdPtr;
+  if (streamId == 0) {
+    onConnectionFrame(std::move(frame));
+    return;
+  }
+  auto it = streams_.find(streamId);
   if (it == streams_.end()) {
-    handleUnknownStream(*streamId, std::move(frame));
+    handleUnknownStream(streamId, std::move(frame));
     return;
   }
   auto automaton = it->second;
@@ -137,6 +152,33 @@ void ConnectionAutomaton::onComplete() {
 
 void ConnectionAutomaton::onError(folly::exception_wrapper ex) {
   onTerminal(std::move(ex));
+}
+
+void ConnectionAutomaton::onConnectionFrame(Payload payload) {
+  auto type = FrameHeader::peekType(*payload);
+
+  switch (type) {
+    case FrameType::KEEPALIVE: {
+      Frame_KEEPALIVE frame;
+      if (frame.deserializeFrom(std::move(payload))) {
+        assert(frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND);
+        frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
+        connectionOutput_.onNext(frame.serializeOut());
+      } else {
+        // TODO(yschimke): handle connection-level error
+        assert(false);
+      }
+    }
+      return;
+    case FrameType::SETUP:
+      // TODO handle lease logic
+      LOG(INFO) << "ignoring setup frame";
+      return;
+    default:
+      // TODO(yschimke): check ignore flag and fail
+      assert(false);
+      return;
+  }
 }
 /// @}
 
@@ -191,7 +233,7 @@ void ConnectionAutomaton::cancel() {
 void ConnectionAutomaton::handleUnknownStream(
     StreamId streamId,
     Payload payload) {
-  // TODO(stupaq): there are some rules about monothonically increasing stream
+  // TODO(stupaq): there are some rules about monotonically increasing stream
   // IDs -- let's forget about them for a moment
   if (!factory_(streamId, payload)) {
     // TODO(stupaq): handle connection-level error

@@ -16,8 +16,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -momit-leaf-fram
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 
 find_package(Folly REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
+include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 
 include_directories(${CMAKE_SOURCE_DIR})
 
@@ -40,10 +42,10 @@ add_library(
   reactivesocket-cpp/src/Frame.h
   reactivesocket-cpp/src/framed/FramedDuplexConnection.cpp
   reactivesocket-cpp/src/framed/FramedDuplexConnection.h
-  reactivesocket-cpp/src/framed/FramedReader.h
   reactivesocket-cpp/src/framed/FramedReader.cpp
-  reactivesocket-cpp/src/framed/FramedWriter.h
+  reactivesocket-cpp/src/framed/FramedReader.h
   reactivesocket-cpp/src/framed/FramedWriter.cpp
+  reactivesocket-cpp/src/framed/FramedWriter.h
   reactivesocket-cpp/src/mixins/ConsumerMixin-inl.h
   reactivesocket-cpp/src/mixins/ConsumerMixin.h
   reactivesocket-cpp/src/mixins/ExecutorMixin.h
@@ -61,7 +63,8 @@ add_library(
   reactivesocket-cpp/src/ReactiveSocket.h
   reactivesocket-cpp/src/ReactiveStreamsCompat.h
   reactivesocket-cpp/src/RequestHandler.h
-  )
+  reactivesocket-cpp/src/tcp/TcpDuplexConnection.cpp
+  reactivesocket-cpp/src/tcp/TcpDuplexConnection.h)
 
 target_link_libraries(
   ReactiveSocket
@@ -71,8 +74,8 @@ target_link_libraries(
 
 enable_testing()
 
-add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
 # EXCLUDE_FROM_ALL so 'make install' doesn't attempt installation of googletest
+add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
 
 add_executable(
   tests
@@ -88,8 +91,7 @@ add_executable(
   reactivesocket-cpp/test/MockDuplexConnection.h
   reactivesocket-cpp/test/MockRequestHandler.h
   reactivesocket-cpp/test/ReactiveSocketTest.cpp
-  reactivesocket-cpp/test/ReactiveStreamsMocksCompat.h
-  )
+  reactivesocket-cpp/test/ReactiveStreamsMocksCompat.h)
 
 target_link_libraries(
   tests
@@ -100,5 +102,49 @@ target_link_libraries(
   gmock_main
   glog
   )
+
+add_executable(
+        tcpclient
+        reactivesocket-cpp/test/tcp/TcpClient.cpp
+        reactivesocket-cpp/test/simple/PrintSubscriber.cpp
+        reactivesocket-cpp/test/simple/PrintSubscriber.h
+        reactivesocket-cpp/test/simple/CancelSubscriber.cpp
+        reactivesocket-cpp/test/simple/CancelSubscriber.h
+        reactivesocket-cpp/src/ReactiveSocket.cpp
+        reactivesocket-cpp/src/ReactiveSocket.h
+        reactivesocket-cpp/test/simple/NullSubscription.cpp
+        reactivesocket-cpp/test/simple/NullSubscription.h)
+
+target_link_libraries(
+        tcpclient
+        ReactiveSocket
+        ${FOLLY_LIBRARIES}
+        gtest
+        gflags
+        gmock
+        gmock_main
+        glog
+)
+
+add_executable(
+        tcpserver
+        reactivesocket-cpp/test/tcp/TcpServer.cpp
+        reactivesocket-cpp/test/simple/PrintSubscriber.cpp
+        reactivesocket-cpp/test/simple/PrintSubscriber.h
+        reactivesocket-cpp/test/simple/NullSubscription.cpp
+        reactivesocket-cpp/test/simple/NullSubscription.h
+        reactivesocket-cpp/test/simple/CancelSubscriber.cpp
+        reactivesocket-cpp/test/simple/CancelSubscriber.h)
+
+target_link_libraries(
+        tcpserver
+        ReactiveSocket
+        ${FOLLY_LIBRARIES}
+        gtest
+        gflags
+        gmock
+        gmock_main
+        glog
+)
 
 # EOF
