@@ -5,7 +5,6 @@
 #include <folly/Singleton.h>
 #include <folly/io/IOBuf.h>
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "src/Frame.h"
 #include "src/Payload.h"
@@ -16,7 +15,7 @@ using namespace ::reactivesocket;
 class FrameTest : public ::testing::Test {
   void SetUp() override {
     EXPECT_CALL(allocator, allocateBuffer_(_))
-        .WillOnce(Invoke([](size_t size) {
+        .WillRepeatedly(Invoke([](size_t size) {
           auto buf = folly::IOBuf::createCombined(size + sizeof(int32_t));
           // create some wasted headroom
           buf->advance(sizeof(int32_t));
@@ -67,14 +66,16 @@ void expectHeader(
 
 TEST_F(FrameTest, Frame_REQUEST_CHANNEL) {
   uint32_t streamId = 42;
-  FrameFlags flags = FrameFlags_COMPLETE | FrameFlags_REQN_PRESENT;
+  FrameFlags flags = FrameFlags_COMPLETE | FrameFlags_REQN_PRESENT | FrameFlags_METADATA;
   uint32_t requestN = 3;
+  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
   auto data = folly::IOBuf::copyBuffer("424242");
   auto frame = reserialize<Frame_REQUEST_CHANNEL>(
-      streamId, flags, requestN, data->clone());
+      streamId, flags, requestN, FrameMetadata(metadata->clone()), data->clone());
 
   expectHeader(FrameType::REQUEST_CHANNEL, flags, streamId, frame);
   EXPECT_EQ(requestN, frame.requestN_);
+  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.metadata_.metadataPayload_));
   EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.data_));
 }
 
@@ -89,28 +90,52 @@ TEST_F(FrameTest, Frame_REQUEST_N) {
 
 TEST_F(FrameTest, Frame_CANCEL) {
   uint32_t streamId = 42;
-  auto frame = reserialize<Frame_CANCEL>(streamId);
+  FrameFlags flags = FrameFlags_METADATA;
+  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
+  auto frame = reserialize<Frame_CANCEL>(streamId, flags, FrameMetadata(metadata->clone()));
 
-  expectHeader(FrameType::CANCEL, FrameFlags_EMPTY, streamId, frame);
+  expectHeader(FrameType::CANCEL, flags, streamId, frame);
+  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.metadata_.metadataPayload_));
 }
 
-TEST_F(FrameTest, Frame_RESPONE) {
+TEST_F(FrameTest, Frame_RESPONSE) {
   uint32_t streamId = 42;
-  FrameFlags flags = FrameFlags_COMPLETE;
+  FrameFlags flags = FrameFlags_COMPLETE | FrameFlags_METADATA;
+  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
   auto data = folly::IOBuf::copyBuffer("424242");
-  auto frame = reserialize<Frame_RESPONSE>(streamId, flags, data->clone());
+  auto frame = reserialize<Frame_RESPONSE>(streamId, flags, FrameMetadata(metadata->clone()), data->clone());
 
   expectHeader(FrameType::RESPONSE, flags, streamId, frame);
+  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.metadata_.metadataPayload_));
   EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.data_));
 }
 
+TEST_F(FrameTest, Frame_RESPONSE_NoMeta) {
+  uint32_t streamId = 42;
+  FrameFlags flags = FrameFlags_COMPLETE;
+  auto data = folly::IOBuf::copyBuffer("424242");
+  auto frame = reserialize<Frame_RESPONSE>(streamId, flags, FrameMetadata::empty(), data->clone());
+
+  expectHeader(FrameType::RESPONSE, flags, streamId, frame);
+  EXPECT_FALSE(frame.metadata_.metadataPayload_);
+  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.data_));
+}
+
+
+
 TEST_F(FrameTest, Frame_ERROR) {
   uint32_t streamId = 42;
+  FrameFlags flags = FrameFlags_METADATA;
   auto errorCode = ErrorCode::REJECTED;
-  auto frame = reserialize<Frame_ERROR>(streamId, errorCode);
+  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
+  auto frame = reserialize<Frame_ERROR>(streamId,
+                                        flags,
+                                        errorCode,
+                                        FrameMetadata(metadata->clone()));
 
-  expectHeader(FrameType::ERROR, FrameFlags_EMPTY, streamId, frame);
+  expectHeader(FrameType::ERROR, flags, streamId, frame);
   EXPECT_EQ(errorCode, frame.errorCode_);
+  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.metadata_.metadataPayload_));
 }
 
 TEST_F(FrameTest, Frame_KEEPALIVE) {
@@ -125,14 +150,20 @@ TEST_F(FrameTest, Frame_KEEPALIVE) {
 
 TEST_F(FrameTest, Frame_SETUP) {
   uint32_t streamId = 0;
-  FrameFlags flags = 0;
+  FrameFlags flags = FrameFlags_EMPTY;
   uint32_t version = 0;
   uint32_t keepaliveTime = std::numeric_limits<uint32_t>::max();
   uint32_t maxLifetime = std::numeric_limits<uint32_t>::max();
   auto data = folly::IOBuf::copyBuffer("424242");
-  auto frame = reserialize<Frame_SETUP>(streamId, flags, version, keepaliveTime, maxLifetime, data->clone());
+  auto frame = reserialize<Frame_SETUP>(streamId,
+                                        flags,
+                                        version,
+                                        keepaliveTime,
+                                        maxLifetime,
+                                        FrameMetadata::empty(),
+                                        data->clone());
 
-  expectHeader(FrameType::SETUP, FrameFlags_EMPTY, streamId, frame);
+  expectHeader(FrameType::SETUP, flags, streamId, frame);
   EXPECT_EQ(version, frame.version_);
   EXPECT_EQ(keepaliveTime, frame.keepaliveTime_);
   EXPECT_EQ(maxLifetime, frame.maxLifetime_);
