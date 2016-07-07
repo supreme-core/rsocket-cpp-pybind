@@ -25,46 +25,46 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 add_library(
   ReactiveSocket
-  reactivesocket-cpp/src/AbstractStreamAutomaton.cpp
-  reactivesocket-cpp/src/AbstractStreamAutomaton.h
-  reactivesocket-cpp/src/automata/ChannelRequester.cpp
-  reactivesocket-cpp/src/automata/ChannelRequester.h
-  reactivesocket-cpp/src/automata/ChannelResponder.cpp
-  reactivesocket-cpp/src/automata/ChannelResponder.h
-  reactivesocket-cpp/src/automata/SubscriptionRequester.cpp
-  reactivesocket-cpp/src/automata/SubscriptionRequester.h
-  reactivesocket-cpp/src/automata/SubscriptionResponder.cpp
-  reactivesocket-cpp/src/automata/SubscriptionResponder.h
-  reactivesocket-cpp/src/ConnectionAutomaton.cpp
-  reactivesocket-cpp/src/ConnectionAutomaton.h
-  reactivesocket-cpp/src/DuplexConnection.h
-  reactivesocket-cpp/src/Frame.cpp
-  reactivesocket-cpp/src/Frame.h
-  reactivesocket-cpp/src/framed/FramedDuplexConnection.cpp
-  reactivesocket-cpp/src/framed/FramedDuplexConnection.h
-  reactivesocket-cpp/src/framed/FramedReader.cpp
-  reactivesocket-cpp/src/framed/FramedReader.h
-  reactivesocket-cpp/src/framed/FramedWriter.cpp
-  reactivesocket-cpp/src/framed/FramedWriter.h
-  reactivesocket-cpp/src/mixins/ConsumerMixin-inl.h
-  reactivesocket-cpp/src/mixins/ConsumerMixin.h
-  reactivesocket-cpp/src/mixins/ExecutorMixin.h
-  reactivesocket-cpp/src/mixins/IntrusiveDeleter.h
-  reactivesocket-cpp/src/mixins/LoggingMixin.h
-  reactivesocket-cpp/src/mixins/MemoryMixin.h
-  reactivesocket-cpp/src/mixins/MixinTerminator.h
-  reactivesocket-cpp/src/mixins/PublisherMixin.h
-  reactivesocket-cpp/src/mixins/README.md
-  reactivesocket-cpp/src/mixins/SinkIfMixin.h
-  reactivesocket-cpp/src/mixins/SourceIfMixin.h
-  reactivesocket-cpp/src/mixins/StreamIfMixin.h
-  reactivesocket-cpp/src/Payload.h
-  reactivesocket-cpp/src/ReactiveSocket.cpp
-  reactivesocket-cpp/src/ReactiveSocket.h
-  reactivesocket-cpp/src/ReactiveStreamsCompat.h
-  reactivesocket-cpp/src/RequestHandler.h
-  reactivesocket-cpp/src/tcp/TcpDuplexConnection.cpp
-  reactivesocket-cpp/src/tcp/TcpDuplexConnection.h)
+  src/AbstractStreamAutomaton.cpp
+  src/AbstractStreamAutomaton.h
+  src/automata/ChannelRequester.cpp
+  src/automata/ChannelRequester.h
+  src/automata/ChannelResponder.cpp
+  src/automata/ChannelResponder.h
+  src/automata/SubscriptionRequester.cpp
+  src/automata/SubscriptionRequester.h
+  src/automata/SubscriptionResponder.cpp
+  src/automata/SubscriptionResponder.h
+  src/ConnectionAutomaton.cpp
+  src/ConnectionAutomaton.h
+  src/DuplexConnection.h
+  src/Frame.cpp
+  src/Frame.h
+  src/framed/FramedDuplexConnection.cpp
+  src/framed/FramedDuplexConnection.h
+  src/framed/FramedReader.cpp
+  src/framed/FramedReader.h
+  src/framed/FramedWriter.cpp
+  src/framed/FramedWriter.h
+  src/mixins/ConsumerMixin-inl.h
+  src/mixins/ConsumerMixin.h
+  src/mixins/ExecutorMixin.h
+  src/mixins/IntrusiveDeleter.h
+  src/mixins/LoggingMixin.h
+  src/mixins/MemoryMixin.h
+  src/mixins/MixinTerminator.h
+  src/mixins/PublisherMixin.h
+  src/mixins/README.md
+  src/mixins/SinkIfMixin.h
+  src/mixins/SourceIfMixin.h
+  src/mixins/StreamIfMixin.h
+  src/Payload.h
+  src/ReactiveSocket.cpp
+  src/ReactiveSocket.h
+  src/ReactiveStreamsCompat.h
+  src/RequestHandler.h
+  src/tcp/TcpDuplexConnection.cpp
+  src/tcp/TcpDuplexConnection.h)
 
 target_link_libraries(
   ReactiveSocket
@@ -79,19 +79,19 @@ add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
 
 add_executable(
   tests
-  reactivesocket-cpp/test/framed/FramedReaderTest.cpp
-  reactivesocket-cpp/test/framed/FramedWriterTest.cpp
-  reactivesocket-cpp/test/streams/AllowanceSemaphoreTest.cpp
-  reactivesocket-cpp/test/streams/OwnershipTest.cpp
-  reactivesocket-cpp/test/streams/SmartPointersTest.cpp
-  reactivesocket-cpp/test/FrameTest.cpp
-  reactivesocket-cpp/test/InlineConnection.cpp
-  reactivesocket-cpp/test/InlineConnection.h
-  reactivesocket-cpp/test/InlineConnectionTest.cpp
-  reactivesocket-cpp/test/MockDuplexConnection.h
-  reactivesocket-cpp/test/MockRequestHandler.h
-  reactivesocket-cpp/test/ReactiveSocketTest.cpp
-  reactivesocket-cpp/test/ReactiveStreamsMocksCompat.h)
+  test/framed/FramedReaderTest.cpp
+  test/framed/FramedWriterTest.cpp
+  test/streams/AllowanceSemaphoreTest.cpp
+  test/streams/OwnershipTest.cpp
+  test/streams/SmartPointersTest.cpp
+  test/FrameTest.cpp
+  test/InlineConnection.cpp
+  test/InlineConnection.h
+  test/InlineConnectionTest.cpp
+  test/MockDuplexConnection.h
+  test/MockRequestHandler.h
+  test/ReactiveSocketTest.cpp
+  test/ReactiveStreamsMocksCompat.h)
 
 target_link_libraries(
   tests
@@ -105,15 +105,15 @@ target_link_libraries(
 
 add_executable(
         tcpclient
-        reactivesocket-cpp/test/tcp/TcpClient.cpp
-        reactivesocket-cpp/test/simple/PrintSubscriber.cpp
-        reactivesocket-cpp/test/simple/PrintSubscriber.h
-        reactivesocket-cpp/test/simple/CancelSubscriber.cpp
-        reactivesocket-cpp/test/simple/CancelSubscriber.h
-        reactivesocket-cpp/src/ReactiveSocket.cpp
-        reactivesocket-cpp/src/ReactiveSocket.h
-        reactivesocket-cpp/test/simple/NullSubscription.cpp
-        reactivesocket-cpp/test/simple/NullSubscription.h)
+        test/tcp/TcpClient.cpp
+        test/simple/PrintSubscriber.cpp
+        test/simple/PrintSubscriber.h
+        test/simple/CancelSubscriber.cpp
+        test/simple/CancelSubscriber.h
+        src/ReactiveSocket.cpp
+        src/ReactiveSocket.h
+        test/simple/NullSubscription.cpp
+        test/simple/NullSubscription.h)
 
 target_link_libraries(
         tcpclient
@@ -128,13 +128,13 @@ target_link_libraries(
 
 add_executable(
         tcpserver
-        reactivesocket-cpp/test/tcp/TcpServer.cpp
-        reactivesocket-cpp/test/simple/PrintSubscriber.cpp
-        reactivesocket-cpp/test/simple/PrintSubscriber.h
-        reactivesocket-cpp/test/simple/NullSubscription.cpp
-        reactivesocket-cpp/test/simple/NullSubscription.h
-        reactivesocket-cpp/test/simple/CancelSubscriber.cpp
-        reactivesocket-cpp/test/simple/CancelSubscriber.h)
+        test/tcp/TcpServer.cpp
+        test/simple/PrintSubscriber.cpp
+        test/simple/PrintSubscriber.h
+        test/simple/NullSubscription.cpp
+        test/simple/NullSubscription.h
+        test/simple/CancelSubscriber.cpp
+        test/simple/CancelSubscriber.h)
 
 target_link_libraries(
         tcpserver
