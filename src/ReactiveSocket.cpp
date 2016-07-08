@@ -75,6 +75,18 @@ void ReactiveSocket::requestSubscription(
   automaton->start();
 }
 
+void ReactiveSocket::requestFireAndForget(Payload request) {
+  // TODO(stupaq): handle any exceptions
+  StreamId streamId = nextStreamId_;
+  nextStreamId_ += 2;
+  Frame_REQUEST_FNF frame(
+      streamId,
+      FrameFlags_EMPTY,
+      FrameMetadata::empty(),
+      std::move(std::move(request)));
+  connection_->onNextFrame(frame);
+}
+
 ReactiveSocket::ReactiveSocket(
     bool isServer,
     std::unique_ptr<DuplexConnection> connection,
@@ -121,6 +133,15 @@ bool ReactiveSocket::createResponder(
       handler_->handleRequestSubscription(std::move(frame.data_), *automaton);
       automaton->onNextFrame(frame);
       automaton->start();
+      break;
+    }
+    case FrameType::REQUEST_FNF: {
+      Frame_REQUEST_FNF frame;
+      if (!frame.deserializeFrom(std::move(serializedFrame))) {
+        return false;
+      }
+      // no stream tracking is necessary
+      handler_->handleFireAndForgetRequest(std::move(frame.data_));
       break;
     }
     // Other frames cannot start a stream.

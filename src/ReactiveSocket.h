@@ -49,6 +49,8 @@ class ReactiveSocket {
 
   void requestSubscription(Payload payload, Subscriber<Payload>& responseSink);
 
+  void requestFireAndForget(Payload request);
+
  private:
   ReactiveSocket(
       bool isServer,
