@@ -1,11 +1,11 @@
 // Copyright 2004-present Facebook.  All rights reserved.
 #include "FramedDuplexConnection.h"
 
-#include <glog/logging.h>
 #include <folly/Memory.h>
+#include <glog/logging.h>
+#include <memory>
 #include "FramedReader.h"
 #include "FramedWriter.h"
-#include <memory>
 
 namespace reactivesocket {
 

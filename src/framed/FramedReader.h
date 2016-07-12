@@ -1,4 +1,5 @@
-// Copyright 2004-present Facebook.  All rights reserved.
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
@@ -10,7 +11,8 @@
 
 namespace reactivesocket {
 
-class FramedReader : public reactivesocket::Subscriber<Payload>, public reactivesocket::Subscription {
+class FramedReader : public reactivesocket::Subscriber<Payload>,
+                     public reactivesocket::Subscription {
  public:
   explicit FramedReader(reactivesocket::Subscriber<Payload>& frames)
       : frames_(&frames),

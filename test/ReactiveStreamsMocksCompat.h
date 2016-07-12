@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "streams/Mocks.h"
+#include <reactive-streams/test/Mocks.h>
 
 namespace folly {
 class exception_wrapper;

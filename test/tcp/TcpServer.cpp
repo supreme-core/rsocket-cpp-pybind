@@ -1,7 +1,7 @@
-#include <thread>
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <gmock/gmock.h>
+#include <thread>
 #include "src/ReactiveSocket.h"
 #include "src/RequestHandler.h"
 #include "src/framed/FramedDuplexConnection.h"
@@ -71,7 +71,7 @@ class ServerRequestHandler : public RequestHandler {
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  Callback(EventBase& eventBase) : eventBase_(eventBase){};
+  explicit Callback(EventBase& eventBase) : eventBase_(eventBase){};
 
   virtual ~Callback() = default;
 

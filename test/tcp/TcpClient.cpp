@@ -1,12 +1,12 @@
-#include <thread>
 #include <folly/Memory.h>
 #include <gmock/gmock.h>
+#include <thread>
 #include "src/ReactiveSocket.h"
 #include "src/RequestHandler.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/mixins/MemoryMixin.h"
-#include "test/simple/CancelSubscriber.h"
 #include "src/tcp/TcpDuplexConnection.h"
+#include "test/simple/CancelSubscriber.h"
 #include "test/simple/NullSubscription.h"
 #include "test/simple/PrintSubscriber.h"
 

@@ -32,14 +32,19 @@ void ConnectionAutomaton::connect(bool client) {
   // subscription, which might deliver frames in-line.
   connection_->setInput(*this);
 
-
   if (client) {
     // TODO set correct version
     auto metadata = folly::IOBuf::create(0);
     auto data = folly::IOBuf::create(0);
     auto flags = FrameFlags_METADATA;
-    Frame_SETUP frame(0, flags, 0, std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max(),
-                      FrameMetadata(std::move(metadata)), std::move(data));
+    Frame_SETUP frame(
+        0,
+        flags,
+        0,
+        std::numeric_limits<uint32_t>::max(),
+        std::numeric_limits<uint32_t>::max(),
+        FrameMetadata(std::move(metadata)),
+        std::move(data));
     onNext(frame.serializeOut());
   }
 }
@@ -194,6 +199,7 @@ void ConnectionAutomaton::onTerminal(folly::exception_wrapper ex) {
   while (!streams_.empty()) {
     auto oldSize = streams_.size();
     auto result = endStreamInternal(streams_.begin()->first, signal);
+    (void)oldSize;
     (void)result;
     // TODO(stupaq): what kind of a user action could violate these assertions?
     assert(result);

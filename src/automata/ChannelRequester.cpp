@@ -68,7 +68,8 @@ void ChannelRequesterBase::onComplete() {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
-      Frame_REQUEST_CHANNEL frame(streamId_, FrameFlags_COMPLETE, 0, FrameMetadata::empty(), nullptr);
+      Frame_REQUEST_CHANNEL frame(
+          streamId_, FrameFlags_COMPLETE, 0, FrameMetadata::empty(), nullptr);
       connection_->onNextFrame(frame);
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
     } break;

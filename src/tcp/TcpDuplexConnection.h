@@ -23,8 +23,8 @@ class TcpDuplexConnection;
 class TcpSubscriptionBase : public virtual ::reactivesocket::IntrusiveDeleter,
                             public ::reactivesocket::Subscription {
  public:
-  TcpSubscriptionBase(TcpDuplexConnection& connection)
-    : connection_(connection){};
+  explicit TcpSubscriptionBase(TcpDuplexConnection& connection)
+      : connection_(connection){};
 
   ~TcpSubscriptionBase() = default;
 
@@ -41,7 +41,7 @@ class TcpDuplexConnection;
 
 class TcpOutputSubscriber : public Subscriber<Payload> {
  public:
-  TcpOutputSubscriber(TcpDuplexConnection& connection)
+  explicit TcpOutputSubscriber(TcpDuplexConnection& connection)
       : connection_(connection){};
 
   void onSubscribe(Subscription& subscription) override;
@@ -61,7 +61,7 @@ class TcpDuplexConnection
       public ::folly::AsyncTransportWrapper::WriteCallback,
       public ::folly::AsyncTransportWrapper::ReadCallback {
  public:
-  TcpDuplexConnection(folly::AsyncSocket::UniquePtr&& socket)
+  explicit TcpDuplexConnection(folly::AsyncSocket::UniquePtr&& socket)
       : socket_(std::move(socket)){};
 
   ~TcpDuplexConnection() {
