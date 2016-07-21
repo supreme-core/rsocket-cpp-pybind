@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include <gmock/gmock.h>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include "TestSuite.h"
 #include "TestFileParser.h"
@@ -12,7 +12,7 @@ DEFINE_string(test_file, "", "host to connect to");
 using namespace reactivesocket::tck;
 
 int main(int argc, char* argv[]) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 

@@ -163,8 +163,6 @@ target_link_libraries(
         ${FOLLY_LIBRARIES}
         gtest
         gflags
-        gmock
-        gmock_main
         glog
 )
 
