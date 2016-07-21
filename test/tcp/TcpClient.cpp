@@ -1,4 +1,3 @@
-#include <folly/io/async/EventBase.h>
 #include <folly/io/async/AsyncSocketBase.h>
 
 DEFINE_string(host, "localhost", "host to connect to");
