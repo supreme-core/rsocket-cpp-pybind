@@ -1,7 +1,4 @@
-#include "src/tcp/TcpDuplexConnection.h"
-
-using namespace ::reactivesocket;
-using namespace ::folly;
+#include <folly/io/async/DelayedDestruction.h>
 
 DEFINE_string(host, "localhost", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");
