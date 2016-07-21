@@ -6,7 +6,7 @@ DEFINE_int32(port, 9898, "host:port to connect to");
 
 
 int main(int argc, char* argv[]) {
-  GFLAGS_NAMESPACE::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
