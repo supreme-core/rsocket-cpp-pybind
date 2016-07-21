@@ -1,5 +1,3 @@
-#include "src/framed/FramedDuplexConnection.h"
-#include "src/mixins/MemoryMixin.h"
 #include "src/tcp/TcpDuplexConnection.h"
 
 using namespace ::reactivesocket;
