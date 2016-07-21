@@ -1,5 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include <gmock/gmock.h>
 #include <glog/logging.h>
 #include "TestSuite.h"
 #include "TestFileParser.h"
