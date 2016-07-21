@@ -147,17 +147,4 @@ target_link_libraries(
         glog
 )
 
-add_executable(
-        tcpclient2
-        test/tcp/TcpClient2.cpp)
-
-target_link_libraries(
-        tcpclient2
-        ReactiveSocket
-        ${FOLLY_LIBRARIES}
-        gtest
-        gflags
-        glog
-)
-
 # EOF
