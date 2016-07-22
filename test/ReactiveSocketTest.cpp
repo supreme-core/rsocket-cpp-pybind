@@ -218,7 +218,6 @@ TEST(ReactiveSocketTest, RequestFireAndForget) {
 
   StrictMock<UnmanagedMockSubscriber<Payload>> clientInput;
   StrictMock<UnmanagedMockSubscription> serverOutputSub;
-  Subscription* clientInputSub = nullptr;
 
   auto clientSock = ReactiveSocket::fromClientConnection(
       std::move(clientConn),

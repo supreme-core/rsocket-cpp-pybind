@@ -147,4 +147,23 @@ target_link_libraries(
         glog
 )
 
+add_executable(
+        tckclient
+        tck-test/client.cpp
+        tck-test/TestFileParser.cpp
+        tck-test/TestFileParser.h
+        tck-test/TestSuite.cpp
+        tck-test/TestSuite.h
+        tck-test/TestInterpreter.cpp
+        tck-test/TestInterpreter.h
+        tck-test/TypedCommands.h)
+
+target_link_libraries(
+        tckclient
+        ${FOLLY_LIBRARIES}
+        gtest
+        gflags
+        glog
+)
+
 # EOF

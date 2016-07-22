@@ -21,7 +21,8 @@ folly::Singleton<reactivesocket::FrameBufferAllocator> bufferAllocatorSingleton;
 namespace reactivesocket {
 
 std::unique_ptr<folly::IOBuf> FrameBufferAllocator::allocate(size_t size) {
-  return folly::Singleton<FrameBufferAllocator>::get()->allocateBuffer(size);
+  return folly::Singleton<FrameBufferAllocator>::try_get()
+    ->allocateBuffer(size);
 }
 
 std::unique_ptr<folly::IOBuf> FrameBufferAllocator::allocateBuffer(
@@ -158,7 +159,7 @@ bool FrameMetadata::deserializeFrom(folly::io::Cursor& cur) {
     const auto length = cur.readBE<uint32_t>();
     assert(length < kMaxMetaLength);
     const auto metadataPayloadLength = length - sizeof(uint32_t);
-    
+
     if (metadataPayloadLength > 0) {
       cur.clone(metadataPayload_, metadataPayloadLength);
     } else {
