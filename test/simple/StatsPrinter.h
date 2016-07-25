@@ -5,7 +5,6 @@
 #include <src/Stats.h>
 
 namespace reactivesocket {
-// Virtual interface for a stats receiver
 class StatsPrinter : public Stats {
  public:
   virtual ~StatsPrinter() = default;
