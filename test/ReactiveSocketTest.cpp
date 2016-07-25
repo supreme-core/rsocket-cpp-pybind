@@ -251,14 +251,17 @@ TEST(ReactiveSocketTest, Destructor) {
 
   // TODO: since we don't assert anything, should we just use the StatsPrinter
   // instead?
-  NiceMock<MockStats> clientStats, serverStats;
+  NiceMock<MockStats> clientStats;
+  NiceMock<MockStats> serverStats;
   std::array<StrictMock<UnmanagedMockSubscriber<Payload>>, 2> clientInputs;
   std::array<StrictMock<UnmanagedMockSubscription>, 2> serverOutputSubs;
   std::array<Subscription*, 2> clientInputSubs = {{nullptr}};
   std::array<Subscriber<Payload>*, 2> serverOutputs = {{nullptr}};
 
-  EXPECT_CALL(clientStats, socketCreated_());
-  EXPECT_CALL(serverStats, socketCreated_());
+  EXPECT_CALL(clientStats, socketCreated_()).Times(1);
+  EXPECT_CALL(serverStats, socketCreated_()).Times(1);
+  EXPECT_CALL(clientStats, socketClosed_()).Times(1);
+  EXPECT_CALL(serverStats, socketClosed_()).Times(1);
 
   auto clientSock = ReactiveSocket::fromClientConnection(
       std::move(clientConn),
@@ -320,8 +323,6 @@ TEST(ReactiveSocketTest, Destructor) {
     clientSock->requestSubscription(originalPayload->clone(), clientInputs[i]);
   }
 
-  //  EXPECT_CALL(clientStats, socketClosed_());
-  //  EXPECT_CALL(serverStats, socketClosed_());
-  //  clientSock.reset(nullptr);
-  //  serverSock.reset(nullptr);
+//  clientSock.reset(nullptr);
+//  serverSock.reset(nullptr);
 }
