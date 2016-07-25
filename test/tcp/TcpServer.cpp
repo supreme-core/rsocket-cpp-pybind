@@ -1,7 +1,8 @@
-#include <thread>
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <gmock/gmock.h>
+#include <test/simple/StatsPrinter.h>
+#include <thread>
 #include "src/ReactiveSocket.h"
 #include "src/RequestHandler.h"
 #include "src/framed/FramedDuplexConnection.h"
@@ -10,6 +11,7 @@
 #include "test/simple/CancelSubscriber.h"
 #include "test/simple/NullSubscription.h"
 #include "test/simple/PrintSubscriber.h"
+#include "test/simple/StatsPrinter.h"
 
 using namespace ::testing;
 using namespace ::reactivesocket;
@@ -91,7 +93,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::make_unique<ServerRequestHandler>();
 
     reactiveSocket_ = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler));
+        std::move(framedConnection), std::move(requestHandler), statsPrinter);
   }
 
   virtual void acceptError(const std::exception& ex) noexcept override {
@@ -105,10 +107,14 @@ class Callback : public AsyncServerSocket::AcceptCallback {
  private:
   std::unique_ptr<ReactiveSocket> reactiveSocket_;
   EventBase& eventBase_;
+  reactivesocket::StatsPrinter statsPrinter = reactivesocket::StatsPrinter();
 };
 }
 
 int main(int argc, char* argv[]) {
+  FLAGS_logtostderr = true;
+  FLAGS_minloglevel = 0;
+
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -142,4 +148,6 @@ int main(int argc, char* argv[]) {
 
   eventBase.runInEventBaseThreadAndWait([&callback]() { callback.shutdown(); });
   eventBase.terminateLoopSoon();
+
+  thread.join();
 }
