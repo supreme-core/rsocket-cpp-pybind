@@ -6,7 +6,6 @@ namespace reactivesocket {
 // forward decl for NoopStats
 class NoopStats;
 
-// Virtual interface for a stats receiver
 class Stats {
  public:
   static NoopStats noop;
@@ -18,10 +17,7 @@ class Stats {
 
 class NoopStats : public Stats {
  public:
-  virtual ~NoopStats() = default;
-
-  void socketCreated(){};
-
-  void socketClosed(){};
+  void socketCreated() override {};
+  void socketClosed() override {};
 };
 }
