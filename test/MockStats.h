@@ -14,14 +14,18 @@ namespace reactivesocket {
 
 class MockStats : public Stats {
  public:
-    MOCK_METHOD0(socketCreated_, void());
-    MOCK_METHOD0(socketClosed_, void());
-    MOCK_METHOD2(connectionCreated_, void(const std::string&, reactivesocket::DuplexConnection *));
-    MOCK_METHOD2(connectionClosed_, void(const std::string&, reactivesocket::DuplexConnection *));
-    MOCK_METHOD1(bytesWritten_, void(size_t));
-    MOCK_METHOD1(bytesRead_, void(size_t));
-    MOCK_METHOD0(frameWritten_, void());
-    MOCK_METHOD0(frameRead_, void());
+  MOCK_METHOD0(socketCreated_, void());
+  MOCK_METHOD0(socketClosed_, void());
+  MOCK_METHOD2(
+      connectionCreated_,
+      void(const std::string&, reactivesocket::DuplexConnection*));
+  MOCK_METHOD2(
+      connectionClosed_,
+      void(const std::string&, reactivesocket::DuplexConnection*));
+  MOCK_METHOD1(bytesWritten_, void(size_t));
+  MOCK_METHOD1(bytesRead_, void(size_t));
+  MOCK_METHOD1(frameWritten_, void(FrameType));
+  MOCK_METHOD1(frameRead_, void(FrameType));
 
   void socketCreated() override {
     socketCreated_();
@@ -31,28 +35,32 @@ class MockStats : public Stats {
     socketClosed_();
   }
 
-    void connectionCreated(const std::string& type, reactivesocket::DuplexConnection *connection) override {
-      connectionCreated_(type, connection);
-    }
+  void connectionCreated(
+      const std::string& type,
+      reactivesocket::DuplexConnection* connection) override {
+    connectionCreated_(type, connection);
+  }
 
-    void connectionClosed(const std::string& type, reactivesocket::DuplexConnection *connection) override {
-       connectionClosed_(type, connection);
-      }
+  void connectionClosed(
+      const std::string& type,
+      reactivesocket::DuplexConnection* connection) override {
+    connectionClosed_(type, connection);
+  }
 
-    virtual void bytesWritten(size_t bytes) override {
-bytesWritten_(bytes);
-    }
+  virtual void bytesWritten(size_t bytes) override {
+    bytesWritten_(bytes);
+  }
 
-    virtual void bytesRead(size_t bytes) override {
-      bytesRead_(bytes);
-    }
+  virtual void bytesRead(size_t bytes) override {
+    bytesRead_(bytes);
+  }
 
-    virtual void frameWritten() override {
-frameWritten_();
-    }
+  virtual void frameWritten(FrameType frameType) override {
+    frameWritten_(frameType);
+  }
 
-    virtual void frameRead() override {
-frameRead_();
-    }
+  virtual void frameRead(FrameType frameType) override {
+    frameRead_(frameType);
+  }
 };
 }

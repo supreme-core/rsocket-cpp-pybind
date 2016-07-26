@@ -4,6 +4,7 @@
 
 #include <string>
 #include "DuplexConnection.h"
+#include "Frame.h"
 
 namespace reactivesocket {
 class Stats {
@@ -20,8 +21,8 @@ class Stats {
       reactivesocket::DuplexConnection* connection) = 0;
   virtual void bytesWritten(size_t bytes) = 0;
   virtual void bytesRead(size_t bytes) = 0;
-  virtual void frameWritten() = 0;
-  virtual void frameRead() = 0;
+  virtual void frameWritten(FrameType type) = 0;
+  virtual void frameRead(FrameType type) = 0;
 
   virtual ~Stats() = default;
 };
