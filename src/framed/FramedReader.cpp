@@ -51,6 +51,8 @@ void FramedReader::parseFrames() {
 
     CHECK(allowance_.tryAcquire(1));
     frames_.onNext(std::move(nextFrame));
+
+    stats_.frameRead();
   }
   dispatchingFrames_ = false;
 }

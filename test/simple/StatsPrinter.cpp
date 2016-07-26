@@ -3,6 +3,7 @@
 #include "StatsPrinter.h"
 
 #include <glog/logging.h>
+#include <src/tcp/TcpDuplexConnection.h>
 
 namespace reactivesocket {
 void StatsPrinter::socketCreated() {
@@ -13,11 +14,31 @@ void StatsPrinter::socketClosed() {
   LOG(INFO) << "socketClosed";
 }
 
-    void StatsPrinter::connectionCreated(const std::string &type) {
-      LOG(INFO) << "connectionCreated " << type;
-    }
+void StatsPrinter::connectionCreated(
+    const char type[4],
+    reactivesocket::DuplexConnection* connection) {
+  LOG(INFO) << "connectionCreated " << type;
+}
 
-    void StatsPrinter::connectionClosed(const std::string &type) {
-      LOG(INFO) << "connectionClosed " << type;
-    }
+void StatsPrinter::connectionClosed(
+    const char type[4],
+    reactivesocket::DuplexConnection* connection) {
+  LOG(INFO) << "connectionClosed " << type;
+}
+
+void StatsPrinter::bytesWritten(size_t bytes) {
+  LOG(INFO) << "bytesWritten " << bytes;
+}
+
+void StatsPrinter::bytesRead(size_t bytes) {
+  LOG(INFO) << "bytesRead " << bytes;
+}
+
+void StatsPrinter::frameWritten() {
+  LOG(INFO) << "frameWritten";
+}
+
+void StatsPrinter::frameRead() {
+  LOG(INFO) << "frameRead";
+}
 }

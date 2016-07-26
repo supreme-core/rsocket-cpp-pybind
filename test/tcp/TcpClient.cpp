@@ -95,9 +95,9 @@ int main(int argc, char* argv[]) {
         std::cout << "attempting connection to " << addr.describe() << "\n";
 
         std::unique_ptr<DuplexConnection> connection =
-            folly::make_unique<TcpDuplexConnection>(std::move(socket));
+            folly::make_unique<TcpDuplexConnection>(std::move(socket), stats);
         std::unique_ptr<DuplexConnection> framedConnection =
-            folly::make_unique<FramedDuplexConnection>(std::move(connection));
+            folly::make_unique<FramedDuplexConnection>(std::move(connection), stats);
         std::unique_ptr<RequestHandler> requestHandler =
             folly::make_unique<ClientRequestHandler>();
 

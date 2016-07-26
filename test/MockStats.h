@@ -6,6 +6,7 @@
 
 #include <gmock/gmock.h>
 #include <src/Stats.h>
+#include <src/tcp/TcpDuplexConnection.h>
 
 #include "src/Payload.h"
 
@@ -26,11 +27,11 @@ class MockStats : public Stats {
     socketClosed_();
   }
 
-    void connectionCreated(const std::string& type) override {
+    void connectionCreated(const char type[4], reactivesocket::TcpDuplexConnection *pConnection) override {
       connectionCreated_(type);
     }
 
-    void connectionClosed(const std::string& type) override {
+    void connectionClosed(const char type[4], reactivesocket::TcpDuplexConnection *pConnection) override {
        connectionClosed_(type);
       }
 };

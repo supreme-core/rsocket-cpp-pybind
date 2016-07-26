@@ -38,6 +38,8 @@ void FramedWriter::onNext(std::unique_ptr<folly::IOBuf> payload) {
     newPayload->appendChain(std::move(payload));
     stream_.onNext(std::move(newPayload));
   }
+
+  stats_.frameWritten();
 }
 
 void FramedWriter::onComplete() {
