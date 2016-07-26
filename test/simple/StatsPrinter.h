@@ -12,5 +12,9 @@ class StatsPrinter : public Stats {
   void socketCreated() override;
 
   void socketClosed() override;
+
+    virtual void connectionCreated(const std::string &type) override;
+
+    virtual void connectionClosed(const std::string &type) override;
 };
 }

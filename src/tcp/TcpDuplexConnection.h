@@ -8,6 +8,7 @@
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <reactive-streams/utilities/SmartPointers.h>
+#include <src/Stats.h>
 #include "src/DuplexConnection.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
@@ -61,8 +62,8 @@ class TcpDuplexConnection
       public ::folly::AsyncTransportWrapper::WriteCallback,
       public ::folly::AsyncTransportWrapper::ReadCallback {
  public:
-  TcpDuplexConnection(folly::AsyncSocket::UniquePtr&& socket)
-      : socket_(std::move(socket)){};
+  TcpDuplexConnection(folly::AsyncSocket::UniquePtr&& socket, Stats& stats  = Stats::noop())
+      : socket_(std::move(socket)), stats_(stats){};
 
   ~TcpDuplexConnection() {
     socket_->close();
@@ -102,5 +103,6 @@ class TcpDuplexConnection
   std::unique_ptr<TcpOutputSubscriber> outputSubscriber_;
   SubscriberPtr<Subscriber<Payload>> inputSubscriber_;
   folly::AsyncSocket::UniquePtr socket_;
+  Stats& stats_;
 };
 }

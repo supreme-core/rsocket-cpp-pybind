@@ -12,4 +12,12 @@ void StatsPrinter::socketCreated() {
 void StatsPrinter::socketClosed() {
   LOG(INFO) << "socketClosed";
 }
+
+    void StatsPrinter::connectionCreated(const std::string &type) {
+      LOG(INFO) << "connectionCreated " << type;
+    }
+
+    void StatsPrinter::connectionClosed(const std::string &type) {
+      LOG(INFO) << "connectionClosed " << type;
+    }
 }

@@ -2,22 +2,18 @@
 
 #pragma once
 
-namespace reactivesocket {
-// forward decl for NoopStats
-class NoopStats;
+#include <string>
 
+namespace reactivesocket {
 class Stats {
  public:
   static Stats& noop();
 
   virtual void socketCreated() = 0;
   virtual void socketClosed() = 0;
-  virtual ~Stats() = default;
-};
+  virtual void connectionCreated(const std::string& type) = 0;
+  virtual void connectionClosed(const std::string& type) = 0;
 
-class NoopStats : public Stats {
- public:
-  void socketCreated() override {};
-  void socketClosed() override {};
+  virtual ~Stats() = default;
 };
 }

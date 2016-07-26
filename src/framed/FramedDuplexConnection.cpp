@@ -10,8 +10,8 @@
 namespace reactivesocket {
 
 FramedDuplexConnection::FramedDuplexConnection(
-    std::unique_ptr<DuplexConnection> connection)
-    : connection_(std::move(connection)) {}
+    std::unique_ptr<DuplexConnection> connection, Stats& stats)
+    : connection_(std::move(connection)), stats_(stats) {}
 
 FramedDuplexConnection::~FramedDuplexConnection() {
   // to make sure we close the parties when the connection dies

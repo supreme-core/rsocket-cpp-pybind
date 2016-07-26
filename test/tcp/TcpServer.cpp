@@ -73,7 +73,8 @@ class ServerRequestHandler : public RequestHandler {
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  Callback(EventBase& eventBase) : eventBase_(eventBase){};
+  Callback(EventBase& eventBase, Stats& stats)
+      : eventBase_(eventBase), stats_(stats){};
 
   virtual ~Callback() = default;
 
@@ -86,14 +87,15 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
 
     std::unique_ptr<DuplexConnection> connection =
-        folly::make_unique<TcpDuplexConnection>(std::move(socket));
+        folly::make_unique<TcpDuplexConnection>(std::move(socket), stats_);
     std::unique_ptr<DuplexConnection> framedConnection =
-        folly::make_unique<FramedDuplexConnection>(std::move(connection));
+        folly::make_unique<FramedDuplexConnection>(
+            std::move(connection), stats_);
     std::unique_ptr<RequestHandler> requestHandler =
         folly::make_unique<ServerRequestHandler>();
 
     reactiveSocket_ = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler), statsPrinter);
+        std::move(framedConnection), std::move(requestHandler), stats_);
   }
 
   virtual void acceptError(const std::exception& ex) noexcept override {
@@ -107,7 +109,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
  private:
   std::unique_ptr<ReactiveSocket> reactiveSocket_;
   EventBase& eventBase_;
-  reactivesocket::StatsPrinter statsPrinter = reactivesocket::StatsPrinter();
+  Stats& stats_;
 };
 }
 
@@ -119,10 +121,12 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
+  reactivesocket::StatsPrinter statsPrinter;
+
   EventBase eventBase;
   auto thread = std::thread([&]() { eventBase.loopForever(); });
 
-  Callback callback(eventBase);
+  Callback callback(eventBase, statsPrinter);
 
   auto serverSocket = AsyncServerSocket::newSocket(&eventBase);
 
