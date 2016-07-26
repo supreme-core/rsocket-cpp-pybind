@@ -13,10 +13,10 @@ class Stats {
   virtual void socketCreated() = 0;
   virtual void socketClosed() = 0;
   virtual void connectionCreated(
-      const char type[4],
+      const std::string& type,
       reactivesocket::DuplexConnection* connection) = 0;
   virtual void connectionClosed(
-      const char type[4],
+      const std::string& type,
       reactivesocket::DuplexConnection* connection) = 0;
   virtual void bytesWritten(size_t bytes) = 0;
   virtual void bytesRead(size_t bytes) = 0;

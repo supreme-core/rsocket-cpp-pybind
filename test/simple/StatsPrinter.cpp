@@ -15,13 +15,13 @@ void StatsPrinter::socketClosed() {
 }
 
 void StatsPrinter::connectionCreated(
-    const char type[4],
+    const std::string& type,
     reactivesocket::DuplexConnection* connection) {
   LOG(INFO) << "connectionCreated " << type;
 }
 
 void StatsPrinter::connectionClosed(
-    const char type[4],
+    const std::string& type,
     reactivesocket::DuplexConnection* connection) {
   LOG(INFO) << "connectionClosed " << type;
 }
