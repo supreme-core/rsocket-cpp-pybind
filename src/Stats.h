@@ -8,7 +8,7 @@ class NoopStats;
 
 class Stats {
  public:
-  static NoopStats noop;
+  static Stats& noop();
 
   virtual void socketCreated() = 0;
   virtual void socketClosed() = 0;

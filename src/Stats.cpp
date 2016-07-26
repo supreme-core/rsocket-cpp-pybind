@@ -3,5 +3,8 @@
 #include "src/Stats.h"
 
 namespace reactivesocket {
-NoopStats Stats::noop = NoopStats();
+Stats& Stats::noop() {
+  static NoopStats noop_;
+  return noop_;
+};
 }

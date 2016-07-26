@@ -41,12 +41,12 @@ class ReactiveSocket {
   static std::unique_ptr<ReactiveSocket> fromClientConnection(
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
-      Stats& stats = Stats::noop);
+      Stats& stats = Stats::noop());
 
   static std::unique_ptr<ReactiveSocket> fromServerConnection(
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
-      Stats& stats = Stats::noop);
+      Stats& stats = Stats::noop());
 
   Subscriber<Payload>& requestChannel(Subscriber<Payload>& responseSink);
 
