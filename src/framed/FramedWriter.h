@@ -9,10 +9,13 @@
 
 namespace reactivesocket {
 
-class FramedWriter : public reactivesocket::Subscriber<Payload>, public reactivesocket::Subscription {
+class FramedWriter : public reactivesocket::Subscriber<Payload>,
+                     public reactivesocket::Subscription {
  public:
-  explicit FramedWriter(reactivesocket::Subscriber<Payload>& stream, Stats & stats)
-      : stream_(&stream), stats_(stats)  {}
+  explicit FramedWriter(
+      reactivesocket::Subscriber<Payload>& stream,
+      Stats& stats)
+      : stream_(&stream), stats_(stats) {}
 
   // Subscriber methods
   void onSubscribe(reactivesocket::Subscription& subscription) override;
@@ -27,7 +30,7 @@ class FramedWriter : public reactivesocket::Subscriber<Payload>, public reactive
  private:
   SubscriberPtr<reactivesocket::Subscriber<Payload>> stream_;
   SubscriptionPtr<::reactivestreams::Subscription> writerSubscription_;
-    Stats& stats_;
+  Stats& stats_;
 };
 
 } // reactive socket

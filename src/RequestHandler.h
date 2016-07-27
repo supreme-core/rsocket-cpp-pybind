@@ -25,7 +25,6 @@ class RequestHandler {
       Subscriber<Payload>& response) = 0;
 
   /// Handles a new fire-and-forget request sent by the other end.
-  virtual void handleFireAndForgetRequest(
-      Payload request) = 0;
+  virtual void handleFireAndForgetRequest(Payload request) = 0;
 };
 }

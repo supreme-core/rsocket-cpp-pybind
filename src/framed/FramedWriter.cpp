@@ -2,10 +2,10 @@
 #include "FramedWriter.h"
 
 #include <folly/ExceptionWrapper.h>
+#include <folly/Optional.h>
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 #include <glog/logging.h>
-#include <folly/Optional.h>
 
 namespace reactivesocket {
 

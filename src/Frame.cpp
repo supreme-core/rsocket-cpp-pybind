@@ -21,8 +21,8 @@ folly::Singleton<reactivesocket::FrameBufferAllocator> bufferAllocatorSingleton;
 namespace reactivesocket {
 
 std::unique_ptr<folly::IOBuf> FrameBufferAllocator::allocate(size_t size) {
-  return folly::Singleton<FrameBufferAllocator>::try_get()
-    ->allocateBuffer(size);
+  return folly::Singleton<FrameBufferAllocator>::try_get()->allocateBuffer(
+      size);
 }
 
 std::unique_ptr<folly::IOBuf> FrameBufferAllocator::allocateBuffer(
@@ -133,14 +133,16 @@ void FrameMetadata::serializeInto(folly::io::QueueAppender& appender) {
     // use signed int because the first bit in metadata length is reserved
     assert(metadataPayload_->length() + sizeof(uint32_t) < kMaxMetaLength);
 
-    appender.writeBE<uint32_t>(static_cast<uint32_t>(metadataPayload_->length()) + sizeof(uint32_t));
+    appender.writeBE<uint32_t>(
+        static_cast<uint32_t>(metadataPayload_->length()) + sizeof(uint32_t));
     appender.insert(std::move(metadataPayload_));
   }
 }
 
-bool FrameMetadata::deserializeFrom(folly::io::Cursor& cur,
-                                    const FrameFlags& flags,
-                                    FrameMetadata& metadata) {
+bool FrameMetadata::deserializeFrom(
+    folly::io::Cursor& cur,
+    const FrameFlags& flags,
+    FrameMetadata& metadata) {
   if (flags & FrameFlags_METADATA) {
     FrameMetadata m;
     if (!m.deserializeFrom(cur)) {
@@ -172,9 +174,12 @@ bool FrameMetadata::deserializeFrom(folly::io::Cursor& cur) {
 }
 
 std::ostream& operator<<(std::ostream& os, const FrameMetadata& metadata) {
-  return os << "[meta: " << (metadata.metadataPayload_ ?
-                              folly::to<std::string>(metadata.metadataPayload_->computeChainDataLength())
-                              : "empty") << "]";
+  return os << "[meta: "
+            << (metadata.metadataPayload_
+                    ? folly::to<std::string>(
+                          metadata.metadataPayload_->computeChainDataLength())
+                    : "empty")
+            << "]";
 }
 /// @}
 
@@ -183,9 +188,8 @@ Payload Frame_REQUEST_SUB::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   const bool metadataPresent = (header_.flags_ & FrameFlags_METADATA) != 0;
   const auto bufSize = FrameHeader::kSize + sizeof(uint32_t) +
-    (metadataPresent ? sizeof(uint32_t) : 0);
-  auto buf =
-    FrameBufferAllocator::allocate(bufSize);
+      (metadataPresent ? sizeof(uint32_t) : 0);
+  auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   header_.serializeInto(appender);
@@ -220,8 +224,10 @@ bool Frame_REQUEST_SUB::deserializeFrom(Payload in) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_SUB& frame) {
-  return os << frame.header_ << "(" << frame.requestN_ << ", " << frame.metadata_ << ", <" <<
-            (frame.data_ ? frame.data_->computeChainDataLength() : 0) << ">)";
+  return os << frame.header_ << "(" << frame.requestN_ << ", "
+            << frame.metadata_ << ", <"
+            << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
+            << ">)";
 }
 /// @}
 
@@ -230,9 +236,8 @@ Payload Frame_REQUEST_CHANNEL::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   const bool metadataPresent = (header_.flags_ & FrameFlags_METADATA) != 0;
   const auto bufSize = FrameHeader::kSize + sizeof(uint32_t) +
-    (metadataPresent ? sizeof(uint32_t) : 0);
-  auto buf =
-    FrameBufferAllocator::allocate(bufSize);
+      (metadataPresent ? sizeof(uint32_t) : 0);
+  auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
 
@@ -269,8 +274,10 @@ bool Frame_REQUEST_CHANNEL::deserializeFrom(Payload in) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_CHANNEL& frame) {
-  return os << frame.header_ << "(" << frame.requestN_ << ", " << frame.metadata_ << ", <"
-            << (frame.data_ ? frame.data_->computeChainDataLength() : 0) << ">)";
+  return os << frame.header_ << "(" << frame.requestN_ << ", "
+            << frame.metadata_ << ", <"
+            << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
+            << ">)";
 }
 /// @}
 
@@ -280,7 +287,7 @@ Payload Frame_REQUEST_N::serializeOut() {
   const auto bufSize = FrameHeader::kSize + sizeof(uint32_t);
   auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
-    folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
+  folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   header_.serializeInto(appender);
   appender.writeBE<uint32_t>(requestN_);
   return queue.move();
@@ -309,7 +316,7 @@ Payload Frame_REQUEST_FNF::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   const auto metadataPresent = header_.flags_ & FrameFlags_METADATA;
   const auto bufSize = FrameHeader::kSize + sizeof(uint32_t) +
-                       (metadataPresent ? sizeof(uint32_t) : 0);
+      (metadataPresent ? sizeof(uint32_t) : 0);
   auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
@@ -342,7 +349,8 @@ bool Frame_REQUEST_FNF::deserializeFrom(Payload in) {
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_FNF& frame) {
   return os << frame.header_ << ", " << frame.metadata_ << ", <"
-    << (frame.data_ ? frame.data_->computeChainDataLength() : 0) << ">)";
+            << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
+            << ">)";
 }
 /// @}
 
@@ -350,8 +358,8 @@ std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_FNF& frame) {
 Payload Frame_CANCEL::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   const bool metadataPresent = (header_.flags_ & FrameFlags_METADATA) != 0;
-  const auto bufSize = FrameHeader::kSize +
-    (metadataPresent ? sizeof(uint32_t) : 0);
+  const auto bufSize =
+      FrameHeader::kSize + (metadataPresent ? sizeof(uint32_t) : 0);
   auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
@@ -380,8 +388,8 @@ std::ostream& operator<<(std::ostream& os, const Frame_CANCEL& frame) {
 Payload Frame_RESPONSE::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   const bool metadataPresent = (header_.flags_ & FrameFlags_METADATA) != 0;
-  const auto bufSize = FrameHeader::kSize +
-    (metadataPresent ? sizeof(uint32_t) : 0);
+  const auto bufSize =
+      FrameHeader::kSize + (metadataPresent ? sizeof(uint32_t) : 0);
   auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
@@ -422,7 +430,7 @@ Payload Frame_ERROR::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   const bool metadataPresent = (header_.flags_ & FrameFlags_METADATA) != 0;
   const auto bufSize = FrameHeader::kSize + sizeof(uint32_t) +
-    (metadataPresent ? sizeof(uint32_t) : 0);
+      (metadataPresent ? sizeof(uint32_t) : 0);
   auto buf = FrameBufferAllocator::allocate(bufSize);
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
@@ -449,7 +457,8 @@ bool Frame_ERROR::deserializeFrom(Payload in) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_ERROR& frame) {
-  return os << frame.header_ << ", " << frame.metadata_ << ", (" << frame.errorCode_ << ")";
+  return os << frame.header_ << ", " << frame.metadata_ << ", ("
+            << frame.errorCode_ << ")";
 }
 /// @}
 
@@ -483,15 +492,16 @@ bool Frame_KEEPALIVE::deserializeFrom(Payload in) {
 
 std::ostream& operator<<(std::ostream& os, const Frame_KEEPALIVE& frame) {
   return os << frame.header_ << "(<"
-         << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
-         << ">)";
+            << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
+            << ">)";
 }
 /// @}
 
 /// @{
 Payload Frame_SETUP::serializeOut() {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
-  auto buf = FrameBufferAllocator::allocate(FrameHeader::kSize + 3 * sizeof(uint32_t));
+  auto buf =
+      FrameBufferAllocator::allocate(FrameHeader::kSize + 3 * sizeof(uint32_t));
   queue.append(std::move(buf));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
 
@@ -533,7 +543,8 @@ bool Frame_SETUP::deserializeFrom(Payload in) {
 std::ostream& operator<<(std::ostream& os, const Frame_SETUP& frame) {
   return os << frame.header_ << ", (" << frame.metadata_ << ", <"
             << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
-            << ">)";;
+            << ">)";
+  ;
 }
 /// @}
 }

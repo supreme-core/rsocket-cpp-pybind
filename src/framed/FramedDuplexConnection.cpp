@@ -26,7 +26,8 @@ FramedDuplexConnection::~FramedDuplexConnection() {
 
 Subscriber<Payload>& FramedDuplexConnection::getOutput() noexcept {
   if (!outputWriter_) {
-    outputWriter_ = folly::make_unique<FramedWriter>(connection_->getOutput(), stats_);
+    outputWriter_ =
+        folly::make_unique<FramedWriter>(connection_->getOutput(), stats_);
   }
   return *outputWriter_;
 }
