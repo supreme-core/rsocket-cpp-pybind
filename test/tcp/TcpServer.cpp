@@ -1,7 +1,6 @@
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <gmock/gmock.h>
-#include <test/simple/StatsPrinter.h>
 #include <thread>
 #include "src/ReactiveSocket.h"
 #include "src/RequestHandler.h"

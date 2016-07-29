@@ -11,7 +11,7 @@ class FramedWriter;
 
 class FramedDuplexConnection : public DuplexConnection {
  public:
-  FramedDuplexConnection(
+  explicit FramedDuplexConnection(
       std::unique_ptr<DuplexConnection> connection,
       Stats& stats = Stats::noop());
   ~FramedDuplexConnection();
