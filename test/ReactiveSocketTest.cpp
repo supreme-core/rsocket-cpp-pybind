@@ -323,6 +323,6 @@ TEST(ReactiveSocketTest, Destructor) {
     clientSock->requestSubscription(originalPayload->clone(), clientInputs[i]);
   }
 
-//  clientSock.reset(nullptr);
-//  serverSock.reset(nullptr);
+  //  clientSock.reset(nullptr);
+  //  serverSock.reset(nullptr);
 }

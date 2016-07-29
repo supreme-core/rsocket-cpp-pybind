@@ -19,9 +19,7 @@ class MockRequestHandler : public RequestHandler {
   MOCK_METHOD2(
       handleRequestSubscription_,
       void(Payload& request, Subscriber<Payload>*));
-  MOCK_METHOD1(
-    handleFireAndForgetRequest_,
-      void(Payload& request));
+  MOCK_METHOD1(handleFireAndForgetRequest_, void(Payload& request));
 
   Subscriber<Payload>& handleRequestChannel(
       Payload request,

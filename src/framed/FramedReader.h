@@ -11,7 +11,8 @@
 
 namespace reactivesocket {
 
-class FramedReader : public reactivesocket::Subscriber<Payload>, public reactivesocket::Subscription {
+class FramedReader : public reactivesocket::Subscriber<Payload>,
+                     public reactivesocket::Subscription {
  public:
   FramedReader(reactivesocket::Subscriber<Payload>& frames, Stats& stats)
       : frames_(&frames),
@@ -41,7 +42,7 @@ class FramedReader : public reactivesocket::Subscriber<Payload>, public reactive
   bool dispatchingFrames_{false};
 
   folly::IOBufQueue payloadQueue_;
-    Stats& stats_;
+  Stats& stats_;
 };
 
 } // reactive socket
