@@ -3,6 +3,7 @@
 #include "TcpDuplexConnection.h"
 #include <folly/ExceptionWrapper.h>
 #include <folly/Memory.h>
+#include <glog/logging.h>
 #include "src/mixins/MemoryMixin.h"
 
 namespace reactivesocket {
@@ -43,7 +44,7 @@ void TcpDuplexConnection::writeSuccess() noexcept {}
 void TcpDuplexConnection::writeErr(
     size_t bytesWritten,
     const AsyncSocketException& ex) noexcept {
-  std::cout << "TODO writeErr" << bytesWritten << ex.what() << "\n";
+  LOG(INFO) << "TODO writeErr" << bytesWritten << ex.what();
 }
 
 void TcpDuplexConnection::getReadBuffer(
