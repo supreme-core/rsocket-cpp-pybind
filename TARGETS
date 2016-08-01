@@ -6,6 +6,14 @@ cpp_library(
     headers = [
         'src/DuplexConnection.h',
         'src/Payload.h',
+        'src/framed/FramedReader.h',
+        'src/framed/FramedWriter.h',
+        'src/framed/FramedDuplexConnection.h',
+    ],
+    srcs = [
+        'src/framed/FramedReader.cpp',
+        'src/framed/FramedWriter.cpp',
+        'src/framed/FramedDuplexConnection.cpp',
     ],
     deps = [
         ':reactivesocket-streams',

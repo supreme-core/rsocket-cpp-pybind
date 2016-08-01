@@ -33,11 +33,8 @@ class ClientRequestHandler : public RequestHandler {
       Subscriber<Payload>& response) override {
     LOG(ERROR) << "not expecting server call";
     response.onError(std::runtime_error("incoming request not supported"));
-
-    auto* subscription = new MemoryMixin<NullSubscription>();
-    response.onSubscribe(*subscription);
-
-    return *(new MemoryMixin<CancelSubscriber>());
+    response.onSubscribe(createManagedInstance<NullSubscription>());
+    return createManagedInstance<CancelSubscriber>();
   }
 
   /// Handles a new inbound Subscription requested by the other end.
@@ -45,9 +42,7 @@ class ClientRequestHandler : public RequestHandler {
       override {
     LOG(ERROR) << "not expecting server call";
     response.onError(std::runtime_error("incoming request not supported"));
-
-    auto* subscription = new MemoryMixin<NullSubscription>();
-    response.onSubscribe(*subscription);
+    response.onSubscribe(createManagedInstance<NullSubscription>());
   }
 
   void handleFireAndForgetRequest(Payload request) override {
@@ -99,10 +94,9 @@ int main(int argc, char* argv[]) {
         reactiveSocket = ReactiveSocket::fromClientConnection(
             std::move(framedConnection), std::move(requestHandler));
 
-        auto* subscriber = new MemoryMixin<PrintSubscriber>();
-
         reactiveSocket->requestSubscription(
-            folly::IOBuf::copyBuffer("from client"), *subscriber);
+            folly::IOBuf::copyBuffer("from client"),
+            createManagedInstance<PrintSubscriber>());
       });
 
   std::string name;
