@@ -64,7 +64,9 @@ add_library(
   src/ReactiveStreamsCompat.h
   src/RequestHandler.h
   src/tcp/TcpDuplexConnection.cpp
-  src/tcp/TcpDuplexConnection.h)
+  src/tcp/TcpDuplexConnection.h 
+  src/Stats.h 
+  src/Stats.cpp)
 
 target_link_libraries(
   ReactiveSocket
@@ -91,15 +93,17 @@ add_executable(
   test/MockDuplexConnection.h
   test/MockRequestHandler.h
   test/ReactiveSocketTest.cpp
-  test/ReactiveStreamsMocksCompat.h)
+  test/ReactiveStreamsMocksCompat.h
+  test/Test.cpp
+  test/MockStats.h)
 
 target_link_libraries(
   tests
   ReactiveSocket
   ${FOLLY_LIBRARIES}
-  gtest
+  gflags
   gmock
-  gmock_main
+  gtest
   glog
   )
 
@@ -113,7 +117,9 @@ add_executable(
         src/ReactiveSocket.cpp
         src/ReactiveSocket.h
         test/simple/NullSubscription.cpp
-        test/simple/NullSubscription.h)
+        test/simple/NullSubscription.h
+        test/simple/StatsPrinter.cpp
+        test/simple/StatsPrinter.h)
 
 target_link_libraries(
         tcpclient
@@ -134,7 +140,9 @@ add_executable(
         test/simple/NullSubscription.cpp
         test/simple/NullSubscription.h
         test/simple/CancelSubscriber.cpp
-        test/simple/CancelSubscriber.h)
+        test/simple/CancelSubscriber.h
+        test/simple/StatsPrinter.cpp
+        test/simple/StatsPrinter.h)
 
 target_link_libraries(
         tcpserver
@@ -144,6 +152,25 @@ target_link_libraries(
         gflags
         gmock
         gmock_main
+        glog
+)
+
+add_executable(
+        tckclient
+        tck-test/client.cpp
+        tck-test/TestFileParser.cpp
+        tck-test/TestFileParser.h
+        tck-test/TestSuite.cpp
+        tck-test/TestSuite.h
+        tck-test/TestInterpreter.cpp
+        tck-test/TestInterpreter.h
+        tck-test/TypedCommands.h)
+
+target_link_libraries(
+        tckclient
+        ${FOLLY_LIBRARIES}
+        gtest
+        gflags
         glog
 )
 

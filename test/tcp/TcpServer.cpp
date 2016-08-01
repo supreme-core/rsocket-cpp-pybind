@@ -10,6 +10,7 @@
 #include "test/simple/CancelSubscriber.h"
 #include "test/simple/NullSubscription.h"
 #include "test/simple/PrintSubscriber.h"
+#include "test/simple/StatsPrinter.h"
 
 using namespace ::testing;
 using namespace ::reactivesocket;
@@ -68,7 +69,8 @@ class ServerRequestHandler : public RequestHandler {
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  explicit Callback(EventBase& eventBase) : eventBase_(eventBase){};
+  Callback(EventBase& eventBase, Stats& stats)
+      : eventBase_(eventBase), stats_(stats){};
 
   virtual ~Callback() = default;
 
@@ -81,14 +83,15 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
 
     std::unique_ptr<DuplexConnection> connection =
-        folly::make_unique<TcpDuplexConnection>(std::move(socket));
+        folly::make_unique<TcpDuplexConnection>(std::move(socket), stats_);
     std::unique_ptr<DuplexConnection> framedConnection =
-        folly::make_unique<FramedDuplexConnection>(std::move(connection));
+        folly::make_unique<FramedDuplexConnection>(
+            std::move(connection), stats_);
     std::unique_ptr<RequestHandler> requestHandler =
         folly::make_unique<ServerRequestHandler>();
 
     reactiveSocket_ = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler));
+        std::move(framedConnection), std::move(requestHandler), stats_);
   }
 
   virtual void acceptError(const std::exception& ex) noexcept override {
@@ -102,18 +105,24 @@ class Callback : public AsyncServerSocket::AcceptCallback {
  private:
   std::unique_ptr<ReactiveSocket> reactiveSocket_;
   EventBase& eventBase_;
+  Stats& stats_;
 };
 }
 
 int main(int argc, char* argv[]) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  FLAGS_logtostderr = true;
+  FLAGS_minloglevel = 0;
+
+  google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
+
+  reactivesocket::StatsPrinter statsPrinter;
 
   EventBase eventBase;
   auto thread = std::thread([&]() { eventBase.loopForever(); });
 
-  Callback callback(eventBase);
+  Callback callback(eventBase, statsPrinter);
 
   auto serverSocket = AsyncServerSocket::newSocket(&eventBase);
 
@@ -139,4 +148,6 @@ int main(int argc, char* argv[]) {
 
   eventBase.runInEventBaseThreadAndWait([&callback]() { callback.shutdown(); });
   eventBase.terminateLoopSoon();
+
+  thread.join();
 }

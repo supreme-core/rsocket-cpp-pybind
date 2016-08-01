@@ -9,6 +9,7 @@
 #include "test/simple/CancelSubscriber.h"
 #include "test/simple/NullSubscription.h"
 #include "test/simple/PrintSubscriber.h"
+#include "test/simple/StatsPrinter.h"
 
 using namespace ::testing;
 using namespace ::reactivesocket;
@@ -63,7 +64,10 @@ class Callback : public AsyncSocket::ConnectCallback {
 }
 
 int main(int argc, char* argv[]) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  FLAGS_logtostderr = true;
+  FLAGS_minloglevel = 0;
+
+  google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
@@ -72,9 +76,10 @@ int main(int argc, char* argv[]) {
 
   std::unique_ptr<ReactiveSocket> reactiveSocket;
   Callback callback;
+  StatsPrinter stats;
 
   eventBase.runInEventBaseThreadAndWait(
-      [&callback, &reactiveSocket, &eventBase]() {
+      [&callback, &reactiveSocket, &eventBase, &stats]() {
         folly::AsyncSocket::UniquePtr socket(
             new folly::AsyncSocket(&eventBase));
 
@@ -85,14 +90,15 @@ int main(int argc, char* argv[]) {
         std::cout << "attempting connection to " << addr.describe() << "\n";
 
         std::unique_ptr<DuplexConnection> connection =
-            folly::make_unique<TcpDuplexConnection>(std::move(socket));
+            folly::make_unique<TcpDuplexConnection>(std::move(socket), stats);
         std::unique_ptr<DuplexConnection> framedConnection =
-            folly::make_unique<FramedDuplexConnection>(std::move(connection));
+            folly::make_unique<FramedDuplexConnection>(
+                std::move(connection), stats);
         std::unique_ptr<RequestHandler> requestHandler =
             folly::make_unique<ClientRequestHandler>();
 
         reactiveSocket = ReactiveSocket::fromClientConnection(
-            std::move(framedConnection), std::move(requestHandler));
+            std::move(framedConnection), std::move(requestHandler), stats);
 
         reactiveSocket->requestSubscription(
             folly::IOBuf::copyBuffer("from client"),
