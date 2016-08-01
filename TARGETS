@@ -122,10 +122,6 @@ cpp_library(
 cpp_library(
     name = 'reactivesocket-streams-mocks',
 
-<<<<<<< HEAD
-    headers = ['test/ReactiveStreamsMocksCompat.h',],
-=======
     headers = ['test/ReactiveStreamsMocksCompat.h', 'test/streams/Mocks.h'],
->>>>>>> origin
     deps = ['@/lithium/reactive-streams-cpp:reactive-streams-mocks',],
 )
