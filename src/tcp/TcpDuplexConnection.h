@@ -33,8 +33,8 @@ class TcpSubscriptionBase : public virtual ::reactivesocket::IntrusiveDeleter,
 
   void cancel() override;
 
-  private:
-    TcpDuplexConnection& connection_;
+ private:
+  TcpDuplexConnection& connection_;
 };
 
 class TcpDuplexConnection;
