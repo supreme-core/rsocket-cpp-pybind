@@ -51,7 +51,7 @@ class ServerRequestHandler : public RequestHandler {
   /// Handles a new inbound Subscription requested by the other end.
   void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
       override {
-    response.onSubscribe(createLithiumClient<ServerSubscription>());
+    response.onSubscribe(createManagedInstance<ServerSubscription>());
 
     LOG(INFO) << "ServerRequestHandler.handleRequestSubscription "
               << request->moveToFbString();
