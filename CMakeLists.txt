@@ -109,14 +109,16 @@ add_library(
   src/mixins/SinkIfMixin.h
   src/mixins/SourceIfMixin.h
   src/mixins/StreamIfMixin.h
+  src/NullRequestHandler.cpp
+  src/NullRequestHandler.h
   src/Payload.h
   src/ReactiveSocket.cpp
   src/ReactiveSocket.h
   src/ReactiveStreamsCompat.h
   src/RequestHandler.h
   src/tcp/TcpDuplexConnection.cpp
-  src/tcp/TcpDuplexConnection.h 
-  src/Stats.h 
+  src/tcp/TcpDuplexConnection.h
+  src/Stats.h
   src/Stats.cpp)
 
 target_link_libraries(
@@ -167,12 +169,8 @@ add_executable(
         test/tcp/TcpClient.cpp
         test/simple/PrintSubscriber.cpp
         test/simple/PrintSubscriber.h
-        test/simple/CancelSubscriber.cpp
-        test/simple/CancelSubscriber.h
         src/ReactiveSocket.cpp
         src/ReactiveSocket.h
-        test/simple/NullSubscription.cpp
-        test/simple/NullSubscription.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 
@@ -192,10 +190,6 @@ add_executable(
         test/tcp/TcpServer.cpp
         test/simple/PrintSubscriber.cpp
         test/simple/PrintSubscriber.h
-        test/simple/NullSubscription.cpp
-        test/simple/NullSubscription.h
-        test/simple/CancelSubscriber.cpp
-        test/simple/CancelSubscriber.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 
