@@ -16,8 +16,8 @@ void TestInterpreter::run() {
 
   for (const auto& command : test_.commands()) {
     if (command.name() == "subscribe") {
-      auto subscribe = command.as<SubscribeCommand>();
       //TODO
+      auto subscribe = command.as<SubscribeCommand>();
       (void) subscribe;
     } else if (command.name() == "request") {
       auto request = command.as<RequestCommand>();
