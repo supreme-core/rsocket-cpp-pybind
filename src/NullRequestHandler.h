@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "ConnectionSetupPayload.h"
 #include "src/RequestHandler.h"
 
 namespace reactivesocket {
@@ -37,6 +38,8 @@ class NullRequestHandler : public RequestHandler {
   void handleFireAndForgetRequest(Payload request) override;
 
   void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override;
+
+  void handleSetupPayload(ConnectionSetupPayload request) override;
 };
 
 using DefaultRequestHandler = NullRequestHandler;
