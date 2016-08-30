@@ -410,6 +410,9 @@ TEST(ReactiveSocketTest, RequestResponse) {
 
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
+
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
 
