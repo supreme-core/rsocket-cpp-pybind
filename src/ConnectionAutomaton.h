@@ -12,6 +12,8 @@
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/Stats.h"
+#include "src/ResumeTracker.h"
+#include "src/ResumeCache.h"
 
 namespace reactivesocket {
 
@@ -32,6 +34,9 @@ using StreamId = uint32_t;
 using StreamAutomatonFactory =
     std::function<bool(StreamId, std::unique_ptr<folly::IOBuf>)>;
 
+using ResumeListener =
+    std::function<bool(const ResumeIdentificationToken &token, ResumePosition position)>;
+
 using ConnectionCloseListener = std::function<void()>;
 
 /// Handles connection-level frames and (de)multiplexes streams.
@@ -51,6 +56,7 @@ class ConnectionAutomaton :
       std::unique_ptr<DuplexConnection> connection,
       // TODO(stupaq): for testing only, can devirtualise if necessary
       StreamAutomatonFactory factory,
+      ResumeListener resumeListener,
       Stats& stats,
       bool client);
 
@@ -65,6 +71,9 @@ class ConnectionAutomaton :
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
   void disconnect();
+
+  /// Terminate underlying connection and connect new connection
+  void reconnect(std::unique_ptr<DuplexConnection> newConnection);
 
   ~ConnectionAutomaton();
 
@@ -107,9 +116,16 @@ class ConnectionAutomaton :
   ///   delivered multiple times as long as the caller holds shared_ptr to
   ///   ConnectionAutomaton.
   void endStream(StreamId streamId, StreamCompletionSignal signal);
+
+  /// Copy the streams and resumption information from a previous ConnectionAutomaton
+  void resumeFromAutomaton(ConnectionAutomaton& oldAutomaton);
   /// @}
 
   void sendKeepalive();
+  void sendResume(const ResumeIdentificationToken &token);
+
+  bool isPositionAvailable(ResumePosition position);
+  ResumePosition positionDifference(ResumePosition position);
 
   void onClose(ConnectionCloseListener listener);
 
@@ -164,6 +180,10 @@ class ConnectionAutomaton :
       pendingWrites_; // TODO(stupaq): two vectors?
   Stats& stats_;
   bool isServer_;
+  bool isResumable_;
   std::vector<ConnectionCloseListener> closeListeners_;
+  std::unique_ptr<ResumeTracker> resumeTracker_;
+  std::unique_ptr<ResumeCache> resumeCache_;
+  ResumeListener resumeListener_;
 };
 }

@@ -65,6 +65,10 @@ std::ostream& operator<<(std::ostream& os, FrameType type) {
       return os << "LEASE";
     case FrameType::METADATA_PUSH:
       return os << "METADATA_PUSH";
+    case FrameType::RESUME:
+      return os << "RESUME";
+    case FrameType::RESUME_OK:
+      return os << "RESUME_OK";
   }
   return os << "FrameType(" << static_cast<uint16_t>(type) << ")";
 }
@@ -321,6 +325,10 @@ Frame_ERROR Frame_ERROR::applicationError(
   return Frame_ERROR(streamId, ErrorCode::APPLICATION_ERROR, Payload(message));
 }
 
+Frame_ERROR Frame_ERROR::canNotResume(const std::string& message) {
+    return Frame_ERROR(0, ErrorCode::CONNECTION_ERROR, Payload(message));
+}
+
 std::unique_ptr<folly::IOBuf> Frame_ERROR::serializeOut() {
   auto queue = createBufferQueue(
       FrameHeader::kSize + sizeof(uint32_t) + payload_.framingSize());
@@ -383,7 +391,7 @@ std::ostream& operator<<(std::ostream& os, const Frame_KEEPALIVE& frame) {
 /// @{
 std::unique_ptr<folly::IOBuf> Frame_SETUP::serializeOut() {
   auto queue = createBufferQueue(
-      FrameHeader::kSize + 3 * sizeof(uint32_t) + 2 +
+      FrameHeader::kSize + 3 * sizeof(uint32_t) + token_.size() + 2 +
       metadataMimeType_.length() + dataMimeType_.length() +
       payload_.framingSize());
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
@@ -392,8 +400,9 @@ std::unique_ptr<folly::IOBuf> Frame_SETUP::serializeOut() {
   appender.writeBE(static_cast<uint32_t>(version_));
   appender.writeBE(static_cast<uint32_t>(keepaliveTime_));
   appender.writeBE(static_cast<uint32_t>(maxLifetime_));
+  appender.push((const uint8_t*)token_.data(), token_.size());
 
-  CHECK(metadataMimeType_.length() <= std::numeric_limits<uint8_t>::max());
+    CHECK(metadataMimeType_.length() <= std::numeric_limits<uint8_t>::max());
   appender.writeBE(static_cast<uint8_t>(metadataMimeType_.length()));
   appender.push(
       (const uint8_t*)metadataMimeType_.data(), metadataMimeType_.length());
@@ -413,6 +422,7 @@ bool Frame_SETUP::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
     version_ = cur.readBE<uint32_t>();
     keepaliveTime_ = cur.readBE<uint32_t>();
     maxLifetime_ = cur.readBE<uint32_t>();
+    cur.pull(token_.data(), token_.size());
 
     int mdmtLen = cur.readBE<uint8_t>();
     metadataMimeType_ = cur.readFixedString(mdmtLen);
@@ -465,4 +475,64 @@ std::ostream& operator<<(std::ostream& os, const Frame_LEASE& frame) {
             << ")";
 }
 /// @}
+
+/// @{
+std::unique_ptr<folly::IOBuf> Frame_RESUME::serializeOut() {
+  auto queue = createBufferQueue(
+      FrameHeader::kSize + sizeof(ResumeIdentificationToken) + sizeof(ResumePosition));
+  folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
+
+  header_.serializeInto(appender);
+  appender.push(token_.data(), sizeof(token_));
+  appender.writeBE(position_);
+
+  return queue.move();
+}
+
+bool Frame_RESUME::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    header_.deserializeFrom(cur);
+    cur.pull(token_.data(), sizeof(token_));
+    position_ = cur.readBE<ResumePosition>();
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
+
+std::ostream& operator<<(std::ostream& os, const Frame_RESUME& frame) {
+  return os << frame.header_ << ", ("
+            << "token" << ", @" << frame.position_ << ")";
+}
+/// @}
+
+/// @{
+std::unique_ptr<folly::IOBuf> Frame_RESUME_OK::serializeOut() {
+  auto queue = createBufferQueue(
+      FrameHeader::kSize + sizeof(ResumePosition));
+  folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
+
+  header_.serializeInto(appender);
+  appender.writeBE(position_);
+
+  return queue.move();
+}
+
+bool Frame_RESUME_OK::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    header_.deserializeFrom(cur);
+    position_ = cur.readBE<ResumePosition>();
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
+
+std::ostream& operator<<(std::ostream& os, const Frame_RESUME_OK& frame) {
+  return os << frame.header_ << ", (@" << frame.position_ << ")";
+}
+/// @}
+
 }

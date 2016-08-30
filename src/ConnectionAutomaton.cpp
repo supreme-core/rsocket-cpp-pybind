@@ -21,12 +21,17 @@ namespace reactivesocket {
 ConnectionAutomaton::ConnectionAutomaton(
     std::unique_ptr<DuplexConnection> connection,
     StreamAutomatonFactory factory,
+    ResumeListener resumeListener,
     Stats& stats,
     bool isServer)
     : connection_(std::move(connection)),
       factory_(std::move(factory)),
       stats_(stats),
-      isServer_(isServer) {
+      isServer_(isServer),
+      isResumable_(true),
+      resumeTracker_(new ResumeTracker()),
+      resumeCache_(new ResumeCache()),
+      resumeListener_(resumeListener) {
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
@@ -64,6 +69,12 @@ void ConnectionAutomaton::disconnect() {
   for (auto closeListener : closeListeners_) {
     closeListener();
   }
+}
+
+void ConnectionAutomaton::reconnect(std::unique_ptr<DuplexConnection> newConnection) {
+    disconnect();
+    connection_ = std::move(newConnection);
+    connect();
 }
 
 ConnectionAutomaton::~ConnectionAutomaton() {
@@ -127,6 +138,10 @@ void ConnectionAutomaton::onNext(std::unique_ptr<folly::IOBuf> frame) {
 
   stats_.frameRead(ss.str());
 
+  // TODO(tmont): If a frame is invalid, it will still be tracked. However, we actually want that. We want to keep
+  // each side in sync, even if a frame is invalid.
+  resumeTracker_->trackReceivedFrame(*frame);
+
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
@@ -183,6 +198,9 @@ void ConnectionAutomaton::onConnectionFrame(
       return;
     }
     case FrameType::SETUP: {
+      // TODO(tmont): check for ENABLE_RESUME and make sure isResumable_ is true
+      // TODO(tmont): figure out how best to pass in ResumeIdentificationToken
+
       if (!factory_(0, std::move(payload))) {
         assert(false);
       }
@@ -191,6 +209,46 @@ void ConnectionAutomaton::onConnectionFrame(
     case FrameType::METADATA_PUSH: {
       if (!factory_(0, std::move(payload))) {
         assert(false);
+      }
+      return;
+    }
+    case FrameType::RESUME: {
+      Frame_RESUME frame;
+      if (frame.deserializeFrom(std::move(payload))) {
+        bool canResume = false;
+
+        if (isServer_ && isResumable_) {
+            // find old ConnectionAutmaton via calling listener.
+            // Application will call resumeFromAutomaton to setup streams and resume information
+            canResume = resumeListener_(frame.token_, frame.position_);
+        }
+
+        if (canResume) {
+          outputFrameOrEnqueue(
+              Frame_RESUME_OK(resumeTracker_->impliedPosition()).serializeOut());
+          resumeCache_->retransmitFromPosition(frame.position_, *this);
+        } else {
+          outputFrameOrEnqueue(Frame_ERROR::canNotResume("can not resume").serializeOut());
+          disconnect();
+        }
+      } else {
+        outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
+        disconnect();
+      }
+      return;
+    }
+    case FrameType::RESUME_OK: {
+      Frame_RESUME_OK frame;
+      if (frame.deserializeFrom(std::move(payload))) {
+        if (!isServer_ && isResumable_ && resumeCache_->isPositionAvailable(frame.position_)) {
+          resumeCache_->retransmitFromPosition(frame.position_, *this);
+        } else {
+            outputFrameOrEnqueue(Frame_ERROR::canNotResume("can not resume").serializeOut());
+            disconnect();
+        }
+      } else {
+        outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
+        disconnect();
       }
       return;
     }
@@ -263,6 +321,19 @@ void ConnectionAutomaton::sendKeepalive() {
   outputFrameOrEnqueue(pingFrame.serializeOut());
 }
 
+void ConnectionAutomaton::sendResume(const ResumeIdentificationToken &token) {
+  Frame_RESUME resumeFrame(token, resumeTracker_->impliedPosition());
+  outputFrameOrEnqueue(resumeFrame.serializeOut());
+}
+
+bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
+    return resumeCache_->isPositionAvailable(position);
+}
+
+ResumePosition ConnectionAutomaton::positionDifference(ResumePosition position) {
+    return resumeCache_->position() - position;
+}
+
 void ConnectionAutomaton::onClose(ConnectionCloseListener listener) {
   closeListeners_.push_back(listener);
 }
@@ -299,6 +370,20 @@ void ConnectionAutomaton::outputFrame(
 
   stats_.frameWritten(ss.str());
 
+  resumeCache_->trackAndCacheSentFrame(*outputFrame);
   connectionOutput_.onNext(std::move(outputFrame));
 }
+
+void ConnectionAutomaton::resumeFromAutomaton(ConnectionAutomaton& oldAutomaton)
+{
+  if (isServer_ && isResumable_)
+  {
+    streams_ = std::move(oldAutomaton.streams_);
+    factory_ = oldAutomaton.factory_;
+
+    resumeTracker_ = std::move(oldAutomaton.resumeTracker_);
+    resumeCache_ = std::move(oldAutomaton.resumeCache_);
+  }
+}
+
 }

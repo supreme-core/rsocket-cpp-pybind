@@ -35,6 +35,7 @@ ReactiveSocket::ReactiveSocket(
     bool isServer,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
+    ResumeSocketListener resumeListener,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
     : connection_(new ConnectionAutomaton(
@@ -44,22 +45,30 @@ ReactiveSocket::ReactiveSocket(
               this,
               std::placeholders::_1,
               std::placeholders::_2),
+          std::bind(
+              &ReactiveSocket::resumeListener,
+              this,
+              std::placeholders::_1,
+              std::placeholders::_2),
           stats,
           isServer)),
       handler_(std::move(handler)),
       nextStreamId_(isServer ? 1 : 2),
-      keepaliveTimer_(std::move(keepaliveTimer)) {}
+      keepaliveTimer_(std::move(keepaliveTimer)),
+      resumeSocketListener_(resumeListener) {}
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
     ConnectionSetupPayload setupPayload,
     Stats& stats,
-    std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
+    const ResumeIdentificationToken &token) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       false,
       std::move(connection),
       std::move(handler),
+      [](ReactiveSocket&, const ResumeIdentificationToken&, ResumePosition) { return false; },
       stats,
       std::move(keepaliveTimer)));
   socket->connection_->connect();
@@ -74,6 +83,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
       0,
       keepaliveTime,
       std::numeric_limits<uint32_t>::max(),
+      token,
       std::move(setupPayload.metadataMimeType),
       std::move(setupPayload.dataMimeType),
       std::move(setupPayload.payload));
@@ -90,11 +100,13 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
-    Stats& stats) {
+    Stats& stats,
+    ResumeSocketListener resumeListener) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
       std::move(connection),
       std::move(handler),
+      resumeListener,
       stats,
       std::unique_ptr<KeepaliveTimer>(nullptr)));
   socket->connection_->connect();
@@ -259,6 +271,10 @@ bool ReactiveSocket::createResponder(
   return true;
 }
 
+bool ReactiveSocket::resumeListener(const ResumeIdentificationToken& token, ResumePosition position) {
+    return resumeSocketListener_(*this, token, position);
+}
+
 void ReactiveSocket::close() {
   connection_->disconnect();
 }
@@ -266,4 +282,23 @@ void ReactiveSocket::close() {
 void ReactiveSocket::onClose(CloseListener listener) {
   connection_->onClose([listener, this]() { listener(*this); });
 }
+
+void ReactiveSocket::resumeFromSocket(ReactiveSocket &socket) {
+  connection_->resumeFromAutomaton(*socket.connection_);
+}
+
+void ReactiveSocket::tryClientResume(
+    std::unique_ptr<DuplexConnection> newConnection, const ResumeIdentificationToken& token) {
+  connection_->reconnect(std::move(newConnection));
+  connection_->sendResume(token);
+}
+
+bool ReactiveSocket::isPositionAvailable(ResumePosition position) {
+  return connection_->isPositionAvailable(position);
+}
+
+ResumePosition ReactiveSocket::positionDifference(ResumePosition position) {
+  return connection_->positionDifference(position);
+}
+
 }
