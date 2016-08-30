@@ -12,8 +12,6 @@ void RequestResponseRequesterBase::subscribe(Subscriber<Payload>& subscriber) {
   // FIXME
   // Subscriber::onSubscribe is delivered externally, as it may attempt to
   // synchronously deliver Subscriber::request.
-  // Q: why do we want to avoid Subscriber::request being delivered
-  // synchronously?
 }
 
 void RequestResponseRequesterBase::onNext(Payload request) {
@@ -26,6 +24,8 @@ void RequestResponseRequesterBase::onNext(Payload request) {
       break;
     }
     case State::REQUESTED:
+      // Cannot receive a request payload twice.
+      CHECK(false);
       break;
     case State::CLOSED:
       break;
@@ -68,8 +68,6 @@ void RequestResponseRequesterBase::endStream(StreamCompletionSignal signal) {
     case State::CLOSED:
       break;
   }
-  // Q: don't really understand what the comment below means or if it applies
-  // in this case as well?
   // FIXME: switch on signal and verify that callsites propagate stream errors
   consumingSubscriber_.onComplete();
 }
