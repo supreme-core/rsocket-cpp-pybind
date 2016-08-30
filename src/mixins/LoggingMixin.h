@@ -69,6 +69,11 @@ class LoggingMixin : public Base {
     Base::onNext(std::move(payload));
   }
 
+  void onNext(Payload payload, FrameFlags flags) {
+    Base::logPrefix(LOG(INFO)) << "onNext(" << payload << ", " << flags << ")";
+    Base::onNext(std::move(payload), flags);
+  }
+
   void onComplete() {
     Base::logPrefix(LOG(INFO)) << "onComplete()";
     Base::onComplete();

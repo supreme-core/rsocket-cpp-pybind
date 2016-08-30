@@ -29,8 +29,8 @@ class PublisherMixin : public Base {
     producingSubscription_.reset(&subscription);
   }
 
-  void onNext(Payload payload) {
-    ProducedFrame frame(Base::streamId_, FrameFlags_EMPTY, std::move(payload));
+  void onNext(Payload payload, FrameFlags flags = FrameFlags_EMPTY) {
+    ProducedFrame frame(Base::streamId_, flags, std::move(payload));
     Base::connection_->outputFrameOrEnqueue(frame.serializeOut());
   }
   /// @}

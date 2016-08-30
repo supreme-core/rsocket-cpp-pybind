@@ -447,11 +447,13 @@ TEST(ReactiveSocketTest, RequestResponse) {
   EXPECT_CALL(clientInput, onNext_(Equals(&originalPayload)))
       .InSequence(s)
       .WillOnce(Invoke([&](Payload&) { clientInputSub->cancel(); }));
+  // Client also receives onComplete() call since the response frame received
+  // had COMPELTE flag set
+  EXPECT_CALL(clientInput, onComplete_()).InSequence(s);
 
   EXPECT_CALL(serverOutputSub, cancel_()).InSequence(s).WillOnce(Invoke([&]() {
     serverOutput->onComplete();
   }));
-  EXPECT_CALL(clientInput, onComplete_()).InSequence(s);
 
   // Kick off the magic.
   clientSock->requestResponse(Payload(originalPayload->clone()), clientInput);
