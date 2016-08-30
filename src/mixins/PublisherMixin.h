@@ -53,6 +53,11 @@ class PublisherMixin : public Base {
     Base::onNextFrame(std::move(frame));
   }
 
+  void onNextFrame(Frame_REQUEST_RESPONSE&& frame) {
+    producingSubscription_.request(1);
+    Base::onNextFrame(std::move(frame));
+  }
+
   /// Remaining frames just pass through.
   template <typename Frame>
   typename std::enable_if<!Frame::Trait_CarriesAllowance>::type onNextFrame(

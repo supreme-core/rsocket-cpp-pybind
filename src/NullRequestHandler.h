@@ -35,6 +35,9 @@ class NullRequestHandler : public RequestHandler {
   void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
       override;
 
+  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
+      override;
+
   void handleFireAndForgetRequest(Payload request) override;
 
   void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override;

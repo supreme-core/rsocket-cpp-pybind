@@ -389,6 +389,70 @@ TEST(ReactiveSocketTest, RequestSubscription) {
       Payload(originalPayload->clone()), clientInput);
 }
 
+TEST(ReactiveSocketTest, RequestResponse) {
+  // InlineConnection forwards appropriate calls in-line, hence the order of
+  // mock calls will be deterministic.
+  Sequence s;
+
+  auto clientConn = folly::make_unique<InlineConnection>();
+  auto serverConn = folly::make_unique<InlineConnection>();
+  clientConn->connectTo(*serverConn);
+
+  StrictMock<UnmanagedMockSubscriber<Payload>> clientInput;
+  StrictMock<UnmanagedMockSubscription> serverOutputSub;
+  Subscription* clientInputSub = nullptr;
+  Subscriber<Payload>* serverOutput = nullptr;
+
+  auto clientSock = ReactiveSocket::fromClientConnection(
+      std::move(clientConn),
+      // No interactions on this mock, the client will not accept any requests.
+      folly::make_unique<StrictMock<MockRequestHandler>>());
+
+  auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
+  auto& serverHandlerRef = *serverHandler;
+  auto serverSock = ReactiveSocket::fromServerConnection(
+      std::move(serverConn), std::move(serverHandler));
+
+  const auto originalPayload = folly::IOBuf::copyBuffer("foo");
+
+  // Client creates a subscription.
+  EXPECT_CALL(clientInput, onSubscribe_(_))
+      .InSequence(s)
+      .WillOnce(Invoke([&](Subscription* sub) {
+        clientInputSub = sub;
+        // Request payload immediately.
+        clientInputSub->request(1);
+      }));
+
+  // The request reaches the other end and triggers new responder to be set up.
+  EXPECT_CALL(
+      serverHandlerRef, handleRequestResponse_(Equals(&originalPayload), _))
+      .InSequence(s)
+      .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+        serverOutput = response;
+        serverOutput->onSubscribe(serverOutputSub);
+      }));
+
+  EXPECT_CALL(serverOutputSub, request_(_))
+      .InSequence(s)
+      // The server deliver the response immediately.
+      .WillOnce(Invoke([&](size_t) {
+        serverOutput->onNext(Payload(originalPayload->clone()));
+      }));
+
+  // Client receives the only payload and closes the subscription in response.
+  EXPECT_CALL(clientInput, onNext_(Equals(&originalPayload)))
+      .InSequence(s)
+      .WillOnce(Invoke([&](Payload&) { clientInputSub->cancel(); }));
+
+  EXPECT_CALL(serverOutputSub, cancel_()).InSequence(s).WillOnce(Invoke([&]() {
+    serverOutput->onComplete();
+  }));
+  EXPECT_CALL(clientInput, onComplete_()).InSequence(s);
+
+  // Kick off the magic.
+  clientSock->requestResponse(Payload(originalPayload->clone()), clientInput);
+}
 TEST(ReactiveSocketTest, RequestFireAndForget) {
   // InlineConnection forwards appropriate calls in-line, hence the order of
   // mock calls will be deterministic.

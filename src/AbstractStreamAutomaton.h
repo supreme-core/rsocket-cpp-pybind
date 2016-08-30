@@ -17,6 +17,7 @@ class ConnectionAutomaton;
 class Frame_REQUEST_STREAM;
 class Frame_REQUEST_SUB;
 class Frame_REQUEST_CHANNEL;
+class Frame_REQUEST_RESPONSE;
 class Frame_REQUEST_N;
 class Frame_CANCEL;
 class Frame_RESPONSE;
@@ -96,6 +97,7 @@ class AbstractStreamAutomaton {
   virtual void onNextFrame(Frame_REQUEST_SUB&& frame) = 0;
   virtual void onNextFrame(Frame_REQUEST_CHANNEL&& frame) = 0;
   virtual void onNextFrame(Frame_REQUEST_N&& frame) = 0;
+  virtual void onNextFrame(Frame_REQUEST_RESPONSE&& frame) = 0;
   virtual void onNextFrame(Frame_CANCEL&& frame) = 0;
   virtual void onNextFrame(Frame_RESPONSE&& frame) = 0;
   virtual void onNextFrame(Frame_ERROR&& frame) = 0;

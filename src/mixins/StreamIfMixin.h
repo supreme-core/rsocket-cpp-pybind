@@ -33,6 +33,9 @@ class StreamIfMixin : public Base, public AbstractStreamAutomaton {
   void onNextFrame(Frame_REQUEST_CHANNEL&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
+  void onNextFrame(Frame_REQUEST_RESPONSE&& frame) override final {
+    Base::onNextFrame(std::move(frame));
+  }
   void onNextFrame(Frame_REQUEST_N&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }

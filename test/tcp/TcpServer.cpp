@@ -21,15 +21,18 @@ DEFINE_string(address, "9898", "host:port to listen to");
 namespace {
 class ServerSubscription : public Subscription {
  public:
-  explicit ServerSubscription(Subscriber<Payload>& response)
-      : response_(response) {}
+  explicit ServerSubscription(
+      Subscriber<Payload>& response,
+      size_t numElems = 2)
+      : response_(response), numElems_(numElems) {}
 
   ~ServerSubscription(){};
 
   // Subscription methods
   void request(size_t n) override {
-    response_.onNext(Payload("from server"));
-    response_.onNext(Payload("from server2"));
+    for (size_t i = 0; i < numElems_; i++) {
+      response_.onNext(Payload("from server " + std::to_string(i)));
+    }
     response_.onComplete();
     //    response_.onError(std::runtime_error("XXX"));
   }
@@ -38,6 +41,7 @@ class ServerSubscription : public Subscription {
 
  private:
   Subscriber<Payload>& response_;
+  size_t numElems_;
 };
 
 class ServerRequestHandler : public DefaultRequestHandler {
@@ -56,6 +60,14 @@ class ServerRequestHandler : public DefaultRequestHandler {
     LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
 
     response.onSubscribe(createManagedInstance<ServerSubscription>(response));
+  }
+
+  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
+      override {
+    LOG(INFO) << "ServerRequestHandler.handleRequestResponse " << request;
+
+    response.onSubscribe(
+        createManagedInstance<ServerSubscription>(response, 1));
   }
 
   void handleFireAndForgetRequest(Payload request) override {
