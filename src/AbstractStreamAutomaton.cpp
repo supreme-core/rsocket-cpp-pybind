@@ -47,6 +47,9 @@ void AbstractStreamAutomaton::onNextFrame(
     case FrameType::REQUEST_N:
       deserializeAndDispatch<Frame_REQUEST_N>(std::move(payload));
       return;
+    case FrameType::REQUEST_RESPONSE:
+      deserializeAndDispatch<Frame_REQUEST_RESPONSE>(std::move(payload));
+      return;
     case FrameType::CANCEL:
       deserializeAndDispatch<Frame_CANCEL>(std::move(payload));
       return;

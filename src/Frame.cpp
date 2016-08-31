@@ -47,6 +47,8 @@ std::ostream& operator<<(std::ostream& os, FrameType type) {
       return os << "REQUEST_CHANNEL";
     case FrameType::REQUEST_N:
       return os << "REQUEST_N";
+    case FrameType::REQUEST_RESPONSE:
+      return os << "REQUEST_RESPONSE";
     case FrameType::REQUEST_FNF:
       return os << "REQUEST_FNF";
     case FrameType::CANCEL:
@@ -189,6 +191,34 @@ bool Frame_REQUEST_N::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_N& frame) {
   return os << frame.header_ << "(" << frame.requestN_ << ")";
+}
+/// @}
+
+/// @{
+std::unique_ptr<folly::IOBuf> Frame_REQUEST_RESPONSE::serializeOut() {
+  auto queue = createBufferQueue(FrameHeader::kSize + payload_.framingSize());
+  folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
+
+  header_.serializeInto(appender);
+  payload_.serializeInto(appender);
+  return queue.move();
+}
+
+bool Frame_REQUEST_RESPONSE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    header_.deserializeFrom(cur);
+    payload_.deserializeFrom(cur, header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const Frame_REQUEST_RESPONSE& frame) {
+  return os << frame.header_ << ", " << frame.payload_;
 }
 /// @}
 

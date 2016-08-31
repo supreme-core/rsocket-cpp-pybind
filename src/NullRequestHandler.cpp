@@ -46,6 +46,13 @@ void NullRequestHandler::handleRequestSubscription(
   response.onError(std::runtime_error("NullRequestHandler"));
 }
 
+void NullRequestHandler::handleRequestResponse(
+    Payload /*request*/,
+    Subscriber<Payload>& response) {
+  response.onSubscribe(createManagedInstance<NullSubscription>());
+  response.onError(std::runtime_error("NullRequestHandler"));
+}
+
 void NullRequestHandler::handleFireAndForgetRequest(Payload /*request*/) {}
 
 void NullRequestHandler::handleMetadataPush(

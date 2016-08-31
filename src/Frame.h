@@ -38,7 +38,7 @@ enum class FrameType : uint16_t {
   SETUP = 0x0001,
   LEASE = 0x0002,
   KEEPALIVE = 0x0003,
-  // REQUEST_RESPONSE = 0x0004,
+  REQUEST_RESPONSE = 0x0004,
   REQUEST_FNF = 0x0005,
   REQUEST_STREAM = 0x0006,
   REQUEST_SUB = 0x0007,
@@ -217,6 +217,29 @@ class Frame_REQUEST_CHANNEL : public Frame_REQUEST_Base {
   Frame_REQUEST_CHANNEL(StreamId streamId, FrameFlags flags, Payload payload)
       : Frame_REQUEST_CHANNEL(streamId, flags, 0, std::move(payload)) {}
 };
+
+class Frame_REQUEST_RESPONSE {
+ public:
+  static constexpr bool Trait_CarriesAllowance = false;
+
+  Frame_REQUEST_RESPONSE() = default;
+  Frame_REQUEST_RESPONSE(StreamId streamId, FrameFlags flags, Payload payload)
+      : header_(
+            FrameType::REQUEST_RESPONSE,
+            flags | payload.getFlags(),
+            streamId),
+        payload_(std::move(payload)) {
+    payload_.checkFlags(header_.flags_); // to verify the client didn't set
+    // METADATA and provided none
+  }
+
+  std::unique_ptr<folly::IOBuf> serializeOut();
+  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
+
+  FrameHeader header_;
+  Payload payload_;
+};
+std::ostream& operator<<(std::ostream&, const Frame_REQUEST_RESPONSE&);
 
 class Frame_REQUEST_FNF {
  public:

@@ -18,6 +18,8 @@
 #include "src/RequestHandler.h"
 #include "src/automata/ChannelRequester.h"
 #include "src/automata/ChannelResponder.h"
+#include "src/automata/RequestResponseRequester.h"
+#include "src/automata/RequestResponseResponder.h"
 #include "src/automata/StreamRequester.h"
 #include "src/automata/StreamResponder.h"
 #include "src/automata/SubscriptionRequester.h"
@@ -166,6 +168,21 @@ void ReactiveSocket::requestFireAndForget(Payload request) {
   connection_->outputFrameOrEnqueue(frame.serializeOut());
 }
 
+void ReactiveSocket::requestResponse(
+    Payload payload,
+    Subscriber<Payload>& responseSink) {
+  // TODO(stupaq): handle any exceptions
+  StreamId streamId = nextStreamId_;
+  nextStreamId_ += 2;
+  RequestResponseRequester::Parameters params = {connection_, streamId};
+  auto automaton = new RequestResponseRequester(params);
+  connection_->addStream(streamId, *automaton);
+  automaton->subscribe(responseSink);
+  responseSink.onSubscribe(*automaton);
+  automaton->onNext(std::move(payload));
+  automaton->start();
+}
+
 void ReactiveSocket::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
   connection_->outputFrameOrEnqueue(
       Frame_METADATA_PUSH(std::move(metadata)).serializeOut());
@@ -243,6 +260,19 @@ bool ReactiveSocket::createResponder(
       connection_->addStream(streamId, *automaton);
       handler_->handleRequestSubscription(
           std::move(frame.payload_), *automaton);
+      automaton->onNextFrame(std::move(frame));
+      automaton->start();
+      break;
+    }
+    case FrameType::REQUEST_RESPONSE: {
+      Frame_REQUEST_RESPONSE frame;
+      if (!frame.deserializeFrom(std::move(serializedFrame))) {
+        return false;
+      }
+      SubscriptionResponder::Parameters params = {connection_, streamId};
+      auto automaton = new RequestResponseResponder(params);
+      connection_->addStream(streamId, *automaton);
+      handler_->handleRequestResponse(std::move(frame.payload_), *automaton);
       automaton->onNextFrame(std::move(frame));
       automaton->start();
       break;

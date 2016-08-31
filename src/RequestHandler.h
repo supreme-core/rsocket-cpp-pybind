@@ -30,6 +30,11 @@ class RequestHandler {
       Payload request,
       Subscriber<Payload>& response) = 0;
 
+  /// Handles a new inbound RequestResponse requested by the other end.
+  virtual void handleRequestResponse(
+      Payload request,
+      Subscriber<Payload>& response) = 0;
+
   /// Handles a new fire-and-forget request sent by the other end.
   virtual void handleFireAndForgetRequest(Payload request) = 0;
 

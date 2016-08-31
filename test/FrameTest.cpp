@@ -205,6 +205,19 @@ TEST_F(FrameTest, Frame_LEASE) {
   EXPECT_EQ(numberOfRequests, frame.numberOfRequests_);
 }
 
+TEST_F(FrameTest, Frame_REQUEST_RESPONSE) {
+  uint32_t streamId = 42;
+  FrameFlags flags = FrameFlags_METADATA;
+  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
+  auto data = folly::IOBuf::copyBuffer("424242");
+  auto frame = reserialize<Frame_REQUEST_RESPONSE>(
+      streamId, flags, Payload(data->clone(), metadata->clone()));
+
+  expectHeader(FrameType::REQUEST_RESPONSE, flags, streamId, frame);
+  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+}
+
 TEST_F(FrameTest, Frame_REQUEST_FNF) {
   uint32_t streamId = 42;
   FrameFlags flags = FrameFlags_METADATA;

@@ -22,6 +22,9 @@ class MockRequestHandler : public RequestHandler {
   MOCK_METHOD2(
       handleRequestSubscription_,
       void(Payload& request, Subscriber<Payload>*));
+  MOCK_METHOD2(
+      handleRequestResponse_,
+      void(Payload& request, Subscriber<Payload>*));
   MOCK_METHOD1(handleFireAndForgetRequest_, void(Payload& request));
   MOCK_METHOD1(
       handleMetadataPush_,
@@ -42,6 +45,11 @@ class MockRequestHandler : public RequestHandler {
   void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
       override {
     handleRequestSubscription_(request, &response);
+  }
+
+  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
+      override {
+    handleRequestResponse_(request, &response);
   }
 
   void handleFireAndForgetRequest(Payload request) override {

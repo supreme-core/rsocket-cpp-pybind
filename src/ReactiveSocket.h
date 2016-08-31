@@ -78,6 +78,8 @@ class ReactiveSocket {
 
   void requestFireAndForget(Payload request);
 
+  void requestResponse(Payload payload, Subscriber<Payload>& responseSink);
+
   void close();
 
   void onClose(CloseListener listener);
