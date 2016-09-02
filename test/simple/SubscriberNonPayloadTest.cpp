@@ -24,7 +24,7 @@ class FooSubscriber : public IntrusiveDeleter, public Subscriber<Foo> {
 };
 
 int main(int argc, char** argv) {
-auto& m = createManagedInstance<FooSubscriber, Foo>();
+  auto& m = createManagedInstance<FooSubscriber, Foo>();
   m.onNext(Foo("asdf"));
   return 0;
 }
