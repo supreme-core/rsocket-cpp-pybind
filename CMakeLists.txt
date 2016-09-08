@@ -56,7 +56,7 @@ find_package(Threads)
 
 # Common configuration for all build modes.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Werror -Woverloaded-virtual")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -momit-leaf-frame-pointer")
 
 # Configuration for Debug build mode.
@@ -288,5 +288,19 @@ target_link_libraries(
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpresumeserver gmock)
+
+add_executable(
+        subscriber_non_payload
+	test/simple/SubscriberNonPayloadTest.cpp
+)
+
+target_link_libraries(
+        subscriber_non_payload
+        ReactiveSocket
+        ${FOLLY_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+)
+
+add_dependencies(subscriber_non_payload ReactiveSocket ReactiveStreams)
 
 # EOF
