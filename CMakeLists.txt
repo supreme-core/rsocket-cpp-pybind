@@ -92,11 +92,9 @@ add_library(
   src/automata/StreamSubscriptionResponderBase.h
   src/automata/StreamRequester.cpp
   src/automata/StreamRequester.h
-  src/automata/StreamResponder.cpp
   src/automata/StreamResponder.h
   src/automata/SubscriptionRequester.cpp
   src/automata/SubscriptionRequester.h
-  src/automata/SubscriptionResponder.cpp
   src/automata/SubscriptionResponder.h
   src/ConnectionAutomaton.cpp
   src/ConnectionAutomaton.h
