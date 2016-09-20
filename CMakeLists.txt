@@ -31,7 +31,7 @@ include(CTest)
 # gmock
 ExternalProject_Add(
   gmock
-  URL ${CMAKE_CURRENT_SOURCE_DIR}/googletest-master-20160722.zip
+  URL ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0.zip
   INSTALL_COMMAND ""
 )
 
@@ -54,8 +54,13 @@ ExternalProject_Add(
 
 find_package(Threads)
 
+if(APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif(APPLE)
+
 # Common configuration for all build modes.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Werror -Woverloaded-virtual")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -momit-leaf-frame-pointer")
 
