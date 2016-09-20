@@ -168,6 +168,7 @@ add_executable(
   test/streams/OwnershipTest.cpp
   test/streams/SmartPointersTest.cpp
   test/FrameTest.cpp
+  test/ConnectionAutomatonTest.cpp
   test/InlineConnection.cpp
   test/InlineConnection.h
   test/InlineConnectionTest.cpp
