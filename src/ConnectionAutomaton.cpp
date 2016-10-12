@@ -39,11 +39,11 @@ ConnectionAutomaton::ConnectionAutomaton(
 }
 
 void ConnectionAutomaton::connect() {
-  connectionOutput_.reset(&connection_->getOutput());
-  connectionOutput_.get()->onSubscribe(*this);
+  connectionOutput_.reset(connection_->getOutput());
+  connectionOutput_.get()->onSubscribe(shared_from_this());
   // This may call ::onSubscribe in-line, which calls ::request on the provided
   // subscription, which might deliver frames in-line.
-  connection_->setInput(*this);
+  connection_->setInput(shared_from_this());
 
   stats_.socketCreated();
 }
@@ -87,8 +87,8 @@ ConnectionAutomaton::~ConnectionAutomaton() {
 
 void ConnectionAutomaton::addStream(
     StreamId streamId,
-    AbstractStreamAutomaton& automaton) {
-  auto result = streams_.emplace(streamId, &automaton);
+    std::shared_ptr<AbstractStreamAutomaton> automaton) {
+  auto result = streams_.emplace(streamId, std::move(automaton));
   (void)result;
   assert(result.second);
 }
@@ -124,9 +124,9 @@ bool ConnectionAutomaton::endStreamInternal(
 }
 
 /// @{
-void ConnectionAutomaton::onSubscribe(Subscription& subscription) {
+void ConnectionAutomaton::onSubscribe(std::shared_ptr<Subscription> subscription) {
   assert(!connectionInputSub_);
-  connectionInputSub_.reset(&subscription);
+  connectionInputSub_.reset(std::move(subscription));
   // This may result in signals being issued by the connection in-line, see
   // ::connect.
   connectionInputSub_.request(std::numeric_limits<size_t>::max());

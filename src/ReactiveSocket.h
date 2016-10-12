@@ -76,15 +76,15 @@ class ReactiveSocket {
              const ResumeIdentificationToken&,
              ResumePosition) { return false; });
 
-  Subscriber<Payload>& requestChannel(Subscriber<Payload>& responseSink);
+  std::shared_ptr<Subscriber<Payload>> requestChannel(std::shared_ptr<Subscriber<Payload>> responseSink);
 
-  void requestStream(Payload payload, Subscriber<Payload>& responseSink);
+  void requestStream(Payload payload, std::shared_ptr<Subscriber<Payload>> responseSink);
 
-  void requestSubscription(Payload payload, Subscriber<Payload>& responseSink);
+  void requestSubscription(Payload payload, std::shared_ptr<Subscriber<Payload>> responseSink);
 
   void requestFireAndForget(Payload request);
 
-  void requestResponse(Payload payload, Subscriber<Payload>& responseSink);
+  void requestResponse(Payload payload, std::shared_ptr<Subscriber<Payload>> responseSink);
 
   void close();
 

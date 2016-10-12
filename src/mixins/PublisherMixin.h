@@ -24,9 +24,9 @@ class PublisherMixin : public Base {
   using Base::Base;
 
   /// @{
-  void onSubscribe(Subscription& subscription) {
+  void onSubscribe(std::shared_ptr<Subscription> subscription) {
     DCHECK(!producingSubscription_);
-    producingSubscription_.reset(&subscription);
+    producingSubscription_.reset(std::move(subscription));
   }
 
   void onNext(Payload payload, FrameFlags flags = FrameFlags_EMPTY) {

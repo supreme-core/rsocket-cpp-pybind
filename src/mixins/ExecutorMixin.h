@@ -47,11 +47,11 @@ class ExecutorMixin : public Base {
 
   /// @{
   /// Publisher<Payload>
-  void subscribe(Subscriber<Payload>& subscriber) {
+  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
     // This call punches through the executor-enforced ordering, to ensure that
     // the Subscriber pointer is set as soon as possible.
     // More esoteric reason: this is not a signal in ReactiveStreams language.
-    Base::subscribe(subscriber);
+    Base::subscribe(std::move(subscriber));
   }
   /// @}
 
@@ -68,11 +68,11 @@ class ExecutorMixin : public Base {
 
   /// @{
   /// Subscriber<Payload>
-  void onSubscribe(Subscription& subscription) {
+  void onSubscribe(std::shared_ptr<Subscription> subscription) {
     // This call punches through the executor-enforced ordering, to ensure that
     // the Subscription pointer is set as soon as possible.
     // More esoteric reason: this is not a signal in ReactiveStreams language.
-    Base::onSubscribe(subscription);
+    Base::onSubscribe(std::move(subscription));
   }
 
   void onNext(Payload payload) {

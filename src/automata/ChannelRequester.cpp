@@ -16,11 +16,11 @@
 
 namespace reactivesocket {
 
-void ChannelRequesterBase::onSubscribe(Subscription& subscription) {
+void ChannelRequesterBase::onSubscribe(std::shared_ptr<Subscription> subscription) {
   CHECK(State::NEW == state_);
   Base::onSubscribe(subscription);
   // Request the first payload immediately.
-  subscription.request(1);
+  subscription->request(1);
 }
 
 void ChannelRequesterBase::onNext(Payload request) {

@@ -14,43 +14,45 @@ using namespace ::testing;
 using namespace ::reactivestreams;
 
 TEST(SubscriberPtrTest, ResetDtorRelease) {
-  StrictMock<UnmanagedMockSubscriber<int>> subscriber0, subscriber1,
-      subscriber2;
+  auto subscriber0 = std::make_shared<StrictMock<MockSubscriber<int>>>();
+  auto subscriber1 = std::make_shared<StrictMock<MockSubscriber<int>>>();
+  auto subscriber2 = std::make_shared<StrictMock<MockSubscriber<int>>>();
+
   {
     InSequence dummy;
     // It's not okay to skip ::onSubscribe signal, but we can afford to do it
     // with the unmanaged mock.
-    EXPECT_CALL(subscriber0, onComplete_());
-    EXPECT_CALL(subscriber1, onComplete_());
-    EXPECT_CALL(subscriber2, onComplete_()).Times(0);
+    EXPECT_CALL(*subscriber0, onComplete_());
+    EXPECT_CALL(*subscriber1, onComplete_());
+    EXPECT_CALL(*subscriber2, onComplete_()).Times(0);
   }
 
   {
-    auto ptr = makeSubscriberPtr(&subscriber0);
+    auto ptr = makeSubscriberPtr(subscriber0);
     ptr.reset();
     ASSERT_TRUE(!ptr);
-    ptr.reset(&subscriber1);
+    ptr.reset(subscriber1);
     // Wait for d'tor to kick in.
   }
-  auto ptr = makeSubscriberPtr(&subscriber2);
+  auto ptr = makeSubscriberPtr(subscriber2);
   ptr.release();
   ptr.onComplete();
 }
 
 TEST(SubscriberPtrTest, IdempotentComplete) {
-  StrictMock<UnmanagedMockSubscriber<int>> subscriber;
+  auto subscriber = std::make_shared<StrictMock<MockSubscriber<int>>>();
   {
     InSequence dummy;
     // It's not okay to skip ::onSubscribe signal, but we can afford to do it
     // with the unmanaged mock.
-    EXPECT_CALL(subscriber, onNext_(_)).Times(2);
-    EXPECT_CALL(subscriber, onComplete_());
-    EXPECT_CALL(subscriber, onError_(_)).Times(0);
+    EXPECT_CALL(*subscriber, onNext_(_)).Times(2);
+    EXPECT_CALL(*subscriber, onComplete_());
+    EXPECT_CALL(*subscriber, onError_(_)).Times(0);
   }
 
-  auto ptr = makeSubscriberPtr(&subscriber);
+  auto ptr = makeSubscriberPtr(subscriber);
   ASSERT_TRUE(!!ptr);
-  ASSERT_EQ(&subscriber, ptr.get());
+  ASSERT_EQ(subscriber.get(), ptr.get());
 
   int value = 42;
   ptr.onNext(value);
@@ -61,19 +63,19 @@ TEST(SubscriberPtrTest, IdempotentComplete) {
 }
 
 TEST(SubscriberPtrTest, IdempotentError) {
-  StrictMock<UnmanagedMockSubscriber<int>> subscriber;
+  auto subscriber = std::make_shared<StrictMock<MockSubscriber<int>>>();
   {
     InSequence dummy;
     // It's not okay to skip ::onSubscribe signal, but we can afford to do it
     // with the unmanaged mock.
-    EXPECT_CALL(subscriber, onNext_(_)).Times(2);
-    EXPECT_CALL(subscriber, onError_(_));
-    EXPECT_CALL(subscriber, onComplete_()).Times(0);
+    EXPECT_CALL(*subscriber, onNext_(_)).Times(2);
+    EXPECT_CALL(*subscriber, onError_(_));
+    EXPECT_CALL(*subscriber, onComplete_()).Times(0);
   }
 
-  auto ptr = makeSubscriberPtr(&subscriber);
+  auto ptr = makeSubscriberPtr(subscriber);
   ASSERT_TRUE(!!ptr);
-  ASSERT_EQ(&subscriber, ptr.get());
+  ASSERT_EQ(subscriber.get(), ptr.get());
 
   int value = 42;
   ptr.onNext(value);
@@ -84,17 +86,17 @@ TEST(SubscriberPtrTest, IdempotentError) {
 }
 
 TEST(SubscriptionPtrTest, IdempotentCancel) {
-  StrictMock<UnmanagedMockSubscription> subscription;
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
   {
     InSequence dummy;
-    EXPECT_CALL(subscription, request_(1));
-    EXPECT_CALL(subscription, request_(2));
-    EXPECT_CALL(subscription, cancel_());
+    EXPECT_CALL(*subscription, request_(1));
+    EXPECT_CALL(*subscription, request_(2));
+    EXPECT_CALL(*subscription, cancel_());
   }
 
-  auto ptr = makeSubscriptionPtr(&subscription);
+  auto ptr = makeSubscriptionPtr(subscription);
   ASSERT_TRUE(!!ptr);
-  ASSERT_EQ(&subscription, ptr.get());
+  ASSERT_EQ(subscription.get(), ptr.get());
 
   ptr.request(1);
   ptr.request(2);
@@ -103,23 +105,25 @@ TEST(SubscriptionPtrTest, IdempotentCancel) {
 }
 
 TEST(SubscriptionPtrTest, ResetDtorRelease) {
-  StrictMock<UnmanagedMockSubscription> subscription0, subscription1,
-      subscription2;
+  auto subscription0 = std::make_shared<StrictMock<MockSubscription>>();
+  auto subscription1 = std::make_shared<StrictMock<MockSubscription>>();
+  auto subscription2 = std::make_shared<StrictMock<MockSubscription>>();
+
   {
     InSequence dummy;
-    EXPECT_CALL(subscription0, cancel_());
-    EXPECT_CALL(subscription1, cancel_());
-    EXPECT_CALL(subscription2, cancel_()).Times(0);
+    EXPECT_CALL(*subscription0, cancel_());
+    EXPECT_CALL(*subscription1, cancel_());
+    EXPECT_CALL(*subscription2, cancel_()).Times(0);
   }
 
   {
-    auto ptr = makeSubscriptionPtr(&subscription0);
+    auto ptr = makeSubscriptionPtr(subscription0);
     ptr.reset();
     ASSERT_TRUE(!ptr);
-    ptr.reset(&subscription1);
+    ptr.reset(subscription1);
     // Wait for d'tor to kick in.
   }
-  auto ptr = makeSubscriptionPtr(&subscription2);
+  auto ptr = makeSubscriptionPtr(subscription2);
   ptr.release();
   ptr.cancel();
 }

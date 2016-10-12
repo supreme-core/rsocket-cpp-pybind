@@ -117,46 +117,46 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
   return socket;
 }
 
-Subscriber<Payload>& ReactiveSocket::requestChannel(
-    Subscriber<Payload>& responseSink) {
+std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
   ChannelResponder::Parameters params = {connection_, streamId};
-  auto automaton = new ChannelRequester(params);
-  connection_->addStream(streamId, *automaton);
+  auto automaton = std::make_shared<ChannelRequester>(params);
+  connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink.onSubscribe(*automaton);
+  responseSink->onSubscribe(automaton);
   automaton->start();
-  return *automaton;
+  return automaton;
 }
 
 void ReactiveSocket::requestStream(
     Payload request,
-    Subscriber<Payload>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
   StreamRequester::Parameters params = {connection_, streamId};
-  auto automaton = new StreamRequester(params);
-  connection_->addStream(streamId, *automaton);
+  auto automaton = std::make_shared<StreamRequester>(params);
+  connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink.onSubscribe(*automaton);
+  responseSink->onSubscribe(automaton);
   automaton->onNext(std::move(request));
   automaton->start();
 }
 
 void ReactiveSocket::requestSubscription(
     Payload request,
-    Subscriber<Payload>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
   SubscriptionRequester::Parameters params = {connection_, streamId};
-  auto automaton = new SubscriptionRequester(params);
-  connection_->addStream(streamId, *automaton);
+  auto automaton = std::make_shared<SubscriptionRequester>(params);
+  connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink.onSubscribe(*automaton);
+  responseSink->onSubscribe(automaton);
   automaton->onNext(std::move(request));
   automaton->start();
 }
@@ -172,15 +172,15 @@ void ReactiveSocket::requestFireAndForget(Payload request) {
 
 void ReactiveSocket::requestResponse(
     Payload payload,
-    Subscriber<Payload>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
   RequestResponseRequester::Parameters params = {connection_, streamId};
-  auto automaton = new RequestResponseRequester(params);
-  connection_->addStream(streamId, *automaton);
+  auto automaton = std::make_shared<RequestResponseRequester>(params);
+  connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink.onSubscribe(*automaton);
+  responseSink->onSubscribe(automaton);
   automaton->onNext(std::move(payload));
   automaton->start();
 }
@@ -229,13 +229,13 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       ChannelResponder::Parameters params = {connection_, streamId};
-      auto automaton = new ChannelResponder(params);
-      connection_->addStream(streamId, *automaton);
-      auto& requestSink =
-          handler_->handleRequestChannel(std::move(frame.payload_), *automaton);
+      auto automaton = std::make_shared<ChannelResponder>(params);
+      connection_->addStream(streamId, automaton);
+      auto requestSink =
+          handler_->handleRequestChannel(std::move(frame.payload_), automaton);
       automaton->subscribe(requestSink);
       automaton->onNextFrame(std::move(frame));
-      requestSink.onSubscribe(*automaton);
+      requestSink->onSubscribe(automaton);
       automaton->start();
       break;
     }
@@ -245,9 +245,9 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       StreamResponder::Parameters params = {connection_, streamId};
-      auto automaton = new StreamResponder(params);
-      connection_->addStream(streamId, *automaton);
-      handler_->handleRequestStream(std::move(frame.payload_), *automaton);
+      auto automaton = std::make_shared<StreamResponder>(params);
+      connection_->addStream(streamId, automaton);
+      handler_->handleRequestStream(std::move(frame.payload_), automaton);
       automaton->onNextFrame(std::move(frame));
       automaton->start();
       break;
@@ -258,10 +258,10 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       SubscriptionResponder::Parameters params = {connection_, streamId};
-      auto automaton = new SubscriptionResponder(params);
-      connection_->addStream(streamId, *automaton);
+      auto automaton = std::make_shared<SubscriptionResponder>(params);
+      connection_->addStream(streamId, automaton);
       handler_->handleRequestSubscription(
-          std::move(frame.payload_), *automaton);
+          std::move(frame.payload_), automaton);
       automaton->onNextFrame(std::move(frame));
       automaton->start();
       break;
@@ -272,9 +272,9 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       SubscriptionResponder::Parameters params = {connection_, streamId};
-      auto automaton = new RequestResponseResponder(params);
-      connection_->addStream(streamId, *automaton);
-      handler_->handleRequestResponse(std::move(frame.payload_), *automaton);
+      auto automaton = std::make_shared<RequestResponseResponder>(params);
+      connection_->addStream(streamId, automaton);
+      handler_->handleRequestResponse(std::move(frame.payload_), automaton);
       automaton->onNextFrame(std::move(frame));
       automaton->start();
       break;

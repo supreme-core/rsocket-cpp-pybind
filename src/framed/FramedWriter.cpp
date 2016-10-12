@@ -9,10 +9,10 @@
 
 namespace reactivesocket {
 
-void FramedWriter::onSubscribe(Subscription& subscription) {
+void FramedWriter::onSubscribe(std::shared_ptr<Subscription> subscription) {
   CHECK(!writerSubscription_);
-  writerSubscription_.reset(&subscription);
-  stream_.get()->onSubscribe(*this);
+  writerSubscription_.reset(std::move(subscription));
+  stream_.get()->onSubscribe(shared_from_this());
 }
 
 static std::unique_ptr<folly::IOBuf> appendSize(

@@ -22,8 +22,7 @@ class TcpDuplexConnection;
 
 // TODO: this is an internal class, so it should go to its separate file .h file
 // or to the .cpp file
-class TcpSubscriptionBase : public virtual ::reactivesocket::IntrusiveDeleter,
-                            public ::reactivesocket::Subscription {
+class TcpSubscriptionBase : public ::reactivesocket::Subscription {
  public:
   explicit TcpSubscriptionBase(TcpDuplexConnection& connection)
       : connection_(connection){};
@@ -48,7 +47,7 @@ class TcpOutputSubscriber : public Subscriber<std::unique_ptr<folly::IOBuf>> {
   explicit TcpOutputSubscriber(TcpDuplexConnection& connection)
       : connection_(connection){};
 
-  void onSubscribe(Subscription& subscription) override;
+  void onSubscribe(std::shared_ptr<Subscription> subscription) override;
 
   void onNext(std::unique_ptr<folly::IOBuf> element) override;
 
@@ -77,9 +76,9 @@ class TcpDuplexConnection
     stats_.connectionClosed("tcp", this);
   };
 
-  Subscriber<std::unique_ptr<folly::IOBuf>>& getOutput() override;
+  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput() override;
 
-  void setInput(Subscriber<std::unique_ptr<folly::IOBuf>>& framesSink) override;
+  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> framesSink) override;
 
   void send(std::unique_ptr<folly::IOBuf> element);
 
@@ -108,7 +107,7 @@ class TcpDuplexConnection
 
  private:
   folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
-  std::unique_ptr<TcpOutputSubscriber> outputSubscriber_;
+  std::shared_ptr<TcpOutputSubscriber> outputSubscriber_;
   SubscriberPtr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSubscriber_;
   folly::AsyncSocket::UniquePtr socket_;
   Stats& stats_;

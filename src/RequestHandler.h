@@ -16,24 +16,24 @@ class RequestHandler {
   ///
   /// Modelled after Publisher::subscribe, hence must synchronously call
   /// Subscriber::onSubscribe, and provide a valid Subscription.
-  virtual Subscriber<Payload>& handleRequestChannel(
+  virtual std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      std::shared_ptr<Subscriber<Payload>> response) = 0;
 
   /// Handles a new Stream requested by the other end.
   virtual void handleRequestStream(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      std::shared_ptr<Subscriber<Payload>> response) = 0;
 
   /// Handles a new inbound Subscription requested by the other end.
   virtual void handleRequestSubscription(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      std::shared_ptr<Subscriber<Payload>> response) = 0;
 
   /// Handles a new inbound RequestResponse requested by the other end.
   virtual void handleRequestResponse(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      std::shared_ptr<Subscriber<Payload>> response) = 0;
 
   /// Handles a new fire-and-forget request sent by the other end.
   virtual void handleFireAndForgetRequest(Payload request) = 0;
