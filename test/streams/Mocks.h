@@ -46,7 +46,7 @@ class MockSubscriber : public Subscriber<T, E> {
   MOCK_METHOD1_T(onError_, void(E ex));
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-    subscription_.reset(subscription);
+    subscription_ = subscription;
     // We allow registering the same subscriber with multiple Publishers.
     // Otherwise, we could get rid of reference counting.
     onSubscribe_(subscription);
@@ -60,12 +60,13 @@ class MockSubscriber : public Subscriber<T, E> {
   void onComplete() override {
     onComplete_();
     checkpoint_.Call();
-    //TODO: release subscription_
+    subscription_ = nullptr;
   }
 
   void onError(E ex) override {
     onError_(ex);
     checkpoint_.Call();
+    subscription_ = nullptr;
   }
 
   Subscription* subscription() const {
@@ -73,7 +74,7 @@ class MockSubscriber : public Subscriber<T, E> {
   }
 
  private:
-  SubscriptionPtr<Subscription> subscription_;
+  std::shared_ptr<Subscription> subscription_;
   testing::MockFunction<void()> checkpoint_;
 };
 
@@ -86,11 +87,12 @@ class MockSubscription : public Subscription {
   MOCK_METHOD0(cancel_, void());
 
   void request(size_t n) override {
-    request_(n);
     if (!requested_) {
       requested_ = true;
-      EXPECT_CALL(checkpoint_, Call());
+      EXPECT_CALL(checkpoint_, Call()).Times(1);
     }
+
+    request_(n);
   }
 
   void cancel() override {

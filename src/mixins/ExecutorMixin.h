@@ -37,11 +37,13 @@ class ExecutorMixin : public Base {
   void start() {
     if (pendingSignals_) {
       auto movedSignals = folly::makeMoveWrapper(std::move(pendingSignals_));
-      runInExecutor([movedSignals]() mutable {
-        for (auto& signal : **movedSignals) {
-          signal();
-        }
-      });
+      if (!(*movedSignals)->empty()) {
+        runInExecutor([movedSignals]() mutable {
+          for (auto& signal : **movedSignals) {
+            signal();
+          }
+        });
+      }
     }
   }
 

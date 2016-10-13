@@ -23,19 +23,19 @@ TEST(InlineConnectionTest, PingPong) {
   std::array<std::shared_ptr<MockSubscriber<std::unique_ptr<folly::IOBuf>>>, 2> input;
   input[0] = std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   input[1] = std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  std::array<std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>, 2> output;
 
   std::array<std::shared_ptr<MockSubscription>, 2> outputSub;
   outputSub[0] = std::make_shared<MockSubscription>();
   outputSub[1] = std::make_shared<MockSubscription>();
-
   std::array<std::shared_ptr<Subscription>, 2> inputSub;
+
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_CALL(*input[i], onSubscribe_(_))
         .InSequence(s)
         .WillRepeatedly(
             Invoke([&inputSub, i](std::shared_ptr<Subscription> sub) { inputSub[i] = sub; }));
   }
-  std::array<std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>, 2> output;
 
   // Register inputs and outputs in two different orders for two different
   // "directions" of the connection.
@@ -73,13 +73,13 @@ TEST(InlineConnectionTest, PingPong) {
       }));
 
   EXPECT_CALL(*outputSub[1], cancel_()).InSequence(s).WillOnce(Invoke([&]() {
-    output[1]->onComplete(); // "Unsubscribe handshake".
-    inputSub[1]->cancel(); // Close the other direction.
+    output[1]->onComplete(); // "Unsubscribe handshake". Calls input[0]->onComplete()
+    inputSub[1]->cancel(); // Close the other direction. // equivalent to outputSub[0]->cancel();
   }));
   EXPECT_CALL(*input[0], onComplete_())
       .InSequence(s); // This finishes the handshake.
   EXPECT_CALL(*outputSub[0], cancel_()).InSequence(s).WillOnce(Invoke([&]() {
-    output[0]->onComplete(); // "Unsubscribe handshake".
+    output[0]->onComplete(); // "Unsubscribe handshake". Calls input[1]->onComplete()
   }));
   EXPECT_CALL(*input[1], onComplete_())
       .InSequence(s); // This finishes the handshake.
@@ -89,5 +89,5 @@ TEST(InlineConnectionTest, PingPong) {
   // Perform the ping
   inputSub[1]->request(1);
   // Let's shut everything down from the end that requested the ping.
-  inputSub[0]->cancel();
+  inputSub[0]->cancel(); // equivalent to outputSub[1]->cancel()
 }

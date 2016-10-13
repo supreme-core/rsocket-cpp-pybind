@@ -25,22 +25,22 @@ void InlineConnection::setInput(
 
   ASSERT_TRUE(other_);
   ASSERT_FALSE(inputSink_);
-  inputSink_.reset(std::move(inputSink));
+  inputSink_ = std::move(inputSink);
   // If `other_->outputSubscription_` is not empty, we can provide the
   // subscription to newly registered `inputSink`.
   // Otherwise, we only record the sink and wait for appropriate sequence of
   // calls to happen on the other end.
   if (other_->outputSubscription_) {
-    inputSink_.get()->onSubscribe(other_->outputSubscription_);
+    inputSink_->onSubscribe(other_->outputSubscription_);
     ASSERT_TRUE(!inputSinkCompleted_ || !inputSinkError_);
     // If there are any pending signals, we deliver them now.
     if (inputSinkCompleted_) {
-      inputSink_.onComplete();
+      inputSink_->onComplete();
     } else if (inputSinkError_) {
-      inputSink_.onError(inputSinkError_);
+      inputSink_->onError(inputSinkError_);
     }
   } else {
-    // No other signal can preced Subscriber::onSubscribe. Since that one was
+    // No other signal can precede Subscriber::onSubscribe. Since that one was
     // not delivered to other end's output subscriber, no other signal could be
     // delivered to this subscription.
     ASSERT_FALSE(inputSinkCompleted_);
@@ -60,13 +60,13 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> InlineConnection::get
       .InSequence(s)
       .WillOnce(Invoke([this](std::shared_ptr<Subscription> subscription) {
         ASSERT_FALSE(outputSubscription_);
-        outputSubscription_.reset(subscription);
+        outputSubscription_ = std::move(subscription);
         // If `other_->inputSink_` is not empty, we can provide the subscriber
         // with newly received subscription.
         // Otherwise, we only record the subscription and wait for appropriate
         // sequence of calls to happen on the other end.
         if (other_->inputSink_) {
-          other_->inputSink_.get()->onSubscribe(outputSubscription_);
+          other_->inputSink_->onSubscribe(outputSubscription_);
         }
       }));
   EXPECT_CALL(*outputSink, onNext_(_))
@@ -79,7 +79,7 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> InlineConnection::get
         // invoked on the other end's input, in order for ::onNext to be called
         // on this end's output.
         ASSERT_TRUE(other_->inputSink_);
-        other_->inputSink_.onNext(std::move(frame));
+        other_->inputSink_->onNext(std::move(frame));
       }));
   EXPECT_CALL(*outputSink, onComplete_())
       .Times(AtMost(1))
@@ -96,7 +96,7 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> InlineConnection::get
         // * otherwise, we only record the signal and wait for appropriate
         //    sequence of calls to happen on the other end.
         if (other_->inputSink_) {
-          other_->inputSink_.onComplete();
+          other_->inputSink_->onComplete();
         }
       }));
   EXPECT_CALL(*outputSink, onError_(_))
@@ -114,7 +114,7 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> InlineConnection::get
         // * otherwise, we only record the signal and wait for appropriate
         //    sequence of calls to happen on the other end.
         if (other_->inputSink_) {
-          other_->inputSink_.onError(std::move(ex));
+          other_->inputSink_->onError(std::move(ex));
         }
       }));
   EXPECT_CALL(*checkpoint, Call())

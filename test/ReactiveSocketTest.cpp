@@ -572,9 +572,11 @@ TEST(ReactiveSocketTest, Destructor) {
   std::array<std::shared_ptr<StrictMock<MockSubscriber<Payload>>>, 2> clientInputs;
   clientInputs[0] = std::make_shared<StrictMock<MockSubscriber<Payload>>>();
   clientInputs[1] = std::make_shared<StrictMock<MockSubscriber<Payload>>>();
+
   std::array<std::shared_ptr<StrictMock<MockSubscription>>, 2> serverOutputSubs;
   serverOutputSubs[0] = std::make_shared<StrictMock<MockSubscription>>();
   serverOutputSubs[1] = std::make_shared<StrictMock<MockSubscription>>();
+
   std::array<std::shared_ptr<Subscription>, 2> clientInputSubs;
   std::array<std::shared_ptr<Subscriber<Payload>>, 2> serverOutputs;
 

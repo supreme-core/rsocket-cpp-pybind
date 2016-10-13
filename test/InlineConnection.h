@@ -42,7 +42,7 @@ class InlineConnection : public DuplexConnection {
 
  private:
   InlineConnection* other_{nullptr};
-  SubscriberPtr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSink_;
+  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSink_;
   /// @{
   /// Store pending terminal signal that would be sent to the input, if it was
   /// set at the time the signal was issued. Both fields being false indicate a
@@ -50,6 +50,6 @@ class InlineConnection : public DuplexConnection {
   bool inputSinkCompleted_{false};
   folly::exception_wrapper inputSinkError_;
   /// @}
-  SubscriptionPtr<Subscription> outputSubscription_;
+  std::shared_ptr<Subscription> outputSubscription_;
 };
 }
