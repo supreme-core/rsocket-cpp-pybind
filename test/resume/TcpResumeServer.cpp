@@ -21,8 +21,8 @@ DEFINE_string(address, "9898", "host:port to listen to");
 namespace {
 class ServerSubscription : public Subscription {
  public:
-  explicit ServerSubscription(Subscriber<Payload>& response)
-      : response_(response) {}
+  explicit ServerSubscription(std::shared_ptr<Subscriber<Payload>> response)
+      : response_(std::move(response)) {}
 
   ~ServerSubscription(){};
 
@@ -34,28 +34,29 @@ class ServerSubscription : public Subscription {
     //    response_.onError(std::runtime_error("XXX"));
   }
 
-  void cancel() override {}
+  void cancel() override {
+  }
 
  private:
-  Subscriber<Payload>& response_;
+  SubscriberPtr<Subscriber<Payload>> response_;
 };
 
 class ServerRequestHandler : public DefaultRequestHandler {
  public:
   /// Handles a new inbound Subscription requested by the other end.
-  void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
+  void handleRequestSubscription(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
     LOG(INFO) << "ServerRequestHandler.handleRequestSubscription " << request;
 
-    response.onSubscribe(createManagedInstance<ServerSubscription>(response));
+    response->onSubscribe(createManagedInstance<ServerSubscription>(response));
   }
 
   /// Handles a new inbound Stream requested by the other end.
-  void handleRequestStream(Payload request, Subscriber<Payload>& response)
+  void handleRequestStream(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
     LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
 
-    response.onSubscribe(createManagedInstance<ServerSubscription>(response));
+    response->onSubscribe(createManagedInstance<ServerSubscription>(response));
   }
 
   void handleFireAndForgetRequest(Payload request) override {

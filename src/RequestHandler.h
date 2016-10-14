@@ -18,22 +18,22 @@ class RequestHandler {
   /// Subscriber::onSubscribe, and provide a valid Subscription.
   virtual std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
-      std::shared_ptr<Subscriber<Payload>> response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new Stream requested by the other end.
   virtual void handleRequestStream(
       Payload request,
-      std::shared_ptr<Subscriber<Payload>> response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new inbound Subscription requested by the other end.
   virtual void handleRequestSubscription(
       Payload request,
-      std::shared_ptr<Subscriber<Payload>> response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new inbound RequestResponse requested by the other end.
   virtual void handleRequestResponse(
       Payload request,
-      std::shared_ptr<Subscriber<Payload>> response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new fire-and-forget request sent by the other end.
   virtual void handleFireAndForgetRequest(Payload request) = 0;

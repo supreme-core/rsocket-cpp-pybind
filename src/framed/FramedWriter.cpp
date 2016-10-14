@@ -9,6 +9,10 @@
 
 namespace reactivesocket {
 
+FramedWriter::~FramedWriter() {
+
+}
+
 void FramedWriter::onSubscribe(std::shared_ptr<Subscription> subscription) {
   CHECK(!writerSubscription_);
   writerSubscription_.reset(std::move(subscription));

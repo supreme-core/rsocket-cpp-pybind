@@ -48,17 +48,13 @@ int main(int argc, char* argv[]) {
   Callback callback;
   StatsPrinter stats;
 
-  folly::AsyncSocket::UniquePtr socket(new folly::AsyncSocket(&eventBase));
-
-  folly::AsyncSocket::UniquePtr socketResume(
-      new folly::AsyncSocket(&eventBase));
-
   ResumeIdentificationToken token;
   token.fill(1);
 
   eventBase.runInEventBaseThreadAndWait([&]() {
     folly::SocketAddress addr(FLAGS_host, FLAGS_port, true);
 
+    folly::AsyncSocket::UniquePtr socket(new folly::AsyncSocket(&eventBase));
     socket->connect(&callback, addr);
 
     std::cout << "attempting connection to " << addr.describe() << "\n";
@@ -90,6 +86,8 @@ int main(int argc, char* argv[]) {
   eventBase.runInEventBaseThreadAndWait([&]() {
     folly::SocketAddress addr(FLAGS_host, FLAGS_port, true);
 
+    folly::AsyncSocket::UniquePtr socketResume(
+        new folly::AsyncSocket(&eventBase));
     socketResume->connect(&callback, addr);
 
     std::unique_ptr<DuplexConnection> connectionResume =

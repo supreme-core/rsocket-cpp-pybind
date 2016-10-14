@@ -23,7 +23,7 @@ void NullSubscription::cancel() {}
 
 std::shared_ptr<Subscriber<Payload>> NullRequestHandler::handleRequestChannel(
     Payload /*request*/,
-    std::shared_ptr<Subscriber<Payload>> response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) {
   // TODO(lehecka): get rid of onSubscribe call
   response->onSubscribe(createManagedInstance<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
@@ -32,7 +32,7 @@ std::shared_ptr<Subscriber<Payload>> NullRequestHandler::handleRequestChannel(
 
 void NullRequestHandler::handleRequestStream(
     Payload /*request*/,
-    std::shared_ptr<Subscriber<Payload>> response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) {
   // TODO(lehecka): get rid of onSubscribe call
   response->onSubscribe(createManagedInstance<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
@@ -40,7 +40,7 @@ void NullRequestHandler::handleRequestStream(
 
 void NullRequestHandler::handleRequestSubscription(
     Payload /*request*/,
-    std::shared_ptr<Subscriber<Payload>> response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) {
   // TODO(lehecka): get rid of onSubscribe call
   response->onSubscribe(createManagedInstance<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
@@ -48,7 +48,7 @@ void NullRequestHandler::handleRequestSubscription(
 
 void NullRequestHandler::handleRequestResponse(
     Payload /*request*/,
-    std::shared_ptr<Subscriber<Payload>> response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) {
   response->onSubscribe(createManagedInstance<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
 }

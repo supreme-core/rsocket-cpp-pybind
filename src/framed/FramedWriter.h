@@ -22,6 +22,8 @@ class FramedWriter
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>> stream)
       : stream_(std::move(stream)) {}
 
+  ~FramedWriter();
+
   // Subscriber methods
   void onSubscribe(std::shared_ptr<reactivesocket::Subscription> subscription) override;
   void onNext(std::unique_ptr<folly::IOBuf> element) override;

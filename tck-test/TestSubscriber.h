@@ -40,7 +40,7 @@ class TestSubscriber : public reactivesocket::Subscriber<Payload> {
   void assertCanceled();
 
  protected:
-  void onSubscribe(Subscription& subscription) override;
+  void onSubscribe(std::shared_ptr<Subscription> subscription) override;
   void onNext(Payload element) override;
   void onComplete() override;
   void onError(folly::exception_wrapper ex) override;

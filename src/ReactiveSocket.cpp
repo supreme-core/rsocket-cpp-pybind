@@ -118,7 +118,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
 }
 
 std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
-    std::shared_ptr<Subscriber<Payload>> responseSink) {
+    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -133,7 +133,7 @@ std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
 
 void ReactiveSocket::requestStream(
     Payload request,
-    std::shared_ptr<Subscriber<Payload>> responseSink) {
+    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -148,7 +148,7 @@ void ReactiveSocket::requestStream(
 
 void ReactiveSocket::requestSubscription(
     Payload request,
-    std::shared_ptr<Subscriber<Payload>> responseSink) {
+    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -172,7 +172,7 @@ void ReactiveSocket::requestFireAndForget(Payload request) {
 
 void ReactiveSocket::requestResponse(
     Payload payload,
-    std::shared_ptr<Subscriber<Payload>> responseSink) {
+    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;

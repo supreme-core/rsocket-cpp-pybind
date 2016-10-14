@@ -16,8 +16,8 @@ class EventBaseSubscription : public Subscription {
  public:
   explicit EventBaseSubscription(
       EventBase& eventBase,
-      Subscription& subscription)
-      : eventBase_(&eventBase), inner_(&subscription) {}
+      std::shared_ptr<Subscription> subscription)
+      : eventBase_(&eventBase), inner_(std::move(subscription)) {}
 
   void request(size_t n) override {
     eventBase_->runInEventBaseThread([this, n]() { inner_.request(n); });
@@ -142,9 +142,9 @@ void TestSubscriber::assertTerminated() {
   }
 }
 
-void TestSubscriber::onSubscribe(Subscription& subscription) {
-  subscription_.reset(&createManagedInstance<EventBaseSubscription>(
-      *rsEventBase_, subscription));
+void TestSubscriber::onSubscribe(std::shared_ptr<Subscription> subscription) {
+  subscription_.reset(createManagedInstance<EventBaseSubscription>(
+      *rsEventBase_, std::move(subscription)));
 
   //  actual.onSubscribe(s);
 
@@ -153,7 +153,7 @@ void TestSubscriber::onSubscribe(Subscription& subscription) {
   //  }
 
   if (initialRequestN_ > 0) {
-    subscription.request(initialRequestN_);
+    subscription_.request(initialRequestN_);
   }
 
   //  long mr = missedRequested.getAndSet(0L);
