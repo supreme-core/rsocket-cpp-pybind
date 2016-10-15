@@ -168,18 +168,20 @@ class ConnectionAutomaton :
   void drainOutputFramesQueue();
   void outputFrame(std::unique_ptr<folly::IOBuf>);
 
-  std::unique_ptr<DuplexConnection> connection_;
+  std::shared_ptr<DuplexConnection> connection_;
   StreamAutomatonFactory factory_;
-  // TODO(stupaq): looks like a bug that I have to qualify this
+
   reactivestreams::SubscriberPtr<
       reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       connectionOutput_;
   reactivestreams::SubscriptionPtr<Subscription> connectionInputSub_;
 
   std::unordered_map<StreamId, std::shared_ptr<AbstractStreamAutomaton>> streams_;
+
   reactivestreams::AllowanceSemaphore writeAllowance_;
-  std::deque<std::unique_ptr<folly::IOBuf>>
-      pendingWrites_; // TODO(stupaq): two vectors?
+
+  std::deque<std::unique_ptr<folly::IOBuf>> pendingWrites_;
+
   Stats& stats_;
   bool isServer_;
   bool isResumable_;

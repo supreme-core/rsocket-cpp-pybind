@@ -39,12 +39,22 @@ ConnectionAutomaton::ConnectionAutomaton(
 }
 
 void ConnectionAutomaton::connect() {
+  CHECK(connection_);
   connectionOutput_.reset(connection_->getOutput());
-  connectionOutput_.get()->onSubscribe(shared_from_this());
-  // This may call ::onSubscribe in-line, which calls ::request on the provided
-  // subscription, which might deliver frames in-line.
-  connection_->setInput(shared_from_this());
+  connectionOutput_.onSubscribe(shared_from_this());
 
+  // previous call on onSubscribe may have caused to disconnect
+  if (connection_) {
+    // This may call ::onSubscribe in-line, which calls ::request on the provided
+    // subscription, which might deliver frames in-line.
+    // it can also call onComplete which will call disconnect() and reset the connection_
+    // while in the setInput method. We will create a hard reference for that case
+    // and keep the object alive until we return from the setInput method
+    auto connectionCopy = connection_;
+    connectionCopy->setInput(shared_from_this());
+  }
+
+  // TODO: move to appropriate place
   stats_.socketCreated();
 }
 
@@ -75,7 +85,7 @@ void ConnectionAutomaton::disconnect() {
 void ConnectionAutomaton::reconnect(
     std::unique_ptr<DuplexConnection> newConnection) {
   disconnect();
-  connection_ = std::move(newConnection);
+  connection_ = std::shared_ptr<DuplexConnection>(std::move(newConnection));
   connect();
 }
 

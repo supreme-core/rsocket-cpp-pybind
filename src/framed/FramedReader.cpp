@@ -8,14 +8,10 @@
 
 namespace reactivesocket {
 
-FramedReader::~FramedReader() {
-
-}
-
 void FramedReader::onSubscribe(std::shared_ptr<Subscription> subscription) {
   CHECK(!streamSubscription_);
   streamSubscription_.reset(std::move(subscription));
-  frames_.get()->onSubscribe(shared_from_this());
+  frames_.onSubscribe(shared_from_this());
 }
 
 void FramedReader::onNext(std::unique_ptr<folly::IOBuf> payload) {

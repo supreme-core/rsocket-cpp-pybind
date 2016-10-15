@@ -20,8 +20,6 @@ class FramedReader :
       : frames_(std::move(frames)),
         payloadQueue_(folly::IOBufQueue::cacheChainLength()) {}
 
-  ~FramedReader();
-
   //
   // public methods should be guarded by the DestructorGuard
   // if there is code to execute after calling into the callbacks

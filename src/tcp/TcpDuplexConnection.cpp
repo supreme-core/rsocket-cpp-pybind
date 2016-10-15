@@ -26,7 +26,7 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> TcpDuplexConnection::
 void TcpDuplexConnection::setInput(
     std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSubscriber) {
   inputSubscriber_.reset(std::move(inputSubscriber));
-  inputSubscriber_.get()->onSubscribe(createManagedInstance<TcpSubscriptionBase>(*this));
+  inputSubscriber_.onSubscribe(createManagedInstance<TcpSubscriptionBase>(*this));
 
   socket_->setReadCB(this);
 };

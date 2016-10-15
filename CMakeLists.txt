@@ -164,9 +164,6 @@ add_executable(
   tests
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
-  test/streams/AllowanceSemaphoreTest.cpp
-  test/streams/OwnershipTest.cpp
-  test/streams/SmartPointersTest.cpp
   test/FrameTest.cpp
   test/ConnectionAutomatonTest.cpp
   test/InlineConnection.cpp
