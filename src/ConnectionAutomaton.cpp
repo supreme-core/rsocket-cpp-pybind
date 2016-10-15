@@ -43,13 +43,15 @@ void ConnectionAutomaton::connect() {
   connectionOutput_.reset(connection_->getOutput());
   connectionOutput_.onSubscribe(shared_from_this());
 
-  // previous call on onSubscribe may have caused to disconnect
+  // the onSubscribe call on the previous line may have called the terminating signal
+  // which would call disconnect
   if (connection_) {
     // This may call ::onSubscribe in-line, which calls ::request on the provided
     // subscription, which might deliver frames in-line.
     // it can also call onComplete which will call disconnect() and reset the connection_
-    // while in the setInput method. We will create a hard reference for that case
-    // and keep the object alive until we return from the setInput method
+    // while still inside of the connection_::setInput method. We will create
+    // a hard reference for that case and keep the object alive until we
+    // return from the setInput method
     auto connectionCopy = connection_;
     connectionCopy->setInput(shared_from_this());
   }
