@@ -23,35 +23,21 @@ void NullSubscription::cancel() {}
 
 Subscriber<Payload>& NullRequestHandler::handleRequestChannel(
     Payload /*request*/,
-    Subscriber<Payload>& response) {
-  // TODO(lehecka): get rid of onSubscribe call
-  response.onSubscribe(createManagedInstance<NullSubscription>());
-  response.onError(std::runtime_error("NullRequestHandler"));
+    SubscriberFactory& subscriberFactory) {
   return createManagedInstance<NullSubscriber>();
 }
 
 void NullRequestHandler::handleRequestStream(
     Payload /*request*/,
-    Subscriber<Payload>& response) {
-  // TODO(lehecka): get rid of onSubscribe call
-  response.onSubscribe(createManagedInstance<NullSubscription>());
-  response.onError(std::runtime_error("NullRequestHandler"));
-}
+    SubscriberFactory& subscriberFactory) {}
 
 void NullRequestHandler::handleRequestSubscription(
     Payload /*request*/,
-    Subscriber<Payload>& response) {
-  // TODO(lehecka): get rid of onSubscribe call
-  response.onSubscribe(createManagedInstance<NullSubscription>());
-  response.onError(std::runtime_error("NullRequestHandler"));
-}
+    SubscriberFactory& subscriberFactory) {}
 
 void NullRequestHandler::handleRequestResponse(
     Payload /*request*/,
-    Subscriber<Payload>& response) {
-  response.onSubscribe(createManagedInstance<NullSubscription>());
-  response.onError(std::runtime_error("NullRequestHandler"));
-}
+    SubscriberFactory& subscriberFactory) {}
 
 void NullRequestHandler::handleFireAndForgetRequest(Payload /*request*/) {}
 
@@ -60,4 +46,4 @@ void NullRequestHandler::handleMetadataPush(
 
 void NullRequestHandler::handleSetupPayload(
     ConnectionSetupPayload /*request*/) {}
-}
+} // reactivesocket

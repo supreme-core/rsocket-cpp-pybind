@@ -6,7 +6,18 @@
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
+namespace folly {
+class Executor;
+}
+
 namespace reactivesocket {
+
+class SubscriberFactory {
+ public:
+  virtual ~SubscriberFactory() = default;
+  virtual Subscriber<Payload>& createSubscriber() = 0;
+  virtual Subscriber<Payload>& createSubscriber(folly::Executor& executor) = 0;
+};
 
 class RequestHandler {
  public:
@@ -18,22 +29,22 @@ class RequestHandler {
   /// Subscriber::onSubscribe, and provide a valid Subscription.
   virtual Subscriber<Payload>& handleRequestChannel(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new Stream requested by the other end.
   virtual void handleRequestStream(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new inbound Subscription requested by the other end.
   virtual void handleRequestSubscription(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new inbound RequestResponse requested by the other end.
   virtual void handleRequestResponse(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new fire-and-forget request sent by the other end.
   virtual void handleFireAndForgetRequest(Payload request) = 0;

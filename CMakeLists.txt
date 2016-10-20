@@ -48,7 +48,7 @@ set(GMOCK_LIBS
 # ReactiveStreams C++
 ExternalProject_Add(
   ReactiveStreams
-  GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
+  #GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
   CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release" "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/reactivestreams"
 )
 
@@ -146,7 +146,8 @@ add_library(
   src/concurrent/atomic64.h
   src/concurrent/atomic64_gcc_x86_64.h
   src/concurrent/OneToOneRingBuffer.h
-)
+  src/ReactiveSocketSubscriberFactory.h
+  src/CancellingSubscription.h)
 
 target_link_libraries(
   ReactiveSocket
@@ -164,9 +165,6 @@ add_executable(
   tests
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
-  test/streams/AllowanceSemaphoreTest.cpp
-  test/streams/OwnershipTest.cpp
-  test/streams/SmartPointersTest.cpp
   test/FrameTest.cpp
   test/ConnectionAutomatonTest.cpp
   test/InlineConnection.cpp
@@ -175,6 +173,7 @@ add_executable(
   test/MockDuplexConnection.h
   test/MockRequestHandler.h
   test/ReactiveSocketTest.cpp
+  test/ReactiveSocketConcurrencyTest.cpp
   test/ReactiveStreamsMocksCompat.h
   test/Test.cpp
   test/MockStats.h

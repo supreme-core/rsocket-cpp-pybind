@@ -92,6 +92,7 @@ class MockSubscriber : public Subscriber<T, E> {
     // We allow registering the same subscriber with multiple Publishers.
     // Otherwise, we could get rid of reference counting.
     refCount_.increment();
+    EXPECT_CALL(checkpoint_, Call());
     onSubscribe_(&subscription);
   }
 
@@ -101,11 +102,13 @@ class MockSubscriber : public Subscriber<T, E> {
 
   void onComplete() override {
     auto handle = refCount_.decrementDeferred();
+    checkpoint_.Call();
     onComplete_();
   }
 
   void onError(E ex) override {
     auto handle = refCount_.decrementDeferred();
+    checkpoint_.Call();
     onError_(ex);
   }
 
@@ -122,6 +125,7 @@ class MockSubscriber : public Subscriber<T, E> {
   /// Private c'tor, please use the static factory method.
   /// MockSubscriber manages its own lifetime and assumes heap-allocation.
   MockSubscriber() : refCount_(this, 0) {}
+  testing::MockFunction<void()> checkpoint_;
 };
 
 /// GoogleMock-compatible Subscriber implementation for fast prototyping.
@@ -133,11 +137,16 @@ class MockSubscription : public Subscription {
   MOCK_METHOD0(cancel_, void());
 
   void request(size_t n) override {
+    if (!requested_) {
+      requested_ = true;
+      EXPECT_CALL(checkpoint_, Call()).Times(1);
+    }
     request_(n);
   }
 
   void cancel() override {
     auto handle = refCount_.decrementDeferred();
+    checkpoint_.Call();
     cancel_();
   }
 
@@ -149,6 +158,9 @@ class MockSubscription : public Subscription {
   /// Private c'tor, please use the static factory method.
   /// MockSubscription manages its own lifetime and assumes heap-allocation.
   MockSubscription() : refCount_(this, 1) {}
+
+  bool requested_{false};
+  testing::MockFunction<void()> checkpoint_;
 };
 
 inline MockSubscription& makeMockSubscription() {

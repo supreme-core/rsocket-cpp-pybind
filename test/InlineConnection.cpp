@@ -66,6 +66,7 @@ Subscriber<std::unique_ptr<folly::IOBuf>>& InlineConnection::getOutput() {
 
   Sequence s;
   EXPECT_CALL(outputSink, onSubscribe_(_))
+      .Times(AtMost(1))
       .InSequence(s)
       .WillOnce(Invoke([this](Subscription* subscription) {
         ASSERT_FALSE(outputSubscription_);
@@ -98,7 +99,6 @@ Subscriber<std::unique_ptr<folly::IOBuf>>& InlineConnection::getOutput() {
       .WillOnce(Invoke([this, checkpoint]() {
         checkpoint->Call();
         ASSERT_TRUE(other_);
-        ASSERT_TRUE(other_->outputSubscription_);
         ASSERT_FALSE(inputSinkCompleted_);
         ASSERT_FALSE(inputSinkError_);
         inputSinkCompleted_ = true;
@@ -108,6 +108,7 @@ Subscriber<std::unique_ptr<folly::IOBuf>>& InlineConnection::getOutput() {
         // * otherwise, we only record the signal and wait for appropriate
         //    sequence of calls to happen on the other end.
         if (inputSink) {
+          ASSERT_TRUE(other_->outputSubscription_);
           inputSink->onComplete();
         }
       }));

@@ -15,16 +15,16 @@ class MockRequestHandler : public RequestHandler {
  public:
   MOCK_METHOD2(
       handleRequestChannel_,
-      Subscriber<Payload>*(Payload& request, Subscriber<Payload>*));
+      Subscriber<Payload>*(Payload& request, SubscriberFactory&));
   MOCK_METHOD2(
       handleRequestStream_,
-      void(Payload& request, Subscriber<Payload>*));
+      void(Payload& request, SubscriberFactory&));
   MOCK_METHOD2(
       handleRequestSubscription_,
-      void(Payload& request, Subscriber<Payload>*));
+      void(Payload& request, SubscriberFactory&));
   MOCK_METHOD2(
       handleRequestResponse_,
-      void(Payload& request, Subscriber<Payload>*));
+      void(Payload& request, SubscriberFactory&));
   MOCK_METHOD1(handleFireAndForgetRequest_, void(Payload& request));
   MOCK_METHOD1(
       handleMetadataPush_,
@@ -33,23 +33,26 @@ class MockRequestHandler : public RequestHandler {
 
   Subscriber<Payload>& handleRequestChannel(
       Payload request,
-      Subscriber<Payload>& response) override {
-    return *handleRequestChannel_(request, &response);
+      SubscriberFactory& subscriberFactory) override {
+    return *handleRequestChannel_(request, subscriberFactory);
   }
 
-  void handleRequestStream(Payload request, Subscriber<Payload>& response)
-      override {
-    handleRequestStream_(request, &response);
+  void handleRequestStream(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    handleRequestStream_(request, subscriberFactory);
   }
 
-  void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
-      override {
-    handleRequestSubscription_(request, &response);
+  void handleRequestSubscription(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    handleRequestSubscription_(request, subscriberFactory);
   }
 
-  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
-      override {
-    handleRequestResponse_(request, &response);
+  void handleRequestResponse(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    handleRequestResponse_(request, subscriberFactory);
   }
 
   void handleFireAndForgetRequest(Payload request) override {

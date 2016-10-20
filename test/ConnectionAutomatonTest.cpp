@@ -7,8 +7,8 @@
 #include <folly/io/IOBuf.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "src/Frame.h"
 #include "src/ConnectionAutomaton.h"
+#include "src/Frame.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedWriter.h"
 #include "test/InlineConnection.h"
@@ -47,7 +47,8 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   //
   // automatonConnection->connectTo(*testConnection);
   //
-  // auto framedAutomatonConnection = folly::make_unique<FramedDuplexConnection>(
+  // auto framedAutomatonConnection =
+  // folly::make_unique<FramedDuplexConnection>(
   //     std::move(automatonConnection));
   //
   // auto framedTestConnection =
@@ -70,7 +71,8 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   //       framedWriter.onNextMultiple(std::move(frames));
   //     }));
   //
-  // UnmanagedMockSubscriber<std::unique_ptr<folly::IOBuf>> testOutputSubscriber;
+  // UnmanagedMockSubscriber<std::unique_ptr<folly::IOBuf>>
+  // testOutputSubscriber;
   // EXPECT_CALL(testOutputSubscriber, onSubscribe_(_))
   //     .WillOnce(Invoke([&](Subscription* subscription) {
   //       // allow receiving frames from the automaton

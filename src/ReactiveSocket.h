@@ -12,6 +12,10 @@
 #include "src/ReactiveStreamsCompat.h"
 #include "src/Stats.h"
 
+namespace folly {
+class Executor;
+}
+
 namespace reactivesocket {
 
 class ConnectionAutomaton;
@@ -76,15 +80,26 @@ class ReactiveSocket {
              const ResumeIdentificationToken&,
              ResumePosition) { return false; });
 
-  Subscriber<Payload>& requestChannel(Subscriber<Payload>& responseSink);
+  Subscriber<Payload>& requestChannel(
+      Subscriber<Payload>& responseSink,
+      folly::Executor& executor = defaultExecutor());
 
-  void requestStream(Payload payload, Subscriber<Payload>& responseSink);
+  void requestStream(
+      Payload payload,
+      Subscriber<Payload>& responseSink,
+      folly::Executor& executor = defaultExecutor());
 
-  void requestSubscription(Payload payload, Subscriber<Payload>& responseSink);
+  void requestSubscription(
+      Payload payload,
+      Subscriber<Payload>& responseSink,
+      folly::Executor& executor = defaultExecutor());
 
   void requestFireAndForget(Payload request);
 
-  void requestResponse(Payload payload, Subscriber<Payload>& responseSink);
+  void requestResponse(
+      Payload payload,
+      Subscriber<Payload>& responseSink,
+      folly::Executor& executor = defaultExecutor());
 
   void close();
 
@@ -114,6 +129,8 @@ class ReactiveSocket {
   bool resumeListener(
       const ResumeIdentificationToken& token,
       ResumePosition position);
+
+  static folly::Executor& defaultExecutor();
 
   const std::shared_ptr<ConnectionAutomaton> connection_;
   std::unique_ptr<RequestHandler> handler_;
