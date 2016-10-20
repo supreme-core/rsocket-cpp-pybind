@@ -252,7 +252,7 @@ bool ReactiveSocket::createResponder(
             connection_->addStream(streamId, *automaton);
             return *automaton;
           });
-      auto& requestSink = handler_->handleRequestChannel(
+      auto& requestSink = handler_->onRequestChannel(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto& subscriber = subscriberFactory.createSubscriber();
@@ -280,7 +280,7 @@ bool ReactiveSocket::createResponder(
             connection_->addStream(streamId, *automaton);
             return *automaton;
           });
-      handler_->handleRequestStream(
+      handler_->onRequestStream(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto& subscriber = subscriberFactory.createSubscriber();
@@ -306,7 +306,7 @@ bool ReactiveSocket::createResponder(
             connection_->addStream(streamId, *automaton);
             return *automaton;
           });
-      handler_->handleRequestSubscription(
+      handler_->onRequestSubscription(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto& subscriber = subscriberFactory.createSubscriber();
@@ -332,7 +332,7 @@ bool ReactiveSocket::createResponder(
             connection_->addStream(streamId, *automaton);
             return *automaton;
           });
-      handler_->handleRequestResponse(
+      handler_->onRequestResponse(
           std::move(frame.payload_), subscriberFactory);
       // we need to create a responder to at least close the stream
       if (!automaton) {

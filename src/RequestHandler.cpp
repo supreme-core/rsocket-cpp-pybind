@@ -4,7 +4,7 @@
 
 namespace reactivesocket {
 
-Subscriber<Payload>& RequestHandler::handleRequestChannel(
+Subscriber<Payload>& RequestHandler::onRequestChannel(
     Payload request,
     SubscriberFactory& subscriberFactory) {
   return handleRequestChannel(
@@ -12,14 +12,14 @@ Subscriber<Payload>& RequestHandler::handleRequestChannel(
 }
 
 /// Handles a new Stream requested by the other end.
-void RequestHandler::handleRequestStream(
+void RequestHandler::onRequestStream(
     Payload request,
     SubscriberFactory& subscriberFactory) {
   handleRequestStream(std::move(request), subscriberFactory.createSubscriber());
 }
 
 /// Handles a new inbound Subscription requested by the other end.
-void RequestHandler::handleRequestSubscription(
+void RequestHandler::onRequestSubscription(
     Payload request,
     SubscriberFactory& subscriberFactory) {
   handleRequestSubscription(
@@ -27,7 +27,7 @@ void RequestHandler::handleRequestSubscription(
 }
 
 /// Handles a new inbound RequestResponse requested by the other end.
-void RequestHandler::handleRequestResponse(
+void RequestHandler::onRequestResponse(
     Payload request,
     SubscriberFactory& subscriberFactory) {
   handleRequestResponse(

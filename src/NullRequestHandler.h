@@ -25,11 +25,6 @@ class NullSubscription : public Subscription {
 
 class NullRequestHandler : public RequestHandler {
  public:
-  using RequestHandler::handleRequestChannel;
-  using RequestHandler::handleRequestStream;
-  using RequestHandler::handleRequestSubscription;
-  using RequestHandler::handleRequestResponse;
-
   Subscriber<Payload>& handleRequestChannel(
       Payload request,
       Subscriber<Payload>& response) override;

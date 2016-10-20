@@ -31,25 +31,25 @@ class MockRequestHandlerBase : public RequestHandlerBase {
       void(std::unique_ptr<folly::IOBuf>& request));
   MOCK_METHOD1(handleSetupPayload_, void(ConnectionSetupPayload& request));
 
-  Subscriber<Payload>& handleRequestChannel(
+  Subscriber<Payload>& onRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) override {
     return *handleRequestChannel_(request, subscriberFactory);
   }
 
-  void handleRequestStream(
+  void onRequestStream(
       Payload request,
       SubscriberFactory& subscriberFactory) override {
     handleRequestStream_(request, subscriberFactory);
   }
 
-  void handleRequestSubscription(
+  void onRequestSubscription(
       Payload request,
       SubscriberFactory& subscriberFactory) override {
     handleRequestSubscription_(request, subscriberFactory);
   }
 
-  void handleRequestResponse(
+  void onRequestResponse(
       Payload request,
       SubscriberFactory& subscriberFactory) override {
     handleRequestResponse_(request, subscriberFactory);

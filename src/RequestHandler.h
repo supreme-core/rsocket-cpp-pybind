@@ -31,22 +31,22 @@ class RequestHandlerBase {
   //
 
   /// Handles a new Channel requested by the other end.
-  virtual Subscriber<Payload>& handleRequestChannel(
+  virtual Subscriber<Payload>& onRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new Stream requested by the other end.
-  virtual void handleRequestStream(
+  virtual void onRequestStream(
       Payload request,
       SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new inbound Subscription requested by the other end.
-  virtual void handleRequestSubscription(
+  virtual void onRequestSubscription(
       Payload request,
       SubscriberFactory& subscriberFactory) = 0;
 
   /// Handles a new inbound RequestResponse requested by the other end.
-  virtual void handleRequestResponse(
+  virtual void onRequestResponse(
       Payload request,
       SubscriberFactory& subscriberFactory) = 0;
 
@@ -88,22 +88,23 @@ class RequestHandler : public RequestHandlerBase {
       Payload request,
       Subscriber<Payload>& response) = 0;
 
-  Subscriber<Payload>& handleRequestChannel(
+ private:
+  Subscriber<Payload>& onRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) override;
 
   /// Handles a new Stream requested by the other end.
-  void handleRequestStream(
+  void onRequestStream(
       Payload request,
       SubscriberFactory& subscriberFactory) override;
 
   /// Handles a new inbound Subscription requested by the other end.
-  void handleRequestSubscription(
+  void onRequestSubscription(
       Payload request,
       SubscriberFactory& subscriberFactory) override;
 
   /// Handles a new inbound RequestResponse requested by the other end.
-  void handleRequestResponse(
+  void onRequestResponse(
       Payload request,
       SubscriberFactory& subscriberFactory) override;
 };

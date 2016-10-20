@@ -675,26 +675,21 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
 class ReactiveSocketIgnoreRequestTest : public testing::Test {
  public:
   class TestRequestHandler : public NullRequestHandler {
-    using NullRequestHandler::handleRequestChannel;
-    using NullRequestHandler::handleRequestStream;
-    using NullRequestHandler::handleRequestSubscription;
-    using NullRequestHandler::handleRequestResponse;
-
-    Subscriber<Payload>& handleRequestChannel(
+    Subscriber<Payload>& onRequestChannel(
         Payload /*request*/,
         SubscriberFactory& subscriberFactory) override {
       return createManagedInstance<NullSubscriber>();
     }
 
-    void handleRequestStream(
+    void onRequestStream(
         Payload /*request*/,
         SubscriberFactory& subscriberFactory) override {}
 
-    void handleRequestSubscription(
+    void onRequestSubscription(
         Payload /*request*/,
         SubscriberFactory& subscriberFactory) override {}
 
-    void handleRequestResponse(
+    void onRequestResponse(
         Payload /*request*/,
         SubscriberFactory& subscriberFactory) override {}
   };
