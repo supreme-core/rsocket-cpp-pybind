@@ -4,6 +4,7 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <condition_variable>
 
 #include <folly/Memory.h>
 #include <folly/io/IOBuf.h>
@@ -119,7 +120,23 @@ class ClientSideConcurrencyTest : public testing::Test {
       serverOutput->onComplete();
     }));
 
-    EXPECT_CALL(clientInput, onComplete_());
+    EXPECT_CALL(clientInput, onComplete_()).WillOnce(Invoke([&]() {
+      if (!clientTerminatesInteraction_) {
+        clientInputSub->cancel();
+      }
+      done();
+    }));
+  }
+
+  void done() {
+    std::unique_lock<std::mutex> lock(mtx);
+    isDone_ = true;
+    cv.notify_one();
+  }
+
+  void wainUntilDone() {
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock,[&](){return isDone_;});
   }
 
   std::unique_ptr<ReactiveSocket> clientSock;
@@ -141,27 +158,28 @@ class ClientSideConcurrencyTest : public testing::Test {
   folly::ScopedEventBaseThread thread2;
 
   bool clientTerminatesInteraction_{true};
+
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool isDone_{false};
 };
 
 TEST_F(ClientSideConcurrencyTest, RequestResponseTest) {
   clientSock->requestResponse(
       Payload(originalPayload->clone()), clientInput, *thread2.getEventBase());
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestStreamTest) {
   clientSock->requestStream(
       Payload(originalPayload->clone()), clientInput, *thread2.getEventBase());
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestSubscriptionTest) {
   clientSock->requestSubscription(
       Payload(originalPayload->clone()), clientInput, *thread2.getEventBase());
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
@@ -181,14 +199,15 @@ TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
   }));
   EXPECT_CALL(clientOutputSub, cancel_()).WillOnce(Invoke([&]() {
     thread1.getEventBase()->runInEventBaseThread(
-        [&]() { clientOutput.onComplete(); });
+        [&]() {
+          clientOutput.onComplete();
+        });
   }));
 
   thread1.getEventBase()->runInEventBaseThreadAndWait(
       [&]() { clientOutput.onSubscribe(clientOutputSub); });
 
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 class ServerSideConcurrencyTest : public testing::Test {
@@ -298,7 +317,23 @@ class ServerSideConcurrencyTest : public testing::Test {
       serverOutput->onComplete();
     }));
 
-    EXPECT_CALL(clientInput, onComplete_());
+    EXPECT_CALL(clientInput, onComplete_()).WillOnce(Invoke([&]() {
+      if (!clientTerminatesInteraction_) {
+        clientInputSub->cancel();
+      }
+      done();
+    }));
+  }
+
+  void done() {
+    std::unique_lock<std::mutex> lock(mtx);
+    isDone_ = true;
+    cv.notify_one();
+  }
+
+  void wainUntilDone() {
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock,[&](){return isDone_;});
   }
 
   std::unique_ptr<ReactiveSocket> clientSock;
@@ -320,25 +355,26 @@ class ServerSideConcurrencyTest : public testing::Test {
   folly::ScopedEventBaseThread thread2;
 
   bool clientTerminatesInteraction_{true};
+
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool isDone_{false};
 };
 
 TEST_F(ServerSideConcurrencyTest, RequestResponseTest) {
   clientSock->requestResponse(Payload(originalPayload->clone()), clientInput);
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 TEST_F(ServerSideConcurrencyTest, RequestStreamTest) {
   clientSock->requestStream(Payload(originalPayload->clone()), clientInput);
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 TEST_F(ServerSideConcurrencyTest, RequestSubscriptionTest) {
   clientSock->requestSubscription(
       Payload(originalPayload->clone()), clientInput);
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
 
 TEST_F(ServerSideConcurrencyTest, RequestChannelTest) {
@@ -361,6 +397,5 @@ TEST_F(ServerSideConcurrencyTest, RequestChannelTest) {
 
   clientOutput.onSubscribe(clientOutputSub);
 
-  // give the second thread a change to execute the code
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  wainUntilDone();
 }
