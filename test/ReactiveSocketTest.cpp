@@ -13,6 +13,7 @@
 #include "MockStats.h"
 #include "src/NullRequestHandler.h"
 #include "src/ReactiveSocket.h"
+#include "src/mixins/MemoryMixin.h"
 #include "test/InlineConnection.h"
 #include "test/MockRequestHandler.h"
 #include "test/ReactiveStreamsMocksCompat.h"
@@ -79,12 +80,11 @@ TEST(ReactiveSocketTest, RequestChannel) {
   EXPECT_CALL(
       serverHandlerRef, handleRequestChannel_(Equals(&originalPayload), _))
       .InSequence(s)
-      .WillOnce(
-          Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-            serverOutput = &subscriberFactory.createSubscriber();
-            serverOutput->onSubscribe(serverOutputSub);
-            return &serverInput;
-          }));
+      .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+        serverOutput = response;
+        serverOutput->onSubscribe(serverOutputSub);
+        return &serverInput;
+      }));
   EXPECT_CALL(serverInput, onSubscribe_(_))
       .InSequence(s)
       .WillOnce(Invoke([&](Subscription* sub) {
@@ -189,11 +189,10 @@ TEST(ReactiveSocketTest, RequestStreamComplete) {
   EXPECT_CALL(
       serverHandlerRef, handleRequestStream_(Equals(&originalPayload), _))
       .InSequence(s)
-      .WillOnce(
-          Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-            serverOutput = &subscriberFactory.createSubscriber();
-            serverOutput->onSubscribe(serverOutputSub);
-          }));
+      .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+        serverOutput = response;
+        serverOutput->onSubscribe(serverOutputSub);
+      }));
   EXPECT_CALL(serverOutputSub, request_(2))
       .InSequence(s)
       // The server delivers them immediately.
@@ -273,11 +272,10 @@ TEST(ReactiveSocketTest, RequestStreamCancel) {
   EXPECT_CALL(
       serverHandlerRef, handleRequestStream_(Equals(&originalPayload), _))
       .InSequence(s)
-      .WillOnce(
-          Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-            serverOutput = &subscriberFactory.createSubscriber();
-            serverOutput->onSubscribe(serverOutputSub);
-          }));
+      .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+        serverOutput = response;
+        serverOutput->onSubscribe(serverOutputSub);
+      }));
   EXPECT_CALL(serverOutputSub, request_(2))
       .InSequence(s)
       // The server delivers them immediately.
@@ -354,11 +352,10 @@ TEST(ReactiveSocketTest, RequestSubscription) {
   EXPECT_CALL(
       serverHandlerRef, handleRequestSubscription_(Equals(&originalPayload), _))
       .InSequence(s)
-      .WillOnce(
-          Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-            serverOutput = &subscriberFactory.createSubscriber();
-            serverOutput->onSubscribe(serverOutputSub);
-          }));
+      .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+        serverOutput = response;
+        serverOutput->onSubscribe(serverOutputSub);
+      }));
   EXPECT_CALL(serverOutputSub, request_(2))
       .InSequence(s)
       // The server delivers them immediately.
@@ -436,11 +433,10 @@ TEST(ReactiveSocketTest, RequestResponse) {
   EXPECT_CALL(
       serverHandlerRef, handleRequestResponse_(Equals(&originalPayload), _))
       .InSequence(s)
-      .WillOnce(
-          Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-            serverOutput = &subscriberFactory.createSubscriber();
-            serverOutput->onSubscribe(serverOutputSub);
-          }));
+      .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+        serverOutput = response;
+        serverOutput->onSubscribe(serverOutputSub);
+      }));
 
   EXPECT_CALL(serverOutputSub, request_(_))
       .InSequence(s)
@@ -620,8 +616,8 @@ TEST(ReactiveSocketTest, Destructor) {
         handleRequestSubscription_(Equals(&originalPayload), _))
         .InSequence(s)
         .WillOnce(Invoke([i, &serverOutputs, &serverOutputSubs](
-            Payload& request, SubscriberFactory& subscriberFactory) {
-          serverOutputs[i] = &subscriberFactory.createSubscriber();
+            Payload& request, Subscriber<Payload>* response) {
+          serverOutputs[i] = response;
           serverOutputs[i]->onSubscribe(serverOutputSubs[i]);
         }));
     Sequence s0, s1;
@@ -678,6 +674,31 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
 
 class ReactiveSocketIgnoreRequestTest : public testing::Test {
  public:
+  class TestRequestHandler : public NullRequestHandler {
+    using NullRequestHandler::handleRequestChannel;
+    using NullRequestHandler::handleRequestStream;
+    using NullRequestHandler::handleRequestSubscription;
+    using NullRequestHandler::handleRequestResponse;
+
+    Subscriber<Payload>& handleRequestChannel(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {
+      return createManagedInstance<NullSubscriber>();
+    }
+
+    void handleRequestStream(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {}
+
+    void handleRequestSubscription(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {}
+
+    void handleRequestResponse(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {}
+  };
+
   ReactiveSocketIgnoreRequestTest() {
     auto clientConn = folly::make_unique<InlineConnection>();
     auto serverConn = folly::make_unique<InlineConnection>();
@@ -691,7 +712,7 @@ class ReactiveSocketIgnoreRequestTest : public testing::Test {
         ConnectionSetupPayload("", "", Payload()));
 
     serverSock = ReactiveSocket::fromServerConnection(
-        std::move(serverConn), folly::make_unique<NullRequestHandler>());
+        std::move(serverConn), folly::make_unique<TestRequestHandler>());
 
     // Client request.
     EXPECT_CALL(clientInput, onSubscribe_(_))

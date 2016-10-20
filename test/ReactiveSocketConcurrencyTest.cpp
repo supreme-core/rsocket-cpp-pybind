@@ -54,52 +54,48 @@ class ClientSideConcurrencyTest : public testing::Test {
     // up.
     EXPECT_CALL(serverHandlerRef, handleRequestResponse_(_, _))
         .Times(AtMost(1))
-        .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-              serverOutput = &subscriberFactory.createSubscriber();
-              serverOutput->onSubscribe(serverOutputSub);
-            }));
+        .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+          serverOutput = response;
+          serverOutput->onSubscribe(serverOutputSub);
+        }));
     EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _))
         .Times(AtMost(1))
-        .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-              serverOutput = &subscriberFactory.createSubscriber();
-              serverOutput->onSubscribe(serverOutputSub);
-            }));
+        .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+          serverOutput = response;
+          serverOutput->onSubscribe(serverOutputSub);
+        }));
     EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _))
         .Times(AtMost(1))
-        .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-              serverOutput = &subscriberFactory.createSubscriber();
-              serverOutput->onSubscribe(serverOutputSub);
-            }));
+        .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+          serverOutput = response;
+          serverOutput->onSubscribe(serverOutputSub);
+        }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _))
         .Times(AtMost(1))
-        .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
-              clientTerminatesInteraction_ = false;
-              EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+        .WillOnce(Invoke([&](Payload& request, Subscriber<Payload>* response) {
+          clientTerminatesInteraction_ = false;
+          EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
 
-              EXPECT_CALL(serverInput, onSubscribe_(_))
-                  .WillOnce(Invoke([&](Subscription* sub) {
-                    EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-                    serverInputSub = sub;
-                    sub->request(2);
-                  }));
-              EXPECT_CALL(serverInput, onNext_(_))
-                  .WillOnce(Invoke([&](Payload& payload) {
-                    EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-                    serverInputSub->cancel();
-                  }));
-              EXPECT_CALL(serverInput, onComplete_()).WillOnce(Invoke([&]() {
+          EXPECT_CALL(serverInput, onSubscribe_(_))
+              .WillOnce(Invoke([&](Subscription* sub) {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+                serverInputSub = sub;
+                sub->request(2);
               }));
+          EXPECT_CALL(serverInput, onNext_(_))
+              .WillOnce(Invoke([&](Payload& payload) {
+                EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+                serverInputSub->cancel();
+              }));
+          EXPECT_CALL(serverInput, onComplete_()).WillOnce(Invoke([&]() {
+            EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+          }));
 
-              serverOutput = &subscriberFactory.createSubscriber();
-              serverOutput->onSubscribe(serverOutputSub);
+          serverOutput = response;
+          serverOutput->onSubscribe(serverOutputSub);
 
-              return &serverInput;
-            }));
+          return &serverInput;
+        }));
 
     EXPECT_CALL(serverOutputSub, request_(_))
         // The server delivers them immediately.
@@ -209,7 +205,8 @@ class ServerSideConcurrencyTest : public testing::Test {
         folly::make_unique<StrictMock<MockRequestHandler>>(),
         ConnectionSetupPayload("", "", Payload()));
 
-    auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
+    auto serverHandler =
+        folly::make_unique<StrictMock<MockRequestHandlerBase>>();
     auto& serverHandlerRef = *serverHandler;
 
     EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_));

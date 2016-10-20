@@ -11,7 +11,6 @@
 #include <folly/MoveWrapper.h>
 #include <folly/futures/QueuedImmediateExecutor.h>
 
-#include "NullRequestHandler.h"
 #include "src/CancellingSubscription.h"
 #include "src/ConnectionAutomaton.h"
 #include "src/ConnectionSetupPayload.h"
@@ -40,7 +39,7 @@ ReactiveSocket::~ReactiveSocket() {
 ReactiveSocket::ReactiveSocket(
     bool isServer,
     std::unique_ptr<DuplexConnection> connection,
-    std::unique_ptr<RequestHandler> handler,
+    std::unique_ptr<RequestHandlerBase> handler,
     ResumeSocketListener resumeListener,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
@@ -70,7 +69,7 @@ folly::Executor& ReactiveSocket::defaultExecutor() {
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,
-    std::unique_ptr<RequestHandler> handler,
+    std::unique_ptr<RequestHandlerBase> handler,
     ConnectionSetupPayload setupPayload,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
@@ -112,7 +111,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
     std::unique_ptr<DuplexConnection> connection,
-    std::unique_ptr<RequestHandler> handler,
+    std::unique_ptr<RequestHandlerBase> handler,
     Stats& stats,
     ResumeSocketListener resumeListener) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(

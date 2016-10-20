@@ -19,14 +19,18 @@ class SubscriberFactory {
   virtual Subscriber<Payload>& createSubscriber(folly::Executor& executor) = 0;
 };
 
-class RequestHandler {
+class RequestHandlerBase {
  public:
-  virtual ~RequestHandler() = default;
+  virtual ~RequestHandlerBase() = default;
+
+  //
+  // client code uses subscriberFactory to create instances of subcsribers
+  // there is an optional executor instance which can be passed to
+  // SubscriberFactory::createSubscriber() method
+  // client can ignore the subscriber factory if it desires to
+  //
 
   /// Handles a new Channel requested by the other end.
-  ///
-  /// Modelled after Publisher::subscribe, hence must synchronously call
-  /// Subscriber::onSubscribe, and provide a valid Subscription.
   virtual Subscriber<Payload>& handleRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) = 0;
@@ -55,5 +59,52 @@ class RequestHandler {
   /// Temporary home - this should eventually be an input to asking for a
   /// RequestHandler so negotiation is possible
   virtual void handleSetupPayload(ConnectionSetupPayload request) = 0;
+};
+
+class RequestHandler : public RequestHandlerBase {
+ public:
+  //
+  // Modelled after Publisher::subscribe, hence must synchronously call
+  // Subscriber::onSubscribe, and provide a valid Subscription.
+  //
+
+  /// Handles a new Channel requested by the other end.
+  virtual Subscriber<Payload>& handleRequestChannel(
+      Payload request,
+      Subscriber<Payload>& response) = 0;
+
+  /// Handles a new Stream requested by the other end.
+  virtual void handleRequestStream(
+      Payload request,
+      Subscriber<Payload>& response) = 0;
+
+  /// Handles a new inbound Subscription requested by the other end.
+  virtual void handleRequestSubscription(
+      Payload request,
+      Subscriber<Payload>& response) = 0;
+
+  /// Handles a new inbound RequestResponse requested by the other end.
+  virtual void handleRequestResponse(
+      Payload request,
+      Subscriber<Payload>& response) = 0;
+
+  Subscriber<Payload>& handleRequestChannel(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override;
+
+  /// Handles a new Stream requested by the other end.
+  void handleRequestStream(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override;
+
+  /// Handles a new inbound Subscription requested by the other end.
+  void handleRequestSubscription(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override;
+
+  /// Handles a new inbound RequestResponse requested by the other end.
+  void handleRequestResponse(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override;
 };
 }

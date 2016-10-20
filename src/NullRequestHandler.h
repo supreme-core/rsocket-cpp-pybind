@@ -27,19 +27,16 @@ class NullRequestHandler : public RequestHandler {
  public:
   Subscriber<Payload>& handleRequestChannel(
       Payload request,
-      SubscriberFactory& subscriberFactory) override;
+      Subscriber<Payload>& response) override;
 
-  void handleRequestStream(
-      Payload request,
-      SubscriberFactory& subscriberFactory) override;
+  void handleRequestStream(Payload request, Subscriber<Payload>& response)
+      override;
 
-  void handleRequestSubscription(
-      Payload request,
-      SubscriberFactory& subscriberFactory) override;
+  void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
+      override;
 
-  void handleRequestResponse(
-      Payload request,
-      SubscriberFactory& subscriberFactory) override;
+  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
+      override;
 
   void handleFireAndForgetRequest(Payload request) override;
 

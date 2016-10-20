@@ -20,7 +20,7 @@ namespace reactivesocket {
 
 class ConnectionAutomaton;
 class DuplexConnection;
-class RequestHandler;
+class RequestHandlerBase;
 class ReactiveSocket;
 enum class FrameType : uint16_t;
 using StreamId = uint32_t;
@@ -63,7 +63,7 @@ class ReactiveSocket {
 
   static std::unique_ptr<ReactiveSocket> fromClientConnection(
       std::unique_ptr<DuplexConnection> connection,
-      std::unique_ptr<RequestHandler> handler,
+      std::unique_ptr<RequestHandlerBase> handler,
       ConnectionSetupPayload setupPayload = ConnectionSetupPayload(),
       Stats& stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
@@ -73,7 +73,7 @@ class ReactiveSocket {
 
   static std::unique_ptr<ReactiveSocket> fromServerConnection(
       std::unique_ptr<DuplexConnection> connection,
-      std::unique_ptr<RequestHandler> handler,
+      std::unique_ptr<RequestHandlerBase> handler,
       Stats& stats = Stats::noop(),
       ResumeSocketListener resumeListener =
           [](ReactiveSocket&,
@@ -120,7 +120,7 @@ class ReactiveSocket {
   ReactiveSocket(
       bool isServer,
       std::unique_ptr<DuplexConnection> connection,
-      std::unique_ptr<RequestHandler> handler,
+      std::unique_ptr<RequestHandlerBase> handler,
       ResumeSocketListener resumeListener,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer);
@@ -133,7 +133,7 @@ class ReactiveSocket {
   static folly::Executor& defaultExecutor();
 
   const std::shared_ptr<ConnectionAutomaton> connection_;
-  std::unique_ptr<RequestHandler> handler_;
+  std::unique_ptr<RequestHandlerBase> handler_;
   StreamId nextStreamId_;
   std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
   ResumeSocketListener resumeSocketListener_;
