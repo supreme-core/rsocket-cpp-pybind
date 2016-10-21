@@ -260,8 +260,12 @@ bool ReactiveSocket::createResponder(
             createManagedInstance<CancellingSubscription>(subscriber));
       }
       automaton->subscribe(requestSink);
-      automaton->onNextFrame(std::move(frame));
+      // any calls from onSubscribe are queued until we start
       requestSink.onSubscribe(*automaton);
+      // onNextFrame executes directly, it may cause to call request(n)
+      // which may call back and it will be queued after the calls from
+      // the onSubscribe method
+      automaton->onNextFrame(std::move(frame));
       automaton->start();
       break;
     }
