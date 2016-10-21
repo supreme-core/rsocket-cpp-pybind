@@ -7,8 +7,8 @@
 #include <folly/io/IOBuf.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "src/Frame.h"
 #include "src/ConnectionAutomaton.h"
+#include "src/Frame.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedWriter.h"
 #include "test/InlineConnection.h"

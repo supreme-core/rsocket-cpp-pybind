@@ -56,14 +56,14 @@ class MockSubscriber : public Subscriber<T, E> {
   }
 
   void onComplete() override {
-    onComplete_();
     checkpoint_.Call();
+    onComplete_();
     subscription_ = nullptr;
   }
 
   void onError(E ex) override {
-    onError_(ex);
     checkpoint_.Call();
+    onError_(ex);
     subscription_ = nullptr;
   }
 
@@ -89,13 +89,12 @@ class MockSubscription : public Subscription {
       requested_ = true;
       EXPECT_CALL(checkpoint_, Call()).Times(1);
     }
-
     request_(n);
   }
 
   void cancel() override {
-    cancel_();
     checkpoint_.Call();
+    cancel_();
   }
 
  private:

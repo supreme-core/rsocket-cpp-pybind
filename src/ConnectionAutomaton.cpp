@@ -161,7 +161,7 @@ void ConnectionAutomaton::onNext(std::unique_ptr<folly::IOBuf> frame) {
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
     outputFrameOrEnqueue(
-      Frame_ERROR::connectionError("invalid frame").serializeOut());
+        Frame_ERROR::connectionError("invalid frame").serializeOut());
     disconnect();
     return;
   }
@@ -203,7 +203,7 @@ void ConnectionAutomaton::onConnectionFrame(
           } else {
             outputFrameOrEnqueue(
                 Frame_ERROR::connectionError("keepalive without flag")
-                .serializeOut());
+                    .serializeOut());
             disconnect();
           }
         }
@@ -336,7 +336,8 @@ void ConnectionAutomaton::handleUnknownStream(
   if (!factory_(streamId, std::move(payload))) {
     outputFrameOrEnqueue(
         Frame_ERROR::connectionError(
-          folly::to<std::string>("unknown stream ", streamId)).serializeOut());
+            folly::to<std::string>("unknown stream ", streamId))
+            .serializeOut());
     disconnect();
   }
 }

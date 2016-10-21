@@ -8,9 +8,9 @@
 #include <queue>
 
 #include <folly/ExceptionWrapper.h>
+#include <folly/Executor.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
-#include <folly/futures/QueuedImmediateExecutor.h>
 #include <folly/io/IOBuf.h>
 
 #include "src/ConnectionAutomaton.h"
@@ -26,8 +26,16 @@ namespace reactivesocket {
 template <typename Base>
 class ExecutorMixin : public Base {
  public:
-  using Base::Base;
+  struct Parameters : Base::Parameters {
+    Parameters(
+        const typename Base::Parameters& baseParams,
+        folly::Executor& _executor)
+        : Base::Parameters(baseParams), executor(_executor) {}
+    folly::Executor& executor;
+  };
 
+  ExecutorMixin(const Parameters& params)
+      : Base(params), executor_(params.executor) {}
   ~ExecutorMixin() {}
 
   /// The mixin starts in a queueing mode, where it merely queues signal
@@ -122,10 +130,11 @@ class ExecutorMixin : public Base {
     if (pendingSignals_) {
       pendingSignals_->emplace_back(func);
     } else {
-      folly::QueuedImmediateExecutor::addStatic(func);
+      executor_.add(std::move(func));
     }
   }
 
+  folly::Executor& executor_;
   using PendingSignals = std::vector<std::function<void()>>;
   std::unique_ptr<PendingSignals> pendingSignals_{
       folly::make_unique<PendingSignals>()};

@@ -78,7 +78,8 @@ void TestInterpreter::handleSubscribe(const SubscribeCommand& command) {
     rsEventBase_->runInEventBaseThreadAndWait([&]() {
       reactiveSocket_->requestStream(
           Payload(command.payloadData(), command.payloadMetadata()),
-          testSubscriber);
+          testSubscriber,
+          *rsEventBase_);
     });
   } else {
     throw std::runtime_error("unsupported interaction type");
@@ -133,7 +134,7 @@ std::shared_ptr<TestSubscriber> TestInterpreter::createTestSubscriber(const std:
     throw std::runtime_error("test subscriber with the same id already exists");
   }
 
-  auto testSubscriber = createManagedInstance<TestSubscriber>(*rsEventBase_);
+  auto testSubscriber = createManagedInstance<TestSubscriber>();
   testSubscribers_[id] = testSubscriber;
   return testSubscriber;
 }

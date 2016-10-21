@@ -11,7 +11,9 @@
 #include <gtest/gtest.h>
 
 #include "MockStats.h"
+#include "src/NullRequestHandler.h"
 #include "src/ReactiveSocket.h"
+#include "src/mixins/MemoryMixin.h"
 #include "test/InlineConnection.h"
 #include "test/MockRequestHandler.h"
 #include "test/ReactiveStreamsMocksCompat.h"
@@ -621,7 +623,7 @@ TEST(ReactiveSocketTest, Destructor) {
         .WillOnce(Invoke([i, &serverOutputs, &serverOutputSubs](
             Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutputs[i] = response;
-          response->onSubscribe(serverOutputSubs[i]);
+          serverOutputs[i]->onSubscribe(serverOutputSubs[i]);
         }));
     Sequence s0, s1;
     EXPECT_CALL(*serverOutputSubs[i], request_(2))
@@ -653,3 +655,119 @@ TEST(ReactiveSocketTest, Destructor) {
   //  clientSock.reset(nullptr);
   //  serverSock.reset(nullptr);
 }
+
+TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
+  auto clientConn = folly::make_unique<InlineConnection>();
+  auto serverConn = folly::make_unique<InlineConnection>();
+  clientConn->connectTo(*serverConn);
+
+  auto clientSock = ReactiveSocket::fromClientConnection(
+      std::move(clientConn),
+      // No interactions on this mock, the client will not accept any requests.
+      folly::make_unique<StrictMock<MockRequestHandler>>(),
+      ConnectionSetupPayload("", "", Payload()));
+
+  // we don't expect any call other than setup payload
+  auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
+  auto& serverHandlerRef = *serverHandler;
+
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_));
+
+  auto serverSock = ReactiveSocket::fromServerConnection(
+      std::move(serverConn), std::move(serverHandler));
+}
+
+class ReactiveSocketIgnoreRequestTest : public testing::Test {
+ public:
+  class TestRequestHandler : public NullRequestHandler {
+    std::shared_ptr<Subscriber<Payload>> onRequestChannel(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {
+      return createManagedInstance<NullSubscriber>();
+    }
+
+    void onRequestStream(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {}
+
+    void onRequestSubscription(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {}
+
+    void onRequestResponse(
+        Payload /*request*/,
+        SubscriberFactory& subscriberFactory) override {}
+  };
+
+  ReactiveSocketIgnoreRequestTest() {
+    auto clientConn = folly::make_unique<InlineConnection>();
+    auto serverConn = folly::make_unique<InlineConnection>();
+    clientConn->connectTo(*serverConn);
+
+    clientSock = ReactiveSocket::fromClientConnection(
+        std::move(clientConn),
+        // No interactions on this mock, the client will not accept any
+        // requests.
+        folly::make_unique<StrictMock<MockRequestHandler>>(),
+        ConnectionSetupPayload("", "", Payload()));
+
+    serverSock = ReactiveSocket::fromServerConnection(
+        std::move(serverConn), folly::make_unique<TestRequestHandler>());
+
+    // Client request.
+    EXPECT_CALL(*clientInput, onSubscribe_(_))
+        .WillOnce(Invoke([&](std::shared_ptr<Subscription> sub) {
+          clientInputSub = sub;
+          sub->request(2);
+        }));
+
+    //
+    // server RequestHandler is ignoring the request, we expect terminating
+    // response
+    //
+
+    EXPECT_CALL(*clientInput, onNext_(_)).Times(0);
+    EXPECT_CALL(*clientInput, onComplete_()).WillOnce(Invoke([&]() {
+      clientInputSub->cancel();
+    }));
+  }
+
+  std::unique_ptr<ReactiveSocket> clientSock;
+  std::unique_ptr<ReactiveSocket> serverSock;
+
+  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
+  std::shared_ptr<Subscription> clientInputSub;
+
+  const std::unique_ptr<folly::IOBuf> originalPayload{
+      folly::IOBuf::copyBuffer("foo")};
+};
+
+TEST_F(ReactiveSocketIgnoreRequestTest, IgnoreRequestResponse) {
+  clientSock->requestResponse(Payload(originalPayload->clone()), clientInput);
+}
+
+TEST_F(ReactiveSocketIgnoreRequestTest, IgnoreRequestStream) {
+  clientSock->requestStream(Payload(originalPayload->clone()), clientInput);
+}
+
+TEST_F(ReactiveSocketIgnoreRequestTest, IgnoreRequestSubscription) {
+  clientSock->requestSubscription(
+      Payload(originalPayload->clone()), clientInput);
+}
+
+// TODO: the following test is leaking memory. Travis detects this.
+// TODO: either fix the memory issue in the current model or
+//       wait for the new memory model to come and enable the test then
+//TEST_F(ReactiveSocketIgnoreRequestTest, IgnoreRequestChannel) {
+//  auto& clientOutput = clientSock->requestChannel(clientInput);
+//
+//  StrictMock<UnmanagedMockSubscription> clientOutputSub;
+//  EXPECT_CALL(clientOutputSub, request_(1)).WillOnce(Invoke([&](size_t) {
+//    clientOutput.onNext(Payload(originalPayload->clone()));
+//  }));
+//  EXPECT_CALL(clientOutputSub, cancel_()).WillOnce(Invoke([&]() {
+//    clientOutput.onComplete();
+//  }));
+//
+//  clientOutput.onSubscribe(clientOutputSub);
+//}
