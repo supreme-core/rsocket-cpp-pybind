@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <folly/Optional.h>
 #include <iosfwd>
 
 #include <reactive-streams/utilities/SmartPointers.h>
@@ -65,7 +64,7 @@ class RequestResponseRequesterBase : public MixinTerminator {
   // Whether the Subscriber made the request(1) call and thus is
   // ready to accept the payload.
   bool waitingForPayload_{false};
-  folly::Optional<Payload> payload_;
+  Payload payload_;
 
   /// A Subscriber that will consume payloads.
   /// This mixin is responsible for delivering a terminal signal to the

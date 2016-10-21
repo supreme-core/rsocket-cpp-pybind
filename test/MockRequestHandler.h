@@ -11,6 +11,63 @@
 
 namespace reactivesocket {
 
+class MockRequestHandlerBase : public RequestHandlerBase {
+ public:
+  MOCK_METHOD2(
+      handleRequestChannel_,
+      Subscriber<Payload>*(Payload& request, SubscriberFactory&));
+  MOCK_METHOD2(
+      handleRequestStream_,
+      void(Payload& request, SubscriberFactory&));
+  MOCK_METHOD2(
+      handleRequestSubscription_,
+      void(Payload& request, SubscriberFactory&));
+  MOCK_METHOD2(
+      handleRequestResponse_,
+      void(Payload& request, SubscriberFactory&));
+  MOCK_METHOD1(handleFireAndForgetRequest_, void(Payload& request));
+  MOCK_METHOD1(
+      handleMetadataPush_,
+      void(std::unique_ptr<folly::IOBuf>& request));
+  MOCK_METHOD1(handleSetupPayload_, void(ConnectionSetupPayload& request));
+
+  Subscriber<Payload>& onRequestChannel(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    return *handleRequestChannel_(request, subscriberFactory);
+  }
+
+  void onRequestStream(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    handleRequestStream_(request, subscriberFactory);
+  }
+
+  void onRequestSubscription(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    handleRequestSubscription_(request, subscriberFactory);
+  }
+
+  void onRequestResponse(
+      Payload request,
+      SubscriberFactory& subscriberFactory) override {
+    handleRequestResponse_(request, subscriberFactory);
+  }
+
+  void handleFireAndForgetRequest(Payload request) override {
+    handleFireAndForgetRequest_(request);
+  }
+
+  void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override {
+    handleMetadataPush_(request);
+  }
+
+  void handleSetupPayload(ConnectionSetupPayload request) override {
+    handleSetupPayload_(request);
+  }
+};
+
 class MockRequestHandler : public RequestHandler {
  public:
   MOCK_METHOD2(
