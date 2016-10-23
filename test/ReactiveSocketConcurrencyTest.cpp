@@ -87,6 +87,7 @@ class ClientSideConcurrencyTest : public testing::Test {
               .WillOnce(Invoke([&](Payload& payload) {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
                 serverInputSub->cancel();
+                serverInputSub = nullptr;
               }));
           EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
             EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
@@ -111,18 +112,22 @@ class ClientSideConcurrencyTest : public testing::Test {
           // but delivered on thread2
           if (clientTerminatesInteraction_) {
             thread1.getEventBase()->runInEventBaseThreadAndWait(
-                [&]() { clientInputSub->cancel(); });
+                [&]() { clientInputSub->cancel();
+                  clientInputSub = nullptr;
+                });
           }
         }));
 
     EXPECT_CALL(*serverOutputSub, cancel_()).WillOnce(Invoke([&]() {
       EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
       serverOutput->onComplete();
+      serverOutput = nullptr;
     }));
 
     EXPECT_CALL(*clientInput, onComplete_()).WillOnce(Invoke([&]() {
       if (!clientTerminatesInteraction_) {
         clientInputSub->cancel();
+        clientInputSub = nullptr;
       }
       done();
     }));
@@ -201,6 +206,7 @@ TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
     thread1.getEventBase()->runInEventBaseThread(
         [&]() {
           clientOutput->onComplete();
+          clientOutput = nullptr;
         });
   }));
 
@@ -281,7 +287,8 @@ class ServerSideConcurrencyTest : public testing::Test {
               EXPECT_CALL(*serverInput, onNext_(_))
                   .WillOnce(Invoke([&](Payload& payload) {
                     thread1.getEventBase()->runInEventBaseThreadAndWait(
-                        [&]() { serverInputSub->cancel(); });
+                        [&]() { serverInputSub->cancel();
+                          serverInputSub = nullptr; });
                   }));
               EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
@@ -309,17 +316,20 @@ class ServerSideConcurrencyTest : public testing::Test {
           // but delivered on thread2
           if (clientTerminatesInteraction_) {
             clientInputSub->cancel();
+            clientInputSub = nullptr;
           }
         }));
 
     EXPECT_CALL(*serverOutputSub, cancel_()).WillOnce(Invoke([&]() {
       EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
       serverOutput->onComplete();
+      serverOutput = nullptr;
     }));
 
     EXPECT_CALL(*clientInput, onComplete_()).WillOnce(Invoke([&]() {
       if (!clientTerminatesInteraction_) {
         clientInputSub->cancel();
+        clientInputSub = nullptr;
       }
       done();
     }));
@@ -393,6 +403,7 @@ TEST_F(ServerSideConcurrencyTest, RequestChannelTest) {
   EXPECT_CALL(*clientOutputSub, cancel_()).WillOnce(Invoke([&]() {
     EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
     clientOutput->onComplete();
+    clientOutput = nullptr;
   }));
 
   clientOutput->onSubscribe(clientOutputSub);

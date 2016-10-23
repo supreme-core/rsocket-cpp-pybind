@@ -24,7 +24,12 @@ namespace reactivesocket {
 ///
 /// Uses lazy method instantiantiation trick, see LoggingMixin.
 template <typename Base>
-class ExecutorMixin : public Base {
+class ExecutorMixin : public Base,
+                      public std::enable_shared_from_this<ExecutorMixin<Base>> {
+  static_assert(
+      !std::is_base_of<std::enable_shared_from_this<Base>, Base>::value,
+      "enable_shared_from_this is already inherited");
+
  public:
   struct Parameters : Base::Parameters {
     Parameters(
@@ -68,11 +73,11 @@ class ExecutorMixin : public Base {
   /// @{
   /// Subscription
   void request(size_t n) {
-    runInExecutor(std::bind(&Base::request, this, n));
+    runInExecutor(std::bind(&Base::request, this->shared_from_this(), n));
   }
 
   void cancel() {
-    runInExecutor(std::bind(&Base::cancel, this));
+    runInExecutor(std::bind(&Base::cancel, this->shared_from_this()));
   }
   /// @}
 
@@ -87,17 +92,19 @@ class ExecutorMixin : public Base {
 
   void onNext(Payload payload) {
     auto movedPayload = folly::makeMoveWrapper(std::move(payload));
+    std::shared_ptr<Base> basePtr = this->shared_from_this();
     runInExecutor(
-        [this, movedPayload]() mutable { Base::onNext(movedPayload.move()); });
+        [basePtr, movedPayload]() mutable { basePtr->onNext(movedPayload.move()); });
   }
 
   void onComplete() {
-    runInExecutor(std::bind(&Base::onComplete, this));
+    runInExecutor(std::bind(&Base::onComplete, this->shared_from_this()));
   }
 
   void onError(folly::exception_wrapper ex) {
     auto movedEx = folly::makeMoveWrapper(std::move(ex));
-    runInExecutor([this, movedEx]() mutable { Base::onError(movedEx.move()); });
+    std::shared_ptr<Base> basePtr = this->shared_from_this();
+    runInExecutor([basePtr, movedEx]() mutable { basePtr->onError(movedEx.move()); });
   }
   /// @}
 

@@ -248,7 +248,7 @@ bool ReactiveSocket::createResponder(
             ChannelResponder::Parameters params = {
                 {connection_, streamId},
                 executor ? *executor : defaultExecutor()};
-            auto automaton = std::make_shared<ChannelResponder>(params);
+            automaton = std::make_shared<ChannelResponder>(params);
             connection_->addStream(streamId, automaton);
             return automaton;
           });
