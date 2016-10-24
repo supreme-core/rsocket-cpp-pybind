@@ -48,7 +48,7 @@ set(GMOCK_LIBS
 # ReactiveStreams C++
 ExternalProject_Add(
   ReactiveStreams
-  #GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
+  GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
   CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release" "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/reactivestreams"
 )
 
@@ -296,19 +296,5 @@ target_link_libraries(
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpresumeserver gmock)
-
-add_executable(
-        subscriber_non_payload
-	test/simple/SubscriberNonPayloadTest.cpp
-)
-
-target_link_libraries(
-        subscriber_non_payload
-        ReactiveSocket
-        ${FOLLY_LIBRARIES}
-        ${CMAKE_THREAD_LIBS_INIT}
-)
-
-add_dependencies(subscriber_non_payload ReactiveSocket ReactiveStreams)
 
 # EOF
