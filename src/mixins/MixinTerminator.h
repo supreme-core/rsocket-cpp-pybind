@@ -6,8 +6,6 @@
 #include <iosfwd>
 #include <memory>
 
-#include "src/mixins/IntrusiveDeleter.h"
-
 namespace reactivesocket {
 
 class ConnectionAutomaton;
@@ -30,8 +28,6 @@ using StreamId = uint32_t;
 /// IntrusiveDeleter's reference count, which shall be shared by all mixins that
 /// perform automatic memory management.
 class MixinTerminator {
-    // The `protected` below is intentional and makes sense.
-//    : protected IntrusiveDeleter {
  public:
   /// A dependent type which encapsulates all parameters needed to initialise
   /// any of the mixins and the final automata. Must be the only argument to the
