@@ -16,14 +16,14 @@
 
 namespace reactivesocket {
 
-void ChannelRequesterBase::onSubscribe(std::shared_ptr<Subscription> subscription) {
+void ChannelRequesterBase::onSubscribeImpl(std::shared_ptr<Subscription> subscription) {
   CHECK(State::NEW == state_);
   Base::onSubscribe(subscription);
   // Request the first payload immediately.
   subscription->request(1);
 }
 
-void ChannelRequesterBase::onNext(Payload request) {
+void ChannelRequesterBase::onNextImpl(Payload request) {
   switch (state_) {
     case State::NEW: {
       state_ = State::REQUESTED;
@@ -59,7 +59,7 @@ void ChannelRequesterBase::onNext(Payload request) {
   }
 }
 
-void ChannelRequesterBase::onComplete() {
+void ChannelRequesterBase::onCompleteImpl() {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;
@@ -77,7 +77,7 @@ void ChannelRequesterBase::onComplete() {
   }
 }
 
-void ChannelRequesterBase::onError(folly::exception_wrapper ex) {
+void ChannelRequesterBase::onErrorImpl(folly::exception_wrapper ex) {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;
@@ -93,7 +93,7 @@ void ChannelRequesterBase::onError(folly::exception_wrapper ex) {
   }
 }
 
-void ChannelRequesterBase::request(size_t n) {
+void ChannelRequesterBase::requestImpl(size_t n) {
   switch (state_) {
     case State::NEW:
       // The initial request has not been sent out yet, hence we must accumulate
@@ -110,7 +110,7 @@ void ChannelRequesterBase::request(size_t n) {
   }
 }
 
-void ChannelRequesterBase::cancel() {
+void ChannelRequesterBase::cancelImpl() {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;
@@ -177,8 +177,8 @@ void ChannelRequesterBase::onNextFrame(Frame_ERROR&& frame) {
   }
 }
 
-std::ostream& ChannelRequesterBase::logPrefix(std::ostream& os) {
-  return os << "ChannelRequester(" << &connection_ << ", " << streamId_
-            << "): ";
+std::shared_ptr<SharedFromThisBase> ChannelRequesterBase::sharedFromThisImpl() {
+  return std::static_pointer_cast<SharedFromThisBase>(shared_from_this());
 }
+
 }

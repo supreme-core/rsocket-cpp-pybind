@@ -30,49 +30,52 @@ enum class StreamCompletionSignal;
 
 /// Implementation of stream automaton that represents a Channel requester.
 class ChannelRequesterBase
-    : public PublisherMixin<
+    : public StreamIfMixin<PublisherMixin<
           Frame_REQUEST_CHANNEL,
-          ConsumerMixin<Frame_RESPONSE, MixinTerminator>> {
-  using Base = PublisherMixin<
+          ConsumerMixin<Frame_RESPONSE, MixinTerminator>>>,
+      public SubscriberBase,
+      public SubscriptionBase,
+      public std::enable_shared_from_this<ChannelRequesterBase>     {
+  using Base = StreamIfMixin<PublisherMixin<
       Frame_REQUEST_CHANNEL,
-      ConsumerMixin<Frame_RESPONSE, MixinTerminator>>;
+      ConsumerMixin<Frame_RESPONSE, MixinTerminator>>>;
 
  public:
-  using Base::Base;
+  struct Parameters : Base::Parameters {
+    Parameters(
+        const Base::Parameters& baseParams,
+        folly::Executor& _executor)
+        : Base::Parameters(baseParams), executor(_executor) {}
+    folly::Executor& executor;
+  };
 
+  ChannelRequesterBase(const Parameters& params)
+      : ExecutorBase(params.executor), Base(params) {}
+
+private:
   /// @{
-  /// A Subscriber implementation exposed to the user of ReactiveSocket to
-  /// receive "request" payloads.
-  void onSubscribe(std::shared_ptr<Subscription>);
-
-  void onNext(Payload);
-
-  void onComplete();
-
-  void onError(folly::exception_wrapper);
+  void onSubscribeImpl(std::shared_ptr<Subscription>) override;
+  void onNextImpl(Payload) override;
+  void onCompleteImpl() override;
+  void onErrorImpl(folly::exception_wrapper) override;
   /// @}
 
   /// @{
-  void request(size_t);
-
-  void cancel();
+  void requestImpl(size_t) override;
+  void cancelImpl() override;
   /// @}
 
-  std::ostream& logPrefix(std::ostream& os);
-
- protected:
   /// @{
-  void endStream(StreamCompletionSignal);
+  void endStream(StreamCompletionSignal) override;
 
   /// Not all frames are intercepted, some just pass through.
   using Base::onNextFrame;
-
-  void onNextFrame(Frame_RESPONSE&&);
-
-  void onNextFrame(Frame_ERROR&&);
+  void onNextFrame(Frame_RESPONSE&&) override;
+  void onNextFrame(Frame_ERROR&&) override;
   /// @}
 
- private:
+  std::shared_ptr<SharedFromThisBase> sharedFromThisImpl() override;
+
   /// State of the Channel requester.
   enum class State : uint8_t {
     NEW,
@@ -84,6 +87,8 @@ class ChannelRequesterBase
   reactivestreams::AllowanceSemaphore initialResponseAllowance_;
 };
 
-using ChannelRequester = SourceIfMixin<SinkIfMixin<StreamIfMixin<
-    ExecutorMixin<MemoryMixin<LoggingMixin<ChannelRequesterBase>>>>>>;
+// using ChannelRequester = SourceIfMixin<SinkIfMixin<StreamIfMixin<
+//     ExecutorMixin<MemoryMixin<LoggingMixin<ChannelRequesterBase>>>>>>;
+
+using ChannelRequester = ChannelRequesterBase;
 }
