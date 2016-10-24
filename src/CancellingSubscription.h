@@ -10,8 +10,8 @@ namespace reactivesocket {
 
 class CancellingSubscription : public Subscription {
  public:
-  explicit CancellingSubscription(Subscriber<Payload>& subscriber)
-      : subscriber_(&subscriber) {}
+  explicit CancellingSubscription(std::shared_ptr<Subscriber<Payload>> subscriber)
+      : subscriber_(std::move(subscriber)) {}
 
   // Subscription methods
   void request(size_t n) override {

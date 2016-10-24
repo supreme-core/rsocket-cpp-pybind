@@ -297,18 +297,4 @@ target_link_libraries(
 
 add_dependencies(tcpresumeserver gmock)
 
-add_executable(
-        subscriber_non_payload
-	test/simple/SubscriberNonPayloadTest.cpp
-)
-
-target_link_libraries(
-        subscriber_non_payload
-        ReactiveSocket
-        ${FOLLY_LIBRARIES}
-        ${CMAKE_THREAD_LIBS_INIT}
-)
-
-add_dependencies(subscriber_non_payload ReactiveSocket ReactiveStreams)
-
 # EOF

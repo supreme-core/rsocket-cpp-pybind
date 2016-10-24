@@ -43,7 +43,7 @@ class ChannelRequesterBase
   /// @{
   /// A Subscriber implementation exposed to the user of ReactiveSocket to
   /// receive "request" payloads.
-  void onSubscribe(Subscription&);
+  void onSubscribe(std::shared_ptr<Subscription>);
 
   void onNext(Payload);
 

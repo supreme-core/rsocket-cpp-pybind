@@ -15,7 +15,7 @@ class MockRequestHandlerBase : public RequestHandlerBase {
  public:
   MOCK_METHOD2(
       handleRequestChannel_,
-      Subscriber<Payload>*(Payload& request, SubscriberFactory&));
+      std::shared_ptr<Subscriber<Payload>>(Payload& request, SubscriberFactory&));
   MOCK_METHOD2(
       handleRequestStream_,
       void(Payload& request, SubscriberFactory&));
@@ -31,10 +31,10 @@ class MockRequestHandlerBase : public RequestHandlerBase {
       void(std::unique_ptr<folly::IOBuf>& request));
   MOCK_METHOD1(handleSetupPayload_, void(ConnectionSetupPayload& request));
 
-  Subscriber<Payload>& onRequestChannel(
+  std::shared_ptr<Subscriber<Payload>> onRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) override {
-    return *handleRequestChannel_(request, subscriberFactory);
+    return handleRequestChannel_(request, subscriberFactory);
   }
 
   void onRequestStream(
@@ -72,41 +72,41 @@ class MockRequestHandler : public RequestHandler {
  public:
   MOCK_METHOD2(
       handleRequestChannel_,
-      Subscriber<Payload>*(Payload& request, Subscriber<Payload>*));
+      std::shared_ptr<Subscriber<Payload>>(Payload& request, const std::shared_ptr<Subscriber<Payload>>&));
   MOCK_METHOD2(
       handleRequestStream_,
-      void(Payload& request, Subscriber<Payload>*));
+      void(Payload& request, const std::shared_ptr<Subscriber<Payload>>&));
   MOCK_METHOD2(
       handleRequestSubscription_,
-      void(Payload& request, Subscriber<Payload>*));
+      void(Payload& request, const std::shared_ptr<Subscriber<Payload>>&));
   MOCK_METHOD2(
       handleRequestResponse_,
-      void(Payload& request, Subscriber<Payload>*));
+      void(Payload& request, const std::shared_ptr<Subscriber<Payload>>&));
   MOCK_METHOD1(handleFireAndForgetRequest_, void(Payload& request));
   MOCK_METHOD1(
       handleMetadataPush_,
       void(std::unique_ptr<folly::IOBuf>& request));
   MOCK_METHOD1(handleSetupPayload_, void(ConnectionSetupPayload& request));
 
-  Subscriber<Payload>& handleRequestChannel(
+  std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
-      Subscriber<Payload>& response) override {
-    return *handleRequestChannel_(request, &response);
+      const std::shared_ptr<Subscriber<Payload>>& response) override {
+    return handleRequestChannel_(request, response);
   }
 
-  void handleRequestStream(Payload request, Subscriber<Payload>& response)
+  void handleRequestStream(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
-    handleRequestStream_(request, &response);
+    handleRequestStream_(request, response);
   }
 
-  void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
+  void handleRequestSubscription(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
-    handleRequestSubscription_(request, &response);
+    handleRequestSubscription_(request, response);
   }
 
-  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
+  void handleRequestResponse(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
-    handleRequestResponse_(request, &response);
+    handleRequestResponse_(request, response);
   }
 
   void handleFireAndForgetRequest(Payload request) override {

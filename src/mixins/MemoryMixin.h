@@ -2,6 +2,10 @@
 
 #pragma once
 
+//TODO: will completely go away in the next round
+
+#include <memory>
+
 #include <cstddef>
 #include <type_traits>
 
@@ -32,105 +36,107 @@ namespace reactivesocket {
 /// Subscription or the Subscriber interface.
 template <typename Base, typename T = Payload>
 class MemoryMixin : public Base {
-  static_assert(
-      std::is_base_of<IntrusiveDeleter, Base>::value,
-      "Base must be a descendant of IntrusiveDeleter");
+//  static_assert(
+//      std::is_base_of<IntrusiveDeleter, Base>::value,
+//      "Base must be a descendant of IntrusiveDeleter");
 
  public:
   using Base::Base;
 
-  ~MemoryMixin() {}
-
-  /// @{
-  /// Publisher<T>
-  void subscribe(Subscriber<T>& subscriber) {
-    Base::incrementRefCount();
-    Base::subscribe(subscriber);
-  }
-  /// @}
-
-  /// @{
-  /// Subscription
-  void request(size_t n) {
-    Base::request(n);
-  }
-
-  void cancel() {
-    Base::cancel();
-    Base::decrementRefCount();
-  }
-  /// @}
-
-  /// @{
-  /// Subscriber<T>
-  void onSubscribe(Subscription& subscription) {
-    Base::incrementRefCount();
-    Base::onSubscribe(subscription);
-  }
-
-  void onNext(T payload) {
-    Base::onNext(std::move(payload));
-  }
-
-  void onComplete() {
-    Base::onComplete();
-    Base::decrementRefCount();
-  }
-
-  void onError(folly::exception_wrapper ex) {
-    Base::onError(std::move(ex));
-    Base::decrementRefCount();
-  }
-  /// @}
-
-  /// @{
-  void endStream(StreamCompletionSignal signal) {
-    Base::endStream(signal);
-    Base::decrementRefCount();
-  }
-  /// @}
-
-  std::ostream& logPrefix(std::ostream& os) {
-    return os << "MemoryMixin(" << &this->connection_ << ", " << this->streamId_
-              << "): ";
-  }
-
- protected:
-  /// @{
-  template <typename Frame>
-  void onNextFrame(Frame&& frame) {
-    Base::onNextFrame(std::move(frame));
-  }
-
-  void onBadFrame() {
-    Base::onBadFrame();
-  }
-  /// @}
+//  ~MemoryMixin() {}
+//
+//  /// @{
+//  /// Publisher<T>
+//  void subscribe(Subscriber<T>& subscriber) {
+//    Base::incrementRefCount();
+//    Base::subscribe(subscriber);
+//  }
+//  /// @}
+//
+//  /// @{
+//  /// Subscription
+//  void request(size_t n) {
+//    Base::request(n);
+//  }
+//
+//  void cancel() {
+//    Base::cancel();
+//    Base::decrementRefCount();
+//  }
+//  /// @}
+//
+//  /// @{
+//  /// Subscriber<T>
+//  void onSubscribe(Subscription& subscription) {
+//    Base::incrementRefCount();
+//    Base::onSubscribe(subscription);
+//  }
+//
+//  void onNext(T payload) {
+//    Base::onNext(std::move(payload));
+//  }
+//
+//  void onComplete() {
+//    Base::onComplete();
+//    Base::decrementRefCount();
+//  }
+//
+//  void onError(folly::exception_wrapper ex) {
+//    Base::onError(std::move(ex));
+//    Base::decrementRefCount();
+//  }
+//  /// @}
+//
+//  /// @{
+//  void endStream(StreamCompletionSignal signal) {
+//    Base::endStream(signal);
+//    Base::decrementRefCount();
+//  }
+//  /// @}
+//
+//  std::ostream& logPrefix(std::ostream& os) {
+//    return os << "MemoryMixin(" << &this->connection_ << ", " << this->streamId_
+//              << "): ";
+//  }
+//
+// protected:
+//  /// @{
+//  template <typename Frame>
+//  void onNextFrame(Frame&& frame) {
+//    Base::onNextFrame(std::move(frame));
+//  }
+//
+//  void onBadFrame() {
+//    Base::onBadFrame();
+//  }
+//  /// @}
 };
 
-namespace details {
-
-template <typename Base>
-class WithIntrusiveDeleter {
-  class BaseWithIntrusiveDeleter : public IntrusiveDeleter, public Base {
-   public:
-    using Base::Base;
-  };
-
- public:
-  using T = typename std::conditional<
-      std::is_base_of<IntrusiveDeleter, Base>::value,
-      Base,
-      BaseWithIntrusiveDeleter>::type;
-};
-
-} // namespace details
+//namespace details {
+//
+//template <typename Base>
+//class WithIntrusiveDeleter {
+//  class BaseWithIntrusiveDeleter : public IntrusiveDeleter, public Base {
+//   public:
+//    using Base::Base;
+//  };
+//
+// public:
+//  using T = typename std::conditional<
+//      std::is_base_of<IntrusiveDeleter, Base>::value,
+//      Base,
+//      BaseWithIntrusiveDeleter>::type;
+//};
+//
+//} // namespace details
+//
 
 template <typename Base, typename T = Payload, typename... TArgs>
-Base& createManagedInstance(TArgs&&... args) {
-  auto* instance =
-      new MemoryMixin<typename details::WithIntrusiveDeleter<Base>::T, T>(
-          std::forward<TArgs>(args)...);
-  return *instance;
+std::shared_ptr<Base> createManagedInstance(TArgs&&... args) {
+  return std::make_shared<Base>(std::forward<TArgs>(args)...);
+//  auto* instance =
+//      new MemoryMixin<typename details::WithIntrusiveDeleter<Base>::T, T>(
+//          std::forward<TArgs>(args)...);
+//  return *instance;
 }
 }

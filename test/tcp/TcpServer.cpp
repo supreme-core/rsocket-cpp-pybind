@@ -22,9 +22,9 @@ namespace {
 class ServerSubscription : public Subscription {
  public:
   explicit ServerSubscription(
-      Subscriber<Payload>& response,
+      std::shared_ptr<Subscriber<Payload>> response,
       size_t numElems = 2)
-      : response_(response), numElems_(numElems) {}
+      : response_(std::move(response)), numElems_(numElems) {}
 
   ~ServerSubscription(){};
 
@@ -40,33 +40,33 @@ class ServerSubscription : public Subscription {
   void cancel() override {}
 
  private:
-  Subscriber<Payload>& response_;
+  SubscriberPtr<Subscriber<Payload>> response_;
   size_t numElems_;
 };
 
 class ServerRequestHandler : public DefaultRequestHandler {
  public:
   /// Handles a new inbound Subscription requested by the other end.
-  void handleRequestSubscription(Payload request, Subscriber<Payload>& response)
+  void handleRequestSubscription(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
     LOG(INFO) << "ServerRequestHandler.handleRequestSubscription " << request;
 
-    response.onSubscribe(createManagedInstance<ServerSubscription>(response));
+    response->onSubscribe(createManagedInstance<ServerSubscription>(response));
   }
 
   /// Handles a new inbound Stream requested by the other end.
-  void handleRequestStream(Payload request, Subscriber<Payload>& response)
+  void handleRequestStream(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
     LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
 
-    response.onSubscribe(createManagedInstance<ServerSubscription>(response));
+    response->onSubscribe(createManagedInstance<ServerSubscription>(response));
   }
 
-  void handleRequestResponse(Payload request, Subscriber<Payload>& response)
+  void handleRequestResponse(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
       override {
     LOG(INFO) << "ServerRequestHandler.handleRequestResponse " << request;
 
-    response.onSubscribe(
+    response->onSubscribe(
         createManagedInstance<ServerSubscription>(response, 1));
   }
 

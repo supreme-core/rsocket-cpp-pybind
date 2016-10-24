@@ -24,7 +24,12 @@ namespace reactivesocket {
 ///
 /// Uses lazy method instantiantiation trick, see LoggingMixin.
 template <typename Base>
-class ExecutorMixin : public Base {
+class ExecutorMixin : public Base,
+                      public std::enable_shared_from_this<ExecutorMixin<Base>> {
+  static_assert(
+      !std::is_base_of<std::enable_shared_from_this<Base>, Base>::value,
+      "enable_shared_from_this is already inherited");
+
  public:
   struct Parameters : Base::Parameters {
     Parameters(
@@ -57,47 +62,49 @@ class ExecutorMixin : public Base {
 
   /// @{
   /// Publisher<Payload>
-  void subscribe(Subscriber<Payload>& subscriber) {
+  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
     // This call punches through the executor-enforced ordering, to ensure that
     // the Subscriber pointer is set as soon as possible.
     // More esoteric reason: this is not a signal in ReactiveStreams language.
-    Base::subscribe(subscriber);
+    Base::subscribe(std::move(subscriber));
   }
   /// @}
 
   /// @{
   /// Subscription
   void request(size_t n) {
-    runInExecutor(std::bind(&Base::request, this, n));
+    runInExecutor(std::bind(&Base::request, this->shared_from_this(), n));
   }
 
   void cancel() {
-    runInExecutor(std::bind(&Base::cancel, this));
+    runInExecutor(std::bind(&Base::cancel, this->shared_from_this()));
   }
   /// @}
 
   /// @{
   /// Subscriber<Payload>
-  void onSubscribe(Subscription& subscription) {
+  void onSubscribe(std::shared_ptr<Subscription> subscription) {
     // This call punches through the executor-enforced ordering, to ensure that
     // the Subscription pointer is set as soon as possible.
     // More esoteric reason: this is not a signal in ReactiveStreams language.
-    Base::onSubscribe(subscription);
+    Base::onSubscribe(std::move(subscription));
   }
 
   void onNext(Payload payload) {
     auto movedPayload = folly::makeMoveWrapper(std::move(payload));
+    std::shared_ptr<Base> basePtr = this->shared_from_this();
     runInExecutor(
-        [this, movedPayload]() mutable { Base::onNext(movedPayload.move()); });
+        [basePtr, movedPayload]() mutable { basePtr->onNext(movedPayload.move()); });
   }
 
   void onComplete() {
-    runInExecutor(std::bind(&Base::onComplete, this));
+    runInExecutor(std::bind(&Base::onComplete, this->shared_from_this()));
   }
 
   void onError(folly::exception_wrapper ex) {
     auto movedEx = folly::makeMoveWrapper(std::move(ex));
-    runInExecutor([this, movedEx]() mutable { Base::onError(movedEx.move()); });
+    std::shared_ptr<Base> basePtr = this->shared_from_this();
+    runInExecutor([basePtr, movedEx]() mutable { basePtr->onError(movedEx.move()); });
   }
   /// @}
 

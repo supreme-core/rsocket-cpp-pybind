@@ -2,7 +2,6 @@
 
 #include "TcpDuplexConnection.h"
 #include <folly/ExceptionWrapper.h>
-#include <folly/Memory.h>
 #include <glog/logging.h>
 #include "src/mixins/MemoryMixin.h"
 
@@ -17,19 +16,17 @@ void TcpSubscriptionBase::cancel() {
   connection_.closeFromReader();
 }
 
-Subscriber<std::unique_ptr<folly::IOBuf>>& TcpDuplexConnection::getOutput() {
+std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> TcpDuplexConnection::getOutput() {
   if (!outputSubscriber_) {
-    outputSubscriber_ = folly::make_unique<TcpOutputSubscriber>(*this);
+    outputSubscriber_ = std::make_shared<TcpOutputSubscriber>(*this);
   }
-  return *outputSubscriber_;
+  return outputSubscriber_;
 };
 
 void TcpDuplexConnection::setInput(
-    Subscriber<std::unique_ptr<folly::IOBuf>>& inputSubscriber) {
-  inputSubscriber_.reset(&inputSubscriber);
-
-  auto& subscription = createManagedInstance<TcpSubscriptionBase>(*this);
-  inputSubscriber.onSubscribe(subscription);
+    std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSubscriber) {
+  inputSubscriber_.reset(std::move(inputSubscriber));
+  inputSubscriber_.onSubscribe(createManagedInstance<TcpSubscriptionBase>(*this));
 
   socket_->setReadCB(this);
 };
@@ -93,9 +90,9 @@ void TcpDuplexConnection::closeFromReader() {
   socket_->close();
 }
 
-void TcpOutputSubscriber::onSubscribe(Subscription& subscription) {
+void TcpOutputSubscriber::onSubscribe(std::shared_ptr<Subscription> subscription) {
   // no flow control at tcp level, since we can't know the size of messages
-  subscription.request(std::numeric_limits<size_t>::max());
+  subscription->request(std::numeric_limits<size_t>::max());
 };
 
 void TcpOutputSubscriber::onNext(std::unique_ptr<folly::IOBuf> element) {

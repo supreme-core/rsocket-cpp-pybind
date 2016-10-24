@@ -121,8 +121,8 @@ void TestSubscriber::assertTerminated() {
   }
 }
 
-void TestSubscriber::onSubscribe(Subscription& subscription) {
-  subscription_.reset(&subscription);
+void TestSubscriber::onSubscribe(std::shared_ptr<Subscription> subscription) {
+  subscription_.reset(std::move(subscription));
 
   //  actual.onSubscribe(s);
 
@@ -131,7 +131,7 @@ void TestSubscriber::onSubscribe(Subscription& subscription) {
   //  }
 
   if (initialRequestN_ > 0) {
-    subscription.request(initialRequestN_);
+    subscription_.request(initialRequestN_);
   }
 
   //  long mr = missedRequested.getAndSet(0L);

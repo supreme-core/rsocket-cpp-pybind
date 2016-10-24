@@ -80,26 +80,24 @@ class ReactiveSocket {
              const ResumeIdentificationToken&,
              ResumePosition) { return false; });
 
-  Subscriber<Payload>& requestChannel(
-      Subscriber<Payload>& responseSink,
+  std::shared_ptr<Subscriber<Payload>> requestChannel(
+      const std::shared_ptr<Subscriber<Payload>>& responseSink,
       folly::Executor& executor = defaultExecutor());
 
   void requestStream(
       Payload payload,
-      Subscriber<Payload>& responseSink,
+      const std::shared_ptr<Subscriber<Payload>>& responseSink,
       folly::Executor& executor = defaultExecutor());
 
   void requestSubscription(
       Payload payload,
-      Subscriber<Payload>& responseSink,
+      const std::shared_ptr<Subscriber<Payload>>& responseSink,
+      folly::Executor& executor = defaultExecutor());
+
+  void requestResponse(Payload payload, const std::shared_ptr<Subscriber<Payload>>& responseSink,
       folly::Executor& executor = defaultExecutor());
 
   void requestFireAndForget(Payload request);
-
-  void requestResponse(
-      Payload payload,
-      Subscriber<Payload>& responseSink,
-      folly::Executor& executor = defaultExecutor());
 
   void close();
 

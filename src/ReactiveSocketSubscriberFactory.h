@@ -9,18 +9,18 @@ namespace reactivesocket {
 class ReactiveSocketSubscriberFactory : public SubscriberFactory {
  public:
   using TFactoryCallback =
-      std::function<Subscriber<Payload>&(folly::Executor*)>;
+      std::function<std::shared_ptr<Subscriber<Payload>>(folly::Executor*)>;
 
   ReactiveSocketSubscriberFactory(TFactoryCallback factoryCallback)
       : factoryCallback_(std::move(factoryCallback)) {}
 
-  Subscriber<Payload>& createSubscriber() override {
+  std::shared_ptr<Subscriber<Payload>> createSubscriber() override {
     CHECK(factoryCallback_);
     auto call = std::move(factoryCallback_);
     return call(nullptr);
   }
 
-  Subscriber<Payload>& createSubscriber(folly::Executor& executor) override {
+  std::shared_ptr<Subscriber<Payload>> createSubscriber(folly::Executor& executor) override {
     CHECK(factoryCallback_);
     auto call = std::move(factoryCallback_);
     return call(&executor);

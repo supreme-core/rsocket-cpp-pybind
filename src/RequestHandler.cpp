@@ -4,7 +4,7 @@
 
 namespace reactivesocket {
 
-Subscriber<Payload>& RequestHandler::onRequestChannel(
+std::shared_ptr<Subscriber<Payload>> RequestHandler::onRequestChannel(
     Payload request,
     SubscriberFactory& subscriberFactory) {
   return handleRequestChannel(

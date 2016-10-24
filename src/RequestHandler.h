@@ -15,8 +15,8 @@ namespace reactivesocket {
 class SubscriberFactory {
  public:
   virtual ~SubscriberFactory() = default;
-  virtual Subscriber<Payload>& createSubscriber() = 0;
-  virtual Subscriber<Payload>& createSubscriber(folly::Executor& executor) = 0;
+  virtual std::shared_ptr<Subscriber<Payload>> createSubscriber() = 0;
+  virtual std::shared_ptr<Subscriber<Payload>> createSubscriber(folly::Executor& executor) = 0;
 };
 
 class RequestHandlerBase {
@@ -31,7 +31,7 @@ class RequestHandlerBase {
   //
 
   /// Handles a new Channel requested by the other end.
-  virtual Subscriber<Payload>& onRequestChannel(
+  virtual std::shared_ptr<Subscriber<Payload>> onRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) = 0;
 
@@ -69,27 +69,27 @@ class RequestHandler : public RequestHandlerBase {
   //
 
   /// Handles a new Channel requested by the other end.
-  virtual Subscriber<Payload>& handleRequestChannel(
+  virtual std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new Stream requested by the other end.
   virtual void handleRequestStream(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new inbound Subscription requested by the other end.
   virtual void handleRequestSubscription(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new inbound RequestResponse requested by the other end.
   virtual void handleRequestResponse(
       Payload request,
-      Subscriber<Payload>& response) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
  private:
-  Subscriber<Payload>& onRequestChannel(
+  std::shared_ptr<Subscriber<Payload>> onRequestChannel(
       Payload request,
       SubscriberFactory& subscriberFactory) override;
 
