@@ -7,16 +7,17 @@
 #include <reactive-streams/utilities/AllowanceSemaphore.h>
 #include <reactive-streams/utilities/SmartPointers.h>
 #include "src/ReactiveStreamsCompat.h"
+#include "src/mixins/ExecutorMixin.h"
 
 namespace reactivesocket {
 
-class FramedReader :
-      public reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>,
-      public reactivesocket::Subscription,
-      public std::enable_shared_from_this<FramedReader> {
+class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
+                     public SubscriptionBase,
+                     public EnableSharedFromThisBase<FramedReader> {
  public:
   FramedReader(
-      std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>> frames)
+      std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+          frames)
       : frames_(std::move(frames)),
         payloadQueue_(folly::IOBufQueue::cacheChainLength()) {}
 
@@ -25,17 +26,20 @@ class FramedReader :
   // if there is code to execute after calling into the callbacks
   //
 
+ private:
+
+  using EnableSharedFromThisBase<FramedReader>::shared_from_this;
+
   // Subscriber methods
-  void onSubscribe(std::shared_ptr<Subscription> subscription) override;
-  void onNext(std::unique_ptr<folly::IOBuf> element) override;
-  void onComplete() override;
-  void onError(folly::exception_wrapper ex) override;
+  void onSubscribeImpl(std::shared_ptr<Subscription> subscription) override;
+  void onNextImpl(std::unique_ptr<folly::IOBuf> element) override;
+  void onCompleteImpl() override;
+  void onErrorImpl(folly::exception_wrapper ex) override;
 
   // Subscription methods
-  void request(size_t n) override;
-  void cancel() override;
+  void requestImpl(size_t n) override;
+  void cancelImpl() override;
 
- private:
   void parseFrames();
   void requestStream();
 

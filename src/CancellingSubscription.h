@@ -5,24 +5,25 @@
 #include <reactive-streams/utilities/SmartPointers.h>
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/mixins/ExecutorMixin.h"
 
 namespace reactivesocket {
 
-class CancellingSubscription : public Subscription {
+class CancellingSubscription : public SubscriptionBase {
  public:
-  explicit CancellingSubscription(std::shared_ptr<Subscriber<Payload>> subscriber)
+  explicit CancellingSubscription(
+      std::shared_ptr<Subscriber<Payload>> subscriber)
       : subscriber_(std::move(subscriber)) {}
 
-  // Subscription methods
-  void request(size_t n) override {
-    subscriber_.onComplete();
-  }
-
-  void cancel() override {
-    subscriber_.onComplete();
-  }
-
  private:
+  void requestImpl(size_t n) override {
+    subscriber_.onComplete();
+  }
+
+  void cancelImpl() override {
+    subscriber_.onComplete();
+  }
+
   SubscriberPtr<Subscriber<Payload>> subscriber_;
 };
 

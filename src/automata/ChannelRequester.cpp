@@ -8,6 +8,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/io/IOBuf.h>
 #include <glog/logging.h>
+#include <folly/futures/QueuedImmediateExecutor.h>
 
 #include "src/ConnectionAutomaton.h"
 #include "src/Frame.h"
@@ -16,7 +17,8 @@
 
 namespace reactivesocket {
 
-void ChannelRequesterBase::onSubscribeImpl(std::shared_ptr<Subscription> subscription) {
+void ChannelRequesterBase::onSubscribeImpl(
+    std::shared_ptr<Subscription> subscription) {
   CHECK(State::NEW == state_);
   Base::onSubscribe(subscription);
   // Request the first payload immediately.
@@ -177,8 +179,11 @@ void ChannelRequesterBase::onNextFrame(Frame_ERROR&& frame) {
   }
 }
 
-std::shared_ptr<SharedFromThisBase> ChannelRequesterBase::sharedFromThisImpl() {
-  return std::static_pointer_cast<SharedFromThisBase>(shared_from_this());
+template class SubscriberBaseT<Payload>;
+
+folly::Executor& defaultExecutor() {
+  static folly::QueuedImmediateExecutor immediateExecutor;
+  return immediateExecutor;
 }
 
 }

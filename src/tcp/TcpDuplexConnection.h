@@ -76,9 +76,11 @@ class TcpDuplexConnection
     stats_.connectionClosed("tcp", this);
   };
 
-  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput() override;
+  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput()
+      override;
 
-  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> framesSink) override;
+  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+                    framesSink) override;
 
   void send(std::unique_ptr<folly::IOBuf> element);
 

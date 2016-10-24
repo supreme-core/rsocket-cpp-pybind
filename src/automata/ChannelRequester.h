@@ -34,25 +34,22 @@ class ChannelRequesterBase
           Frame_REQUEST_CHANNEL,
           ConsumerMixin<Frame_RESPONSE, MixinTerminator>>>,
       public SubscriberBase,
-      public SubscriptionBase,
-      public std::enable_shared_from_this<ChannelRequesterBase>     {
+      public SubscriptionBase {
   using Base = StreamIfMixin<PublisherMixin<
       Frame_REQUEST_CHANNEL,
       ConsumerMixin<Frame_RESPONSE, MixinTerminator>>>;
 
  public:
   struct Parameters : Base::Parameters {
-    Parameters(
-        const Base::Parameters& baseParams,
-        folly::Executor& _executor)
+    Parameters(const Base::Parameters& baseParams, folly::Executor& _executor)
         : Base::Parameters(baseParams), executor(_executor) {}
     folly::Executor& executor;
   };
 
   ChannelRequesterBase(const Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
+      : ExecutorBase(params.executor, false), Base(params) {}
 
-private:
+ private:
   /// @{
   void onSubscribeImpl(std::shared_ptr<Subscription>) override;
   void onNextImpl(Payload) override;
@@ -73,8 +70,6 @@ private:
   void onNextFrame(Frame_RESPONSE&&) override;
   void onNextFrame(Frame_ERROR&&) override;
   /// @}
-
-  std::shared_ptr<SharedFromThisBase> sharedFromThisImpl() override;
 
   /// State of the Channel requester.
   enum class State : uint8_t {

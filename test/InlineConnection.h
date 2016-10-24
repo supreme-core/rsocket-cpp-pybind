@@ -36,9 +36,11 @@ class InlineConnection : public DuplexConnection {
   /// accessing input or output of the connection.
   void connectTo(InlineConnection& other);
 
-  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSink) override;
+  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+                    inputSink) override;
 
-  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput() override;
+  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput()
+      override;
 
  private:
   InlineConnection* other_{nullptr};

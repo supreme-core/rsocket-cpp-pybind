@@ -48,7 +48,8 @@ void InlineConnection::setInput(
   }
 }
 
-std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> InlineConnection::getOutput() {
+std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+InlineConnection::getOutput() {
   using namespace ::testing;
 
   auto outputSink = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
@@ -80,9 +81,12 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> InlineConnection::get
         // invoked on the other end's input, in order for ::onNext to be called
         // on this end's output.
         ASSERT_TRUE(other_->inputSink_);
-        // calling onNext can result in calling terminating signals (onComplete/onError/cancel)
-        // and releasing shared_ptrs which may destroy object instances while onNext method is still on the stack
-        // we will protect against such bugs by keeping a strong reference to the object while in onNext method
+        // calling onNext can result in calling terminating signals
+        // (onComplete/onError/cancel)
+        // and releasing shared_ptrs which may destroy object instances while
+        // onNext method is still on the stack
+        // we will protect against such bugs by keeping a strong reference to
+        // the object while in onNext method
         auto otherInputSink = other_->inputSink_;
         otherInputSink->onNext(std::move(frame));
       }));

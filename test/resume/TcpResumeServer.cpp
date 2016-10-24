@@ -34,8 +34,7 @@ class ServerSubscription : public Subscription {
     //    response_.onError(std::runtime_error("XXX"));
   }
 
-  void cancel() override {
-  }
+  void cancel() override {}
 
  private:
   SubscriberPtr<Subscriber<Payload>> response_;
@@ -44,16 +43,18 @@ class ServerSubscription : public Subscription {
 class ServerRequestHandler : public DefaultRequestHandler {
  public:
   /// Handles a new inbound Subscription requested by the other end.
-  void handleRequestSubscription(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
-      override {
+  void handleRequestSubscription(
+      Payload request,
+      const std::shared_ptr<Subscriber<Payload>>& response) override {
     LOG(INFO) << "ServerRequestHandler.handleRequestSubscription " << request;
 
     response->onSubscribe(createManagedInstance<ServerSubscription>(response));
   }
 
   /// Handles a new inbound Stream requested by the other end.
-  void handleRequestStream(Payload request, const std::shared_ptr<Subscriber<Payload>>& response)
-      override {
+  void handleRequestStream(
+      Payload request,
+      const std::shared_ptr<Subscriber<Payload>>& response) override {
     LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
 
     response->onSubscribe(createManagedInstance<ServerSubscription>(response));

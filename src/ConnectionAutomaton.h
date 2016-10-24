@@ -89,7 +89,9 @@ class ConnectionAutomaton :
   /// No frames will be issued as a result of this call. Stream automaton
   /// must take care of writing appropriate frames to the connection, using
   /// ::writeFrame after calling this method.
-  void addStream(StreamId streamId, std::shared_ptr<AbstractStreamAutomaton> automaton);
+  void addStream(
+      StreamId streamId,
+      std::shared_ptr<AbstractStreamAutomaton> automaton);
 
   /// Enqueues provided frame to be written to the underlying connection.
   /// Enqueuing a terminal frame does not end the stream.
@@ -176,7 +178,8 @@ class ConnectionAutomaton :
       connectionOutput_;
   reactivestreams::SubscriptionPtr<Subscription> connectionInputSub_;
 
-  std::unordered_map<StreamId, std::shared_ptr<AbstractStreamAutomaton>> streams_;
+  std::unordered_map<StreamId, std::shared_ptr<AbstractStreamAutomaton>>
+      streams_;
 
   reactivestreams::AllowanceSemaphore writeAllowance_;
 

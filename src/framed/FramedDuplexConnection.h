@@ -15,8 +15,10 @@ class FramedDuplexConnection : public virtual DuplexConnection {
   explicit FramedDuplexConnection(std::unique_ptr<DuplexConnection> connection);
   ~FramedDuplexConnection();
 
-  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput() noexcept override;
-  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> framesSink) override;
+  std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+  getOutput() noexcept override;
+  void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+                    framesSink) override;
 
  private:
   std::unique_ptr<DuplexConnection> connection_;

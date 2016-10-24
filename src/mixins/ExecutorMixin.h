@@ -19,12 +19,20 @@
 
 namespace reactivesocket {
 
-class ExecutorBase {
-public:
-    ExecutorBase(        folly::Executor& executor)
-        : executor_(executor) {}
+folly::Executor& defaultExecutor();
 
-/// We start in a queueing mode, where it merely queues signal
+class ExecutorBase {
+ public:
+  explicit ExecutorBase(
+      folly::Executor& executor = defaultExecutor(),
+      bool startExecutor = true)
+      : executor_(executor) {
+    if (!startExecutor) {
+      pendingSignals_ = folly::make_unique<PendingSignals>();
+    }
+  }
+
+  /// We start in a queueing mode, where it merely queues signal
   /// deliveries until ::start is invoked.
   ///
   /// Calling into this method may deliver all enqueued signals immediately.
@@ -51,78 +59,94 @@ public:
     }
   }
 
-private:
+ private:
   using PendingSignals = std::vector<std::function<void()>>;
-  std::unique_ptr<PendingSignals> pendingSignals_{
-      folly::make_unique<PendingSignals>()};
-
-    folly::Executor& executor_;
-
+  std::unique_ptr<PendingSignals> pendingSignals_;
+  folly::Executor& executor_;
 };
 
-//TODO: look into how to virtually inherit std::enable_shared_from_this
-class SharedFromThisBase {
-  virtual std::shared_ptr<SharedFromThisBase> sharedFromThisImpl() = 0;
- protected:
-  template<typename T>
-  std::shared_ptr<T> sharedFromThis() {
-    return std::static_pointer_cast<T>(sharedFromThisImpl());
+class EnableSharedFromThisVirtualBase
+    : public std::enable_shared_from_this<EnableSharedFromThisVirtualBase> {};
+
+template <typename T>
+class EnableSharedFromThisBase
+    : public virtual EnableSharedFromThisVirtualBase {
+ public:
+  std::shared_ptr<T> shared_from_this() {
+    std::shared_ptr<T> result(
+        EnableSharedFromThisVirtualBase::shared_from_this(),
+        static_cast<T*>(this));
+    return result;
+  }
+
+  std::shared_ptr<const T> shared_from_this() const {
+    std::shared_ptr<const T> result(
+        EnableSharedFromThisVirtualBase::shared_from_this(),
+        static_cast<const T*>(this));
+    return result;
   }
 };
 
-class SubscriberBase : public Subscriber<Payload>,
-                       public SharedFromThisBase,
-                       public virtual ExecutorBase {
+template <typename T>
+class SubscriberBaseT : public Subscriber<T>,
+                        public EnableSharedFromThisBase<SubscriberBaseT<T>>,
+                        public virtual ExecutorBase {
   virtual void onSubscribeImpl(std::shared_ptr<Subscription> subscription) = 0;
-  virtual void onNextImpl(Payload payload) = 0;
+  virtual void onNextImpl(T payload) = 0;
   virtual void onCompleteImpl() = 0;
   virtual void onErrorImpl(folly::exception_wrapper ex) = 0;
 
-public:
+ public:
   using ExecutorBase::ExecutorBase;
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override final {
-    runInExecutor(std::bind(&SubscriberBase::onSubscribeImpl, sharedFromThis<SubscriberBase>(), subscription));
+    runInExecutor(std::bind(
+        &SubscriberBaseT::onSubscribeImpl, this->shared_from_this(), subscription));
   }
 
-  void onNext(Payload payload) override final {
+  void onNext(T payload) override final {
     auto movedPayload = folly::makeMoveWrapper(std::move(payload));
-    auto thisPtr = sharedFromThis<SubscriberBase>();
-    //TODO: can we use std::bind and move the parameter into it?
-    runInExecutor(
-        [thisPtr, movedPayload]() mutable { thisPtr->onNextImpl(movedPayload.move()); });
+    auto thisPtr = this->shared_from_this();
+    // TODO: can we use std::bind and move the parameter into it?
+    runInExecutor([thisPtr, movedPayload]() mutable {
+      thisPtr->onNextImpl(movedPayload.move());
+    });
   }
 
   void onComplete() override final {
-    runInExecutor(std::bind(&SubscriberBase::onCompleteImpl, sharedFromThis<SubscriberBase>()));
+    runInExecutor(
+        std::bind(&SubscriberBaseT::onCompleteImpl, this->shared_from_this()));
   }
 
   void onError(folly::exception_wrapper ex) override final {
     auto movedEx = folly::makeMoveWrapper(std::move(ex));
-    auto thisPtr = sharedFromThis<SubscriberBase>();
-    runInExecutor([thisPtr, movedEx]() mutable { thisPtr->onErrorImpl(movedEx.move()); });
+    auto thisPtr = this->shared_from_this();
+    runInExecutor(
+        [thisPtr, movedEx]() mutable { thisPtr->onErrorImpl(movedEx.move()); });
   }
 };
 
+extern template class SubscriberBaseT<Payload>;
+using SubscriberBase = SubscriberBaseT<Payload>;
+
 class SubscriptionBase : public Subscription,
-                         public SharedFromThisBase,
+                         public EnableSharedFromThisBase<SubscriptionBase>,
                          public virtual ExecutorBase {
   virtual void requestImpl(size_t n) = 0;
   virtual void cancelImpl() = 0;
 
-public:
+ public:
   using ExecutorBase::ExecutorBase;
 
   void request(size_t n) override final {
-    runInExecutor(std::bind(&SubscriptionBase::requestImpl, sharedFromThis<SubscriptionBase>(), n));
+    runInExecutor(
+        std::bind(&SubscriptionBase::requestImpl, shared_from_this(), n));
   }
 
   void cancel() override final {
-    runInExecutor(std::bind(&SubscriptionBase::cancelImpl, sharedFromThis<SubscriptionBase>()));
+    runInExecutor(std::bind(&SubscriptionBase::cancelImpl, shared_from_this()));
   }
 };
-
-
 
 /// Instead of calling into the respective Base methods, schedules signals
 /// delivery on an executor. Non-signal methods are simply forwarded.
@@ -198,8 +222,9 @@ class ExecutorMixin : public Base,
   void onNext(Payload payload) {
     auto movedPayload = folly::makeMoveWrapper(std::move(payload));
     std::shared_ptr<Base> basePtr = this->shared_from_this();
-    runInExecutor(
-        [basePtr, movedPayload]() mutable { basePtr->onNext(movedPayload.move()); });
+    runInExecutor([basePtr, movedPayload]() mutable {
+      basePtr->onNext(movedPayload.move());
+    });
   }
 
   void onComplete() {
@@ -209,7 +234,8 @@ class ExecutorMixin : public Base,
   void onError(folly::exception_wrapper ex) {
     auto movedEx = folly::makeMoveWrapper(std::move(ex));
     std::shared_ptr<Base> basePtr = this->shared_from_this();
-    runInExecutor([basePtr, movedEx]() mutable { basePtr->onError(movedEx.move()); });
+    runInExecutor(
+        [basePtr, movedEx]() mutable { basePtr->onError(movedEx.move()); });
   }
   /// @}
 

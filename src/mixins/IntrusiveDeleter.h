@@ -1,4 +1,4 @@
-//TODO: will delete in the next round
+// TODO: will delete in the next round
 //// Copyright 2004-present Facebook. All Rights Reserved.
 //
 //#pragma once
@@ -7,11 +7,11 @@
 //#include <cstddef>
 //#include <memory>
 //
-//namespace reactivesocket {
+// namespace reactivesocket {
 //
 ///// Deletes itself using the first time the reference count, initially one,
 ///// drops to zero.
-//class IntrusiveDeleter {
+// class IntrusiveDeleter {
 // public:
 //  virtual ~IntrusiveDeleter() = 0;
 //
@@ -31,5 +31,5 @@
 //  size_t refCount_{1};
 //};
 //
-//inline IntrusiveDeleter::~IntrusiveDeleter() = default;
+// inline IntrusiveDeleter::~IntrusiveDeleter() = default;
 //}
