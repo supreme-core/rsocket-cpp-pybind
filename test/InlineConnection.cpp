@@ -56,10 +56,11 @@ InlineConnection::getOutput() {
   // A check point for either of the terminal signals.
   auto* checkpoint = new MockFunction<void()>();
 
-  Sequence s;
+  //TODO: enable Sequence
+  //Sequence s;
   EXPECT_CALL(*outputSink, onSubscribe_(_))
       .Times(AtMost(1))
-      .InSequence(s)
+//      .InSequence(s)
       .WillOnce(Invoke([this](std::shared_ptr<Subscription> subscription) {
         ASSERT_FALSE(outputSubscription_);
         outputSubscription_ = std::move(subscription);
@@ -73,7 +74,7 @@ InlineConnection::getOutput() {
       }));
   EXPECT_CALL(*outputSink, onNext_(_))
       .Times(AnyNumber())
-      .InSequence(s)
+//      .InSequence(s)
       .WillRepeatedly(Invoke([this](std::unique_ptr<folly::IOBuf>& frame) {
         ASSERT_TRUE(other_);
         ASSERT_TRUE(other_->outputSubscription_);
@@ -92,7 +93,7 @@ InlineConnection::getOutput() {
       }));
   EXPECT_CALL(*outputSink, onComplete_())
       .Times(AtMost(1))
-      .InSequence(s)
+//      .InSequence(s)
       .WillOnce(Invoke([this, checkpoint]() {
         checkpoint->Call();
         ASSERT_TRUE(other_);
@@ -110,7 +111,7 @@ InlineConnection::getOutput() {
       }));
   EXPECT_CALL(*outputSink, onError_(_))
       .Times(AtMost(1))
-      .InSequence(s)
+//      .InSequence(s)
       .WillOnce(Invoke([this, checkpoint](folly::exception_wrapper ex) {
         checkpoint->Call();
         ASSERT_TRUE(other_);
@@ -127,7 +128,7 @@ InlineConnection::getOutput() {
         }
       }));
   EXPECT_CALL(*checkpoint, Call())
-      .InSequence(s)
+//      .InSequence(s)
       .WillOnce(Invoke([checkpoint]() { delete checkpoint; }));
 
   return outputSink;

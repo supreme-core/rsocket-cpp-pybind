@@ -13,7 +13,6 @@
 #include "src/mixins/ConsumerMixin.h"
 #include "src/mixins/ExecutorMixin.h"
 #include "src/mixins/LoggingMixin.h"
-#include "src/mixins/MemoryMixin.h"
 #include "src/mixins/MixinTerminator.h"
 #include "src/mixins/PublisherMixin.h"
 #include "src/mixins/SinkIfMixin.h"
@@ -81,9 +80,6 @@ class ChannelRequesterBase
   /// Remaining part of the allowance is forwarded to the ConsumerMixin.
   reactivestreams::AllowanceSemaphore initialResponseAllowance_;
 };
-
-// using ChannelRequester = SourceIfMixin<SinkIfMixin<StreamIfMixin<
-//     ExecutorMixin<MemoryMixin<LoggingMixin<ChannelRequesterBase>>>>>>;
 
 using ChannelRequester = ChannelRequesterBase;
 }

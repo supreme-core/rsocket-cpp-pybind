@@ -3,7 +3,6 @@
 #include "TcpDuplexConnection.h"
 #include <folly/ExceptionWrapper.h>
 #include <glog/logging.h>
-#include "src/mixins/MemoryMixin.h"
 
 namespace reactivesocket {
 using namespace ::folly;
@@ -28,8 +27,7 @@ void TcpDuplexConnection::setInput(
     std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
         inputSubscriber) {
   inputSubscriber_.reset(std::move(inputSubscriber));
-  inputSubscriber_.onSubscribe(
-      createManagedInstance<TcpSubscriptionBase>(*this));
+  inputSubscriber_.onSubscribe(std::make_shared<TcpSubscriptionBase>(*this));
 
   socket_->setReadCB(this);
 };

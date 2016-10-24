@@ -256,7 +256,7 @@ bool ReactiveSocket::createResponder(
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
-            createManagedInstance<CancellingSubscription>(subscriber));
+            std::make_shared<CancellingSubscription>(subscriber));
       }
       automaton->subscribe(requestSink);
       // any calls from onSubscribe are queued until we start
@@ -286,7 +286,7 @@ bool ReactiveSocket::createResponder(
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
-            createManagedInstance<CancellingSubscription>(subscriber));
+            std::make_shared<CancellingSubscription>(subscriber));
       }
       automaton->onNextFrame(std::move(frame));
       automaton->start();
@@ -311,7 +311,7 @@ bool ReactiveSocket::createResponder(
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
-            createManagedInstance<CancellingSubscription>(subscriber));
+            std::make_shared<CancellingSubscription>(subscriber));
       }
       automaton->onNextFrame(std::move(frame));
       automaton->start();
@@ -336,7 +336,7 @@ bool ReactiveSocket::createResponder(
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
-            createManagedInstance<CancellingSubscription>(subscriber));
+            std::make_shared<CancellingSubscription>(subscriber));
       }
       automaton->onNextFrame(std::move(frame));
       automaton->start();
