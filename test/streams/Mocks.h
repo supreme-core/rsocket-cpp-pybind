@@ -16,7 +16,9 @@ namespace reactivestreams {
 template <typename T, typename E = std::exception_ptr>
 class MockPublisher : public Publisher<T, E> {
  public:
-  MOCK_METHOD1_T(subscribe_, void(std::shared_ptr<Subscriber<T, E>> subscriber));
+  MOCK_METHOD1_T(
+      subscribe_,
+      void(std::shared_ptr<Subscriber<T, E>> subscriber));
 
   void subscribe(std::shared_ptr<Subscriber<T, E>> subscriber) override {
     subscribe_(std::move(subscriber));
@@ -30,7 +32,7 @@ class MockPublisher : public Publisher<T, E> {
 template <typename T, typename E = std::exception_ptr>
 class MockSubscriber;
 
-//TODO: remove
+// TODO: remove
 template <typename T, typename E = std::exception_ptr>
 std::shared_ptr<MockSubscriber<T, E>> makeMockSubscriber() {
   return std::make_shared<MockSubscriber<T, E>>();
@@ -102,7 +104,7 @@ class MockSubscription : public Subscription {
   testing::MockFunction<void()> checkpoint_;
 };
 
-//TODO: remove
+// TODO: remove
 inline std::shared_ptr<MockSubscription> makeMockSubscription() {
   return std::make_shared<MockSubscription>();
 }

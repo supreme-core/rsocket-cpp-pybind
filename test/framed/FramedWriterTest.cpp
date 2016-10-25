@@ -87,7 +87,7 @@ static void nextSingleFrameTest(int headroom) {
   EXPECT_CALL(*subscriber, onComplete_()).Times(1);
   EXPECT_CALL(*subscription, cancel_()).Times(1);
 
-  //TODO: cancel should be called automatically
+  // TODO: cancel should be called automatically
   subscriber->subscription()->cancel();
   writer->onComplete();
 }

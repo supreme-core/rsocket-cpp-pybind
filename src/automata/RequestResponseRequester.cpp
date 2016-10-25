@@ -6,7 +6,8 @@
 
 namespace reactivesocket {
 
-void RequestResponseRequesterBase::subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
+void RequestResponseRequesterBase::subscribe(
+    std::shared_ptr<Subscriber<Payload>> subscriber) {
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_.reset(std::move(subscriber));
   // FIXME

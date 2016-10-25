@@ -16,7 +16,8 @@ class SubscriberFactory {
  public:
   virtual ~SubscriberFactory() = default;
   virtual std::shared_ptr<Subscriber<Payload>> createSubscriber() = 0;
-  virtual std::shared_ptr<Subscriber<Payload>> createSubscriber(folly::Executor& executor) = 0;
+  virtual std::shared_ptr<Subscriber<Payload>> createSubscriber(
+      folly::Executor& executor) = 0;
 };
 
 class RequestHandlerBase {
@@ -94,9 +95,8 @@ class RequestHandler : public RequestHandlerBase {
       SubscriberFactory& subscriberFactory) override;
 
   /// Handles a new Stream requested by the other end.
-  void onRequestStream(
-      Payload request,
-      SubscriberFactory& subscriberFactory) override;
+  void onRequestStream(Payload request, SubscriberFactory& subscriberFactory)
+      override;
 
   /// Handles a new inbound Subscription requested by the other end.
   void onRequestSubscription(
@@ -104,8 +104,7 @@ class RequestHandler : public RequestHandlerBase {
       SubscriberFactory& subscriberFactory) override;
 
   /// Handles a new inbound RequestResponse requested by the other end.
-  void onRequestResponse(
-      Payload request,
-      SubscriberFactory& subscriberFactory) override;
+  void onRequestResponse(Payload request, SubscriberFactory& subscriberFactory)
+      override;
 };
 }

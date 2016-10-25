@@ -15,7 +15,8 @@ void TcpSubscriptionBase::cancel() {
   connection_.closeFromReader();
 }
 
-std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> TcpDuplexConnection::getOutput() {
+std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+TcpDuplexConnection::getOutput() {
   if (!outputSubscriber_) {
     outputSubscriber_ = std::make_shared<TcpOutputSubscriber>(*this);
   }
@@ -23,7 +24,8 @@ std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> TcpDuplexConnection::
 };
 
 void TcpDuplexConnection::setInput(
-    std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> inputSubscriber) {
+    std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
+        inputSubscriber) {
   inputSubscriber_.reset(std::move(inputSubscriber));
   inputSubscriber_.onSubscribe(std::make_shared<TcpSubscriptionBase>(*this));
 
@@ -89,7 +91,8 @@ void TcpDuplexConnection::closeFromReader() {
   socket_->close();
 }
 
-void TcpOutputSubscriber::onSubscribe(std::shared_ptr<Subscription> subscription) {
+void TcpOutputSubscriber::onSubscribe(
+    std::shared_ptr<Subscription> subscription) {
   // no flow control at tcp level, since we can't know the size of messages
   subscription->request(std::numeric_limits<size_t>::max());
 };

@@ -94,7 +94,9 @@ class ReactiveSocket {
       const std::shared_ptr<Subscriber<Payload>>& responseSink,
       folly::Executor& executor = defaultExecutor());
 
-  void requestResponse(Payload payload, const std::shared_ptr<Subscriber<Payload>>& responseSink,
+  void requestResponse(
+      Payload payload,
+      const std::shared_ptr<Subscriber<Payload>>& responseSink,
       folly::Executor& executor = defaultExecutor());
 
   void requestFireAndForget(Payload request);

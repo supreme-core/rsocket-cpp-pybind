@@ -10,13 +10,14 @@
 
 namespace reactivesocket {
 
-class FramedReader :
-      public reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>,
+class FramedReader
+    : public reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>,
       public reactivesocket::Subscription,
       public std::enable_shared_from_this<FramedReader> {
  public:
   FramedReader(
-      std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>> frames)
+      std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+          frames)
       : frames_(std::move(frames)),
         payloadQueue_(folly::IOBufQueue::cacheChainLength()) {}
 

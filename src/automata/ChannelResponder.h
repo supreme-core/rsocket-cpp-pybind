@@ -77,6 +77,6 @@ class ChannelResponderBase
   } state_{State::RESPONDING};
 };
 
-using ChannelResponder = SourceIfMixin<SinkIfMixin<StreamIfMixin<
-    ExecutorMixin<LoggingMixin<ChannelResponderBase>>>>>;
+using ChannelResponder = SourceIfMixin<SinkIfMixin<
+    StreamIfMixin<ExecutorMixin<LoggingMixin<ChannelResponderBase>>>>>;
 }

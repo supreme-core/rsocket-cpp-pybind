@@ -61,6 +61,6 @@ class RequestResponseResponderBase
   } state_{State::RESPONDING};
 };
 
-using RequestResponseResponder = SinkIfMixin<StreamIfMixin<
-    ExecutorMixin<LoggingMixin<RequestResponseResponderBase>>>>;
+using RequestResponseResponder = SinkIfMixin<
+    StreamIfMixin<ExecutorMixin<LoggingMixin<RequestResponseResponderBase>>>>;
 }
