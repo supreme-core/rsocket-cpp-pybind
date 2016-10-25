@@ -68,8 +68,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
       const std::shared_ptr<Subscriber<Payload>>& response) override {
     LOG(INFO) << "ServerRequestHandler.handleRequestResponse " << request;
 
-    response->onSubscribe(
-        std::make_shared<ServerSubscription>(response, 1));
+    response->onSubscribe(std::make_shared<ServerSubscription>(response, 1));
   }
 
   void handleFireAndForgetRequest(Payload request) override {

@@ -14,10 +14,10 @@
 //#include "test/InlineConnection.h"
 //#include "test/ReactiveStreamsMocksCompat.h"
 //
-//using namespace ::testing;
-//using namespace ::reactivesocket;
+// using namespace ::testing;
+// using namespace ::reactivesocket;
 //
-//static std::unique_ptr<folly::IOBuf> makeInvalidFrameHeader() {
+// static std::unique_ptr<folly::IOBuf> makeInvalidFrameHeader() {
 //   // Create a header without the stream id
 //   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
 //   queue.append(folly::IOBuf::create(FrameHeader::kSize - sizeof(StreamId)));
@@ -28,13 +28,14 @@
 //   return queue.move();
 // }
 //
-//TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
+// TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
 //   auto automatonConnection = folly::make_unique<InlineConnection>();
 //   auto testConnection = folly::make_unique<InlineConnection>();
 //
 //   automatonConnection->connectTo(*testConnection);
 //
-//   auto framedAutomatonConnection = folly::make_unique<FramedDuplexConnection>(
+//   auto framedAutomatonConnection =
+//   folly::make_unique<FramedDuplexConnection>(
 //       std::move(automatonConnection));
 //
 //   auto framedTestConnection =
@@ -53,7 +54,8 @@
 //         framedTestConnection->getOutput()->onNext(makeInvalidFrameHeader());
 //       }));
 //
-//   auto testOutputSubscriber = std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+//   auto testOutputSubscriber =
+//   std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
 //   EXPECT_CALL(*testOutputSubscriber, onSubscribe_(_))
 //       .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
 //         // allow receiving frames from the automaton
@@ -68,7 +70,8 @@
 //         ASSERT_TRUE(error.deserializeFrom(std::move(frame)));
 //         ASSERT_EQ("invalid frame", error.payload_.moveDataToString());
 //       }));
-//   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1)/*.InSequence(s)*/;
+//   EXPECT_CALL(*testOutputSubscriber,
+//   onComplete_()).Times(1)/*.InSequence(s)*/;
 //   EXPECT_CALL(*inputSubscription, cancel_()).Times(1)/*.InSequence(s)*/;
 //
 //   framedTestConnection->setInput(testOutputSubscriber);
@@ -83,7 +86,8 @@
 //   connectionAutomaton->connect();
 //}
 //
-//static void terminateTest(bool inOnSubscribe, bool inOnNext, bool inOnComplete, bool inRequest) {
+// static void terminateTest(bool inOnSubscribe, bool inOnNext, bool
+// inOnComplete, bool inRequest) {
 //  auto automatonConnection = folly::make_unique<InlineConnection>();
 //  auto testConnection = folly::make_unique<InlineConnection>();
 //
@@ -114,7 +118,8 @@
 //        }));
 //  }
 //
-//  auto testOutputSubscriber = std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+//  auto testOutputSubscriber =
+//  std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
 //  EXPECT_CALL(*testOutputSubscriber, onSubscribe_(_))
 //      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
 //        if (inOnSubscribe) {
@@ -154,29 +159,30 @@
 //  connectionAutomaton->connect();
 //}
 //
-//TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
+// TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
 //  terminateTest(true, false, false, false);
 //}
 //
-//TEST(ConnectionAutomatonTest, CleanTerminateOnNext) {
+// TEST(ConnectionAutomatonTest, CleanTerminateOnNext) {
 //  terminateTest(false, true, false, false);
 //}
 //
-//TEST(ConnectionAutomatonTest, CleanTerminateOnComplete) {
+// TEST(ConnectionAutomatonTest, CleanTerminateOnComplete) {
 //  terminateTest(true, true, true, false);
 //}
 //
-//TEST(ConnectionAutomatonTest, CleanTerminateRequest) {
+// TEST(ConnectionAutomatonTest, CleanTerminateRequest) {
 //  terminateTest(false, true, false, true);
 //}
 //
-//TEST(ConnectionAutomatonTest, RefuseFrame) {
+// TEST(ConnectionAutomatonTest, RefuseFrame) {
 //    auto automatonConnection = folly::make_unique<InlineConnection>();
 //    auto testConnection = folly::make_unique<InlineConnection>();
 //
 //    automatonConnection->connectTo(*testConnection);
 //
-//    auto framedAutomatonConnection = folly::make_unique<FramedDuplexConnection>(
+//    auto framedAutomatonConnection =
+//    folly::make_unique<FramedDuplexConnection>(
 //        std::move(automatonConnection));
 //
 //    auto framedTestConnection =
@@ -193,7 +199,8 @@
 //// TODO: enable Sequence
 ////    Sequence s;
 //
-//    auto testOutputSubscriber = std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+//    auto testOutputSubscriber =
+//    std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
 //    EXPECT_CALL(*testOutputSubscriber, onSubscribe_(_))
 ////        .InSequence(s)
 //        .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
@@ -204,7 +211,8 @@
 //    EXPECT_CALL(*inputSubscription, request_(_))
 ////        .InSequence(s)
 //        .WillOnce(Invoke([&](size_t n) {
-//          auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(framedTestConnection->getOutput());
+//          auto framedWriter =
+//          std::dynamic_pointer_cast<FramedWriter>(framedTestConnection->getOutput());
 //          CHECK(framedWriter);
 //
 //          std::vector<std::unique_ptr<folly::IOBuf>> frames;
@@ -220,7 +228,8 @@
 //          auto frameType = FrameHeader::peekType(*frame);
 //          ASSERT_EQ(FrameType::ERROR, frameType);
 //        }));
-//    EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1)/*.InSequence(s)*/;
+//    EXPECT_CALL(*testOutputSubscriber,
+//    onComplete_()).Times(1)/*.InSequence(s)*/;
 //    EXPECT_CALL(*inputSubscription, cancel_()).Times(1)/*.InSequence(s)*/;
 //
 //    framedTestConnection->setInput(testOutputSubscriber);
