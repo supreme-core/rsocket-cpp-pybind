@@ -2,9 +2,9 @@
 
 #include <array>
 #include <chrono>
+#include <condition_variable>
 #include <memory>
 #include <thread>
-#include <condition_variable>
 
 #include <folly/Memory.h>
 #include <folly/io/IOBuf.h>
@@ -55,25 +55,29 @@ class ClientSideConcurrencyTest : public testing::Test {
     // up.
     EXPECT_CALL(serverHandlerRef, handleRequestResponse_(_, _))
         .Times(AtMost(1))
-        .WillOnce(Invoke([&](Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+        .WillOnce(Invoke([&](
+            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
         }));
     EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _))
         .Times(AtMost(1))
-        .WillOnce(Invoke([&](Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+        .WillOnce(Invoke([&](
+            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
         }));
     EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _))
         .Times(AtMost(1))
-        .WillOnce(Invoke([&](Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+        .WillOnce(Invoke([&](
+            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
         }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _))
         .Times(AtMost(1))
-        .WillOnce(Invoke([&](Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+        .WillOnce(Invoke([&](
+            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
           clientTerminatesInteraction_ = false;
           EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
 
@@ -111,10 +115,10 @@ class ClientSideConcurrencyTest : public testing::Test {
           // cancel is called from the thread1
           // but delivered on thread2
           if (clientTerminatesInteraction_) {
-            thread1.getEventBase()->runInEventBaseThreadAndWait(
-                [&]() { clientInputSub->cancel();
-                  clientInputSub = nullptr;
-                });
+            thread1.getEventBase()->runInEventBaseThreadAndWait([&]() {
+              clientInputSub->cancel();
+              clientInputSub = nullptr;
+            });
           }
         }));
 
@@ -141,7 +145,7 @@ class ClientSideConcurrencyTest : public testing::Test {
 
   void wainUntilDone() {
     std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock,[&](){return isDone_;});
+    cv.wait(lock, [&]() { return isDone_; });
   }
 
   std::unique_ptr<ReactiveSocket> clientSock;
@@ -150,13 +154,16 @@ class ClientSideConcurrencyTest : public testing::Test {
   const std::unique_ptr<folly::IOBuf> originalPayload{
       folly::IOBuf::copyBuffer("foo")};
 
-  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
+  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{
+      std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
   std::shared_ptr<Subscription> clientInputSub;
 
   std::shared_ptr<Subscriber<Payload>> serverOutput;
-  std::shared_ptr<StrictMock<MockSubscription>> serverOutputSub{std::make_shared<StrictMock<MockSubscription>>()};
+  std::shared_ptr<StrictMock<MockSubscription>> serverOutputSub{
+      std::make_shared<StrictMock<MockSubscription>>()};
 
-  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> serverInput{std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
+  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> serverInput{
+      std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
   std::shared_ptr<Subscription> serverInputSub;
 
   folly::ScopedEventBaseThread thread1;
@@ -203,11 +210,10 @@ TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
     clientOutput->onNext(Payload(originalPayload->clone()));
   }));
   EXPECT_CALL(*clientOutputSub, cancel_()).WillOnce(Invoke([&]() {
-    thread1.getEventBase()->runInEventBaseThread(
-        [&]() {
-          clientOutput->onComplete();
-          clientOutput = nullptr;
-        });
+    thread1.getEventBase()->runInEventBaseThread([&]() {
+      clientOutput->onComplete();
+      clientOutput = nullptr;
+    });
   }));
 
   thread1.getEventBase()->runInEventBaseThreadAndWait(
@@ -286,9 +292,10 @@ class ServerSideConcurrencyTest : public testing::Test {
                   }));
               EXPECT_CALL(*serverInput, onNext_(_))
                   .WillOnce(Invoke([&](Payload& payload) {
-                    thread1.getEventBase()->runInEventBaseThreadAndWait(
-                        [&]() { serverInputSub->cancel();
-                          serverInputSub = nullptr; });
+                    thread1.getEventBase()->runInEventBaseThreadAndWait([&]() {
+                      serverInputSub->cancel();
+                      serverInputSub = nullptr;
+                    });
                   }));
               EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
@@ -343,7 +350,7 @@ class ServerSideConcurrencyTest : public testing::Test {
 
   void wainUntilDone() {
     std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock,[&](){return isDone_;});
+    cv.wait(lock, [&]() { return isDone_; });
   }
 
   std::unique_ptr<ReactiveSocket> clientSock;
@@ -352,13 +359,16 @@ class ServerSideConcurrencyTest : public testing::Test {
   const std::unique_ptr<folly::IOBuf> originalPayload{
       folly::IOBuf::copyBuffer("foo")};
 
-  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
+  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{
+      std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
   std::shared_ptr<Subscription> clientInputSub;
 
   std::shared_ptr<Subscriber<Payload>> serverOutput;
-  std::shared_ptr<StrictMock<MockSubscription>> serverOutputSub{std::make_shared<StrictMock<MockSubscription>>()};
+  std::shared_ptr<StrictMock<MockSubscription>> serverOutputSub{
+      std::make_shared<StrictMock<MockSubscription>>()};
 
-  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> serverInput{std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
+  std::shared_ptr<StrictMock<MockSubscriber<Payload>>> serverInput{
+      std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
   std::shared_ptr<Subscription> serverInputSub;
 
   folly::ScopedEventBaseThread thread1;

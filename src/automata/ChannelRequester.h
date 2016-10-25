@@ -83,6 +83,6 @@ class ChannelRequesterBase
   reactivestreams::AllowanceSemaphore initialResponseAllowance_;
 };
 
-using ChannelRequester = SourceIfMixin<SinkIfMixin<StreamIfMixin<
-    ExecutorMixin<LoggingMixin<ChannelRequesterBase>>>>>;
+using ChannelRequester = SourceIfMixin<SinkIfMixin<
+    StreamIfMixin<ExecutorMixin<LoggingMixin<ChannelRequesterBase>>>>>;
 }

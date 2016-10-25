@@ -25,6 +25,6 @@ class SubscriptionResponderBase : public StreamSubscriptionResponderBase {
   }
 };
 
-using SubscriptionResponder = SinkIfMixin<StreamIfMixin<
-    ExecutorMixin<LoggingMixin<SubscriptionResponderBase>>>>;
+using SubscriptionResponder = SinkIfMixin<
+    StreamIfMixin<ExecutorMixin<LoggingMixin<SubscriptionResponderBase>>>>;
 }

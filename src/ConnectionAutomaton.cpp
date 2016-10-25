@@ -43,12 +43,15 @@ void ConnectionAutomaton::connect() {
   connectionOutput_.reset(connection_->getOutput());
   connectionOutput_.onSubscribe(shared_from_this());
 
-  // the onSubscribe call on the previous line may have called the terminating signal
+  // the onSubscribe call on the previous line may have called the terminating
+  // signal
   // which would call disconnect
   if (connection_) {
-    // This may call ::onSubscribe in-line, which calls ::request on the provided
+    // This may call ::onSubscribe in-line, which calls ::request on the
+    // provided
     // subscription, which might deliver frames in-line.
-    // it can also call onComplete which will call disconnect() and reset the connection_
+    // it can also call onComplete which will call disconnect() and reset the
+    // connection_
     // while still inside of the connection_::setInput method. We will create
     // a hard reference for that case and keep the object alive until we
     // return from the setInput method
@@ -136,7 +139,8 @@ bool ConnectionAutomaton::endStreamInternal(
 }
 
 /// @{
-void ConnectionAutomaton::onSubscribe(std::shared_ptr<Subscription> subscription) {
+void ConnectionAutomaton::onSubscribe(
+    std::shared_ptr<Subscription> subscription) {
   assert(!connectionInputSub_);
   connectionInputSub_.reset(std::move(subscription));
   // This may result in signals being issued by the connection in-line, see

@@ -128,7 +128,8 @@ void TestInterpreter::handleAssert(const AssertCommand& command) {
   }
 }
 
-std::shared_ptr<TestSubscriber> TestInterpreter::createTestSubscriber(const std::string& id) {
+std::shared_ptr<TestSubscriber> TestInterpreter::createTestSubscriber(
+    const std::string& id) {
   if (testSubscribers_.find(id) != testSubscribers_.end()) {
     throw std::runtime_error("test subscriber with the same id already exists");
   }
@@ -138,7 +139,8 @@ std::shared_ptr<TestSubscriber> TestInterpreter::createTestSubscriber(const std:
   return testSubscriber;
 }
 
-std::shared_ptr<TestSubscriber> TestInterpreter::getSubscriber(const std::string& id) {
+std::shared_ptr<TestSubscriber> TestInterpreter::getSubscriber(
+    const std::string& id) {
   auto found = testSubscribers_.find(id);
   if (found == testSubscribers_.end()) {
     throw std::runtime_error("unable to find test subscriber with provided id");
