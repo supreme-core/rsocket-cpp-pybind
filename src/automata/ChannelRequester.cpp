@@ -182,4 +182,4 @@ std::ostream& ChannelRequesterBase::logPrefix(std::ostream& os) {
   return os << "ChannelRequester(" << &connection_ << ", " << streamId_
             << "): ";
 }
-}
+} // reactivesocket

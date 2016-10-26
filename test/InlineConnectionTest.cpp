@@ -78,7 +78,7 @@ TEST(InlineConnectionTest, PingPong) {
     output[1]
         ->onComplete(); // "Unsubscribe handshake". Calls input[0]->onComplete()
     inputSub[1]->cancel(); // Close the other direction. // equivalent to
-                           // outputSub[0]->cancel();
+    // outputSub[0]->cancel();
   }));
   EXPECT_CALL(*input[0], onComplete_())
       .InSequence(s); // This finishes the handshake.

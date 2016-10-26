@@ -25,6 +25,8 @@ class ReactiveSocket;
 enum class FrameType : uint16_t;
 using StreamId = uint32_t;
 
+folly::Executor& defaultExecutor();
+
 class KeepaliveTimer {
  public:
   virtual ~KeepaliveTimer() = default;
@@ -129,8 +131,6 @@ class ReactiveSocket {
   bool resumeListener(
       const ResumeIdentificationToken& token,
       ResumePosition position);
-
-  static folly::Executor& defaultExecutor();
 
   const std::shared_ptr<ConnectionAutomaton> connection_;
   std::unique_ptr<RequestHandlerBase> handler_;

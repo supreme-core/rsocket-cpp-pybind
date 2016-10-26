@@ -9,7 +9,6 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
-#include <folly/futures/QueuedImmediateExecutor.h>
 
 #include "src/CancellingSubscription.h"
 #include "src/ConnectionAutomaton.h"
@@ -61,11 +60,6 @@ ReactiveSocket::ReactiveSocket(
       nextStreamId_(isServer ? 1 : 2),
       keepaliveTimer_(std::move(keepaliveTimer)),
       resumeSocketListener_(resumeListener) {}
-
-folly::Executor& ReactiveSocket::defaultExecutor() {
-  static folly::QueuedImmediateExecutor immediateExecutor;
-  return immediateExecutor;
-}
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,

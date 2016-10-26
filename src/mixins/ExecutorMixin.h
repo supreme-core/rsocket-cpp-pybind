@@ -19,12 +19,43 @@
 
 namespace reactivesocket {
 
+folly::Executor& defaultExecutor();
+
+class ExecutorBase {
+ public:
+  explicit ExecutorBase(
+      folly::Executor& executor = defaultExecutor(),
+      bool startExecutor = true);
+
+  /// We start in a queueing mode, where it merely queues signal
+  /// deliveries until ::start is invoked.
+  ///
+  /// Calling into this method may deliver all enqueued signals immediately.
+  void start();
+
+ protected:
+  template <typename F>
+  void runInExecutor(F&& func) {
+    if (pendingSignals_) {
+      pendingSignals_->emplace_back(func);
+    } else {
+      executor_.add(std::move(func));
+    }
+  }
+
+ private:
+  using PendingSignals = std::vector<std::function<void()>>;
+  std::unique_ptr<PendingSignals> pendingSignals_;
+  folly::Executor& executor_;
+};
+
 /// Instead of calling into the respective Base methods, schedules signals
 /// delivery on an executor. Non-signal methods are simply forwarded.
 ///
 /// Uses lazy method instantiantiation trick, see LoggingMixin.
 template <typename Base>
 class ExecutorMixin : public Base,
+                      public ExecutorBase,
                       public std::enable_shared_from_this<ExecutorMixin<Base>> {
   static_assert(
       !std::is_base_of<std::enable_shared_from_this<Base>, Base>::value,
@@ -40,25 +71,7 @@ class ExecutorMixin : public Base,
   };
 
   ExecutorMixin(const Parameters& params)
-      : Base(params), executor_(params.executor) {}
-  ~ExecutorMixin() {}
-
-  /// The mixin starts in a queueing mode, where it merely queues signal
-  /// deliveries until ::start is invoked.
-  ///
-  /// Calling into this method may deliver all enqueued signals immediately.
-  void start() {
-    if (pendingSignals_) {
-      auto movedSignals = folly::makeMoveWrapper(std::move(pendingSignals_));
-      if (!(*movedSignals)->empty()) {
-        runInExecutor([movedSignals]() mutable {
-          for (auto& signal : **movedSignals) {
-            signal();
-          }
-        });
-      }
-    }
-  }
+      : Base(params), ExecutorBase(params.executor, false) {}
 
   /// @{
   /// Publisher<Payload>
@@ -132,20 +145,5 @@ class ExecutorMixin : public Base,
     Base::onBadFrame();
   }
   /// @}
-
- private:
-  template <typename F>
-  void runInExecutor(F&& func) {
-    if (pendingSignals_) {
-      pendingSignals_->emplace_back(func);
-    } else {
-      executor_.add(std::move(func));
-    }
-  }
-
-  folly::Executor& executor_;
-  using PendingSignals = std::vector<std::function<void()>>;
-  std::unique_ptr<PendingSignals> pendingSignals_{
-      folly::make_unique<PendingSignals>()};
 };
-}
+} // reactivesocket
