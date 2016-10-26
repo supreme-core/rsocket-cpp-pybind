@@ -6,6 +6,7 @@
 #include <thread>
 #include "src/NullRequestHandler.h"
 #include "src/ReactiveSocket.h"
+#include "src/SubscriptionBase.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/tcp/TcpDuplexConnection.h"
 #include "test/simple/PrintSubscriber.h"
@@ -18,7 +19,7 @@ using namespace ::folly;
 DEFINE_string(address, "9898", "host:port to listen to");
 
 namespace {
-class ServerSubscription : public Subscription {
+class ServerSubscription : public SubscriptionBase {
  public:
   explicit ServerSubscription(std::shared_ptr<Subscriber<Payload>> response)
       : response_(std::move(response)) {}
@@ -26,14 +27,14 @@ class ServerSubscription : public Subscription {
   ~ServerSubscription(){};
 
   // Subscription methods
-  void request(size_t n) override {
+  void requestImpl(size_t n) override {
     response_.onNext(Payload("from server"));
     response_.onNext(Payload("from server2"));
     response_.onComplete();
     //    response_.onError(std::runtime_error("XXX"));
   }
 
-  void cancel() override {}
+  void cancelImpl() override {}
 
  private:
   SubscriberPtr<Subscriber<Payload>> response_;

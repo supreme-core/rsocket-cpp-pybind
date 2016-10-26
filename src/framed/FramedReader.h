@@ -7,7 +7,8 @@
 #include <reactive-streams/utilities/AllowanceSemaphore.h>
 #include <reactive-streams/utilities/SmartPointers.h>
 #include "src/ReactiveStreamsCompat.h"
-#include "src/mixins/ExecutorMixin.h"
+#include "src/SubscriberBase.h"
+#include "src/SubscriptionBase.h"
 
 namespace reactivesocket {
 
@@ -21,15 +22,7 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
       : frames_(std::move(frames)),
         payloadQueue_(folly::IOBufQueue::cacheChainLength()) {}
 
-  //
-  // public methods should be guarded by the DestructorGuard
-  // if there is code to execute after calling into the callbacks
-  //
-
  private:
-
-  using EnableSharedFromThisBase<FramedReader>::shared_from_this;
-
   // Subscriber methods
   void onSubscribeImpl(std::shared_ptr<Subscription> subscription) override;
   void onNextImpl(std::unique_ptr<folly::IOBuf> element) override;
@@ -42,6 +35,8 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
 
   void parseFrames();
   void requestStream();
+
+  using EnableSharedFromThisBase<FramedReader>::shared_from_this;
 
   SubscriberPtr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       frames_;

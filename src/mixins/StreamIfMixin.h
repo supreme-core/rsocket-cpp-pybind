@@ -19,37 +19,37 @@ class StreamIfMixin : public Base, public AbstractStreamAutomaton {
  public:
   using Base::Base;
 
-  void endStream(StreamCompletionSignal signal) override {
+  void endStream(StreamCompletionSignal signal) override final {
     Base::endStream(signal);
   }
 
-  void onNextFrame(Frame_REQUEST_STREAM&& frame) override {
+  void onNextFrame(Frame_REQUEST_STREAM&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
 
-  void onNextFrame(Frame_REQUEST_SUB&& frame) override {
+  void onNextFrame(Frame_REQUEST_SUB&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
-  void onNextFrame(Frame_REQUEST_CHANNEL&& frame) override {
+  void onNextFrame(Frame_REQUEST_CHANNEL&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
-  void onNextFrame(Frame_REQUEST_RESPONSE&& frame) override {
+  void onNextFrame(Frame_REQUEST_RESPONSE&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
-  void onNextFrame(Frame_REQUEST_N&& frame) override {
+  void onNextFrame(Frame_REQUEST_N&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
-  void onNextFrame(Frame_CANCEL&& frame) override {
+  void onNextFrame(Frame_CANCEL&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
-  void onNextFrame(Frame_RESPONSE&& frame) override {
+  void onNextFrame(Frame_RESPONSE&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
-  void onNextFrame(Frame_ERROR&& frame) override {
+  void onNextFrame(Frame_ERROR&& frame) override final {
     Base::onNextFrame(std::move(frame));
   }
 
-  void onBadFrame() override {
+  void onBadFrame() override final {
     Base::onBadFrame();
   }
 };

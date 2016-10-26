@@ -145,7 +145,11 @@ add_library(
   src/concurrent/OneToOneRingBuffer.h
   src/ReactiveSocketSubscriberFactory.h
   src/CancellingSubscription.h
-  src/RequestHandler.cpp)
+  src/RequestHandler.cpp
+  src/EnableSharedFromThis.h
+  src/SubscriberBase.h
+  src/SubscriptionBase.h
+  src/Executor.cpp)
 
 target_link_libraries(
   ReactiveSocket

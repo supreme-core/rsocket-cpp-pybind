@@ -6,6 +6,8 @@
 #include <reactive-streams/utilities/SmartPointers.h>
 #include <vector>
 #include "src/ReactiveStreamsCompat.h"
+#include "src/SubscriberBase.h"
+#include "src/SubscriptionBase.h"
 
 namespace folly {
 class IOBuf;
@@ -13,30 +15,31 @@ class IOBuf;
 
 namespace reactivesocket {
 
-class FramedWriter
-    : public reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>,
-      public reactivesocket::Subscription,
-      public std::enable_shared_from_this<FramedWriter> {
+class FramedWriter : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
+                     public SubscriptionBase,
+                     public EnableSharedFromThisBase<FramedWriter> {
  public:
   explicit FramedWriter(
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
           stream)
       : stream_(std::move(stream)) {}
 
-  // Subscriber methods
-  void onSubscribe(
-      std::shared_ptr<reactivesocket::Subscription> subscription) override;
-  void onNext(std::unique_ptr<folly::IOBuf> element) override;
-  void onComplete() override;
-  void onError(folly::exception_wrapper ex) override;
-
-  // Subscription methods
-  void request(size_t n) override;
-  void cancel() override;
-
   void onNextMultiple(std::vector<std::unique_ptr<folly::IOBuf>> element);
 
  private:
+  // Subscriber methods
+  void onSubscribeImpl(
+      std::shared_ptr<reactivesocket::Subscription> subscription) override;
+  void onNextImpl(std::unique_ptr<folly::IOBuf> element) override;
+  void onCompleteImpl() override;
+  void onErrorImpl(folly::exception_wrapper ex) override;
+
+  // Subscription methods
+  void requestImpl(size_t n) override;
+  void cancelImpl() override;
+
+  using EnableSharedFromThisBase<FramedWriter>::shared_from_this;
+
   SubscriberPtr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       stream_;
   SubscriptionPtr<::reactivestreams::Subscription> writerSubscription_;

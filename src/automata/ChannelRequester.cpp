@@ -8,7 +8,6 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/io/IOBuf.h>
 #include <glog/logging.h>
-#include <folly/futures/QueuedImmediateExecutor.h>
 
 #include "src/ConnectionAutomaton.h"
 #include "src/Frame.h"
@@ -17,7 +16,7 @@
 
 namespace reactivesocket {
 
-void ChannelRequesterBase::onSubscribeImpl(
+void ChannelRequesterBase::onSubscribe(
     std::shared_ptr<Subscription> subscription) {
   CHECK(State::NEW == state_);
   Base::onSubscribe(subscription);
@@ -25,7 +24,7 @@ void ChannelRequesterBase::onSubscribeImpl(
   subscription->request(1);
 }
 
-void ChannelRequesterBase::onNextImpl(Payload request) {
+void ChannelRequesterBase::onNext(Payload request) {
   switch (state_) {
     case State::NEW: {
       state_ = State::REQUESTED;
@@ -61,7 +60,7 @@ void ChannelRequesterBase::onNextImpl(Payload request) {
   }
 }
 
-void ChannelRequesterBase::onCompleteImpl() {
+void ChannelRequesterBase::onComplete() {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;
@@ -79,7 +78,7 @@ void ChannelRequesterBase::onCompleteImpl() {
   }
 }
 
-void ChannelRequesterBase::onErrorImpl(folly::exception_wrapper ex) {
+void ChannelRequesterBase::onError(folly::exception_wrapper ex) {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;
@@ -95,7 +94,7 @@ void ChannelRequesterBase::onErrorImpl(folly::exception_wrapper ex) {
   }
 }
 
-void ChannelRequesterBase::requestImpl(size_t n) {
+void ChannelRequesterBase::request(size_t n) {
   switch (state_) {
     case State::NEW:
       // The initial request has not been sent out yet, hence we must accumulate
@@ -112,7 +111,7 @@ void ChannelRequesterBase::requestImpl(size_t n) {
   }
 }
 
-void ChannelRequesterBase::cancelImpl() {
+void ChannelRequesterBase::cancel() {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;
@@ -179,11 +178,8 @@ void ChannelRequesterBase::onNextFrame(Frame_ERROR&& frame) {
   }
 }
 
-template class SubscriberBaseT<Payload>;
-
-folly::Executor& defaultExecutor() {
-  static folly::QueuedImmediateExecutor immediateExecutor;
-  return immediateExecutor;
+std::ostream& ChannelRequesterBase::logPrefix(std::ostream& os) {
+  return os << "ChannelRequester(" << &connection_ << ", " << streamId_
+            << "): ";
 }
-
-}
+} // reactivesocket

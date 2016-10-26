@@ -244,4 +244,3 @@
 //    connectionAutomaton->connect();
 //    new int;
 //}
->>>>>>> master
