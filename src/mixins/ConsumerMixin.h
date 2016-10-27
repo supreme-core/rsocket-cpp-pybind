@@ -8,6 +8,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <reactive-streams/utilities/AllowanceSemaphore.h>
 #include <reactive-streams/utilities/SmartPointers.h>
+#include "src/Common.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
@@ -53,13 +54,10 @@ class ConsumerMixin : public Base {
  protected:
   /// @{
   void endStream(StreamCompletionSignal signal) {
-    switch (signal) {
-      case StreamCompletionSignal::CONNECTION_ERROR:
-        consumingSubscriber_.onError(std::runtime_error("connection closed"));
-        break;
-      default:
-        consumingSubscriber_.onComplete();
-        break;
+    if (signal == StreamCompletionSignal::GRACEFUL) {
+      consumingSubscriber_.onComplete();
+    } else {
+      consumingSubscriber_.onError(StreamInterruptedException((int)signal));
     }
     Base::endStream(signal);
   }

@@ -3,6 +3,7 @@
 #include "RequestResponseRequester.h"
 
 #include <iostream>
+#include "src/Common.h"
 
 namespace reactivesocket {
 
@@ -75,8 +76,11 @@ void RequestResponseRequesterBase::endStream(StreamCompletionSignal signal) {
     case State::CLOSED:
       break;
   }
-  // FIXME: switch on signal and verify that callsites propagate stream errors
-  consumingSubscriber_.onComplete();
+  if (signal == StreamCompletionSignal::GRACEFUL) {
+    consumingSubscriber_.onComplete();
+  } else {
+    consumingSubscriber_.onError(StreamInterruptedException((int)signal));
+  }
 }
 
 void RequestResponseRequesterBase::onNextFrame(Frame_ERROR&& frame) {

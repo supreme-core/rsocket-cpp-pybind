@@ -37,9 +37,9 @@ class ExecutorBase {
   template <typename F>
   void runInExecutor(F&& func) {
     if (pendingSignals_) {
-      pendingSignals_->emplace_back(func);
+      pendingSignals_->emplace_back(std::forward<F>(func));
     } else {
-      executor_.add(std::move(func));
+      executor_.add(std::forward<F>(func));
     }
   }
 

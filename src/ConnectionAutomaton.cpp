@@ -132,7 +132,7 @@ bool ConnectionAutomaton::endStreamInternal(
     return false;
   }
   // Remove from the map before notifying the automaton.
-  auto automaton = it->second;
+  auto automaton = std::move(it->second);
   streams_.erase(it);
   automaton->endStream(signal);
   return true;

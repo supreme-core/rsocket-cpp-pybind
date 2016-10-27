@@ -52,21 +52,23 @@ class PublisherMixin : public Base {
   template <typename Frame>
   typename std::enable_if<Frame::Trait_CarriesAllowance>::type onNextFrame(
       Frame&& frame) {
-    DCHECK(producingSubscription_)
-        << "subscriber::onSubscribe has to be called before onNextFrame. "
-           "This is expected in RequestHandler::handleXXX(subscriber) method";
-    if (size_t n = frame.requestN_) {
-      producingSubscription_.request(n);
+    // if producingSubscription_ == nullptr that means the instance is
+    // terminated
+    if (producingSubscription_) {
+      if (size_t n = frame.requestN_) {
+        producingSubscription_.request(n);
+      }
+      Base::onNextFrame(std::move(frame));
     }
-    Base::onNextFrame(std::move(frame));
   }
 
   void onNextFrame(Frame_REQUEST_RESPONSE&& frame) {
-    DCHECK(producingSubscription_)
-        << "subscriber::onSubscribe has to be called before onNextFrame. "
-           "This is expected in RequestHandler::handleXXX(subscriber) method";
-    producingSubscription_.request(1);
-    Base::onNextFrame(std::move(frame));
+    // if producingSubscription_ == nullptr that means the instance is
+    // terminated
+    if (producingSubscription_) {
+      producingSubscription_.request(1);
+      Base::onNextFrame(std::move(frame));
+    }
   }
 
   /// Remaining frames just pass through.
