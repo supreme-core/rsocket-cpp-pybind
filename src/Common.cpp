@@ -17,6 +17,7 @@ static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
       return "general error";
     case StreamCompletionSignal::GRACEFUL:
       DCHECK(false) << "throwing exception for GRACEFUL termination?";
+      return "gracefull termination";
     default:
       return "stream interrupted";
   }
