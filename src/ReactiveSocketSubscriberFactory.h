@@ -11,7 +11,7 @@ class ReactiveSocketSubscriberFactory : public SubscriberFactory {
   using TFactoryCallback =
       std::function<std::shared_ptr<Subscriber<Payload>>(folly::Executor*)>;
 
-  ReactiveSocketSubscriberFactory(TFactoryCallback factoryCallback)
+  explicit ReactiveSocketSubscriberFactory(TFactoryCallback factoryCallback)
       : factoryCallback_(std::move(factoryCallback)) {}
 
   std::shared_ptr<Subscriber<Payload>> createSubscriber() override {

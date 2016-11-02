@@ -30,6 +30,7 @@ class StreamRequesterBase : public StreamSubscriptionRequesterBase {
 
  public:
   using Base::Base;
+  virtual ~StreamRequesterBase() = default;
 
   std::ostream& logPrefix(std::ostream& os);
 
