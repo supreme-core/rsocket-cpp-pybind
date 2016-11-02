@@ -50,3 +50,23 @@ install_manifest.txt
 /reactivesocket-cpp/ReactiveSocketTest
 /reactivesocket-cpp/compile_commands.json
 /reactivesocket-cpp/external/
+
+### Git ###
+.git/
+
+###
+# Miscellaneous
+###
+
+# vim temp files
+*.swp
+*.un~
+
+# Emacs files:
+# VCS comparison files:
+*.~*~
+# Autosave files
+.#*
+
+# Metadata files created by Mac OS.
+.DS_Store
