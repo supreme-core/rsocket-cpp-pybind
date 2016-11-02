@@ -32,6 +32,7 @@ class StreamSubscriptionRequesterBase
 
  public:
   using Base::Base;
+  virtual ~StreamSubscriptionRequesterBase() = default;
 
   /// Degenerate form of the Subscriber interface -- only one request payload
   /// will be sent to the server.

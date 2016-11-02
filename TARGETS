@@ -29,12 +29,12 @@ cpp_library(
 )
 
 # Actual implementation of the ReactiveSocket library.
-cxx_library(
+cpp_library(
     name = 'reactivesocket-internal',
 
-    header_namespace = "src",
-    exported_headers = subdir_glob([
-        ('src', '**/*.h'),
+    header_namespace = 'src',
+    headers = subdir_glob([
+        ('src', '**/*.h')
     ]),
     srcs = [
         'src/AbstractStreamAutomaton.cpp',
@@ -52,15 +52,16 @@ cxx_library(
         'src/NullRequestHandler.cpp',
         'src/Payload.cpp',
         'src/ReactiveSocket.cpp',
+        'src/RequestHandler.cpp',
         'src/ResumeCache.cpp',
         'src/Stats.cpp',
     ],
     deps = [
         ':reactivesocket-streams',
-        '//folly:exception_wrapper',
-        '//folly/futures:futures',
-        '//folly/io:iobuf',
-        '//lithium/reactive-streams-cpp:reactive-streams-utilities',
+        '@/folly/futures:futures',
+        '@/folly/io:iobuf',
+        '@/folly:exception_wrapper',
+        '@/lithium/reactive-streams-cpp:reactive-streams-utilities',
     ],
 )
 
@@ -73,15 +74,13 @@ cpp_library(
         'src/RequestHandler.h',
         'src/ReactiveSocket.h',
         'src/Stats.h',
-        'src/mixins/IntrusiveDeleter.h', #TODO(lehecka): remove from public api
-        'src/mixins/MemoryMixin.h', #TODO(lehecka): remove from public api
     ],
     deps = [
         ':reactivesocket-internal',
     ],
 )
 
-cxx_library(
+cpp_library(
     name = 'reactivesocket-tcp-internal',
 
     header_namespace = "src",
@@ -108,7 +107,7 @@ cpp_library(
     ],
 )
 
-cxx_test(
+cpp_unittest(
     name = 'reactivesocket-tests',
 
     header_namespace = 'test',
@@ -119,6 +118,7 @@ cxx_test(
     deps = [
         ':reactivesocket-internal',
         ':reactivesocket-streams-mocks',
+        '//folly/io/async:util',
     ],
 )
 

@@ -319,7 +319,7 @@ class Frame_CANCEL {
   static constexpr bool Trait_CarriesAllowance = false;
 
   Frame_CANCEL() = default;
-  Frame_CANCEL(
+  explicit Frame_CANCEL(
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
       : header_(
@@ -492,7 +492,7 @@ class Frame_RESUME_OK {
   static constexpr bool Trait_CarriesAllowance = false;
 
   Frame_RESUME_OK() = default;
-  Frame_RESUME_OK(ResumePosition position)
+  explicit Frame_RESUME_OK(ResumePosition position)
       : header_(FrameType::RESUME_OK, 0, 0), position_(position) {}
 
   std::unique_ptr<folly::IOBuf> serializeOut();
