@@ -110,14 +110,14 @@ static void terminateTest(
     EXPECT_CALL(*inputSubscription, request_(_)).Times(0);
   } else {
     auto&& exp = EXPECT_CALL(*inputSubscription, request_(_))
-        .WillOnce(Invoke([&](size_t n) {
-          if (inRequest) {
-            framedTestConnection->getOutput()->onComplete();
-          } else {
-            framedTestConnection->getOutput()->onNext(
-                makeInvalidFrameHeader());
-          }
-        }));
+                     .WillOnce(Invoke([&](size_t n) {
+                       if (inRequest) {
+                         framedTestConnection->getOutput()->onComplete();
+                       } else {
+                         framedTestConnection->getOutput()->onNext(
+                             makeInvalidFrameHeader());
+                       }
+                     }));
     if (!inRequest) {
       exp.WillOnce(Invoke([&](size_t n) {
         // ignored

@@ -60,79 +60,88 @@ InlineConnection::getOutput() {
   // A check point for either of the terminal signals.
   auto* checkpoint = new MockFunction<void()>();
 
+  auto this__ = this_;
+  auto other__ = other_;
+
   Sequence s;
   EXPECT_CALL(*outputSink, onSubscribe_(_))
       .Times(AtMost(1))
       .InSequence(s)
-      .WillOnce(Invoke([ this__ = this_, other__ = other_ ](
-          std::shared_ptr<Subscription> subscription) {
-    ASSERT_FALSE(this__->outputSubscription_);
-    this__->outputSubscription_ = std::move(subscription);
-    // If `other_->inputSink_` is not empty, we can provide the subscriber
-    // with newly received subscription.
-    // Otherwise, we only record the subscription and wait for appropriate
-    // sequence of calls to happen on the other end.
-    if (other__->inputSink_) {
-      other__->inputSink_->onSubscribe(this__->outputSubscription_);
-    }
-  }));
+      .WillOnce(
+          Invoke([this__, other__](std::shared_ptr<Subscription> subscription) {
+            ASSERT_FALSE(this__->outputSubscription_);
+            this__->outputSubscription_ = std::move(subscription);
+            // If `other_->inputSink_` is not empty, we can provide the
+            // subscriber
+            // with newly received subscription.
+            // Otherwise, we only record the subscription and wait for
+            // appropriate
+            // sequence of calls to happen on the other end.
+            if (other__->inputSink_) {
+              other__->inputSink_->onSubscribe(this__->outputSubscription_);
+            }
+          }));
   EXPECT_CALL(*outputSink, onNext_(_))
       .Times(AnyNumber())
       .InSequence(s)
-      .WillRepeatedly(Invoke([ this__ = this_, other__ = other_ ](
-          std::unique_ptr<folly::IOBuf> & frame) {
-    ASSERT_TRUE(other__);
-    ASSERT_TRUE(other__->outputSubscription_);
-    // The handshake must be completed and Subscription::request(n) must be
-    // invoked on the other end's input, in order for ::onNext to be called
-    // on this end's output.
-    ASSERT_TRUE(other__->inputSink_);
-    // calling onNext can result in calling terminating signals
-    // (onComplete/onError/cancel)
-    // and releasing shared_ptrs which may destroy object instances while
-    // onNext method is still on the stack
-    // we will protect against such bugs by keeping a strong reference to
-    // the object while in onNext method
-    auto otherInputSink = other__->inputSink_;
-    otherInputSink->onNext(std::move(frame));
-  }));
+      .WillRepeatedly(
+          Invoke([this__, other__](std::unique_ptr<folly::IOBuf>& frame) {
+            ASSERT_TRUE(other__);
+            ASSERT_TRUE(other__->outputSubscription_);
+            // The handshake must be completed and Subscription::request(n) must
+            // be
+            // invoked on the other end's input, in order for ::onNext to be
+            // called
+            // on this end's output.
+            ASSERT_TRUE(other__->inputSink_);
+            // calling onNext can result in calling terminating signals
+            // (onComplete/onError/cancel)
+            // and releasing shared_ptrs which may destroy object instances
+            // while
+            // onNext method is still on the stack
+            // we will protect against such bugs by keeping a strong reference
+            // to
+            // the object while in onNext method
+            auto otherInputSink = other__->inputSink_;
+            otherInputSink->onNext(std::move(frame));
+          }));
   EXPECT_CALL(*outputSink, onComplete_())
       .Times(AtMost(1))
       .InSequence(s)
-      .WillOnce(Invoke([ this__ = this_, other__ = other_, checkpoint ]() {
-    checkpoint->Call();
-    ASSERT_TRUE(other__);
-    ASSERT_FALSE(this__->inputSinkCompleted_);
-    ASSERT_FALSE(this__->inputSinkError_);
-    this__->inputSinkCompleted_ = true;
-    // We now have two possible situations:
-    // * `other_->inputSink_` is not empty, we forward the signal,
-    // * otherwise, we only record the signal and wait for appropriate
-    //    sequence of calls to happen on the other end.
-    if (other__->inputSink_) {
-      ASSERT_TRUE(other__->outputSubscription_);
-      other__->inputSink_->onComplete();
-    }
-  }));
+      .WillOnce(Invoke([this__, other__, checkpoint]() {
+        checkpoint->Call();
+        ASSERT_TRUE(other__);
+        ASSERT_FALSE(this__->inputSinkCompleted_);
+        ASSERT_FALSE(this__->inputSinkError_);
+        this__->inputSinkCompleted_ = true;
+        // We now have two possible situations:
+        // * `other_->inputSink_` is not empty, we forward the signal,
+        // * otherwise, we only record the signal and wait for appropriate
+        //    sequence of calls to happen on the other end.
+        if (other__->inputSink_) {
+          ASSERT_TRUE(other__->outputSubscription_);
+          other__->inputSink_->onComplete();
+        }
+      }));
   EXPECT_CALL(*outputSink, onError_(_))
       .Times(AtMost(1))
       .InSequence(s)
-      .WillOnce(Invoke([ this__ = this_, other__ = other_, checkpoint ](
-          folly::exception_wrapper ex) {
-    checkpoint->Call();
-    ASSERT_TRUE(other__);
-    ASSERT_TRUE(other__->outputSubscription_);
-    ASSERT_FALSE(this__->inputSinkCompleted_);
-    ASSERT_FALSE(this__->inputSinkError_);
-    this__->inputSinkError_ = ex;
-    // We now have two possible situations:
-    // * `other_->inputSink_` is not empty, we forward the signal,
-    // * otherwise, we only record the signal and wait for appropriate
-    //    sequence of calls to happen on the other end.
-    if (other__->inputSink_) {
-      other__->inputSink_->onError(std::move(ex));
-    }
-  }));
+      .WillOnce(
+          Invoke([this__, other__, checkpoint](folly::exception_wrapper ex) {
+            checkpoint->Call();
+            ASSERT_TRUE(other__);
+            ASSERT_TRUE(other__->outputSubscription_);
+            ASSERT_FALSE(this__->inputSinkCompleted_);
+            ASSERT_FALSE(this__->inputSinkError_);
+            this__->inputSinkError_ = ex;
+            // We now have two possible situations:
+            // * `other_->inputSink_` is not empty, we forward the signal,
+            // * otherwise, we only record the signal and wait for appropriate
+            //    sequence of calls to happen on the other end.
+            if (other__->inputSink_) {
+              other__->inputSink_->onError(std::move(ex));
+            }
+          }));
   EXPECT_CALL(*checkpoint, Call())
       .InSequence(s)
       .WillOnce(Invoke([checkpoint]() {

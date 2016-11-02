@@ -37,10 +37,10 @@ class InlineConnection : public DuplexConnection {
   void connectTo(InlineConnection& other);
 
   void setInput(std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
-                inputSink) override;
+                    inputSink) override;
 
   std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput()
-  override;
+      override;
 
  private:
   // This is to allow 2 instances of InlineConnection to point at each other

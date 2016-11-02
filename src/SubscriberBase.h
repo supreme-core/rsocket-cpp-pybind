@@ -23,9 +23,8 @@ class SubscriberBaseT : public Subscriber<T>,
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override final {
     auto thisPtr = this->shared_from_this();
-    runInExecutor([thisPtr, subscription]() {
-      thisPtr->onSubscribeImpl(subscription);
-    });
+    runInExecutor(
+        [thisPtr, subscription]() { thisPtr->onSubscribeImpl(subscription); });
   }
 
   void onNext(T payload) override final {
@@ -38,9 +37,7 @@ class SubscriberBaseT : public Subscriber<T>,
 
   void onComplete() override final {
     auto thisPtr = this->shared_from_this();
-    runInExecutor([thisPtr]() {
-      thisPtr->onCompleteImpl();
-    });
+    runInExecutor([thisPtr]() { thisPtr->onCompleteImpl(); });
   }
 
   void onError(folly::exception_wrapper ex) override final {
