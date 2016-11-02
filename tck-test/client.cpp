@@ -42,7 +42,7 @@ class SocketConnectCallback : public folly::AsyncSocket::ConnectCallback {
     std::unique_lock<std::mutex> lock(connectionMutex_);
     if (!connectedCV_.wait_for(
             lock, std::chrono::seconds(5), [&] { return connected_.load(); })) {
-      throw new std::runtime_error("unable to connect to tcp server");
+      throw std::runtime_error("unable to connect to tcp server");
     }
   }
 
