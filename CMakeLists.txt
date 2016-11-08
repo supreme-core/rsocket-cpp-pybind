@@ -70,8 +70,22 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 find_package(Folly REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
+
+# Find glog and gflags libraries specifically
+find_path(GLOG_INCLUDE_DIR glog/logging.h)
+find_path(GFLAGS_INCLUDE_DIR gflags/gflags.h)
+
+find_library(GLOG_LIBRARY glog)
+find_library(GFLAGS_LIBRARY gflags)
+
+message("gflags include_dir <${GFLAGS_INCLUDE_DIR}> lib <${GFLAGS_LIBRARY}>")
+message("glog include_dir <${GLOG_INCLUDE_DIR}> lib <${GLOG_LIBRARY}>")
+
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
+
+include_directories(SYSTEM ${GFLAGS_INCLUDE_DIR})
+include_directories(SYSTEM ${GLOG_INCLUDE_DIR})
 
 include_directories(${CMAKE_SOURCE_DIR})
 
@@ -154,7 +168,7 @@ add_library(
 target_link_libraries(
   ReactiveSocket
   ${FOLLY_LIBRARIES}
-  glog)
+  ${GLOG_LIBRARY})
 
 add_dependencies(ReactiveSocket ReactiveStreams)
 
@@ -187,8 +201,8 @@ target_link_libraries(
   ReactiveSocket
   ${FOLLY_LIBRARIES}
   ${GMOCK_LIBS}
-  gflags
-  glog
+  ${GFLAGS_LIBRARY}
+  ${GLOG_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tests gmock ReactiveSocket)
@@ -209,9 +223,9 @@ target_link_libraries(
         tcpclient
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpclient gmock)
@@ -228,9 +242,9 @@ target_link_libraries(
         tcpserver
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpserver gmock)
@@ -252,8 +266,8 @@ target_link_libraries(
         tckclient
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
-        glog
+        ${GFLAGS_LIBRARY}
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tckclient gmock)
@@ -272,9 +286,9 @@ target_link_libraries(
         tcpresumeclient
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpresumeclient gmock)
@@ -291,9 +305,9 @@ target_link_libraries(
         tcpresumeserver
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpresumeserver gmock)
