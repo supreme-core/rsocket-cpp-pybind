@@ -280,6 +280,15 @@ std::ostream& operator<<(std::ostream&, const Frame_REQUEST_FNF&);
 class Frame_REQUEST_N {
  public:
   static constexpr bool Trait_CarriesAllowance = true;
+
+  /*
+   * Maximum value for ReactiveSocket Subscription::request.
+   *
+   * n.b. this is less than size_t because of the Frame encoding restrictions.
+   *
+   * Publishers may optionally consider kMaxRequestN as infinite
+   * and avoid future accounting.
+   */
   static constexpr size_t kMaxRequestN = std::numeric_limits<uint32_t>::max();
 
   Frame_REQUEST_N() = default;
