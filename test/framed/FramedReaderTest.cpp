@@ -16,8 +16,9 @@ using namespace ::testing;
 using namespace ::reactivesocket;
 
 TEST(FramedReaderTest, Read1Frame) {
-  auto frameSubscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto wireSubscription = makeMockSubscription();
+  auto frameSubscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto wireSubscription = std::make_shared<MockSubscription>();
 
   std::string msg1("value1");
 
@@ -56,8 +57,9 @@ TEST(FramedReaderTest, Read1Frame) {
 }
 
 TEST(FramedReaderTest, Read3Frames) {
-  auto frameSubscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto wireSubscription = makeMockSubscription();
+  auto frameSubscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto wireSubscription = std::make_shared<MockSubscription>();
 
   std::string msg1("value1");
   std::string msg2("value2");
@@ -113,8 +115,9 @@ TEST(FramedReaderTest, Read3Frames) {
 }
 
 TEST(FramedReaderTest, Read1FrameIncomplete) {
-  auto frameSubscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto wireSubscription = makeMockSubscription();
+  auto frameSubscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto wireSubscription = std::make_shared<MockSubscription>();
 
   std::string part1("val");
   std::string part2("ueXXX");
