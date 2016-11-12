@@ -59,7 +59,9 @@ TEST(ReactiveSocketTest, RequestChannel) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -173,7 +175,9 @@ TEST(ReactiveSocketTest, RequestStreamComplete) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -257,7 +261,9 @@ TEST(ReactiveSocketTest, RequestStreamCancel) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -338,7 +344,9 @@ TEST(ReactiveSocketTest, RequestSubscription) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -420,7 +428,9 @@ TEST(ReactiveSocketTest, RequestSubscriptionSurplusResponse) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -489,7 +499,9 @@ TEST(ReactiveSocketTest, RequestResponse) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -557,7 +569,9 @@ TEST(ReactiveSocketTest, RequestFireAndForget) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -592,7 +606,9 @@ TEST(ReactiveSocketTest, RequestMetadataPush) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -627,7 +643,9 @@ TEST(ReactiveSocketTest, SetupData) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));
@@ -673,7 +691,9 @@ TEST(ReactiveSocketTest, Destructor) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_)).InSequence(s);
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .InSequence(s)
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler), serverStats);
@@ -748,7 +768,8 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
 
-  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_));
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+      .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
   auto serverSock = ReactiveSocket::fromServerConnection(
       std::move(serverConn), std::move(serverHandler));

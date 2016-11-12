@@ -42,6 +42,10 @@ class ServerSubscription : public SubscriptionBase {
 
 class ServerRequestHandler : public DefaultRequestHandler {
  public:
+  ServerRequestHandler(std::shared_ptr<StreamState> streamState)
+  : streamState_(streamState) {
+  }
+
   /// Handles a new inbound Subscription requested by the other end.
   void handleRequestSubscription(
       Payload request,
@@ -70,15 +74,40 @@ class ServerRequestHandler : public DefaultRequestHandler {
               << request->moveToFbString() << "\n";
   }
 
-  void handleSetupPayload(ConnectionSetupPayload request) override {
-    LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request << "\n";
+  std::shared_ptr<StreamState> handleSetupPayload(ConnectionSetupPayload request) override {
+    std::stringstream str;
+
+    str << "ServerRequestHandler.handleSetupPayload " << request << " setup token <";
+    for (uint8_t byte : request.token) {
+      str << (int)byte;
+    }
+    str << "> " << streamState_.get() << "\n";
+    LOG(INFO) << str.str();
+    return streamState_;
   }
+
+  std::shared_ptr<StreamState> handleResume(const ResumeIdentificationToken& token) override {
+    std::stringstream str;
+
+    str << "ServerRequestHandler.handleResume resume token <";
+    for (uint8_t byte : token) {
+      str << (int)byte;
+    }
+    str << "> " << streamState_.get() << "\n";
+
+    LOG(INFO) << str.str();
+    return streamState_;
+  }
+
+private:
+  // only keeping one
+  std::shared_ptr<StreamState> streamState_;
 };
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
   Callback(EventBase& eventBase, Stats& stats)
-      : eventBase_(eventBase), stats_(stats){};
+      : streamState_(std::make_shared<StreamState>()), eventBase_(eventBase), stats_(stats){};
 
   virtual ~Callback() = default;
 
@@ -95,29 +124,12 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     std::unique_ptr<DuplexConnection> framedConnection =
         folly::make_unique<FramedDuplexConnection>(std::move(connection));
     std::unique_ptr<RequestHandler> requestHandler =
-        folly::make_unique<ServerRequestHandler>();
+        folly::make_unique<ServerRequestHandler>(streamState_);
 
     std::unique_ptr<ReactiveSocket> rs = ReactiveSocket::fromServerConnection(
         std::move(framedConnection),
         std::move(requestHandler),
-        stats_,
-        [&](ReactiveSocket& socket,
-            const ResumeIdentificationToken& token,
-            ResumePosition position) {
-          std::cout << "resume callback token <";
-          for (uint8_t byte : token) {
-            std::cout << (int)byte;
-          }
-
-          std::cout << "> RS " << &socket << " " << reactiveSockets_[0].get();
-          std::cout << " position difference "
-                    << reactiveSockets_[0]->positionDifference(position);
-          std::cout << " isAvailable "
-                    << reactiveSockets_[0]->isPositionAvailable(position)
-                    << std::endl;
-          socket.resumeFromSocket(*reactiveSockets_[0]);
-          return true;
-        });
+        stats_);
 
     std::cout << "RS " << rs.get() << std::endl;
 
@@ -149,6 +161,8 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   }
 
  private:
+  // only one for demo purposes. Should be token dependent.
+  std::shared_ptr<StreamState> streamState_;
   std::vector<std::unique_ptr<ReactiveSocket>> reactiveSockets_;
   EventBase& eventBase_;
   Stats& stats_;

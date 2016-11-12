@@ -27,11 +27,6 @@ namespace reactivesocket {
 // TODO(stupaq): strong typedef and forward declarations all around
 using StreamId = uint32_t;
 
-/// unique identification token for resumption identification purposes
-using ResumeIdentificationToken = std::array<uint8_t, 16>;
-/// position for resumption
-using ResumePosition = int64_t;
-
 enum class FrameType : uint16_t {
   // TODO(stupaq): commented frame types indicate unimplemented frames
   RESERVED = 0x0000,

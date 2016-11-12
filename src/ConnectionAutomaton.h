@@ -11,9 +11,8 @@
 #include "src/Payload.h"
 #include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/ResumeCache.h"
-#include "src/ResumeTracker.h"
 #include "src/Stats.h"
+#include "src/StreamState.h"
 
 namespace reactivesocket {
 
@@ -35,7 +34,7 @@ using StreamAutomatonFactory =
     std::function<bool(StreamId, std::unique_ptr<folly::IOBuf>)>;
 
 using ResumeListener = std::function<
-    bool(const ResumeIdentificationToken& token, ResumePosition position)>;
+    std::shared_ptr<StreamState>(const ResumeIdentificationToken& token)>;
 
 using ConnectionCloseListener = std::function<void()>;
 
@@ -57,6 +56,7 @@ class ConnectionAutomaton :
       std::unique_ptr<DuplexConnection> connection,
       // TODO(stupaq): for testing only, can devirtualise if necessary
       StreamAutomatonFactory factory,
+      std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
       Stats& stats,
       bool client);
@@ -120,9 +120,7 @@ class ConnectionAutomaton :
   ///   ConnectionAutomaton.
   void endStream(StreamId streamId, StreamCompletionSignal signal);
 
-  /// Copy the streams and resumption information from a previous
-  /// ConnectionAutomaton
-  void resumeFromAutomaton(ConnectionAutomaton& oldAutomaton);
+  void useStreamState(std::shared_ptr<StreamState> streamState);
   /// @}
 
   void sendKeepalive();
@@ -178,8 +176,7 @@ class ConnectionAutomaton :
       connectionOutput_;
   reactivestreams::SubscriptionPtr<Subscription> connectionInputSub_;
 
-  std::unordered_map<StreamId, std::shared_ptr<AbstractStreamAutomaton>>
-      streams_;
+  std::shared_ptr<StreamState> streamState_;
 
   reactivestreams::AllowanceSemaphore writeAllowance_;
 
@@ -189,8 +186,6 @@ class ConnectionAutomaton :
   bool isServer_;
   bool isResumable_;
   std::vector<ConnectionCloseListener> closeListeners_;
-  std::unique_ptr<ResumeTracker> resumeTracker_;
-  std::unique_ptr<ResumeCache> resumeCache_;
   ResumeListener resumeListener_;
 };
 }

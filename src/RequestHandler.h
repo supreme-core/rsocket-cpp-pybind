@@ -12,6 +12,8 @@ class Executor;
 
 namespace reactivesocket {
 
+class StreamState;
+
 class SubscriberFactory {
  public:
   virtual ~SubscriberFactory() = default;
@@ -59,7 +61,11 @@ class RequestHandlerBase {
 
   /// Temporary home - this should eventually be an input to asking for a
   /// RequestHandler so negotiation is possible
-  virtual void handleSetupPayload(ConnectionSetupPayload request) = 0;
+  virtual std::shared_ptr<StreamState> handleSetupPayload(ConnectionSetupPayload request) = 0;
+
+  /// Temporary home - this should accompany handleSetupPayload
+  /// Return stream state for the given token. Reutn nullptr to disable resume
+  virtual std::shared_ptr<StreamState> handleResume(const ResumeIdentificationToken& token) = 0;
 };
 
 class RequestHandler : public RequestHandlerBase {
