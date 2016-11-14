@@ -15,8 +15,9 @@ using namespace ::testing;
 using namespace ::reactivesocket;
 
 TEST(FramedWriterTest, Subscribe) {
-  auto subscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto subscription = makeMockSubscription();
+  auto subscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto subscription = std::make_shared<MockSubscription>();
 
   EXPECT_CALL(*subscriber, onSubscribe_(_)).Times(1);
 
@@ -29,8 +30,9 @@ TEST(FramedWriterTest, Subscribe) {
 }
 
 TEST(FramedWriterTest, Error) {
-  auto subscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto subscription = makeMockSubscription();
+  auto subscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto subscription = std::make_shared<MockSubscription>();
 
   auto writer = std::make_shared<FramedWriter>(subscriber);
 
@@ -45,8 +47,9 @@ TEST(FramedWriterTest, Error) {
 }
 
 TEST(FramedWriterTest, Complete) {
-  auto subscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto subscription = makeMockSubscription();
+  auto subscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto subscription = std::make_shared<MockSubscription>();
 
   auto writer = std::make_shared<FramedWriter>(subscriber);
 
@@ -61,8 +64,9 @@ TEST(FramedWriterTest, Complete) {
 }
 
 static void nextSingleFrameTest(int headroom) {
-  auto subscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto subscription = makeMockSubscription();
+  auto subscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto subscription = std::make_shared<MockSubscription>();
 
   EXPECT_CALL(*subscriber, onError_(_)).Times(0);
   EXPECT_CALL(*subscriber, onComplete_()).Times(0);
@@ -99,8 +103,9 @@ TEST(FramedWriterTest, NextSingleFrameWithHeadroom) {
 }
 
 static void nextTwoFramesTest(int headroom) {
-  auto subscriber = makeMockSubscriber<std::unique_ptr<folly::IOBuf>>();
-  auto subscription = makeMockSubscription();
+  auto subscriber =
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+  auto subscription = std::make_shared<MockSubscription>();
 
   EXPECT_CALL(*subscriber, onError_(_)).Times(0);
   EXPECT_CALL(*subscriber, onComplete_()).Times(0);

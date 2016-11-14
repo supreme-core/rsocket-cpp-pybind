@@ -16,14 +16,6 @@ namespace reactivesocket {
 template <typename T>
 using MockSubscriber =
     reactivestreams::MockSubscriber<T, folly::exception_wrapper>;
+
 using MockSubscription = reactivestreams::MockSubscription;
-
-template <typename T>
-std::shared_ptr<MockSubscriber<T>> makeMockSubscriber() {
-  return reactivestreams::makeMockSubscriber<T, folly::exception_wrapper>();
-}
-
-inline std::shared_ptr<MockSubscription> makeMockSubscription() {
-  return reactivestreams::makeMockSubscription();
-}
 }

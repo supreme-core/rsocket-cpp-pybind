@@ -29,14 +29,6 @@ class MockPublisher : public Publisher<T, E> {
 /// MockSubscriber MUST be heap-allocated, as it manages its own lifetime.
 /// For the same reason putting mock instance in a smart pointer is a poor idea.
 /// Can only be instanciated for CopyAssignable E type.
-template <typename T, typename E = std::exception_ptr>
-class MockSubscriber;
-
-// TODO: remove
-template <typename T, typename E = std::exception_ptr>
-std::shared_ptr<MockSubscriber<T, E>> makeMockSubscriber() {
-  return std::make_shared<MockSubscriber<T, E>>();
-}
 
 using CheckpointPtr = std::shared_ptr<testing::MockFunction<void()>>;
 
@@ -120,8 +112,4 @@ class MockSubscription : public Subscription {
   }
 };
 
-// TODO: remove
-inline std::shared_ptr<MockSubscription> makeMockSubscription() {
-  return std::make_shared<MockSubscription>();
-}
-}
+} // reactivesocket
