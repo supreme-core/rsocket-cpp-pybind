@@ -458,7 +458,7 @@ class Frame_LEASE {
   Frame_LEASE() = default;
   Frame_LEASE(
       uint32_t ttl,
-      uint32_t numberOfRequests,
+      int32_t numberOfRequests,
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
       : header_(FrameType::LEASE, metadata ? FrameFlags_METADATA : 0, 0),
         ttl_(ttl),
@@ -470,7 +470,7 @@ class Frame_LEASE {
 
   FrameHeader header_;
   uint32_t ttl_;
-  uint32_t numberOfRequests_;
+  int32_t numberOfRequests_;
   std::unique_ptr<folly::IOBuf> metadata_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_LEASE&);
