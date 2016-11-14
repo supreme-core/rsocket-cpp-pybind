@@ -29,8 +29,33 @@ class MockPublisher : public Publisher<T, E> {
 /// MockSubscriber MUST be heap-allocated, as it manages its own lifetime.
 /// For the same reason putting mock instance in a smart pointer is a poor idea.
 /// Can only be instanciated for CopyAssignable E type.
+
+using CheckpointPtr = std::shared_ptr<testing::MockFunction<void()>>;
+
 template <typename T, typename E>
 class MockSubscriber : public Subscriber<T, E> {
+  class SubscriptionShim : public Subscription {
+   public:
+    explicit SubscriptionShim(
+        std::shared_ptr<Subscription> originalSubscription,
+        CheckpointPtr checkpoint)
+        : originalSubscription_(std::move(originalSubscription)),
+          checkpoint_(std::move(checkpoint)) {}
+
+    void request(size_t n) override final {
+      originalSubscription_->request(n);
+    }
+
+    void cancel() override final {
+      checkpoint_->Call();
+      originalSubscription_->cancel();
+    }
+
+   private:
+    std::shared_ptr<Subscription> originalSubscription_;
+    CheckpointPtr checkpoint_;
+  };
+
  public:
   MOCK_METHOD1(onSubscribe_, void(std::shared_ptr<Subscription> subscription));
   MOCK_METHOD1_T(onNext_, void(T& value));
@@ -38,10 +63,11 @@ class MockSubscriber : public Subscriber<T, E> {
   MOCK_METHOD1_T(onError_, void(E ex));
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-    subscription_ = subscription;
+    subscription_ = std::make_shared<SubscriptionShim>(
+        std::move(subscription), checkpoint_);
     // We allow registering the same subscriber with multiple Publishers.
-    EXPECT_CALL(checkpoint_, Call());
-    onSubscribe_(subscription);
+    EXPECT_CALL(*checkpoint_, Call()).Times(testing::AtLeast(1));
+    onSubscribe_(subscription_);
   }
 
   void onNext(T element) override {
@@ -49,13 +75,13 @@ class MockSubscriber : public Subscriber<T, E> {
   }
 
   void onComplete() override {
-    checkpoint_.Call();
+    checkpoint_->Call();
     onComplete_();
     subscription_ = nullptr;
   }
 
   void onError(E ex) override {
-    checkpoint_.Call();
+    checkpoint_->Call();
     onError_(ex);
     subscription_ = nullptr;
   }
@@ -65,8 +91,8 @@ class MockSubscriber : public Subscriber<T, E> {
   }
 
  private:
-  std::shared_ptr<Subscription> subscription_;
-  testing::MockFunction<void()> checkpoint_;
+  std::shared_ptr<SubscriptionShim> subscription_;
+  CheckpointPtr checkpoint_{std::make_shared<testing::MockFunction<void()>>()};
 };
 
 /// GoogleMock-compatible Subscriber implementation for fast prototyping.
@@ -78,21 +104,12 @@ class MockSubscription : public Subscription {
   MOCK_METHOD0(cancel_, void());
 
   void request(size_t n) override {
-    if (!requested_) {
-      requested_ = true;
-      EXPECT_CALL(checkpoint_, Call()).Times(1);
-    }
     request_(n);
   }
 
   void cancel() override {
-    checkpoint_.Call();
     cancel_();
   }
-
- private:
-  bool requested_{false};
-  testing::MockFunction<void()> checkpoint_;
 };
 
 } // reactivesocket

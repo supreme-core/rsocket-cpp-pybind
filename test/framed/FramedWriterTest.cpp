@@ -20,7 +20,6 @@ TEST(FramedWriterTest, Subscribe) {
   auto subscription = std::make_shared<MockSubscription>();
 
   EXPECT_CALL(*subscriber, onSubscribe_(_)).Times(1);
-  EXPECT_CALL(*subscription, cancel_()).Times(1);
 
   auto writer = std::make_shared<FramedWriter>(subscriber);
   writer->onSubscribe(subscription);
@@ -89,7 +88,6 @@ static void nextSingleFrameTest(int headroom) {
 
   // to delete objects
   EXPECT_CALL(*subscriber, onComplete_()).Times(1);
-  EXPECT_CALL(*subscription, cancel_()).Times(1);
 
   // TODO: cancel should be called automatically
   subscriber->subscription()->cancel();
@@ -146,7 +144,6 @@ static void nextTwoFramesTest(int headroom) {
 
   // to delete objects
   EXPECT_CALL(*subscriber, onComplete_()).Times(1);
-  EXPECT_CALL(*subscription, cancel_()).Times(1);
 
   subscriber->subscription()->cancel();
   writer->onComplete();
