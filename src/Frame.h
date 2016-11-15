@@ -277,14 +277,12 @@ class Frame_REQUEST_N {
   static constexpr bool Trait_CarriesAllowance = true;
 
   /*
-   * Maximum value for ReactiveSocket Subscription::request.
+   * Maximum value for ReactiveSocket Subscription::request. 
+   * Value is a signed int, however negative values are not allowed.
    *
    * n.b. this is less than size_t because of the Frame encoding restrictions.
-   *
-   * Publishers may optionally consider kMaxRequestN as infinite
-   * and avoid future accounting.
    */
-  static constexpr size_t kMaxRequestN = std::numeric_limits<uint32_t>::max();
+  static constexpr size_t kMaxRequestN = std::numeric_limits<int32_t>::max();
 
   Frame_REQUEST_N() = default;
   Frame_REQUEST_N(StreamId streamId, uint32_t requestN)
@@ -455,7 +453,7 @@ class Frame_LEASE {
   Frame_LEASE() = default;
   Frame_LEASE(
       uint32_t ttl,
-      uint32_t numberOfRequests,
+      int32_t numberOfRequests,
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
       : header_(FrameType::LEASE, metadata ? FrameFlags_METADATA : 0, 0),
         ttl_(ttl),
@@ -467,7 +465,7 @@ class Frame_LEASE {
 
   FrameHeader header_;
   uint32_t ttl_;
-  uint32_t numberOfRequests_;
+  int32_t numberOfRequests_;
   std::unique_ptr<folly::IOBuf> metadata_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_LEASE&);
