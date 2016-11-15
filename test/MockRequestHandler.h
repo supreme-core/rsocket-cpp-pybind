@@ -31,7 +31,8 @@ class MockRequestHandlerBase : public RequestHandlerBase {
   MOCK_METHOD1(
       handleMetadataPush_,
       void(std::unique_ptr<folly::IOBuf>& request));
-  MOCK_METHOD1(handleSetupPayload_, void(ConnectionSetupPayload& request));
+  MOCK_METHOD1(handleSetupPayload_, std::shared_ptr<StreamState>(ConnectionSetupPayload& request));
+  MOCK_METHOD1(handleResume_, std::shared_ptr<StreamState>(const ResumeIdentificationToken & token));
 
   std::shared_ptr<Subscriber<Payload>> onRequestChannel(
       Payload request,
@@ -63,9 +64,14 @@ class MockRequestHandlerBase : public RequestHandlerBase {
     handleMetadataPush_(request);
   }
 
-  void handleSetupPayload(ConnectionSetupPayload request) override {
-    handleSetupPayload_(request);
+  std::shared_ptr<StreamState> handleSetupPayload(ConnectionSetupPayload request) override {
+    return handleSetupPayload_(request);
   }
+
+  std::shared_ptr<StreamState> handleResume(const ResumeIdentificationToken& token) override {
+    return handleResume_(token);
+  }
+
 };
 
 class MockRequestHandler : public RequestHandler {
@@ -88,7 +94,8 @@ class MockRequestHandler : public RequestHandler {
   MOCK_METHOD1(
       handleMetadataPush_,
       void(std::unique_ptr<folly::IOBuf>& request));
-  MOCK_METHOD1(handleSetupPayload_, void(ConnectionSetupPayload& request));
+  MOCK_METHOD1(handleSetupPayload_, std::shared_ptr<StreamState>(ConnectionSetupPayload& request));
+  MOCK_METHOD1(handleResume_, std::shared_ptr<StreamState>(const ResumeIdentificationToken & token));
 
   std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
@@ -122,8 +129,13 @@ class MockRequestHandler : public RequestHandler {
     handleMetadataPush_(request);
   }
 
-  void handleSetupPayload(ConnectionSetupPayload request) override {
-    handleSetupPayload_(request);
+  std::shared_ptr<StreamState> handleSetupPayload(ConnectionSetupPayload request) override {
+    return handleSetupPayload_(request);
   }
+
+  std::shared_ptr<StreamState> handleResume(const ResumeIdentificationToken& token) override {
+    return handleResume_(token);
+  }
+
 };
 }

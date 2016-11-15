@@ -38,11 +38,6 @@ class KeepaliveTimer {
 
 using CloseListener = std::function<void(ReactiveSocket&)>;
 
-using ResumeSocketListener = std::function<bool(
-    ReactiveSocket& newSocket,
-    const ResumeIdentificationToken& token,
-    ResumePosition position)>;
-
 // TODO(stupaq): consider using error codes in place of folly::exception_wrapper
 
 // TODO(stupaq): Here is some heavy problem with the recursion on shutdown.
@@ -76,11 +71,7 @@ class ReactiveSocket {
   static std::unique_ptr<ReactiveSocket> fromServerConnection(
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandlerBase> handler,
-      Stats& stats = Stats::noop(),
-      ResumeSocketListener resumeListener =
-          [](ReactiveSocket&,
-             const ResumeIdentificationToken&,
-             ResumePosition) { return false; });
+      Stats& stats = Stats::noop());
 
   std::shared_ptr<Subscriber<Payload>> requestChannel(
       const std::shared_ptr<Subscriber<Payload>>& responseSink,
@@ -109,33 +100,25 @@ class ReactiveSocket {
 
   void metadataPush(std::unique_ptr<folly::IOBuf> metadata);
 
-  void resumeFromSocket(ReactiveSocket& socket);
-
   void tryClientResume(
       std::unique_ptr<DuplexConnection> newConnection,
       const ResumeIdentificationToken& token);
-
-  bool isPositionAvailable(ResumePosition position);
-  ResumePosition positionDifference(ResumePosition position);
 
  private:
   ReactiveSocket(
       bool isServer,
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandlerBase> handler,
-      ResumeSocketListener resumeListener,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer);
 
   bool createResponder(StreamId streamId, std::unique_ptr<folly::IOBuf> frame);
-  bool resumeListener(
-      const ResumeIdentificationToken& token,
-      ResumePosition position);
+  std::shared_ptr<StreamState> resumeListener(
+      const ResumeIdentificationToken& token);
 
   const std::shared_ptr<ConnectionAutomaton> connection_;
   std::unique_ptr<RequestHandlerBase> handler_;
   StreamId nextStreamId_;
   std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
-  ResumeSocketListener resumeSocketListener_;
 };
 }

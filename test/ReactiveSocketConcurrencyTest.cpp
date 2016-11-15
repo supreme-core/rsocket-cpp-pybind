@@ -38,7 +38,8 @@ class ClientSideConcurrencyTest : public testing::Test {
     auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
     auto& serverHandlerRef = *serverHandler;
 
-    EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_));
+    EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+        .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
     serverSock = ReactiveSocket::fromServerConnection(
         std::move(serverConn), std::move(serverHandler));
@@ -240,7 +241,8 @@ class ServerSideConcurrencyTest : public testing::Test {
         folly::make_unique<StrictMock<MockRequestHandlerBase>>();
     auto& serverHandlerRef = *serverHandler;
 
-    EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_));
+    EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+        .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
     serverSock = ReactiveSocket::fromServerConnection(
         std::move(serverConn), std::move(serverHandler));

@@ -76,6 +76,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       std::move(framedAutomatonConnection),
       [](StreamId, std::unique_ptr<folly::IOBuf>) { return false; },
+      std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
       false);
@@ -143,6 +144,7 @@ static void terminateTest(
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       std::move(framedAutomatonConnection),
       [](StreamId, std::unique_ptr<folly::IOBuf>) { return false; },
+      std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
       false);
@@ -224,6 +226,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       std::move(framedAutomatonConnection),
       [](StreamId, std::unique_ptr<folly::IOBuf>) { return false; },
+      std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
       false);

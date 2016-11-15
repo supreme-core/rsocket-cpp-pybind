@@ -163,7 +163,8 @@ add_library(
   src/EnableSharedFromThis.h
   src/SubscriberBase.h
   src/SubscriptionBase.h
-  src/Executor.cpp)
+  src/Executor.cpp
+  src/StreamState.h)
 
 target_link_libraries(
   ReactiveSocket
