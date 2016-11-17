@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "NullRequestHandler.h"
+#include "StreamState.h"
 
 #include <folly/ExceptionWrapper.h>
 
@@ -57,6 +58,13 @@ void NullRequestHandler::handleFireAndForgetRequest(Payload /*request*/) {}
 void NullRequestHandler::handleMetadataPush(
     std::unique_ptr<folly::IOBuf> /*request*/) {}
 
-void NullRequestHandler::handleSetupPayload(
-    ConnectionSetupPayload /*request*/) {}
+std::shared_ptr<StreamState> NullRequestHandler::handleSetupPayload(
+    ConnectionSetupPayload /*request*/) {
+  return std::make_shared<StreamState>();
+}
+
+std::shared_ptr<StreamState> NullRequestHandler::handleResume(
+    const ResumeIdentificationToken& /*token*/) {
+  return std::make_shared<StreamState>();
+}
 } // reactivesocket

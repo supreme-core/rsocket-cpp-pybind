@@ -70,8 +70,22 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 find_package(Folly REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
+
+# Find glog and gflags libraries specifically
+find_path(GLOG_INCLUDE_DIR glog/logging.h)
+find_path(GFLAGS_INCLUDE_DIR gflags/gflags.h)
+
+find_library(GLOG_LIBRARY glog)
+find_library(GFLAGS_LIBRARY gflags)
+
+message("gflags include_dir <${GFLAGS_INCLUDE_DIR}> lib <${GFLAGS_LIBRARY}>")
+message("glog include_dir <${GLOG_INCLUDE_DIR}> lib <${GLOG_LIBRARY}>")
+
 include_directories(SYSTEM ${FOLLY_INCLUDE_DIR})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
+
+include_directories(SYSTEM ${GFLAGS_INCLUDE_DIR})
+include_directories(SYSTEM ${GLOG_INCLUDE_DIR})
 
 include_directories(${CMAKE_SOURCE_DIR})
 
@@ -91,19 +105,31 @@ add_library(
   src/automata/RequestResponseRequester.h
   src/automata/RequestResponseResponder.cpp
   src/automata/RequestResponseResponder.h
+  src/automata/StreamRequester.cpp
+  src/automata/StreamRequester.h
+  src/automata/StreamResponder.h
   src/automata/StreamSubscriptionRequesterBase.cpp
   src/automata/StreamSubscriptionRequesterBase.h
   src/automata/StreamSubscriptionResponderBase.cpp
   src/automata/StreamSubscriptionResponderBase.h
-  src/automata/StreamRequester.cpp
-  src/automata/StreamRequester.h
-  src/automata/StreamResponder.h
   src/automata/SubscriptionRequester.cpp
   src/automata/SubscriptionRequester.h
   src/automata/SubscriptionResponder.h
+  src/CancellingSubscription.h
+  src/Common.cpp
+  src/Common.h
+  src/concurrent/atomic64_gcc_x86_64.h
+  src/concurrent/atomic64.h
+  src/concurrent/OneToOneRingBuffer.h
   src/ConnectionAutomaton.cpp
   src/ConnectionAutomaton.h
+  src/ConnectionSetupPayload.cpp
+  src/ConnectionSetupPayload.h
   src/DuplexConnection.h
+  src/EnableSharedFromThis.h
+  src/Executor.cpp
+  src/folly/FollyKeepaliveTimer.cpp
+  src/folly/FollyKeepaliveTimer.h
   src/Frame.cpp
   src/Frame.h
   src/framed/FramedDuplexConnection.cpp
@@ -127,36 +153,25 @@ add_library(
   src/Payload.h
   src/ReactiveSocket.cpp
   src/ReactiveSocket.h
-  src/ReactiveStreamsCompat.h
-  src/RequestHandler.h
-  src/tcp/TcpDuplexConnection.cpp
-  src/tcp/TcpDuplexConnection.h
-  src/Stats.h
-  src/Stats.cpp
-  src/folly/FollyKeepaliveTimer.cpp
-  src/folly/FollyKeepaliveTimer.h
-  src/ConnectionSetupPayload.h
-  src/ConnectionSetupPayload.cpp
-  src/ResumeTracker.h
-  src/ResumeCache.h
-  src/ResumeCache.cpp
-  src/concurrent/atomic64.h
-  src/concurrent/atomic64_gcc_x86_64.h
-  src/concurrent/OneToOneRingBuffer.h
   src/ReactiveSocketSubscriberFactory.h
-  src/CancellingSubscription.h
+  src/ReactiveStreamsCompat.h
   src/RequestHandler.cpp
-  src/EnableSharedFromThis.h
+  src/RequestHandler.h
+  src/ResumeCache.cpp
+  src/ResumeCache.h
+  src/ResumeTracker.h
+  src/Stats.cpp
+  src/Stats.h
+  src/StreamState.h
   src/SubscriberBase.h
   src/SubscriptionBase.h
-  src/Executor.cpp
-  src/Common.h
-  src/Common.cpp)
+  src/tcp/TcpDuplexConnection.cpp
+  src/tcp/TcpDuplexConnection.h)
 
 target_link_libraries(
   ReactiveSocket
   ${FOLLY_LIBRARIES}
-  glog)
+  ${GLOG_LIBRARY})
 
 add_dependencies(ReactiveSocket ReactiveStreams)
 
@@ -167,21 +182,23 @@ enable_testing()
 
 add_executable(
   tests
+  test/concurrent/OneToOneRingBufferTest.cpp
+  test/ConnectionAutomatonTest.cpp
+  test/ExecutorTest.cpp
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
   test/FrameTest.cpp
-  test/ConnectionAutomatonTest.cpp
   test/InlineConnection.cpp
   test/InlineConnection.h
   test/InlineConnectionTest.cpp
   test/MockDuplexConnection.h
   test/MockRequestHandler.h
-  test/ReactiveSocketTest.cpp
-  test/ReactiveSocketConcurrencyTest.cpp
-  test/ReactiveStreamsMocksCompat.h
-  test/Test.cpp
   test/MockStats.h
-  test/concurrent/OneToOneRingBufferTest.cpp
+  test/ReactiveSocketConcurrencyTest.cpp
+  test/ReactiveSocketTest.cpp
+  test/ReactiveStreamsMocksCompat.h
+  test/SubscriberBaseTest.cpp
+  test/Test.cpp
 )
 
 target_link_libraries(
@@ -189,8 +206,8 @@ target_link_libraries(
   ReactiveSocket
   ${FOLLY_LIBRARIES}
   ${GMOCK_LIBS}
-  gflags
-  glog
+  ${GFLAGS_LIBRARY}
+  ${GLOG_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tests gmock ReactiveSocket)
@@ -211,9 +228,9 @@ target_link_libraries(
         tcpclient
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpclient gmock)
@@ -230,9 +247,9 @@ target_link_libraries(
         tcpserver
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpserver gmock)
@@ -254,8 +271,8 @@ target_link_libraries(
         tckclient
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
-        glog
+        ${GFLAGS_LIBRARY}
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tckclient gmock)
@@ -274,9 +291,9 @@ target_link_libraries(
         tcpresumeclient
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpresumeclient gmock)
@@ -293,9 +310,9 @@ target_link_libraries(
         tcpresumeserver
         ReactiveSocket
         ${FOLLY_LIBRARIES}
-        gflags
+        ${GFLAGS_LIBRARY}
         ${GMOCK_LIBS}
-        glog
+        ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
 add_dependencies(tcpresumeserver gmock)

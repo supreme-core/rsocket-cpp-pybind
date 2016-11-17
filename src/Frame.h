@@ -27,11 +27,6 @@ namespace reactivesocket {
 // TODO(stupaq): strong typedef and forward declarations all around
 using StreamId = uint32_t;
 
-/// unique identification token for resumption identification purposes
-using ResumeIdentificationToken = std::array<uint8_t, 16>;
-/// position for resumption
-using ResumePosition = int64_t;
-
 enum class FrameType : uint16_t {
   // TODO(stupaq): commented frame types indicate unimplemented frames
   RESERVED = 0x0000,
@@ -280,7 +275,14 @@ std::ostream& operator<<(std::ostream&, const Frame_REQUEST_FNF&);
 class Frame_REQUEST_N {
  public:
   static constexpr bool Trait_CarriesAllowance = true;
-  static constexpr size_t kMaxRequestN = std::numeric_limits<uint32_t>::max();
+
+  /*
+   * Maximum value for ReactiveSocket Subscription::request.
+   * Value is a signed int, however negative values are not allowed.
+   *
+   * n.b. this is less than size_t because of the Frame encoding restrictions.
+   */
+  static constexpr size_t kMaxRequestN = std::numeric_limits<int32_t>::max();
 
   Frame_REQUEST_N() = default;
   Frame_REQUEST_N(StreamId streamId, uint32_t requestN)
@@ -451,7 +453,7 @@ class Frame_LEASE {
   Frame_LEASE() = default;
   Frame_LEASE(
       uint32_t ttl,
-      uint32_t numberOfRequests,
+      int32_t numberOfRequests,
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
       : header_(FrameType::LEASE, metadata ? FrameFlags_METADATA : 0, 0),
         ttl_(ttl),
@@ -463,7 +465,7 @@ class Frame_LEASE {
 
   FrameHeader header_;
   uint32_t ttl_;
-  uint32_t numberOfRequests_;
+  int32_t numberOfRequests_;
   std::unique_ptr<folly::IOBuf> metadata_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_LEASE&);

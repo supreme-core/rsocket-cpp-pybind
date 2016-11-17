@@ -79,8 +79,10 @@ class ServerRequestHandler : public DefaultRequestHandler {
               << request->moveToFbString();
   }
 
-  void handleSetupPayload(ConnectionSetupPayload request) override {
+  std::shared_ptr<StreamState> handleSetupPayload(
+      ConnectionSetupPayload request) override {
     LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
+    return std::make_shared<StreamState>();
   }
 };
 

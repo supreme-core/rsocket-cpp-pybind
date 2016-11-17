@@ -50,9 +50,6 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       .InSequence(s)
       .WillOnce(Invoke([&](size_t n) {
         framedTestConnection->getOutput()->onNext(makeInvalidFrameHeader());
-      }))
-      .WillOnce(Invoke([&](size_t n) {
-        // ignored
       }));
 
   auto testOutputSubscriber =
@@ -72,9 +69,6 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         ASSERT_EQ("invalid frame", error.payload_.moveDataToString());
       }));
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1).InSequence(s);
-  EXPECT_CALL(*inputSubscription, cancel_()).InSequence(s).WillOnce(Invoke([&] {
-    framedTestConnection->getOutput()->onComplete();
-  }));
 
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
@@ -82,6 +76,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       std::move(framedAutomatonConnection),
       [](StreamId, std::unique_ptr<folly::IOBuf>) { return false; },
+      std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
       false);
@@ -106,23 +101,14 @@ static void terminateTest(
 
   auto inputSubscription = std::make_shared<MockSubscription>();
 
-  if (inOnSubscribe) {
-    EXPECT_CALL(*inputSubscription, request_(_)).Times(0);
-  } else {
-    auto&& exp = EXPECT_CALL(*inputSubscription, request_(_))
-                     .WillOnce(Invoke([&](size_t n) {
-                       if (inRequest) {
-                         framedTestConnection->getOutput()->onComplete();
-                       } else {
-                         framedTestConnection->getOutput()->onNext(
-                             makeInvalidFrameHeader());
-                       }
-                     }));
-    if (!inRequest) {
-      exp.WillOnce(Invoke([&](size_t n) {
-        // ignored
-      }));
-    }
+  if (!inOnSubscribe) {
+    EXPECT_CALL(*inputSubscription, request_(_)).WillOnce(Invoke([&](size_t n) {
+      if (inRequest) {
+        framedTestConnection->getOutput()->onComplete();
+      } else {
+        framedTestConnection->getOutput()->onNext(makeInvalidFrameHeader());
+      }
+    }));
   }
 
   auto testOutputSubscriber =
@@ -151,9 +137,6 @@ static void terminateTest(
   }));
 
   auto testOutput = framedTestConnection->getOutput();
-  EXPECT_CALL(*inputSubscription, cancel_()).WillOnce(Invoke([&] {
-    testOutput->onComplete();
-  }));
 
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
@@ -161,6 +144,7 @@ static void terminateTest(
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       std::move(framedAutomatonConnection),
       [](StreamId, std::unique_ptr<folly::IOBuf>) { return false; },
+      std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
       false);
@@ -227,9 +211,6 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         frames.push_back(Frame_REQUEST_N(streamId + 2, 1).serializeOut());
 
         framedWriter->onNextMultiple(std::move(frames));
-      }))
-      .WillOnce(Invoke([&](size_t n) {
-        // ignoring
       }));
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .InSequence(s)
@@ -238,9 +219,6 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         ASSERT_EQ(FrameType::ERROR, frameType);
       }));
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1).InSequence(s);
-  EXPECT_CALL(*inputSubscription, cancel_()).InSequence(s).WillOnce(Invoke([&] {
-    framedTestConnection->getOutput()->onComplete();
-  }));
 
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
@@ -248,6 +226,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       std::move(framedAutomatonConnection),
       [](StreamId, std::unique_ptr<folly::IOBuf>) { return false; },
+      std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
       false);

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
 
@@ -19,6 +20,10 @@ namespace reactivesocket {
 // TODO(lehecka): share the definition with Frame.h
 using FrameFlags = uint16_t;
 const FrameFlags FrameFlags_METADATA = 0x4000;
+/// unique identification token for resumption identification purposes
+using ResumeIdentificationToken = std::array<uint8_t, 16>;
+/// position for resumption
+using ResumePosition = int64_t;
 
 /// The type of a read-only view on a binary buffer.
 /// MUST manage the lifetime of the underlying buffer.

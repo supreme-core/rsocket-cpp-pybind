@@ -16,7 +16,7 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
                      public SubscriptionBase,
                      public EnableSharedFromThisBase<FramedReader> {
  public:
-  FramedReader(
+  explicit FramedReader(
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
           frames)
       : frames_(std::move(frames)),
