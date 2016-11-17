@@ -10,16 +10,16 @@
 namespace reactivesocket {
 class ConnectionSetupPayload {
  public:
-  ConnectionSetupPayload(
+  explicit ConnectionSetupPayload(
       std::string _metadataMimeType = "",
       std::string _dataMimeType = "",
       Payload _payload = Payload(),
       const ResumeIdentificationToken& token =
-          { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } })
+          {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}})
       : metadataMimeType(std::move(_metadataMimeType)),
         dataMimeType(std::move(_dataMimeType)),
         payload(std::move(_payload)),
-        token(token) {};
+        token(token){};
 
   std::string metadataMimeType;
   std::string dataMimeType;

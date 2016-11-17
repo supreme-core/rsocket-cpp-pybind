@@ -85,11 +85,14 @@ class SubscriberBaseT : public Subscriber<T>,
   void onSubscribe(std::shared_ptr<Subscription> subscription) override final {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, subscription]() {
-      CHECK(!thisPtr->cancelled_);
       CHECK(!thisPtr->originalSubscription_);
       thisPtr->originalSubscription_ = std::move(subscription);
-      thisPtr->onSubscribeImpl(
-          std::make_shared<SubscriptionShim>(thisPtr->shared_from_this()));
+      // if the subscription got cancelled in the meantime, we will not try to
+      // subscribe. Instead we will let the instance die when released.
+      if (!thisPtr->cancelled_) {
+        thisPtr->onSubscribeImpl(
+            std::make_shared<SubscriptionShim>(thisPtr->shared_from_this()));
+      }
     });
   }
 

@@ -242,8 +242,7 @@ void ConnectionAutomaton::onConnectionFrame(
           // Application will call resumeFromAutomaton to setup streams and
           // resume information
           auto streamState = resumeListener_(frame.token_);
-          if (nullptr != streamState)
-          {
+          if (nullptr != streamState) {
             canResume = true;
             useStreamState(streamState);
           }
@@ -253,7 +252,8 @@ void ConnectionAutomaton::onConnectionFrame(
           outputFrameOrEnqueue(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
-          streamState_->resumeCache_->retransmitFromPosition(frame.position_, *this);
+          streamState_->resumeCache_->retransmitFromPosition(
+              frame.position_, *this);
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());
@@ -270,7 +270,8 @@ void ConnectionAutomaton::onConnectionFrame(
       if (frame.deserializeFrom(std::move(payload))) {
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
-          streamState_->resumeCache_->retransmitFromPosition(frame.position_, *this);
+          streamState_->resumeCache_->retransmitFromPosition(
+              frame.position_, *this);
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());
@@ -304,7 +305,8 @@ void ConnectionAutomaton::onTerminal(folly::exception_wrapper ex) {
   // Close all streams.
   while (!streamState_->streams_.empty()) {
     auto oldSize = streamState_->streams_.size();
-    auto result = endStreamInternal(streamState_->streams_.begin()->first, signal);
+    auto result =
+        endStreamInternal(streamState_->streams_.begin()->first, signal);
     (void)oldSize;
     (void)result;
     // TODO(stupaq): what kind of a user action could violate these
@@ -358,7 +360,8 @@ void ConnectionAutomaton::sendKeepalive() {
 }
 
 void ConnectionAutomaton::sendResume(const ResumeIdentificationToken& token) {
-  Frame_RESUME resumeFrame(token, streamState_->resumeTracker_->impliedPosition());
+  Frame_RESUME resumeFrame(
+      token, streamState_->resumeTracker_->impliedPosition());
   outputFrameOrEnqueue(resumeFrame.serializeOut());
 }
 
@@ -411,11 +414,10 @@ void ConnectionAutomaton::outputFrame(
   connectionOutput_.onNext(std::move(outputFrame));
 }
 
-void ConnectionAutomaton::useStreamState(std::shared_ptr<StreamState> streamState)
-{
+void ConnectionAutomaton::useStreamState(
+    std::shared_ptr<StreamState> streamState) {
   if (isServer_ && isResumable_) {
-      streamState_ = streamState;
+    streamState_ = streamState;
   }
 }
-
 }
