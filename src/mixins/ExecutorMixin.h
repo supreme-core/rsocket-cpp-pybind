@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <queue>
 
 #include <folly/ExceptionWrapper.h>
@@ -36,17 +37,11 @@ class ExecutorBase {
   void start();
 
  protected:
-  template <typename F>
-  void runInExecutor(F&& func) {
-    if (pendingSignals_) {
-      pendingSignals_->emplace_back(std::forward<F>(func));
-    } else {
-      executor_.add(std::forward<F>(func));
-    }
-  }
+  void runInExecutor(folly::Func func);
 
  private:
-  using PendingSignals = std::vector<std::function<void()>>;
+  using PendingSignals = std::vector<folly::Func>;
+  std::recursive_mutex pendingSignalsMutex_;
   std::unique_ptr<PendingSignals> pendingSignals_;
   folly::Executor& executor_;
 };
@@ -72,7 +67,7 @@ class ExecutorMixin : public Base,
     folly::Executor& executor;
   };
 
-  ExecutorMixin(const Parameters& params)
+  explicit ExecutorMixin(const Parameters& params)
       : Base(params), ExecutorBase(params.executor, false) {}
 
   /// @{

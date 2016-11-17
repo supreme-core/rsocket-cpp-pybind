@@ -277,7 +277,7 @@ class Frame_REQUEST_N {
   static constexpr bool Trait_CarriesAllowance = true;
 
   /*
-   * Maximum value for ReactiveSocket Subscription::request. 
+   * Maximum value for ReactiveSocket Subscription::request.
    * Value is a signed int, however negative values are not allowed.
    *
    * n.b. this is less than size_t because of the Frame encoding restrictions.

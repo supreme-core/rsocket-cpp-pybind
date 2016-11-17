@@ -59,8 +59,12 @@ void NullRequestHandler::handleMetadataPush(
     std::unique_ptr<folly::IOBuf> /*request*/) {}
 
 std::shared_ptr<StreamState> NullRequestHandler::handleSetupPayload(
-    ConnectionSetupPayload /*request*/) { return std::make_shared<StreamState>(); }
+    ConnectionSetupPayload /*request*/) {
+  return std::make_shared<StreamState>();
+}
 
 std::shared_ptr<StreamState> NullRequestHandler::handleResume(
-    const ResumeIdentificationToken& /*token*/) { return std::make_shared<StreamState> ();}
+    const ResumeIdentificationToken& /*token*/) {
+  return std::make_shared<StreamState>();
+}
 } // reactivesocket

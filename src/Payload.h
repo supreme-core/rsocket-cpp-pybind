@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
-#include <array>
 
 namespace folly {
 class IOBuf;

@@ -33,8 +33,8 @@ using StreamId = uint32_t;
 using StreamAutomatonFactory =
     std::function<bool(StreamId, std::unique_ptr<folly::IOBuf>)>;
 
-using ResumeListener = std::function<
-    std::shared_ptr<StreamState>(const ResumeIdentificationToken& token)>;
+using ResumeListener = std::function<std::shared_ptr<StreamState>(
+    const ResumeIdentificationToken& token)>;
 
 using ConnectionCloseListener = std::function<void()>;
 
