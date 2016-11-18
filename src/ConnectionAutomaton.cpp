@@ -221,13 +221,13 @@ void ConnectionAutomaton::onConnectionFrame(
     case FrameType::SETUP: {
       // TODO(tmont): check for ENABLE_RESUME and make sure isResumable_ is true
 
-      if (!factory_(0, std::move(payload))) {
+      if (!factory_(*this, 0, std::move(payload))) {
         assert(false);
       }
       return;
     }
     case FrameType::METADATA_PUSH: {
-      if (!factory_(0, std::move(payload))) {
+      if (!factory_(*this, 0, std::move(payload))) {
         assert(false);
       }
       return;
@@ -343,7 +343,7 @@ void ConnectionAutomaton::handleUnknownStream(
     std::unique_ptr<folly::IOBuf> payload) {
   // TODO(stupaq): there are some rules about monotonically increasing stream
   // IDs -- let's forget about them for a moment
-  if (!factory_(streamId, std::move(payload))) {
+  if (!factory_(*this, streamId, std::move(payload))) {
     outputFrameOrEnqueue(
         Frame_ERROR::connectionError(
             folly::to<std::string>("unknown stream ", streamId))
