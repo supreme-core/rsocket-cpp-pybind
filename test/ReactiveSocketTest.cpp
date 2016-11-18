@@ -737,10 +737,10 @@ TEST(ReactiveSocketTest, Destructor) {
         .InSequence(s0)
         .WillOnce(
             Invoke([i, &serverOutputs]() { serverOutputs[i]->onComplete(); }));
-    EXPECT_CALL(*clientInputs[i], onComplete_())
+    EXPECT_CALL(*clientInputs[i], onError_(_))
         .InSequence(s1)
-        .WillOnce(
-            Invoke([i, &clientInputSubs]() { clientInputSubs[i]->cancel(); }));
+        .WillOnce(Invoke([i, &clientInputSubs](
+            const folly::exception_wrapper& ex) { LOG(INFO) << ex.what(); }));
   }
 
   // Kick off the magic.
@@ -887,7 +887,8 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
     auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
     auto& serverHandlerRef = *serverHandler;
 
-    EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_));
+    EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
+        .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
     serverSock = ReactiveSocket::fromServerConnection(
         std::move(serverConn), std::move(serverHandler));
@@ -905,7 +906,7 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
           serverSock.reset(); // should close everything, but streams should end
-                              // with onError
+          // with onError
         }));
     EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _))
         .Times(AtMost(1))
@@ -914,7 +915,7 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
           serverSock.reset(); // should close everything, but streams should end
-                              // with onError
+          // with onError
         }));
     EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _))
         .Times(AtMost(1))
@@ -923,7 +924,7 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
           serverSock.reset(); // should close everything, but streams should end
-                              // with onError
+          // with onError
         }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _))
         .Times(AtMost(1))
@@ -939,7 +940,7 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
           serverSock.reset(); // should close everything, but streams should end
-                              // with onError
+          // with onError
 
           return serverInput;
         }));

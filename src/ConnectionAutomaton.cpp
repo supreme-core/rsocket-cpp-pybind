@@ -28,7 +28,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     bool isServer)
     : connection_(std::move(connection)),
       factory_(std::move(factory)),
-      streamState_(streamState),
+      streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
       isResumable_(true),
@@ -36,6 +36,8 @@ ConnectionAutomaton::ConnectionAutomaton(
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
+  CHECK(connection_);
+  CHECK(streamState_);
 }
 
 void ConnectionAutomaton::connect() {
@@ -416,6 +418,7 @@ void ConnectionAutomaton::outputFrame(
 
 void ConnectionAutomaton::useStreamState(
     std::shared_ptr<StreamState> streamState) {
+  CHECK(streamState);
   if (isServer_ && isResumable_) {
     streamState_ = streamState;
   }
