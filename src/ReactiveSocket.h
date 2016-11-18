@@ -108,12 +108,12 @@ class ReactiveSocket {
   ReactiveSocket(
       bool isServer,
       std::unique_ptr<DuplexConnection> connection,
-      std::unique_ptr<RequestHandlerBase> handler,
+      std::shared_ptr<RequestHandlerBase> handler,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer);
 
   static bool createResponder(
-      const std::shared_ptr<RequestHandlerBase>& handler,
+      RequestHandlerBase& handler,
       ConnectionAutomaton& connection,
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> frame);

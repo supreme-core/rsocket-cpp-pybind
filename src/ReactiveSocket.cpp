@@ -38,18 +38,19 @@ ReactiveSocket::~ReactiveSocket() {
 ReactiveSocket::ReactiveSocket(
     bool isServer,
     std::unique_ptr<DuplexConnection> connection,
-    std::unique_ptr<RequestHandlerBase> handler,
+    std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
-    : handler_(std::move(handler)),
+    : handler_(handler),
       connection_(new ConnectionAutomaton(
           std::move(connection),
-          std::bind(
-              &ReactiveSocket::createResponder,
-              handler_,
-              std::placeholders::_1,
-              std::placeholders::_2,
-              std::placeholders::_3),
+          [handler](
+              ConnectionAutomaton& connection,
+              StreamId streamId,
+              std::unique_ptr<folly::IOBuf> serializedFrame) {
+            return ReactiveSocket::createResponder(
+                *handler, connection, streamId, std::move(serializedFrame));
+          },
           std::make_shared<StreamState>(),
           std::bind(
               &ReactiveSocket::resumeListener,
@@ -193,7 +194,7 @@ void ReactiveSocket::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
 }
 
 bool ReactiveSocket::createResponder(
-    const std::shared_ptr<RequestHandlerBase>& handler,
+    RequestHandlerBase& handler,
     ConnectionAutomaton& connection,
     StreamId streamId,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
@@ -212,7 +213,7 @@ bool ReactiveSocket::createResponder(
           //          disconnect();
         }
 
-        auto streamState = handler->handleSetupPayload(ConnectionSetupPayload(
+        auto streamState = handler.handleSetupPayload(ConnectionSetupPayload(
             std::move(frame.metadataMimeType_),
             std::move(frame.dataMimeType_),
             std::move(frame.payload_),
@@ -245,7 +246,7 @@ bool ReactiveSocket::createResponder(
             connection.addStream(streamId, automaton);
             return automaton;
           });
-      auto requestSink = handler->onRequestChannel(
+      auto requestSink = handler.onRequestChannel(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -277,7 +278,7 @@ bool ReactiveSocket::createResponder(
             connection.addStream(streamId, automaton);
             return automaton;
           });
-      handler->onRequestStream(std::move(frame.payload_), subscriberFactory);
+      handler.onRequestStream(std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
@@ -302,7 +303,7 @@ bool ReactiveSocket::createResponder(
             connection.addStream(streamId, automaton);
             return automaton;
           });
-      handler->onRequestSubscription(
+      handler.onRequestSubscription(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -328,7 +329,7 @@ bool ReactiveSocket::createResponder(
             connection.addStream(streamId, automaton);
             return automaton;
           });
-      handler->onRequestResponse(std::move(frame.payload_), subscriberFactory);
+      handler.onRequestResponse(std::move(frame.payload_), subscriberFactory);
       // we need to create a responder to at least close the stream
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -345,7 +346,7 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       // no stream tracking is necessary
-      handler->handleFireAndForgetRequest(std::move(frame.payload_));
+      handler.handleFireAndForgetRequest(std::move(frame.payload_));
       break;
     }
     case FrameType::METADATA_PUSH: {
@@ -353,7 +354,7 @@ bool ReactiveSocket::createResponder(
       if (!frame.deserializeFrom(std::move(serializedFrame))) {
         return false;
       }
-      handler->handleMetadataPush(std::move(frame.metadata_));
+      handler.handleMetadataPush(std::move(frame.metadata_));
       break;
     }
     // Other frames cannot start a stream.
