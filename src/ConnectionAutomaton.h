@@ -22,6 +22,8 @@ enum class FrameType : uint16_t;
 enum class StreamCompletionSignal;
 using StreamId = uint32_t;
 
+class ConnectionAutomaton;
+
 /// Creates, registers and spins up responder for provided new stream ID and
 /// serialised frame.
 ///
@@ -30,8 +32,10 @@ using StreamId = uint32_t;
 /// Returns true if the responder has been created successfully, false if the
 /// frame cannot start a new stream, in which case the frame (passed by a
 /// mutable referece) must not be modified.
-using StreamAutomatonFactory =
-    std::function<bool(StreamId, std::unique_ptr<folly::IOBuf>)>;
+using StreamAutomatonFactory = std::function<bool(
+    ConnectionAutomaton& connection,
+    StreamId,
+    std::unique_ptr<folly::IOBuf>)>;
 
 using ResumeListener = std::function<std::shared_ptr<StreamState>(
     const ResumeIdentificationToken& token)>;
@@ -179,8 +183,6 @@ class ConnectionAutomaton :
   std::shared_ptr<StreamState> streamState_;
 
   reactivestreams::AllowanceSemaphore writeAllowance_;
-
-  std::deque<std::unique_ptr<folly::IOBuf>> pendingWrites_;
 
   Stats& stats_;
   bool isServer_;

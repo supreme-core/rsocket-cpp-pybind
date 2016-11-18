@@ -29,6 +29,7 @@ public:
         streams_;
     std::unique_ptr<ResumeTracker> resumeTracker_;
     std::unique_ptr<ResumeCache> resumeCache_;
+    std::deque<std::unique_ptr<folly::IOBuf>> pendingWrites_;
 };
 
 }

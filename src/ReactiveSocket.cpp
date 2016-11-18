@@ -38,16 +38,19 @@ ReactiveSocket::~ReactiveSocket() {
 ReactiveSocket::ReactiveSocket(
     bool isServer,
     std::unique_ptr<DuplexConnection> connection,
-    std::unique_ptr<RequestHandlerBase> handler,
+    std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
-    : connection_(new ConnectionAutomaton(
+    : handler_(handler),
+      connection_(new ConnectionAutomaton(
           std::move(connection),
-          std::bind(
-              &ReactiveSocket::createResponder,
-              this,
-              std::placeholders::_1,
-              std::placeholders::_2),
+          [handler](
+              ConnectionAutomaton& connection,
+              StreamId streamId,
+              std::unique_ptr<folly::IOBuf> serializedFrame) {
+            return ReactiveSocket::createResponder(
+                *handler, connection, streamId, std::move(serializedFrame));
+          },
           std::make_shared<StreamState>(),
           std::bind(
               &ReactiveSocket::resumeListener,
@@ -55,7 +58,6 @@ ReactiveSocket::ReactiveSocket(
               std::placeholders::_1),
           stats,
           isServer)),
-      handler_(std::move(handler)),
       nextStreamId_(isServer ? 1 : 2),
       keepaliveTimer_(std::move(keepaliveTimer)) {}
 
@@ -192,6 +194,8 @@ void ReactiveSocket::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
 }
 
 bool ReactiveSocket::createResponder(
+    RequestHandlerBase& handler,
+    ConnectionAutomaton& connection,
     StreamId streamId,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
   auto type = FrameHeader::peekType(*serializedFrame);
@@ -209,13 +213,13 @@ bool ReactiveSocket::createResponder(
           //          disconnect();
         }
 
-        auto streamState = handler_->handleSetupPayload(ConnectionSetupPayload(
+        auto streamState = handler.handleSetupPayload(ConnectionSetupPayload(
             std::move(frame.metadataMimeType_),
             std::move(frame.dataMimeType_),
             std::move(frame.payload_),
             frame.token_));
 
-        connection_->useStreamState(streamState);
+        connection.useStreamState(streamState);
       } else {
         // TODO(yschimke) enable this later after clients upgraded
         LOG(WARNING) << "ignoring bad setup frame";
@@ -233,15 +237,16 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       std::shared_ptr<ChannelResponder> automaton;
-      ReactiveSocketSubscriberFactory subscriberFactory([&](
-          folly::Executor* executor) {
-        ChannelResponder::Parameters params = {
-            {connection_, streamId}, executor ? *executor : defaultExecutor()};
-        automaton = std::make_shared<ChannelResponder>(params);
-        connection_->addStream(streamId, automaton);
-        return automaton;
-      });
-      auto requestSink = handler_->onRequestChannel(
+      ReactiveSocketSubscriberFactory subscriberFactory(
+          [&](folly::Executor* executor) {
+            ChannelResponder::Parameters params = {
+                {connection.shared_from_this(), streamId},
+                executor ? *executor : defaultExecutor()};
+            automaton = std::make_shared<ChannelResponder>(params);
+            connection.addStream(streamId, automaton);
+            return automaton;
+          });
+      auto requestSink = handler.onRequestChannel(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -264,15 +269,16 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       std::shared_ptr<StreamResponder> automaton;
-      ReactiveSocketSubscriberFactory subscriberFactory([&](
-          folly::Executor* executor) {
-        StreamResponder::Parameters params = {
-            {connection_, streamId}, executor ? *executor : defaultExecutor()};
-        automaton = std::make_shared<StreamResponder>(params);
-        connection_->addStream(streamId, automaton);
-        return automaton;
-      });
-      handler_->onRequestStream(std::move(frame.payload_), subscriberFactory);
+      ReactiveSocketSubscriberFactory subscriberFactory(
+          [&](folly::Executor* executor) {
+            StreamResponder::Parameters params = {
+                {connection.shared_from_this(), streamId},
+                executor ? *executor : defaultExecutor()};
+            automaton = std::make_shared<StreamResponder>(params);
+            connection.addStream(streamId, automaton);
+            return automaton;
+          });
+      handler.onRequestStream(std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
@@ -288,15 +294,16 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       std::shared_ptr<SubscriptionResponder> automaton;
-      ReactiveSocketSubscriberFactory subscriberFactory([&](
-          folly::Executor* executor) {
-        SubscriptionResponder::Parameters params = {
-            {connection_, streamId}, executor ? *executor : defaultExecutor()};
-        automaton = std::make_shared<SubscriptionResponder>(params);
-        connection_->addStream(streamId, automaton);
-        return automaton;
-      });
-      handler_->onRequestSubscription(
+      ReactiveSocketSubscriberFactory subscriberFactory(
+          [&](folly::Executor* executor) {
+            SubscriptionResponder::Parameters params = {
+                {connection.shared_from_this(), streamId},
+                executor ? *executor : defaultExecutor()};
+            automaton = std::make_shared<SubscriptionResponder>(params);
+            connection.addStream(streamId, automaton);
+            return automaton;
+          });
+      handler.onRequestSubscription(
           std::move(frame.payload_), subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -313,15 +320,16 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       std::shared_ptr<RequestResponseResponder> automaton;
-      ReactiveSocketSubscriberFactory subscriberFactory([&](
-          folly::Executor* executor) {
-        RequestResponseResponder::Parameters params = {
-            {connection_, streamId}, executor ? *executor : defaultExecutor()};
-        automaton = std::make_shared<RequestResponseResponder>(params);
-        connection_->addStream(streamId, automaton);
-        return automaton;
-      });
-      handler_->onRequestResponse(std::move(frame.payload_), subscriberFactory);
+      ReactiveSocketSubscriberFactory subscriberFactory(
+          [&](folly::Executor* executor) {
+            RequestResponseResponder::Parameters params = {
+                {connection.shared_from_this(), streamId},
+                executor ? *executor : defaultExecutor()};
+            automaton = std::make_shared<RequestResponseResponder>(params);
+            connection.addStream(streamId, automaton);
+            return automaton;
+          });
+      handler.onRequestResponse(std::move(frame.payload_), subscriberFactory);
       // we need to create a responder to at least close the stream
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -338,7 +346,7 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       // no stream tracking is necessary
-      handler_->handleFireAndForgetRequest(std::move(frame.payload_));
+      handler.handleFireAndForgetRequest(std::move(frame.payload_));
       break;
     }
     case FrameType::METADATA_PUSH: {
@@ -346,7 +354,7 @@ bool ReactiveSocket::createResponder(
       if (!frame.deserializeFrom(std::move(serializedFrame))) {
         return false;
       }
-      handler_->handleMetadataPush(std::move(frame.metadata_));
+      handler.handleMetadataPush(std::move(frame.metadata_));
       break;
     }
     // Other frames cannot start a stream.
