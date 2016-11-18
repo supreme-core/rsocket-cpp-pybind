@@ -184,8 +184,6 @@ class ConnectionAutomaton :
 
   reactivestreams::AllowanceSemaphore writeAllowance_;
 
-  std::deque<std::unique_ptr<folly::IOBuf>> pendingWrites_;
-
   Stats& stats_;
   bool isServer_;
   bool isResumable_;
