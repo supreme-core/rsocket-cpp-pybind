@@ -38,9 +38,9 @@ class LoggingMixin : public Base {
 
   /// @{
   /// Publisher<Payload>
-  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
+  bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
     VLOG(6) << *this << "subscribe(" << subscriber.get() << ")";
-    Base::subscribe(std::move(subscriber));
+    return Base::subscribe(std::move(subscriber));
   }
   /// @}
 

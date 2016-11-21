@@ -33,7 +33,7 @@ class RequestResponseRequesterBase : public MixinTerminator {
   void onNext(Payload);
 
   /// @{
-  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
+  bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
   void request(size_t);
   void cancel();
   /// @}

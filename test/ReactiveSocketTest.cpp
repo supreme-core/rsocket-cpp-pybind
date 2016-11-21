@@ -936,6 +936,7 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
                 serverInputSub = sub;
                 sub->request(2);
               }));
+          EXPECT_CALL(*serverInput, onComplete_()).Times(1);
 
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);

@@ -50,9 +50,15 @@ class MixinTerminator {
   /// @}
 
  protected:
+  bool isTerminated() const {
+    return isTerminated_;
+  }
+
   /// @{
   /// Each mixin in the stack implements a subset of this API.
-  void endStream(StreamCompletionSignal) {}
+  void endStream(StreamCompletionSignal) {
+    isTerminated_ = true;
+  }
 
   void onNextFrame(Frame_REQUEST_STREAM&&) {}
 
@@ -76,5 +82,6 @@ class MixinTerminator {
   const std::shared_ptr<ConnectionAutomaton> connection_;
   /// An ID of the stream (within the connection) this automaton manages.
   const StreamId streamId_;
+  bool isTerminated_{false};
 };
 }

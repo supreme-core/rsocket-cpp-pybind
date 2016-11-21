@@ -30,6 +30,7 @@ class PublisherMixin : public Base {
   }
 
   void onNext(Payload payload, FrameFlags flags = FrameFlags_EMPTY) {
+    DCHECK(producingSubscription_);
     ProducedFrame frame(Base::streamId_, flags, std::move(payload));
     Base::connection_->outputFrameOrEnqueue(frame.serializeOut());
   }
@@ -43,7 +44,6 @@ class PublisherMixin : public Base {
  protected:
   /// @{
   void endStream(StreamCompletionSignal signal) {
-    // FIXME: switch on signal
     producingSubscription_.cancel();
     Base::endStream(signal);
   }

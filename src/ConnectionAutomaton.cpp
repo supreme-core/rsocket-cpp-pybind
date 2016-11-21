@@ -73,7 +73,8 @@ void ConnectionAutomaton::disconnect() {
   }
 
   LOG_IF(WARNING, !streamState_->pendingWrites_.empty())
-      << "disconnecting with pending writes (" << streamState_->pendingWrites_.size() << ")";
+      << "disconnecting with pending writes ("
+      << streamState_->pendingWrites_.size() << ")";
 
   // Send terminal signals to the DuplexConnection's input and output before
   // tearing it down. We must do this per DuplexConnection specification (see
@@ -398,7 +399,8 @@ void ConnectionAutomaton::outputFrameOrEnqueue(
 
 void ConnectionAutomaton::drainOutputFramesQueue() {
   // Drain the queue or the allowance.
-  while (!streamState_->pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
+  while (!streamState_->pendingWrites_.empty() &&
+         writeAllowance_.tryAcquire()) {
     auto frame = std::move(streamState_->pendingWrites_.front());
     streamState_->pendingWrites_.pop_front();
     outputFrame(std::move(frame));

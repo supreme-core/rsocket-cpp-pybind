@@ -253,9 +253,11 @@ bool ReactiveSocket::createResponder(
         subscriber->onSubscribe(
             std::make_shared<CancellingSubscription>(subscriber));
       }
-      automaton->subscribe(requestSink);
-      // any calls from onSubscribe are queued until we start
-      requestSink->onSubscribe(automaton);
+      if (automaton->subscribe(requestSink)) {
+        // any calls from onSubscribe are queued until we start
+        // TODO(lehecka): move the onSubscribe call to subscribe method
+        requestSink->onSubscribe(automaton);
+      }
       // onNextFrame executes directly, it may cause to call request(n)
       // which may call back and it will be queued after the calls from
       // the onSubscribe method
