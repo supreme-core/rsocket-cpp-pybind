@@ -5,6 +5,7 @@
 #include <cassert>
 #include <exception>
 
+#include <glog/logging.h>
 #include <gmock/gmock.h>
 
 #include <reactive-streams/ReactiveStreams.h>
@@ -16,6 +17,13 @@ namespace reactivestreams {
 template <typename T, typename E = std::exception_ptr>
 class MockPublisher : public Publisher<T, E> {
  public:
+  MockPublisher() {
+    VLOG(2) << "ctor MockPublisher " << this;
+  }
+  ~MockPublisher() {
+    VLOG(2) << "dtor MockPublisher " << this;
+  }
+
   MOCK_METHOD1_T(
       subscribe_,
       void(std::shared_ptr<Subscriber<T, E>> subscriber));
@@ -40,7 +48,12 @@ class MockSubscriber : public Subscriber<T, E> {
         std::shared_ptr<Subscription> originalSubscription,
         CheckpointPtr checkpoint)
         : originalSubscription_(std::move(originalSubscription)),
-          checkpoint_(std::move(checkpoint)) {}
+          checkpoint_(std::move(checkpoint)) {
+      VLOG(2) << "ctor SubscriptionShim " << this;
+    }
+    ~SubscriptionShim() {
+      VLOG(2) << "dtor SubscriptionShim " << this;
+    }
 
     void request(size_t n) override final {
       originalSubscription_->request(n);
@@ -57,6 +70,13 @@ class MockSubscriber : public Subscriber<T, E> {
   };
 
  public:
+  MockSubscriber() {
+    VLOG(2) << "ctor MockSubscriber " << this;
+  }
+  ~MockSubscriber() {
+    VLOG(2) << "dtor MockSubscriber " << this;
+  }
+
   MOCK_METHOD1(onSubscribe_, void(std::shared_ptr<Subscription> subscription));
   MOCK_METHOD1_T(onNext_, void(T& value));
   MOCK_METHOD0(onComplete_, void());
@@ -100,6 +120,13 @@ class MockSubscriber : public Subscriber<T, E> {
 /// For the same reason putting mock instance in a smart pointer is a poor idea.
 class MockSubscription : public Subscription {
  public:
+  MockSubscription() {
+    VLOG(2) << "ctor MockSubscription " << this;
+  }
+  ~MockSubscription() {
+    VLOG(2) << "dtor MockSubscription " << this;
+  }
+
   MOCK_METHOD1(request_, void(size_t n));
   MOCK_METHOD0(cancel_, void());
 

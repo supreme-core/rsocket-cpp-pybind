@@ -8,6 +8,8 @@
 #include <folly/ExceptionWrapper.h>
 #include <reactive-streams/utilities/AllowanceSemaphore.h>
 #include <reactive-streams/utilities/SmartPointers.h>
+#include "src/Common.h"
+#include "src/NullRequestHandler.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
@@ -30,12 +32,20 @@ class ConsumerMixin : public Base {
   }
 
   /// @{
-  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
+  bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
+    if (Base::isTerminated()) {
+      subscriber->onSubscribe(std::make_shared<NullSubscription>());
+      subscriber->onComplete();
+      return false;
+    }
+
     DCHECK(!consumingSubscriber_);
     consumingSubscriber_.reset(std::move(subscriber));
-    // FIXME
-    // Subscriber::onSubscribe is delivered externally, as it may attempt to
-    // synchronously deliver Subscriber::request.
+
+    // TODO(lehecka): refactor this method to call
+    // subscriber->onSubscribe(enable_shared_from_this());
+    // and remove returning the boolean value
+    return true;
   }
 
   void request(size_t n) {
@@ -52,14 +62,15 @@ class ConsumerMixin : public Base {
 
  protected:
   /// @{
+  // TODO(lehecka): this should call setCancelled in the SubscribeBase, once
+  //               the SubscriberBase is used in the inheritance
+  //               this is effectively a terminating signal from the
+  //               ReactiveSocket instance
   void endStream(StreamCompletionSignal signal) {
-    switch (signal) {
-      case StreamCompletionSignal::CONNECTION_ERROR:
-        consumingSubscriber_.onError(std::runtime_error("connection closed"));
-        break;
-      default:
-        consumingSubscriber_.onComplete();
-        break;
+    if (signal == StreamCompletionSignal::GRACEFUL) {
+      consumingSubscriber_.onComplete();
+    } else {
+      consumingSubscriber_.onError(StreamInterruptedException((int)signal));
     }
     Base::endStream(signal);
   }

@@ -105,19 +105,31 @@ add_library(
   src/automata/RequestResponseRequester.h
   src/automata/RequestResponseResponder.cpp
   src/automata/RequestResponseResponder.h
+  src/automata/StreamRequester.cpp
+  src/automata/StreamRequester.h
+  src/automata/StreamResponder.h
   src/automata/StreamSubscriptionRequesterBase.cpp
   src/automata/StreamSubscriptionRequesterBase.h
   src/automata/StreamSubscriptionResponderBase.cpp
   src/automata/StreamSubscriptionResponderBase.h
-  src/automata/StreamRequester.cpp
-  src/automata/StreamRequester.h
-  src/automata/StreamResponder.h
   src/automata/SubscriptionRequester.cpp
   src/automata/SubscriptionRequester.h
   src/automata/SubscriptionResponder.h
+  src/CancellingSubscription.h
+  src/Common.cpp
+  src/Common.h
+  src/concurrent/atomic64_gcc_x86_64.h
+  src/concurrent/atomic64.h
+  src/concurrent/OneToOneRingBuffer.h
   src/ConnectionAutomaton.cpp
   src/ConnectionAutomaton.h
+  src/ConnectionSetupPayload.cpp
+  src/ConnectionSetupPayload.h
   src/DuplexConnection.h
+  src/EnableSharedFromThis.h
+  src/Executor.cpp
+  src/folly/FollyKeepaliveTimer.cpp
+  src/folly/FollyKeepaliveTimer.h
   src/Frame.cpp
   src/Frame.h
   src/framed/FramedDuplexConnection.cpp
@@ -141,30 +153,20 @@ add_library(
   src/Payload.h
   src/ReactiveSocket.cpp
   src/ReactiveSocket.h
-  src/ReactiveStreamsCompat.h
-  src/RequestHandler.h
-  src/tcp/TcpDuplexConnection.cpp
-  src/tcp/TcpDuplexConnection.h
-  src/Stats.h
-  src/Stats.cpp
-  src/folly/FollyKeepaliveTimer.cpp
-  src/folly/FollyKeepaliveTimer.h
-  src/ConnectionSetupPayload.h
-  src/ConnectionSetupPayload.cpp
-  src/ResumeTracker.h
-  src/ResumeCache.h
-  src/ResumeCache.cpp
-  src/concurrent/atomic64.h
-  src/concurrent/atomic64_gcc_x86_64.h
-  src/concurrent/OneToOneRingBuffer.h
   src/ReactiveSocketSubscriberFactory.h
-  src/CancellingSubscription.h
+  src/ReactiveStreamsCompat.h
   src/RequestHandler.cpp
-  src/EnableSharedFromThis.h
+  src/RequestHandler.h
+  src/ResumeCache.cpp
+  src/ResumeCache.h
+  src/ResumeTracker.h
+  src/Stats.cpp
+  src/Stats.h
+  src/StreamState.h
   src/SubscriberBase.h
   src/SubscriptionBase.h
-  src/Executor.cpp
-  src/StreamState.h)
+  src/tcp/TcpDuplexConnection.cpp
+  src/tcp/TcpDuplexConnection.h)
 
 target_link_libraries(
   ReactiveSocket

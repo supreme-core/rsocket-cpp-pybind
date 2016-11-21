@@ -3,16 +3,19 @@
 #include "RequestResponseRequester.h"
 
 #include <iostream>
+#include "src/Common.h"
 
 namespace reactivesocket {
 
-void RequestResponseRequesterBase::subscribe(
+bool RequestResponseRequesterBase::subscribe(
     std::shared_ptr<Subscriber<Payload>> subscriber) {
+  DCHECK(!isTerminated());
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_.reset(std::move(subscriber));
   // FIXME
   // Subscriber::onSubscribe is delivered externally, as it may attempt to
   // synchronously deliver Subscriber::request.
+  return true;
 }
 
 void RequestResponseRequesterBase::onNext(Payload request) {
@@ -75,8 +78,11 @@ void RequestResponseRequesterBase::endStream(StreamCompletionSignal signal) {
     case State::CLOSED:
       break;
   }
-  // FIXME: switch on signal and verify that callsites propagate stream errors
-  consumingSubscriber_.onComplete();
+  if (signal == StreamCompletionSignal::GRACEFUL) {
+    consumingSubscriber_.onComplete();
+  } else {
+    consumingSubscriber_.onError(StreamInterruptedException((int)signal));
+  }
 }
 
 void RequestResponseRequesterBase::onNextFrame(Frame_ERROR&& frame) {

@@ -28,7 +28,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     bool isServer)
     : connection_(std::move(connection)),
       factory_(std::move(factory)),
-      streamState_(streamState),
+      streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
       isResumable_(true),
@@ -36,6 +36,8 @@ ConnectionAutomaton::ConnectionAutomaton(
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
+  CHECK(connection_);
+  CHECK(streamState_);
 }
 
 void ConnectionAutomaton::connect() {
@@ -71,7 +73,8 @@ void ConnectionAutomaton::disconnect() {
   }
 
   LOG_IF(WARNING, !streamState_->pendingWrites_.empty())
-      << "disconnecting with pending writes (" << streamState_->pendingWrites_.size() << ")";
+      << "disconnecting with pending writes ("
+      << streamState_->pendingWrites_.size() << ")";
 
   // Send terminal signals to the DuplexConnection's input and output before
   // tearing it down. We must do this per DuplexConnection specification (see
@@ -132,7 +135,7 @@ bool ConnectionAutomaton::endStreamInternal(
     return false;
   }
   // Remove from the map before notifying the automaton.
-  auto automaton = it->second;
+  auto automaton = std::move(it->second);
   streamState_->streams_.erase(it);
   automaton->endStream(signal);
   return true;
@@ -396,7 +399,8 @@ void ConnectionAutomaton::outputFrameOrEnqueue(
 
 void ConnectionAutomaton::drainOutputFramesQueue() {
   // Drain the queue or the allowance.
-  while (!streamState_->pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
+  while (!streamState_->pendingWrites_.empty() &&
+         writeAllowance_.tryAcquire()) {
     auto frame = std::move(streamState_->pendingWrites_.front());
     streamState_->pendingWrites_.pop_front();
     outputFrame(std::move(frame));
@@ -416,6 +420,7 @@ void ConnectionAutomaton::outputFrame(
 
 void ConnectionAutomaton::useStreamState(
     std::shared_ptr<StreamState> streamState) {
+  CHECK(streamState);
   if (isServer_ && isResumable_) {
     streamState_ = streamState;
   }

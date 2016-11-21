@@ -46,6 +46,7 @@ cpp_library(
         'src/automata/StreamSubscriptionRequesterBase.cpp',
         'src/automata/StreamSubscriptionResponderBase.cpp',
         'src/automata/SubscriptionRequester.cpp',
+        'src/Common.cpp',
         'src/ConnectionAutomaton.cpp',
         'src/ConnectionSetupPayload.cpp',
         'src/Executor.cpp',
