@@ -253,15 +253,13 @@ void ConnectionAutomaton::onConnectionFrame(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
 
-            if (streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
-              // clean
-              for (auto it : streamState_->streams_) {
-                it.second->onCleanResume();
-              }
-            } else {
-              // dirty
-              for (auto it : streamState_->streams_) {
-                it.second->onDirtyResume();
+            for (auto it : streamState_->streams_) {
+              const StreamId streamId = it.first;
+
+              if (streamState_->resumeCache_->isPositionAvailable(frame.position_, streamId)) {
+                  it.second->onCleanResume();
+              } else {
+                  it.second->onDirtyResume();
               }
             }
         } else {
