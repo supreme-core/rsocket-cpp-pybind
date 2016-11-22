@@ -68,6 +68,10 @@ class RequestHandlerBase {
   /// Return stream state for the given token. Reutn nullptr to disable resume
   virtual std::shared_ptr<StreamState> handleResume(
       const ResumeIdentificationToken& token) = 0;
+
+  virtual void handleCleanResume(std::shared_ptr<Subscription> response) = 0;
+
+  virtual void handleDirtyResume(std::shared_ptr<Subscription> response) = 0;
 };
 
 class RequestHandler : public RequestHandlerBase {

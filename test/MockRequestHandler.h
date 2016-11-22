@@ -77,6 +77,9 @@ class MockRequestHandlerBase : public RequestHandlerBase {
       const ResumeIdentificationToken& token) override {
     return handleResume_(token);
   }
+
+  void handleCleanResume(std::shared_ptr<Subscription> response) override {}
+  void handleDirtyResume(std::shared_ptr<Subscription> response) override {}
 };
 
 class MockRequestHandler : public RequestHandler {
@@ -147,5 +150,8 @@ class MockRequestHandler : public RequestHandler {
       const ResumeIdentificationToken& token) override {
     return handleResume_(token);
   }
+
+  void handleCleanResume(std::shared_ptr<Subscription> response) override {}
+  void handleDirtyResume(std::shared_ptr<Subscription> response) override {}
 };
 }

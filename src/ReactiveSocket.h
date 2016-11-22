@@ -113,7 +113,7 @@ class ReactiveSocket {
       std::unique_ptr<KeepaliveTimer> keepaliveTimer);
 
   static bool createResponder(
-      RequestHandlerBase& handler,
+      std::shared_ptr<RequestHandlerBase> handler,
       ConnectionAutomaton& connection,
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> frame);
