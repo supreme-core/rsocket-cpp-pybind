@@ -50,6 +50,10 @@ class NullRequestHandler : public RequestHandler {
 
   std::shared_ptr<StreamState> handleResume(
       const ResumeIdentificationToken& token) override;
+
+  void handleCleanResume(std::shared_ptr<Subscription> response) override;
+
+  void handleDirtyResume(std::shared_ptr<Subscription> response) override;
 };
 
 using DefaultRequestHandler = NullRequestHandler;

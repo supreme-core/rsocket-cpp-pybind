@@ -52,5 +52,13 @@ class StreamIfMixin : public Base, public AbstractStreamAutomaton {
   void onBadFrame() override final {
     Base::onBadFrame();
   }
+
+  void onCleanResume() override final {
+    Base::onCleanResume();
+  }
+
+  void onDirtyResume() override final {
+    Base::onDirtyResume();
+  }
 };
 }

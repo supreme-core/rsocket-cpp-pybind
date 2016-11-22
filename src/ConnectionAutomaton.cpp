@@ -255,8 +255,18 @@ void ConnectionAutomaton::onConnectionFrame(
           outputFrameOrEnqueue(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
-          streamState_->resumeCache_->retransmitFromPosition(
-              frame.position_, *this);
+
+            if (streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
+              // clean
+              for (auto it : streamState_->streams_) {
+                it.second->onCleanResume();
+              }
+            } else {
+              // dirty
+              for (auto it : streamState_->streams_) {
+                it.second->onDirtyResume();
+              }
+            }
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());
@@ -422,7 +432,7 @@ void ConnectionAutomaton::useStreamState(
     std::shared_ptr<StreamState> streamState) {
   CHECK(streamState);
   if (isServer_ && isResumable_) {
-    streamState_ = streamState;
+    streamState_.swap(streamState);
   }
 }
 }

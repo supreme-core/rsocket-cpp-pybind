@@ -82,7 +82,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
     for (uint8_t byte : request.token) {
       str << (int)byte;
     }
-    str << "> " << streamState_.get() << "\n";
+    str << "> " << streamState_.get() << " " << streamState_->streams_.size() << "\n";
     LOG(INFO) << str.str();
     return streamState_;
   }
@@ -95,10 +95,18 @@ class ServerRequestHandler : public DefaultRequestHandler {
     for (uint8_t byte : token) {
       str << (int)byte;
     }
-    str << "> " << streamState_.get() << "\n";
+    str << "> " << streamState_.get() << " " << streamState_->streams_.size() << "\n";
 
     LOG(INFO) << str.str();
     return streamState_;
+  }
+
+  void handleCleanResume(std::shared_ptr<Subscription> response) override {
+    LOG(INFO) << "clean resume stream" << "\n";
+  }
+
+  void handleDirtyResume(std::shared_ptr<Subscription> response) override {
+    LOG(INFO) << "dirty resume stream" << "\n";
   }
 
  private:
