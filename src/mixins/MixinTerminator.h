@@ -7,7 +7,7 @@
 #include <memory>
 #include <functional>
 
-#include "src/Requesthandler.h"
+#include "src/RequestHandler.h"
 
 namespace reactivesocket {
 
