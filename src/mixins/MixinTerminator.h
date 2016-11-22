@@ -5,6 +5,10 @@
 #include <cstdint>
 #include <iosfwd>
 #include <memory>
+#include <functional>
+
+
+#include "src/RequestHandler.h"
 
 namespace reactivesocket {
 
@@ -36,18 +40,25 @@ class MixinTerminator {
     Parameters() = default;
     Parameters(
         const std::shared_ptr<ConnectionAutomaton>& _connection,
-        StreamId _streamId)
-        : connection(_connection), streamId(_streamId) {}
+        StreamId _streamId,
+        std::shared_ptr<RequestHandlerBase> _handler)
+        : connection(_connection), streamId(_streamId), handler(_handler) {}
 
     std::shared_ptr<ConnectionAutomaton> connection{nullptr};
     StreamId streamId{0};
+    std::shared_ptr<RequestHandlerBase> handler;
   };
   explicit MixinTerminator(Parameters params)
-      : connection_(std::move(params.connection)), streamId_(params.streamId) {}
+      : connection_(std::move(params.connection)),
+      streamId_(params.streamId),
+      requestHandler_(params.handler) {}
 
   /// Logs an identification string of the automaton.
   std::ostream& logPrefix(std::ostream& os) /* = 0 */;
   /// @}
+
+  void onCleanResume() {}
+  void onDirtyResume() {}
 
  protected:
   bool isTerminated() const {
@@ -83,5 +94,6 @@ class MixinTerminator {
   /// An ID of the stream (within the connection) this automaton manages.
   const StreamId streamId_;
   bool isTerminated_{false};
+  std::shared_ptr<RequestHandlerBase> requestHandler_;
 };
 }

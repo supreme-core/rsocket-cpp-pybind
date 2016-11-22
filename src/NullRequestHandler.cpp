@@ -67,4 +67,11 @@ std::shared_ptr<StreamState> NullRequestHandler::handleResume(
     const ResumeIdentificationToken& /*token*/) {
   return std::make_shared<StreamState>();
 }
+
+void NullRequestHandler::handleCleanResume(
+    std::shared_ptr<Subscription> /* response */) {}
+
+void NullRequestHandler::handleDirtyResume(
+    std::shared_ptr<Subscription> /* response */) {}
+
 } // reactivesocket
