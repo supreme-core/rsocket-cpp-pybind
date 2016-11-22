@@ -392,8 +392,13 @@ class Frame_KEEPALIVE {
   static constexpr bool Trait_CarriesAllowance = false;
 
   Frame_KEEPALIVE() = default;
-  Frame_KEEPALIVE(FrameFlags flags, std::unique_ptr<folly::IOBuf> data)
-      : header_(FrameType::KEEPALIVE, flags, 0), data_(std::move(data)) {
+  Frame_KEEPALIVE(
+      FrameFlags flags,
+      ResumePosition position,
+      std::unique_ptr<folly::IOBuf> data)
+      : header_(FrameType::KEEPALIVE, flags, 0),
+      position_(position),
+      data_(std::move(data)) {
     assert(!(flags & FrameFlags_METADATA));
   }
 
@@ -401,6 +406,7 @@ class Frame_KEEPALIVE {
   bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
 
   FrameHeader header_;
+  ResumePosition position_;
   std::unique_ptr<folly::IOBuf> data_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_KEEPALIVE&);

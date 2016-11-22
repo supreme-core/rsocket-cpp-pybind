@@ -213,6 +213,8 @@ void ConnectionAutomaton::onConnectionFrame(
                     .serializeOut());
             disconnect();
           }
+
+          streamState_->resumeCache_->resetUpToPosition(frame.position_);
         }
         // TODO(yschimke) client *should* check the respond flag
       } else {
@@ -361,7 +363,9 @@ void ConnectionAutomaton::handleUnknownStream(
 
 void ConnectionAutomaton::sendKeepalive() {
   Frame_KEEPALIVE pingFrame(
-      FrameFlags_KEEPALIVE_RESPOND, folly::IOBuf::create(0));
+      FrameFlags_KEEPALIVE_RESPOND,
+      streamState_->resumeTracker_->impliedPosition(),
+      folly::IOBuf::create(0));
   outputFrameOrEnqueue(pingFrame.serializeOut());
 }
 

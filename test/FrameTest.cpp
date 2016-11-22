@@ -157,12 +157,14 @@ TEST_F(FrameTest, Frame_ERROR) {
 
 TEST_F(FrameTest, Frame_KEEPALIVE) {
   uint32_t streamId = 0;
+  ResumePosition position = 101;
   auto flags = FrameFlags_KEEPALIVE_RESPOND;
   auto data = folly::IOBuf::copyBuffer("424242");
-  auto frame = reserialize<Frame_KEEPALIVE>(flags, data->clone());
+  auto frame = reserialize<Frame_KEEPALIVE>(flags, position, data->clone());
 
   expectHeader(
       FrameType::KEEPALIVE, FrameFlags_KEEPALIVE_RESPOND, streamId, frame);
+  EXPECT_EQ(position, frame.position_);
   EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.data_));
 }
 
