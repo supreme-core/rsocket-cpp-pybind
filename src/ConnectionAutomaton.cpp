@@ -255,8 +255,6 @@ void ConnectionAutomaton::onConnectionFrame(
           outputFrameOrEnqueue(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
-          streamState_->resumeCache_->retransmitFromPosition(
-              frame.position_, *this);
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());
@@ -273,8 +271,6 @@ void ConnectionAutomaton::onConnectionFrame(
       if (frame.deserializeFrom(std::move(payload))) {
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
-          streamState_->resumeCache_->retransmitFromPosition(
-              frame.position_, *this);
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());
@@ -414,7 +410,7 @@ void ConnectionAutomaton::outputFrame(
 
   stats_.frameWritten(ss.str());
 
-  streamState_->resumeCache_->trackAndCacheSentFrame(*outputFrame);
+  streamState_->resumeCache_->trackSentFrame(*outputFrame);
   connectionOutput_.onNext(std::move(outputFrame));
 }
 
