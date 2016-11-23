@@ -213,6 +213,8 @@ void ConnectionAutomaton::onConnectionFrame(
                     .serializeOut());
             disconnect();
           }
+
+          streamState_->resumeCache_->resetUpToPosition(frame.position_);
         }
         // TODO(yschimke) client *should* check the respond flag
       } else {
@@ -241,9 +243,6 @@ void ConnectionAutomaton::onConnectionFrame(
         bool canResume = false;
 
         if (isServer_ && isResumable_) {
-          // find old ConnectionAutmaton via calling listener.
-          // Application will call resumeFromAutomaton to setup streams and
-          // resume information
           auto streamState = resumeListener_(frame.token_);
           if (nullptr != streamState) {
             canResume = true;
@@ -255,16 +254,13 @@ void ConnectionAutomaton::onConnectionFrame(
           outputFrameOrEnqueue(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
+          for (auto it : streamState_->streams_) {
+            const StreamId streamId = it.first;
 
-          if (streamState_->resumeCache_->isPositionAvailable(
-                  frame.position_)) {
-            // clean
-            for (auto it : streamState_->streams_) {
+            if (streamState_->resumeCache_->isPositionAvailable(
+                    frame.position_, streamId)) {
               it.second->onCleanResume();
-            }
-          } else {
-            // dirty
-            for (auto it : streamState_->streams_) {
+            } else {
               it.second->onDirtyResume();
             }
           }
@@ -284,8 +280,6 @@ void ConnectionAutomaton::onConnectionFrame(
       if (frame.deserializeFrom(std::move(payload))) {
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
-          streamState_->resumeCache_->retransmitFromPosition(
-              frame.position_, *this);
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());
@@ -369,7 +363,9 @@ void ConnectionAutomaton::handleUnknownStream(
 
 void ConnectionAutomaton::sendKeepalive() {
   Frame_KEEPALIVE pingFrame(
-      FrameFlags_KEEPALIVE_RESPOND, folly::IOBuf::create(0));
+      FrameFlags_KEEPALIVE_RESPOND,
+      streamState_->resumeTracker_->impliedPosition(),
+      folly::IOBuf::create(0));
   outputFrameOrEnqueue(pingFrame.serializeOut());
 }
 
@@ -425,7 +421,7 @@ void ConnectionAutomaton::outputFrame(
 
   stats_.frameWritten(ss.str());
 
-  streamState_->resumeCache_->trackAndCacheSentFrame(*outputFrame);
+  streamState_->resumeCache_->trackSentFrame(*outputFrame);
   connectionOutput_.onNext(std::move(outputFrame));
 }
 

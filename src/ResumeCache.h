@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include <folly/Optional.h>
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <unordered_map>
 
 #include "src/Frame.h"
 
@@ -15,62 +17,50 @@ class ConnectionAutomaton;
 class ResumeCache {
  public:
   using position_t = ResumePosition;
-  using RetransmitFilter = std::function<bool()>;
 
-  ResumeCache(const std::int64_t length = 0) : position_(0) {
-    // TODO(tmont): create cache of specified length
-  }
+  ResumeCache() : position_(0), resetPosition_(0) {}
 
-  ResumeCache(const ResumeCache& cache) : position_(cache.position_) {}
+  void trackSentFrame(const folly::IOBuf& serializedFrame);
 
-  ResumeCache(ResumeCache&& cache) : position_(cache.position_) {}
-
-  ResumeCache& operator=(const ResumeCache& cache) {
-    position_ = cache.position_;
-    return *this;
-  }
-
-  ResumeCache& operator=(ResumeCache&& cache) {
-    position_ = cache.position_;
-    return *this;
-  }
-
-  void trackAndCacheSentFrame(const folly::IOBuf& serializedFrame) {
-    auto frameType = FrameHeader::peekType(serializedFrame);
-
-    switch (frameType) {
-      case FrameType::REQUEST_CHANNEL:
-      case FrameType::REQUEST_STREAM:
-      case FrameType::REQUEST_SUB:
-      case FrameType::REQUEST_N:
-      case FrameType::CANCEL:
-      case FrameType::ERROR:
-      case FrameType::RESPONSE:
-        // TODO(tmont): this could be expensive, find a better way to determine
-        // frame length
-        position_ += serializedFrame.computeChainDataLength();
-        break;
-
-      default:
-        break;
+  // called to clear up to a certain position from the cache (from keepalive or
+  // resuming)
+  void resetUpToPosition(const position_t position) {
+    for (auto it = streamMap_.begin(); it != streamMap_.end();) {
+      if (it->second <= position) {
+        it = streamMap_.erase(it);
+      } else {
+        it++;
+      }
     }
+    resetPosition_ = position;
   }
 
   bool isPositionAvailable(position_t position) {
-    // TODO(tmont): until caching is integrated, we only allow idle resumption
     return (position == position_);
+  }
+
+  bool isPositionAvailable(position_t position, StreamId streamId) {
+    bool result = false;
+
+    auto it = streamMap_.find(streamId);
+    if (it != streamMap_.end()) {
+      const position_t streamPosition = (*it).second;
+
+      result = (streamPosition <= position);
+    } else {
+      result = (resetPosition_ >= position);
+    }
+
+    return result;
   }
 
   position_t position() {
     return position_;
   }
 
-  bool retransmitFromPosition(
-      position_t initialPosition,
-      ConnectionAutomaton& connection,
-      const RetransmitFilter& filter = []() { return false; });
-
  private:
   position_t position_;
+  position_t resetPosition_;
+  std::unordered_map<StreamId, position_t> streamMap_;
 };
 }
