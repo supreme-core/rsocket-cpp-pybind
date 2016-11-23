@@ -30,10 +30,8 @@ void FollyKeepaliveTimer::schedule() {
           if (pending_) {
             stop();
 
-            connection_->outputFrameOrEnqueue(
-                Frame_ERROR::connectionError("no response to keepalive")
-                    .serializeOut());
-            connection_->disconnect();
+            connection_->disconnectWithError(
+                Frame_ERROR::connectionError("no response to keepalive"));
           } else {
             connection_->sendKeepalive();
             pending_ = true;
