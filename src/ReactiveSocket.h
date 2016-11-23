@@ -27,6 +27,7 @@ using StreamId = uint32_t;
 
 folly::Executor& defaultExecutor();
 
+// Client Side Keepalive Timer
 class KeepaliveTimer {
  public:
   virtual ~KeepaliveTimer() = default;
@@ -35,6 +36,7 @@ class KeepaliveTimer {
   virtual void stop() = 0;
   virtual void start(
       const std::shared_ptr<ConnectionAutomaton>& connection) = 0;
+  virtual void keepaliveReceived() = 0;
 };
 
 using CloseListener = std::function<void(ReactiveSocket&)>;
@@ -122,8 +124,8 @@ class ReactiveSocket {
       const ResumeIdentificationToken& token);
 
   std::shared_ptr<RequestHandlerBase> handler_;
+  const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
   const std::shared_ptr<ConnectionAutomaton> connection_;
   StreamId nextStreamId_;
-  std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
 };
 }

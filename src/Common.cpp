@@ -1,8 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/Common.h"
-#include <glog/logging.h>
 #include <folly/io/IOBuf.h>
+#include <glog/logging.h>
 #include "src/AbstractStreamAutomaton.h"
 
 namespace reactivesocket {

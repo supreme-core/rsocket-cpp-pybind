@@ -63,6 +63,7 @@ class ConnectionAutomaton :
       std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
       Stats& stats,
+      const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
       bool client);
 
   /// Kicks off connection procedure.
@@ -76,6 +77,13 @@ class ConnectionAutomaton :
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
   void disconnect();
+
+  /// Terminates underlying connection sending the error frame
+  /// on the connection.
+  ///
+  /// This may synchronously deliver terminal signals to all
+  /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
+  void disconnectWithError(Frame_ERROR&& error);
 
   /// Terminate underlying connection and connect new connection
   void reconnect(std::unique_ptr<DuplexConnection> newConnection);
@@ -191,5 +199,6 @@ class ConnectionAutomaton :
   bool isResumable_;
   std::vector<ConnectionCloseListener> closeListeners_;
   ResumeListener resumeListener_;
+  const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
 };
 }

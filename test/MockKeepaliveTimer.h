@@ -10,35 +10,37 @@
 #include "src/ConnectionAutomaton.h"
 #include "src/ReactiveSocket.h"
 
-
 namespace reactivesocket {
 class MockKeepaliveTimer : public KeepaliveTimer {
-public:
-    MockKeepaliveTimer() {
-        VLOG(2) << "ctor MockKeepaliveTimer " << this;
-    }
+ public:
+  MockKeepaliveTimer() {
+    VLOG(2) << "ctor MockKeepaliveTimer " << this;
+  }
 
-    ~MockKeepaliveTimer() {
-        VLOG(2) << "dtor MockKeepaliveTimer " << this;
-    }
+  ~MockKeepaliveTimer() {
+    VLOG(2) << "dtor MockKeepaliveTimer " << this;
+  }
 
-    MOCK_METHOD1(start_,
-    void(
-    const std::shared_ptr <ConnectionAutomaton> connection
-    ));
-    MOCK_METHOD0(stop_,
-    void());
+  MOCK_METHOD1(
+      start_,
+      void(const std::shared_ptr<ConnectionAutomaton> connection));
+  MOCK_METHOD0(stop_, void());
+  MOCK_METHOD0(keepaliveReceived_, void());
 
-    void start(const std::shared_ptr<ConnectionAutomaton>& connection) override {
-        start_(connection);
-    }
+  void start(const std::shared_ptr<ConnectionAutomaton>& connection) override {
+    start_(connection);
+  }
 
-    void stop() override {
-        stop_();
-    }
+  void stop() override {
+    stop_();
+  }
 
-    virtual std::chrono::milliseconds keepaliveTime() override {
-        return std::chrono::seconds(30);
-    }
+  void keepaliveReceived() override {
+    keepaliveReceived_();
+  }
+
+  virtual std::chrono::milliseconds keepaliveTime() override {
+    return std::chrono::seconds(30);
+  }
 };
 }
