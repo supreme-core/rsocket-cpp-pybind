@@ -255,15 +255,16 @@ void ConnectionAutomaton::onConnectionFrame(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
 
-            for (auto it : streamState_->streams_) {
-              const StreamId streamId = it.first;
+          for (auto it : streamState_->streams_) {
+            const StreamId streamId = it.first;
 
-              if (streamState_->resumeCache_->isPositionAvailable(frame.position_, streamId)) {
-                  it.second->onCleanResume();
-              } else {
-                  it.second->onDirtyResume();
-              }
+            if (streamState_->resumeCache_->isPositionAvailable(
+                    frame.position_, streamId)) {
+              it.second->onCleanResume();
+            } else {
+              it.second->onDirtyResume();
             }
+          }
         } else {
           outputFrameOrEnqueue(
               Frame_ERROR::connectionError("can not resume").serializeOut());

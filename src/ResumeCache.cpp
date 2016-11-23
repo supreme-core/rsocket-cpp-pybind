@@ -32,5 +32,4 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
       break;
   }
 }
-
 }
