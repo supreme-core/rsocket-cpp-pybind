@@ -50,6 +50,7 @@ TEST(FramedReaderTest, Read1Frame) {
 
   // to delete objects
   EXPECT_CALL(*frameSubscriber, onComplete_()).Times(1);
+  EXPECT_CALL(*wireSubscription, cancel_()).Times(1);
 
   frameSubscriber->subscription()->cancel();
   framedReader->onComplete();
@@ -107,6 +108,7 @@ TEST(FramedReaderTest, Read3Frames) {
 
   // to delete objects
   EXPECT_CALL(*frameSubscriber, onComplete_()).Times(1);
+  EXPECT_CALL(*wireSubscription, cancel_()).Times(1);
 
   frameSubscriber->subscription()->cancel();
   framedReader->onComplete();
@@ -160,6 +162,7 @@ TEST(FramedReaderTest, Read1FrameIncomplete) {
   framedReader->onNext(std::move(payload));
   // to delete objects
   EXPECT_CALL(*frameSubscriber, onComplete_()).Times(1);
+  EXPECT_CALL(*wireSubscription, cancel_()).Times(1);
 
   frameSubscriber->subscription()->cancel();
   framedReader->onComplete();

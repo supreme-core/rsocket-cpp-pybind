@@ -126,3 +126,36 @@ TEST(SubscriberBaseTest, CancelStopsOnNext) {
   while (!done)
     ;
 }
+
+TEST(SubscriberBaseTest, SubscriptionRequest) {
+  auto subscriber = std::make_shared<SubscriberBaseMock>();
+
+  std::shared_ptr<Subscription> outSubscription;
+  EXPECT_CALL(*subscriber, onSubscribeImpl_(_))
+      .WillOnce(
+          Invoke([&](std::shared_ptr<Subscription> s) { s->request(0); }));
+
+  auto originalSubscription = std::make_shared<StrictMock<MockSubscription>>();
+  EXPECT_CALL(*originalSubscription, request_(_)).Times(1);
+  EXPECT_CALL(*originalSubscription, cancel_()).Times(1);
+
+  auto subscription = std::make_shared<MockSubscription>();
+  std::shared_ptr<Subscriber<int>> ptr = subscriber;
+  ptr->onSubscribe(originalSubscription);
+  ptr->onComplete();
+}
+
+TEST(SubscriberBaseTest, SubscriptionCancel) {
+  auto subscriber = std::make_shared<SubscriberBaseMock>();
+
+  std::shared_ptr<Subscription> outSubscription;
+  EXPECT_CALL(*subscriber, onSubscribeImpl_(_))
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> s) { s->cancel(); }));
+
+  auto originalSubscription = std::make_shared<StrictMock<MockSubscription>>();
+  EXPECT_CALL(*originalSubscription, cancel_()).Times(1);
+
+  auto subscription = std::make_shared<MockSubscription>();
+  std::shared_ptr<Subscriber<int>> ptr = subscriber;
+  ptr->onSubscribe(originalSubscription);
+}

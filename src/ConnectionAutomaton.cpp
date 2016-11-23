@@ -254,7 +254,6 @@ void ConnectionAutomaton::onConnectionFrame(
           outputFrameOrEnqueue(
               Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
                   .serializeOut());
-
           for (auto it : streamState_->streams_) {
             const StreamId streamId = it.first;
 
