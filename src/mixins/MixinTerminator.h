@@ -3,10 +3,9 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <iosfwd>
 #include <memory>
-#include <functional>
-
 
 #include "src/RequestHandler.h"
 
@@ -50,8 +49,8 @@ class MixinTerminator {
   };
   explicit MixinTerminator(Parameters params)
       : connection_(std::move(params.connection)),
-      streamId_(params.streamId),
-      requestHandler_(params.handler) {}
+        streamId_(params.streamId),
+        requestHandler_(params.handler) {}
 
   /// Logs an identification string of the automaton.
   std::ostream& logPrefix(std::ostream& os) /* = 0 */;

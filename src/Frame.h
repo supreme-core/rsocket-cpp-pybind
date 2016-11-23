@@ -397,8 +397,8 @@ class Frame_KEEPALIVE {
       ResumePosition position,
       std::unique_ptr<folly::IOBuf> data)
       : header_(FrameType::KEEPALIVE, flags, 0),
-      position_(position),
-      data_(std::move(data)) {
+        position_(position),
+        data_(std::move(data)) {
     assert(!(flags & FrameFlags_METADATA));
   }
 
