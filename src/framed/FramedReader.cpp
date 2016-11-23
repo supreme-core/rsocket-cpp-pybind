@@ -38,15 +38,20 @@ void FramedReader::parseFrames() {
     }
 
     folly::io::Cursor c(payloadQueue_.front());
-    const auto nextFrameSize = c.readBE<int32_t>();
-    CHECK_GE(nextFrameSize, sizeof(int32_t));
+    const auto nextFrameSize = static_cast<size_t>(c.readBE<int32_t>());
 
-    if (payloadQueue_.chainLength() < (size_t)nextFrameSize) {
+    // the frame size includes the payload size and the size value
+    // so if the size value is less than sizeof(int32_t) something is wrong
+    if (nextFrameSize < sizeof(int32_t)) {
+      onErrorImpl(std::runtime_error("invalid data stream"));
+      break;
+    }
+
+    if (payloadQueue_.chainLength() < nextFrameSize) {
       // need to accumulate more data
       break;
     }
     payloadQueue_.trimStart(sizeof(int32_t));
-    // the frame size includes the payload size and the size value
     auto nextFrame = payloadQueue_.split(nextFrameSize - sizeof(int32_t));
 
     CHECK(allowance_.tryAcquire(1));
