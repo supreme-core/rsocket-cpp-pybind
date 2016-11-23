@@ -120,7 +120,8 @@ std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  ChannelRequester::Parameters params = {{connection_, streamId, handler_}, executor};
+  ChannelRequester::Parameters params = {{connection_, streamId, handler_},
+                                         executor};
   auto automaton = std::make_shared<ChannelRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
@@ -136,7 +137,8 @@ void ReactiveSocket::requestStream(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  StreamRequester::Parameters params = {{connection_, streamId, handler_}, executor};
+  StreamRequester::Parameters params = {{connection_, streamId, handler_},
+                                        executor};
   auto automaton = std::make_shared<StreamRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
@@ -178,8 +180,8 @@ void ReactiveSocket::requestResponse(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  RequestResponseRequester::Parameters params = {{connection_, streamId, handler_},
-                                                 executor};
+  RequestResponseRequester::Parameters params = {
+      {connection_, streamId, handler_}, executor};
   auto automaton = std::make_shared<RequestResponseRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
@@ -372,7 +374,8 @@ std::shared_ptr<StreamState> ReactiveSocket::resumeListener(
 }
 
 void ReactiveSocket::close() {
-  // Stop scheduling keepalives since the socket is now closed, but may be destructed later
+  // Stop scheduling keepalives since the socket is now closed, but may be
+  // destructed later
   if (keepaliveTimer_) {
     keepaliveTimer_->stop();
   }

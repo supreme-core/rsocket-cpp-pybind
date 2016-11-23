@@ -54,10 +54,8 @@ class SubscriberBaseT : public Subscriber<T>,
       if (auto parent = parentSubscriber_.lock()) {
         if (!parent->cancelled_.exchange(true)) {
           parent->runInExecutor([parent]() {
-            if (!parent->cancelled_) {
-              parent->originalSubscription_->cancel();
-              parent->originalSubscription_ = nullptr;
-            }
+            parent->originalSubscription_->cancel();
+            parent->originalSubscription_ = nullptr;
           });
         }
       }
