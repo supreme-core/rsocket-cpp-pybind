@@ -392,9 +392,10 @@ std::ostream& operator<<(std::ostream& os, const Frame_ERROR& frame) {
 
 /// @{
 std::unique_ptr<folly::IOBuf> Frame_KEEPALIVE::serializeOut() {
-  auto queue = createBufferQueue(FrameHeader::kSize);
+  auto queue = createBufferQueue(FrameHeader::kSize + sizeof(ResumePosition));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   header_.serializeInto(appender);
+  appender.writeBE(position_);
   if (data_) {
     appender.insert(std::move(data_));
   }
@@ -406,6 +407,7 @@ bool Frame_KEEPALIVE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
   try {
     header_.deserializeFrom(cur);
     assert((header_.flags_ & FrameFlags_METADATA) == 0);
+    position_ = cur.readBE<ResumePosition>();
     data_ = Payload::deserializeDataFrom(cur);
   } catch (...) {
     return false;
