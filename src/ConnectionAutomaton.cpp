@@ -72,6 +72,13 @@ void ConnectionAutomaton::disconnect() {
   closeDuplexConnection(folly::exception_wrapper());
 }
 
+void ConnectionAutomaton::disconnectWithError(Frame_ERROR&& error) {
+  VLOG(4) << "disconnectWithError " << error.payload_.data->cloneAsValue().moveToFbString();
+
+  outputFrameOrEnqueue(error.serializeOut());
+  disconnect();
+}
+
 void ConnectionAutomaton::closeDuplexConnection(folly::exception_wrapper ex) {
   if (!connectionOutput_) {
     return;
@@ -176,9 +183,8 @@ void ConnectionAutomaton::onNext(std::unique_ptr<folly::IOBuf> frame) {
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
-    outputFrameOrEnqueue(
-        Frame_ERROR::connectionError("invalid frame").serializeOut());
-    disconnect();
+    disconnectWithError(
+        Frame_ERROR::connectionError("invalid frame"));
     return;
   }
   auto streamId = *streamIdPtr;
@@ -217,27 +223,22 @@ void ConnectionAutomaton::onConnectionFrame(
             frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
             outputFrameOrEnqueue(frame.serializeOut());
           } else {
-            outputFrameOrEnqueue(
-                Frame_ERROR::connectionError("keepalive without flag")
-                    .serializeOut());
-            disconnect();
+            disconnectWithError(
+                Frame_ERROR::connectionError("keepalive without flag"));
           }
 
           streamState_->resumeCache_->resetUpToPosition(frame.position_);
         } else {
           if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
-            outputFrameOrEnqueue(
+            disconnectWithError(
                 Frame_ERROR::connectionError(
-                    "client received keepalive with respond flag")
-                    .serializeOut());
-            disconnect();
+                    "client received keepalive with respond flag"));
           } else if (keepaliveTimer_) {
             keepaliveTimer_->keepaliveReceived();
           }
         }
       } else {
-        outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
-        disconnect();
+        disconnectWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
     }
@@ -283,13 +284,11 @@ void ConnectionAutomaton::onConnectionFrame(
             }
           }
         } else {
-          outputFrameOrEnqueue(
-              Frame_ERROR::connectionError("can not resume").serializeOut());
-          disconnect();
+          disconnectWithError(
+              Frame_ERROR::connectionError("can not resume"));
         }
       } else {
-        outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
-        disconnect();
+        disconnectWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
     }
@@ -299,19 +298,16 @@ void ConnectionAutomaton::onConnectionFrame(
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
         } else {
-          outputFrameOrEnqueue(
-              Frame_ERROR::connectionError("can not resume").serializeOut());
-          disconnect();
+          disconnectWithError(
+              Frame_ERROR::connectionError("can not resume"));
         }
       } else {
-        outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
-        disconnect();
+        disconnectWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
     }
     default:
-      outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
-      disconnect();
+      disconnectWithError(Frame_ERROR::unexpectedFrame());
       return;
   }
 }
@@ -370,11 +366,9 @@ void ConnectionAutomaton::handleUnknownStream(
   // TODO(stupaq): there are some rules about monotonically increasing stream
   // IDs -- let's forget about them for a moment
   if (!factory_(*this, streamId, std::move(payload))) {
-    outputFrameOrEnqueue(
+    disconnectWithError(
         Frame_ERROR::connectionError(
-            folly::to<std::string>("unknown stream ", streamId))
-            .serializeOut());
-    disconnect();
+            folly::to<std::string>("unknown stream ", streamId)));
   }
 }
 /// @}

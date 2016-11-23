@@ -78,6 +78,13 @@ class ConnectionAutomaton :
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
   void disconnect();
 
+  /// Terminates underlying connection sending the error frame
+  /// on the connection.
+  ///
+  /// This may synchronously deliver terminal signals to all
+  /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
+  void disconnectWithError(Frame_ERROR&& error);
+
   /// Terminate underlying connection and connect new connection
   void reconnect(std::unique_ptr<DuplexConnection> newConnection);
 
