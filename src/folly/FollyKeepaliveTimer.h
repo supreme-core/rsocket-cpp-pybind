@@ -30,6 +30,6 @@ class FollyKeepaliveTimer : public KeepaliveTimer {
   folly::EventBase& eventBase_;
   std::shared_ptr<bool> running_;
   std::chrono::milliseconds period_;
-  bool pending_{false};
+  std::atomic<bool> pending_{false};
 };
 }
