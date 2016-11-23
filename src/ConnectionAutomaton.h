@@ -192,6 +192,6 @@ class ConnectionAutomaton :
   bool isResumable_;
   std::vector<ConnectionCloseListener> closeListeners_;
   ResumeListener resumeListener_;
-  std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
+  const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
 };
 }
