@@ -81,6 +81,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
+      std::shared_ptr<KeepaliveTimer>(),
       false);
   connectionAutomaton->connect();
 }
@@ -151,6 +152,7 @@ static void terminateTest(
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
+      std::shared_ptr<KeepaliveTimer>(),
       false);
   connectionAutomaton->connect();
 }
@@ -235,6 +237,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
+      std::shared_ptr<KeepaliveTimer>(),
       false);
   connectionAutomaton->connect();
 }

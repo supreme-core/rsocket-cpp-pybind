@@ -25,6 +25,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     std::shared_ptr<StreamState> streamState,
     ResumeListener resumeListener,
     Stats& stats,
+    const std::shared_ptr<KeepaliveTimer>& keepaliveTimer,
     bool isServer)
     : connection_(std::move(connection)),
       factory_(std::move(factory)),
@@ -32,7 +33,8 @@ ConnectionAutomaton::ConnectionAutomaton(
       stats_(stats),
       isServer_(isServer),
       isResumable_(true),
-      resumeListener_(resumeListener) {
+      resumeListener_(resumeListener),
+      keepaliveTimer_(keepaliveTimer) {
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
@@ -222,8 +224,17 @@ void ConnectionAutomaton::onConnectionFrame(
           }
 
           streamState_->resumeCache_->resetUpToPosition(frame.position_);
+        } else {
+          if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
+            outputFrameOrEnqueue(
+                Frame_ERROR::connectionError(
+                    "client received keepalive with respond flag")
+                    .serializeOut());
+            disconnect();
+          } else if (keepaliveTimer_) {
+            keepaliveTimer_->keepaliveReceived();
+          }
         }
-        // TODO(yschimke) client *should* check the respond flag
       } else {
         outputFrameOrEnqueue(Frame_ERROR::unexpectedFrame().serializeOut());
         disconnect();

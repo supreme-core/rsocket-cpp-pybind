@@ -63,6 +63,7 @@ class ConnectionAutomaton :
       std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
       Stats& stats,
+      const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
       bool client);
 
   /// Kicks off connection procedure.
@@ -191,5 +192,6 @@ class ConnectionAutomaton :
   bool isResumable_;
   std::vector<ConnectionCloseListener> closeListeners_;
   ResumeListener resumeListener_;
+  std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
 };
 }

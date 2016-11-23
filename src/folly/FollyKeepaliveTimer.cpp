@@ -27,8 +27,18 @@ void FollyKeepaliveTimer::schedule() {
   eventBase_.runAfterDelay(
       [this, running]() {
         if (*running) {
-          connection_->sendKeepalive();
-          schedule();
+          if (pending_) {
+            stop();
+
+            connection_->outputFrameOrEnqueue(
+                Frame_ERROR::connectionError("no response to keepalive")
+                    .serializeOut());
+            connection_->disconnect();
+          } else {
+            connection_->sendKeepalive();
+            pending_ = true;
+            schedule();
+          }
         }
       },
       keepaliveTime().count());
@@ -46,5 +56,9 @@ void FollyKeepaliveTimer::start(
   *running_ = true;
 
   schedule();
+}
+
+void FollyKeepaliveTimer::keepaliveReceived() {
+  pending_ = false;
 }
 }

@@ -42,6 +42,7 @@ ReactiveSocket::ReactiveSocket(
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
     : handler_(handler),
+      keepaliveTimer_(std::move(keepaliveTimer)),
       connection_(new ConnectionAutomaton(
           std::move(connection),
           [handler](
@@ -57,9 +58,9 @@ ReactiveSocket::ReactiveSocket(
               this,
               std::placeholders::_1),
           stats,
+          keepaliveTimer_,
           isServer)),
-      nextStreamId_(isServer ? 1 : 2),
-      keepaliveTimer_(std::move(keepaliveTimer)) {}
+      nextStreamId_(isServer ? 1 : 2) {}
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,
@@ -393,5 +394,4 @@ void ReactiveSocket::tryClientResume(
   connection_->reconnect(std::move(newConnection));
   connection_->sendResume(token);
 }
-
 }
