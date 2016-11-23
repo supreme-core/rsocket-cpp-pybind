@@ -147,7 +147,7 @@ static void nextTwoFramesTest(int headroom) {
   // to delete objects
   EXPECT_CALL(*subscriber, onComplete_()).Times(1);
   EXPECT_CALL(*subscription, cancel_()).Times(1);
-  
+
   subscriber->subscription()->cancel();
   writer->onComplete();
 }
