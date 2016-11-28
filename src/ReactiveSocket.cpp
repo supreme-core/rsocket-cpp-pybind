@@ -241,7 +241,7 @@ bool ReactiveSocket::createResponder(
             return automaton;
           });
       auto requestSink = handler->onRequestChannel(
-          std::move(frame.payload_), subscriberFactory);
+          std::move(frame.payload_), streamId, subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
@@ -274,7 +274,7 @@ bool ReactiveSocket::createResponder(
             connection.addStream(streamId, automaton);
             return automaton;
           });
-      handler->onRequestStream(std::move(frame.payload_), subscriberFactory);
+      handler->onRequestStream(std::move(frame.payload_), streamId, subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
@@ -300,7 +300,7 @@ bool ReactiveSocket::createResponder(
             return automaton;
           });
       handler->onRequestSubscription(
-          std::move(frame.payload_), subscriberFactory);
+          std::move(frame.payload_), streamId, subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
         subscriber->onSubscribe(
@@ -325,7 +325,7 @@ bool ReactiveSocket::createResponder(
             connection.addStream(streamId, automaton);
             return automaton;
           });
-      handler->onRequestResponse(std::move(frame.payload_), subscriberFactory);
+      handler->onRequestResponse(std::move(frame.payload_), streamId, subscriberFactory);
       // we need to create a responder to at least close the stream
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
@@ -342,7 +342,7 @@ bool ReactiveSocket::createResponder(
         return false;
       }
       // no stream tracking is necessary
-      handler->handleFireAndForgetRequest(std::move(frame.payload_));
+      handler->handleFireAndForgetRequest(std::move(frame.payload_), streamId);
       break;
     }
     case FrameType::METADATA_PUSH: {

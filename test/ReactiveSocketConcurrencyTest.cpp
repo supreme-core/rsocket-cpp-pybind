@@ -52,31 +52,31 @@ class ClientSideConcurrencyTest : public testing::Test {
         }));
     // The request reaches the other end and triggers new responder to be set
     // up.
-    EXPECT_CALL(serverHandlerRef, handleRequestResponse_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestResponse_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke([&](
-            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+            Payload& request, StreamId streamId, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
         }));
-    EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke([&](
-            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+            Payload& request, StreamId streamId, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
         }));
-    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke([&](
-            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+            Payload& request, StreamId streamId, std::shared_ptr<Subscriber<Payload>> response) {
           serverOutput = response;
           serverOutput->onSubscribe(serverOutputSub);
         }));
-    EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke([&](
-            Payload& request, std::shared_ptr<Subscriber<Payload>> response) {
+            Payload& request, StreamId streamId, std::shared_ptr<Subscriber<Payload>> response) {
           clientTerminatesInteraction_ = false;
           EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
 
@@ -252,36 +252,36 @@ class ServerSideConcurrencyTest : public testing::Test {
         }));
     // The request reaches the other end and triggers new responder to be set
     // up.
-    EXPECT_CALL(serverHandlerRef, handleRequestResponse_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestResponse_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
+            Invoke([&](Payload& request, StreamId streamId, SubscriberFactory& subscriberFactory) {
               serverOutput =
                   subscriberFactory.createSubscriber(*thread2.getEventBase());
               // TODO: should onSubscribe be queued and also called from
               // thread1?
               serverOutput->onSubscribe(serverOutputSub);
             }));
-    EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
+            Invoke([&](Payload& request, StreamId streamId, SubscriberFactory& subscriberFactory) {
               serverOutput =
                   subscriberFactory.createSubscriber(*thread2.getEventBase());
               serverOutput->onSubscribe(serverOutputSub);
             }));
-    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
+            Invoke([&](Payload& request, StreamId streamId, SubscriberFactory& subscriberFactory) {
               serverOutput =
                   subscriberFactory.createSubscriber(*thread2.getEventBase());
               serverOutput->onSubscribe(serverOutputSub);
             }));
-    EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _))
+    EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(
-            Invoke([&](Payload& request, SubscriberFactory& subscriberFactory) {
+            Invoke([&](Payload& request, StreamId streamId, SubscriberFactory& subscriberFactory) {
               clientTerminatesInteraction_ = false;
 
               EXPECT_CALL(*serverInput, onSubscribe_(_))
