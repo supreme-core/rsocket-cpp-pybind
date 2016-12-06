@@ -84,6 +84,7 @@ cpp_library(
         '@/lithium/reactive-streams-cpp:reactive-streams-utilities',
         '@/lithium/reactivesocket-utils:reactivesocket-external-utils',
     ],
+    compiler_flags=['-DREACTIVE_SOCKET_EXTERNAL_STACK_TRACE_UTILS'],
 )
 
 cpp_library(
@@ -109,6 +110,7 @@ cpp_library(
     deps = [
         ':reactivesocket-tcp-internal',
         '@/lithium/reactive-streams-cpp:reactive-streams',
+        '@/lithium/reactive-streams-cpp:reactive-streams-utilities',
         '//folly/io/async:async',
     ],
 )
@@ -133,7 +135,6 @@ cpp_unittest(
         ':reactivesocket-streams-mocks',
         '//folly/io/async:util',
     ],
-    compiler_flags=['-DREACTIVE_SOCKET_EXTERNAL_STACK_TRACE_UTILS'],
 )
 
 # Compatibility target for ReactiveStreams API.

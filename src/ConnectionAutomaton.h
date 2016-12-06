@@ -44,6 +44,8 @@ using ConnectionCloseListener = std::function<void()>;
 
 class FrameSink {
  public:
+  virtual ~FrameSink() = default;
+
   /// Terminates underlying connection sending the error frame
   /// on the connection.
   ///
