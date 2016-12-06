@@ -82,34 +82,34 @@ class ClientSideConcurrencyTest : public testing::Test {
             }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _, _))
         .Times(AtMost(1))
-        .WillOnce(Invoke([&](
-            Payload& request,
-            StreamId streamId,
-            std::shared_ptr<Subscriber<Payload>> response) {
-          clientTerminatesInteraction_ = false;
-          EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+        .WillOnce(Invoke(
+            [&](Payload& request,
+                StreamId streamId,
+                std::shared_ptr<Subscriber<Payload>> response) {
+              clientTerminatesInteraction_ = false;
+              EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
 
-          EXPECT_CALL(*serverInput, onSubscribe_(_))
-              .WillOnce(Invoke([&](std::shared_ptr<Subscription> sub) {
+              EXPECT_CALL(*serverInput, onSubscribe_(_))
+                  .WillOnce(Invoke([&](std::shared_ptr<Subscription> sub) {
+                    EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+                    serverInputSub = sub;
+                    sub->request(2);
+                  }));
+              EXPECT_CALL(*serverInput, onNext_(_))
+                  .WillOnce(Invoke([&](Payload& payload) {
+                    EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
+                    serverInputSub->cancel();
+                    serverInputSub = nullptr;
+                  }));
+              EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-                serverInputSub = sub;
-                sub->request(2);
               }));
-          EXPECT_CALL(*serverInput, onNext_(_))
-              .WillOnce(Invoke([&](Payload& payload) {
-                EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-                serverInputSub->cancel();
-                serverInputSub = nullptr;
-              }));
-          EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
-            EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-          }));
 
-          serverOutput = response;
-          serverOutput->onSubscribe(serverOutputSub);
+              serverOutput = response;
+              serverOutput->onSubscribe(serverOutputSub);
 
-          return serverInput;
-        }));
+              return serverInput;
+            }));
 
     EXPECT_CALL(*serverOutputSub, request_(_))
         // The server delivers them immediately.

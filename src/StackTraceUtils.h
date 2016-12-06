@@ -9,7 +9,9 @@ namespace reactivesocket {
 std::string getStackTrace();
 
 #ifndef REACTIVE_SOCKET_EXTERNAL_STACK_TRACE_UTILS
-inline std::string getStackTrace() {return "";}
+inline std::string getStackTrace() {
+  return "";
+}
 #endif
 
 } // reactivesocket
