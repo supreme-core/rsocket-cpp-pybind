@@ -525,9 +525,16 @@ class InitialRequestNDeliveredTest : public testing::Test {
             std::move(serverSocketConnection)),
         std::move(serverHandler));
 
-    testConnection->getOutput()->onNext(
-        Frame_SETUP(FrameFlags_EMPTY, 0, 0, 0, {}, "", "", Payload())
-            .serializeOut());
+    testConnection->getOutput()->onNext(Frame_SETUP(
+                                            FrameFlags_EMPTY,
+                                            0,
+                                            0,
+                                            0,
+                                            ResumeIdentificationToken(),
+                                            "",
+                                            "",
+                                            Payload())
+                                            .serializeOut());
   }
 
   void loopEventBaseUntilDone() {

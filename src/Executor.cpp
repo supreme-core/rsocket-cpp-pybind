@@ -1,8 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <folly/futures/QueuedImmediateExecutor.h>
-#include "src/SubscriberBase.h"
 #include "src/StackTraceUtils.h"
+#include "src/SubscriberBase.h"
 
 namespace reactivesocket {
 
