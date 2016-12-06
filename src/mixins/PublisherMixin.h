@@ -85,8 +85,10 @@ class PublisherMixin : public Base {
     // terminated
     if (producingSubscription_) {
       producingSubscription_.request(1);
-      Base::onNextFrame(std::move(frame));
+    } else {
+      initialRequestN_ = 1;
     }
+    Base::onNextFrame(std::move(frame));
   }
 
   /// Remaining frames just pass through.
