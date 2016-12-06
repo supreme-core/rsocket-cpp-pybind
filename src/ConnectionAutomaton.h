@@ -64,7 +64,7 @@ class ConnectionAutomaton :
       ResumeListener resumeListener,
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
-      bool client);
+      bool isServer);
 
   /// Kicks off connection procedure.
   ///
