@@ -86,7 +86,6 @@ class ClientSideConcurrencyTest : public testing::Test {
             [&](Payload& request,
                 StreamId streamId,
                 std::shared_ptr<Subscriber<Payload>> response) {
-              clientTerminatesInteraction_ = false;
               EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
 
               EXPECT_CALL(*serverInput, onSubscribe_(_))
@@ -113,10 +112,8 @@ class ClientSideConcurrencyTest : public testing::Test {
 
     EXPECT_CALL(*serverOutputSub, request_(_))
         // The server delivers them immediately.
-        .WillOnce(Invoke([&](size_t) {
-          EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-          serverOutput->onNext(Payload(originalPayload->clone()));
-        }));
+        .WillOnce(Invoke(
+            [&](size_t) { serverOutput->onNext(Payload(originalPayload())); }));
     EXPECT_CALL(*clientInput, onNext_(_))
         // Client receives the payload. We will complete the interaction
         .WillOnce(Invoke([&](Payload&) {
@@ -126,12 +123,12 @@ class ClientSideConcurrencyTest : public testing::Test {
             thread1.getEventBase()->runInEventBaseThreadAndWait([&]() {
               clientInputSub->cancel();
               clientInputSub = nullptr;
+              done();
             });
           }
         }));
 
     EXPECT_CALL(*serverOutputSub, cancel_()).WillOnce(Invoke([&]() {
-      EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
       serverOutput->onComplete();
       serverOutput = nullptr;
     }));
@@ -140,8 +137,8 @@ class ClientSideConcurrencyTest : public testing::Test {
       if (!clientTerminatesInteraction_) {
         clientInputSub->cancel();
         clientInputSub = nullptr;
+        done();
       }
-      done();
     }));
   }
 
@@ -159,8 +156,9 @@ class ClientSideConcurrencyTest : public testing::Test {
   std::unique_ptr<ReactiveSocket> clientSock;
   std::unique_ptr<ReactiveSocket> serverSock;
 
-  const std::unique_ptr<folly::IOBuf> originalPayload{
-      folly::IOBuf::copyBuffer("foo")};
+  static std::unique_ptr<folly::IOBuf> originalPayload() {
+    return folly::IOBuf::copyBuffer("foo");
+  };
 
   std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{
       std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
@@ -174,55 +172,54 @@ class ClientSideConcurrencyTest : public testing::Test {
       std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
   std::shared_ptr<Subscription> serverInputSub;
 
-  folly::ScopedEventBaseThread thread1;
-  folly::ScopedEventBaseThread thread2;
-
   bool clientTerminatesInteraction_{true};
 
   std::mutex mtx;
   std::condition_variable cv;
   bool isDone_{false};
+
+  // we want these to be the last members
+  folly::ScopedEventBaseThread thread1;
+  folly::ScopedEventBaseThread thread2;
 };
 
 TEST_F(ClientSideConcurrencyTest, RequestResponseTest) {
   clientSock->requestResponse(
-      Payload(originalPayload->clone()), clientInput, *thread2.getEventBase());
+      Payload(originalPayload()), clientInput, *thread2.getEventBase());
   wainUntilDone();
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestStreamTest) {
   clientSock->requestStream(
-      Payload(originalPayload->clone()), clientInput, *thread2.getEventBase());
+      Payload(originalPayload()), clientInput, *thread2.getEventBase());
   wainUntilDone();
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestSubscriptionTest) {
   clientSock->requestSubscription(
-      Payload(originalPayload->clone()), clientInput, *thread2.getEventBase());
+      Payload(originalPayload()), clientInput, *thread2.getEventBase());
   wainUntilDone();
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
+  clientTerminatesInteraction_ = false;
+
   auto clientOutput =
       clientSock->requestChannel(clientInput, *thread2.getEventBase());
 
   auto clientOutputSub = std::make_shared<StrictMock<MockSubscription>>();
   EXPECT_CALL(*clientOutputSub, request_(1)).WillOnce(Invoke([&](size_t) {
-    thread1.getEventBase()->runInEventBaseThread([&]() {
+    thread1.getEventBase()->runInEventBaseThread([clientOutput]() {
       // first payload for the server RequestHandler
-      clientOutput->onNext(Payload(originalPayload->clone()));
+      clientOutput->onNext(Payload(originalPayload()));
     });
   }));
-  EXPECT_CALL(*clientOutputSub, request_(2)).WillOnce(Invoke([&](size_t) {
-    // second payload for the server input subscriber
-    clientOutput->onNext(Payload(originalPayload->clone()));
-  }));
-  EXPECT_CALL(*clientOutputSub, cancel_()).WillOnce(Invoke([&]() {
-    thread1.getEventBase()->runInEventBaseThread([&]() {
-      clientOutput->onComplete();
-      clientOutput = nullptr;
-    });
-  }));
+  EXPECT_CALL(*clientOutputSub, request_(2))
+      .WillOnce(Invoke([clientOutput](size_t) {
+        // second payload for the server input subscriber
+        clientOutput->onNext(Payload(originalPayload()));
+      }));
+  EXPECT_CALL(*clientOutputSub, cancel_()).Times(1);
 
   thread1.getEventBase()->runInEventBaseThreadAndWait(
       [&]() { clientOutput->onSubscribe(clientOutputSub); });
@@ -308,12 +305,7 @@ class ServerSideConcurrencyTest : public testing::Test {
                         [&]() { sub->request(2); });
                   }));
               EXPECT_CALL(*serverInput, onNext_(_))
-                  .WillOnce(Invoke([&](Payload& payload) {
-                    thread1.getEventBase()->runInEventBaseThreadAndWait([&]() {
-                      serverInputSub->cancel();
-                      serverInputSub = nullptr;
-                    });
-                  }));
+                  .WillOnce(Invoke([&](Payload& payload) {}));
               EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
               }));
@@ -331,21 +323,24 @@ class ServerSideConcurrencyTest : public testing::Test {
           thread1.getEventBase()->runInEventBaseThreadAndWait([&]() {
             serverOutput->onNext(Payload(originalPayload->clone()));
           });
+          thread1.getEventBase()->runInEventBaseThreadAndWait([&]() {
+            if (serverInputSub) {
+              serverInputSub->cancel();
+              serverInputSub = nullptr;
+            }
+          });
         }));
     EXPECT_CALL(*clientInput, onNext_(_))
         // Client receives the payload. We will complete the interaction
         .WillOnce(Invoke([&](Payload&) {
-          EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
-          // cancel is called from the thread1
-          // but delivered on thread2
           if (clientTerminatesInteraction_) {
             clientInputSub->cancel();
             clientInputSub = nullptr;
+            done();
           }
         }));
 
     EXPECT_CALL(*serverOutputSub, cancel_()).WillOnce(Invoke([&]() {
-      EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
       serverOutput->onComplete();
       serverOutput = nullptr;
     }));
@@ -354,8 +349,8 @@ class ServerSideConcurrencyTest : public testing::Test {
       if (!clientTerminatesInteraction_) {
         clientInputSub->cancel();
         clientInputSub = nullptr;
+        done();
       }
-      done();
     }));
   }
 
@@ -388,14 +383,15 @@ class ServerSideConcurrencyTest : public testing::Test {
       std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
   std::shared_ptr<Subscription> serverInputSub;
 
-  folly::ScopedEventBaseThread thread1;
-  folly::ScopedEventBaseThread thread2;
-
   bool clientTerminatesInteraction_{true};
 
   std::mutex mtx;
   std::condition_variable cv;
   bool isDone_{false};
+
+  // we want these to be the last members
+  folly::ScopedEventBaseThread thread1;
+  folly::ScopedEventBaseThread thread2;
 };
 
 TEST_F(ServerSideConcurrencyTest, RequestResponseTest) {
@@ -555,6 +551,8 @@ class InitialRequestNDeliveredTest : public testing::Test {
   std::atomic<bool> done{false};
   size_t expectedRequestN{kRequestN};
   folly::EventBase eventBase_;
+
+  // we want these to be the last members
   folly::ScopedEventBaseThread thread2;
 };
 

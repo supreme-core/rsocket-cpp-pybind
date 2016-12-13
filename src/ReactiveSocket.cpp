@@ -6,7 +6,6 @@
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
 
-#include "src/CancellingSubscription.h"
 #include "src/ClientResumeStatusCallback.h"
 #include "src/ConnectionAutomaton.h"
 #include "src/ReactiveSocketSubscriberFactory.h"
@@ -252,8 +251,8 @@ bool ReactiveSocket::createResponder(
           std::move(frame.payload_), streamId, subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
-        subscriber->onSubscribe(
-            std::make_shared<CancellingSubscription>(subscriber));
+        subscriber->onSubscribe(std::make_shared<NullSubscription>());
+        subscriber->onError(std::runtime_error("unhandled CHANNEL"));
       }
       if (automaton->subscribe(requestSink)) {
         // any calls from onSubscribe are queued until we start
@@ -286,8 +285,8 @@ bool ReactiveSocket::createResponder(
           std::move(frame.payload_), streamId, subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
-        subscriber->onSubscribe(
-            std::make_shared<CancellingSubscription>(subscriber));
+        subscriber->onSubscribe(std::make_shared<NullSubscription>());
+        subscriber->onError(std::runtime_error("unhandled STREAM"));
       }
       automaton->onNextFrame(std::move(frame));
       automaton->start();
@@ -312,8 +311,8 @@ bool ReactiveSocket::createResponder(
           std::move(frame.payload_), streamId, subscriberFactory);
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
-        subscriber->onSubscribe(
-            std::make_shared<CancellingSubscription>(subscriber));
+        subscriber->onSubscribe(std::make_shared<NullSubscription>());
+        subscriber->onError(std::runtime_error("unhandled SUBSCRIPTION"));
       }
       automaton->onNextFrame(std::move(frame));
       automaton->start();
@@ -339,8 +338,8 @@ bool ReactiveSocket::createResponder(
       // we need to create a responder to at least close the stream
       if (!automaton) {
         auto subscriber = subscriberFactory.createSubscriber();
-        subscriber->onSubscribe(
-            std::make_shared<CancellingSubscription>(subscriber));
+        subscriber->onSubscribe(std::make_shared<NullSubscription>());
+        subscriber->onError(std::runtime_error("unhandled REQUEST/RESPONSE"));
       }
       automaton->onNextFrame(std::move(frame));
       automaton->start();

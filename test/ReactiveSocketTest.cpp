@@ -882,10 +882,13 @@ class ReactiveSocketIgnoreRequestTest : public testing::Test {
     //
 
     EXPECT_CALL(*clientInput, onNext_(_)).Times(0);
-    EXPECT_CALL(*clientInput, onComplete_()).WillOnce(Invoke([&]() {
-      clientInputSub->cancel();
-      clientInputSub = nullptr;
-    }));
+    EXPECT_CALL(*clientInput, onComplete_()).Times(0);
+    EXPECT_CALL(*clientInput, onError_(_))
+        .WillOnce(Invoke([&](const folly::exception_wrapper& ex) {
+          LOG(INFO) << "expected error: " << ex.what();
+          clientInputSub->cancel();
+          clientInputSub = nullptr;
+        }));
   }
 
   std::unique_ptr<ReactiveSocket> clientSock;
