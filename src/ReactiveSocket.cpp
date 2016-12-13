@@ -7,6 +7,7 @@
 #include <folly/MoveWrapper.h>
 
 #include "src/CancellingSubscription.h"
+#include "src/ClientResumeStatusCallback.h"
 #include "src/ConnectionAutomaton.h"
 #include "src/ReactiveSocketSubscriberFactory.h"
 #include "src/automata/ChannelRequester.h"
@@ -24,6 +25,10 @@ ReactiveSocket::~ReactiveSocket() {
   // Force connection closure, this will trigger terminal signals to be
   // delivered to all stream automata.
   close();
+
+  onConnectListeners_->clear();
+  onDisconnectListeners_->clear();
+  onCloseListeners_->clear();
 }
 
 ReactiveSocket::ReactiveSocket(
@@ -50,7 +55,10 @@ ReactiveSocket::ReactiveSocket(
               std::placeholders::_1),
           stats,
           keepaliveTimer_,
-          isServer)),
+          isServer,
+          executeListenersFunc(onConnectListeners_),
+          executeListenersFunc(onDisconnectListeners_),
+          executeListenersFunc(onCloseListeners_))),
       nextStreamId_(isServer ? 1 : 2) {}
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
@@ -377,14 +385,36 @@ void ReactiveSocket::close() {
   connection_->disconnect();
 }
 
-void ReactiveSocket::onClose(CloseListener listener) {
-  connection_->onClose([listener, this]() { listener(*this); });
+void ReactiveSocket::onConnected(ReactiveSocketCallback listener) {
+  CHECK(listener);
+  onConnectListeners_->push_back(std::move(listener));
+}
+
+void ReactiveSocket::onDisconnected(ReactiveSocketCallback listener) {
+  CHECK(listener);
+  onDisconnectListeners_->push_back(std::move(listener));
+}
+
+void ReactiveSocket::onClosed(ReactiveSocketCallback listener) {
+  CHECK(listener);
+  onCloseListeners_->push_back(std::move(listener));
 }
 
 void ReactiveSocket::tryClientResume(
+    const ResumeIdentificationToken& token,
     std::unique_ptr<DuplexConnection> newConnection,
-    const ResumeIdentificationToken& token) {
-  connection_->reconnect(std::move(newConnection));
+    std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
+  connection_->reconnect(std::move(newConnection), std::move(resumeCallback));
   connection_->sendResume(token);
 }
+
+std::function<void()> ReactiveSocket::executeListenersFunc(
+    std::shared_ptr<std::list<ReactiveSocketCallback>> listeners) {
+  return [this, listeners]() {
+    for (auto& listener : *listeners) {
+      listener(*this);
+    }
+  };
 }
+
+} // reactivesocket

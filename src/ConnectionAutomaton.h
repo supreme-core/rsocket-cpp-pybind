@@ -8,6 +8,7 @@
 
 #include <reactive-streams/utilities/AllowanceSemaphore.h>
 #include <reactive-streams/utilities/SmartPointers.h>
+#include "src/Common.h"
 #include "src/Payload.h"
 #include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
@@ -40,8 +41,6 @@ using StreamAutomatonFactory = std::function<bool(
 using ResumeListener = std::function<std::shared_ptr<StreamState>(
     const ResumeIdentificationToken& token)>;
 
-using ConnectionCloseListener = std::function<void()>;
-
 class FrameSink {
  public:
   virtual ~FrameSink() = default;
@@ -51,7 +50,7 @@ class FrameSink {
   ///
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
-  virtual void disconnectWithError(Frame_ERROR&& error) = 0;
+  virtual void closeWithError(Frame_ERROR&& error) = 0;
 
   virtual void sendKeepalive() = 0;
 };
@@ -79,9 +78,12 @@ class ConnectionAutomaton :
       ResumeListener resumeListener,
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
-      bool client);
+      bool client,
+      std::function<void()> onConnected,
+      std::function<void()> onDisconnected,
+      std::function<void()> onClosed);
 
-  void disconnectWithError(Frame_ERROR&& error) override;
+  void closeWithError(Frame_ERROR&& error) override;
 
   /// Kicks off connection procedure.
   ///
@@ -93,10 +95,16 @@ class ConnectionAutomaton :
   ///
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
-  void disconnect();
+  void close();
+
+  /// Disconnects DuplexConnection from the automaton.
+  /// Existing streams will stay intact.
+  std::unique_ptr<DuplexConnection> disconnect();
 
   /// Terminate underlying connection and connect new connection
-  void reconnect(std::unique_ptr<DuplexConnection> newConnection);
+  void reconnect(
+      std::unique_ptr<DuplexConnection> newConnection,
+      std::unique_ptr<ClientResumeStatusCallback> resumeCallback);
 
   ~ConnectionAutomaton();
 
@@ -150,8 +158,6 @@ class ConnectionAutomaton :
 
   bool isPositionAvailable(ResumePosition position);
   ResumePosition positionDifference(ResumePosition position);
-
-  void onClose(ConnectionCloseListener listener);
 
  private:
   void closeDuplexConnection(folly::exception_wrapper ex);
@@ -207,7 +213,11 @@ class ConnectionAutomaton :
   Stats& stats_;
   bool isServer_;
   bool isResumable_;
-  std::vector<ConnectionCloseListener> closeListeners_;
+
+  std::function<void()> onConnected_;
+  std::function<void()> onDisconnected_;
+  std::function<void()> onClosed_;
+
   ResumeListener resumeListener_;
   const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
 };

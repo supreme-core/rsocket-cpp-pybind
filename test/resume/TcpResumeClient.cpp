@@ -4,6 +4,7 @@
 #include <folly/io/async/EventBaseManager.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gmock/gmock.h>
+#include "src/ClientResumeStatusCallback.h"
 #include "src/NullRequestHandler.h"
 #include "src/ReactiveSocket.h"
 #include "src/folly/FollyKeepaliveTimer.h"
@@ -30,6 +31,18 @@ class Callback : public AsyncSocket::ConnectCallback {
     std::cout << "TODO error" << ex.what() << " " << ex.getType() << "\n";
   }
 };
+
+class ResumeCallback : public ClientResumeStatusCallback {
+  void onResumeOk() override {}
+
+  // Called when an ERROR frame with CONNECTION_ERROR is received during
+  // resuming operation
+  void onResumeError(folly::exception_wrapper ex) override {}
+
+  // Called when the resume operation was interrupted due to network
+  // the application code may try to resume again.
+  void onConnectionError(folly::exception_wrapper ex) override {}
+};
 }
 
 int main(int argc, char* argv[]) {
@@ -46,8 +59,7 @@ int main(int argc, char* argv[]) {
   Callback callback;
   StatsPrinter stats;
 
-  ResumeIdentificationToken token;
-  token.fill(1);
+  auto token = ResumeIdentificationToken::generateNew();
 
   eventBaseThread.getEventBase()->runInEventBaseThreadAndWait([&]() {
     folly::SocketAddress addr(FLAGS_host, FLAGS_port, true);
@@ -94,7 +106,10 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<DuplexConnection> framedConnectionResume =
         folly::make_unique<FramedDuplexConnection>(std::move(connectionResume));
 
-    reactiveSocket->tryClientResume(std::move(framedConnectionResume), token);
+    reactiveSocket->tryClientResume(
+        token,
+        std::move(framedConnectionResume),
+        folly::make_unique<ResumeCallback>());
   });
 
   std::getline(std::cin, input);

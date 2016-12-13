@@ -113,7 +113,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     auto rs = ReactiveSocket::fromServerConnection(
         std::move(framedConnection), std::move(requestHandler), stats_);
 
-    rs->onClose(
+    rs->onClosed(
         std::bind(&Callback::removeSocket, this, std::placeholders::_1));
 
     reactiveSockets_.push_back(std::move(rs));

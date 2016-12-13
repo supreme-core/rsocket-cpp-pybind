@@ -166,7 +166,8 @@ add_library(
   src/SubscriberBase.h
   src/SubscriptionBase.h
   src/tcp/TcpDuplexConnection.cpp
-  src/tcp/TcpDuplexConnection.h)
+  src/tcp/TcpDuplexConnection.h
+  src/ClientResumeStatusCallback.h)
 
 target_link_libraries(
   ReactiveSocket

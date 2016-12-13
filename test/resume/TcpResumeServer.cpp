@@ -80,7 +80,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
 
     str << "ServerRequestHandler.handleSetupPayload " << request
         << " setup token <";
-    for (uint8_t byte : request.token) {
+    for (uint8_t byte : request.token.data()) {
       str << (int)byte;
     }
     str << "> " << streamState_.get() << " " << streamState_->streams_.size()
@@ -94,7 +94,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
     std::stringstream str;
 
     str << "ServerRequestHandler.handleResume resume token <";
-    for (uint8_t byte : token) {
+    for (uint8_t byte : token.data()) {
       str << (int)byte;
     }
     str << "> " << streamState_.get() << " " << streamState_->streams_.size()
