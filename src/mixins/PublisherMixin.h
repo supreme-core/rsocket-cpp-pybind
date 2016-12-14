@@ -80,6 +80,7 @@ class PublisherMixin : public Base {
     Base::endStream(signal);
   }
 
+  using Base::onNextFrame;
   void onNextFrame(Frame_REQUEST_N&& frame) override {
     processRequestN(frame);
   }
