@@ -9,9 +9,7 @@
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 #include "src/mixins/ConsumerMixin.h"
-#include "src/mixins/MixinTerminator.h"
 #include "src/mixins/PublisherMixin.h"
-#include "src/mixins/StreamIfMixin.h"
 
 namespace folly {
 class exception_wrapper;
@@ -20,14 +18,13 @@ class exception_wrapper;
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a Channel requester.
-class ChannelRequester : public StreamIfMixin<PublisherMixin<
+class ChannelRequester : public PublisherMixin<
                              Frame_REQUEST_CHANNEL,
-                             ConsumerMixin<Frame_RESPONSE, MixinTerminator>>>,
+                             ConsumerMixin<Frame_RESPONSE>>,
                          public SubscriberBase,
                          public SubscriptionBase {
-  using Base = StreamIfMixin<PublisherMixin<
-      Frame_REQUEST_CHANNEL,
-      ConsumerMixin<Frame_RESPONSE, MixinTerminator>>>;
+  using Base =
+      PublisherMixin<Frame_REQUEST_CHANNEL, ConsumerMixin<Frame_RESPONSE>>;
 
  public:
   struct Parameters : Base::Parameters {
@@ -43,13 +40,9 @@ class ChannelRequester : public StreamIfMixin<PublisherMixin<
 
   std::ostream& logPrefix(std::ostream& os);
 
-  /// @{
-
-  /// Not all frames are intercepted, some just pass through.
   using Base::onNextFrame;
   void onNextFrame(Frame_RESPONSE&&) override;
   void onNextFrame(Frame_ERROR&&) override;
-  /// @}
 
  private:
   /// @{

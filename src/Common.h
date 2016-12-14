@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 
 //
@@ -9,6 +10,8 @@
 //
 
 namespace reactivesocket {
+
+using StreamId = uint32_t;
 
 /// Indicates the reason why the stream automaton received a terminal signal
 /// from the connection.

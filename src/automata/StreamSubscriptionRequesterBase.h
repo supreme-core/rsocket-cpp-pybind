@@ -7,17 +7,15 @@
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"
 #include "src/mixins/ConsumerMixin.h"
-#include "src/mixins/MixinTerminator.h"
-#include "src/mixins/StreamIfMixin.h"
 
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a Subscription requester.
 class StreamSubscriptionRequesterBase
-    : public StreamIfMixin<ConsumerMixin<Frame_RESPONSE, MixinTerminator>>,
+    : public ConsumerMixin<Frame_RESPONSE>,
       public SubscriptionBase,
       public EnableSharedFromThisBase<StreamSubscriptionRequesterBase> {
-  using Base = StreamIfMixin<ConsumerMixin<Frame_RESPONSE, MixinTerminator>>;
+  using Base = ConsumerMixin<Frame_RESPONSE>;
 
  public:
   struct Parameters : Base::Parameters {

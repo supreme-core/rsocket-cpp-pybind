@@ -11,13 +11,13 @@
 #include "src/ReactiveStreamsCompat.h"
 
 namespace reactivesocket {
-template <typename Frame, typename Base>
-void ConsumerMixin<Frame, Base>::onError(folly::exception_wrapper ex) {
+template <typename Frame>
+void ConsumerMixin<Frame>::onError(folly::exception_wrapper ex) {
   consumingSubscriber_.onError(std::move(ex));
 };
 
-template <typename Frame, typename Base>
-void ConsumerMixin<Frame, Base>::onNextFrame(Frame&& frame) {
+template <typename Frame>
+void ConsumerMixin<Frame>::processPayload(Frame&& frame) {
   if (frame.payload_) {
     // Frames carry application-level payloads are taken into account when
     // figuring out flow control allowance.
@@ -29,13 +29,10 @@ void ConsumerMixin<Frame, Base>::onNextFrame(Frame&& frame) {
       return;
     }
   }
-  // After the application-level payload is delivered we inspect the frame's
-  // metadata, as it could carry information important for other mixins.
-  Base::onNextFrame(std::move(frame));
 }
 
-template <typename Frame, typename Base>
-void ConsumerMixin<Frame, Base>::sendRequests() {
+template <typename Frame>
+void ConsumerMixin<Frame>::sendRequests() {
   // TODO(stupaq): batch if remote end has some spare allowance
   // TODO(stupaq): limit how much is synced to the other end
   size_t toSync = Frame_REQUEST_N::kMaxRequestN;
@@ -47,8 +44,8 @@ void ConsumerMixin<Frame, Base>::sendRequests() {
   }
 }
 
-template <typename Frame, typename Base>
-void ConsumerMixin<Frame, Base>::handleFlowControlError() {
+template <typename Frame>
+void ConsumerMixin<Frame>::handleFlowControlError() {
   consumingSubscriber_.onError(std::runtime_error("surplus response"));
   Base::connection_->outputFrameOrEnqueue(
       Frame_CANCEL(Base::streamId_).serializeOut());

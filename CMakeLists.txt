@@ -139,9 +139,7 @@ add_library(
   src/framed/FramedWriter.h
   src/mixins/ConsumerMixin-inl.h
   src/mixins/ConsumerMixin.h
-  src/mixins/MixinTerminator.h
   src/mixins/PublisherMixin.h
-  src/mixins/StreamIfMixin.h
   src/NullRequestHandler.cpp
   src/NullRequestHandler.h
   src/Payload.cpp
@@ -162,7 +160,11 @@ add_library(
   src/SubscriptionBase.h
   src/tcp/TcpDuplexConnection.cpp
   src/tcp/TcpDuplexConnection.h
-  src/Executor.h)
+  src/Executor.h
+  src/automata/StreamAutomatonBase.cpp
+  src/automata/StreamAutomatonBase.h
+  src/automata/StreamResponder.cpp
+  src/automata/SubscriptionResponder.cpp)
 
 
 target_link_libraries(

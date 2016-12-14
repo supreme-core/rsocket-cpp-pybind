@@ -19,9 +19,11 @@ class SubscriptionResponder : public StreamSubscriptionResponderBase {
               << "): ";
   }
 
-  void onCompleteImpl() override {
-    LOG(FATAL) << "onComplete is not allowed on Subscription iteraction.";
-  }
+  using Base::onNextFrame;
+  void onNextFrame(Frame_REQUEST_SUB&&) override;
+
+ private:
+  void onCompleteImpl() override;
 };
 
 } // reactivesocket

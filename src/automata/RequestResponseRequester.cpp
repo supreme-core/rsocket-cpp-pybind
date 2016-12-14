@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "RequestResponseRequester.h"
+#include "src/automata/RequestResponseRequester.h"
 #include <folly/ExceptionWrapper.h>
 #include <folly/MoveWrapper.h>
 #include "src/Common.h"

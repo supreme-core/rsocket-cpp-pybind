@@ -8,22 +8,18 @@
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 #include "src/mixins/ConsumerMixin.h"
-#include "src/mixins/MixinTerminator.h"
 #include "src/mixins/PublisherMixin.h"
-#include "src/mixins/StreamIfMixin.h"
 
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a Channel responder.
-class ChannelResponder
-    : public StreamIfMixin<PublisherMixin<
-          Frame_RESPONSE,
-          ConsumerMixin<Frame_REQUEST_CHANNEL, MixinTerminator>>>,
-      public SubscriberBase,
-      public SubscriptionBase {
-  using Base = StreamIfMixin<PublisherMixin<
-      Frame_RESPONSE,
-      ConsumerMixin<Frame_REQUEST_CHANNEL, MixinTerminator>>>;
+class ChannelResponder : public PublisherMixin<
+                             Frame_RESPONSE,
+                             ConsumerMixin<Frame_REQUEST_CHANNEL>>,
+                         public SubscriberBase,
+                         public SubscriptionBase {
+  using Base =
+      PublisherMixin<Frame_RESPONSE, ConsumerMixin<Frame_REQUEST_CHANNEL>>;
 
  public:
   struct Parameters : Base::Parameters {
