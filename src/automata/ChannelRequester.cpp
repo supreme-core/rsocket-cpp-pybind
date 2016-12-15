@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "ChannelRequester.h"
+#include "src/automata/ChannelRequester.h"
 
 namespace reactivesocket {
 
@@ -146,7 +146,9 @@ void ChannelRequester::onNextFrame(Frame_RESPONSE&& frame) {
     case State::CLOSED:
       break;
   }
-  Base::onNextFrame(std::move(frame));
+
+  processPayload(std::move(frame));
+
   if (end) {
     connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
   }

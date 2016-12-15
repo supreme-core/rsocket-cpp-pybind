@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "StreamSubscriptionRequesterBase.h"
+#include "src/automata/StreamSubscriptionRequesterBase.h"
 #include <folly/MoveWrapper.h>
 
 namespace reactivesocket {
@@ -108,7 +108,9 @@ void StreamSubscriptionRequesterBase::onNextFrame(Frame_RESPONSE&& frame) {
     case State::CLOSED:
       break;
   }
-  Base::onNextFrame(std::move(frame));
+
+  processPayload(std::move(frame));
+
   if (end) {
     connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
   }

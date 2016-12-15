@@ -7,17 +7,15 @@
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"
 #include "src/mixins/ConsumerMixin.h"
-#include "src/mixins/MixinTerminator.h"
-#include "src/mixins/StreamIfMixin.h"
 
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a Subscription requester.
 class StreamSubscriptionRequesterBase
-    : public StreamIfMixin<ConsumerMixin<Frame_RESPONSE, MixinTerminator>>,
+    : public ConsumerMixin<Frame_RESPONSE>,
       public SubscriptionBase,
       public EnableSharedFromThisBase<StreamSubscriptionRequesterBase> {
-  using Base = StreamIfMixin<ConsumerMixin<Frame_RESPONSE, MixinTerminator>>;
+  using Base = ConsumerMixin<Frame_RESPONSE>;
 
  public:
   struct Parameters : Base::Parameters {
@@ -36,10 +34,6 @@ class StreamSubscriptionRequesterBase
   // TODO(lehecka): rename to avoid confusion
   void onNext(Payload);
 
-  using Base::onNextFrame;
-  void onNextFrame(Frame_RESPONSE&&) override;
-  void onNextFrame(Frame_ERROR&&) override;
-
  private:
   void onNextImpl(Payload);
 
@@ -48,6 +42,11 @@ class StreamSubscriptionRequesterBase
 
   void requestImpl(size_t) override;
   void cancelImpl() override;
+
+  using Base::onNextFrame;
+  void onNextFrame(Frame_RESPONSE&&) override;
+  void onNextFrame(Frame_ERROR&&) override;
+
   void endStream(StreamCompletionSignal) override;
 
   /// State of the Subscription requester.

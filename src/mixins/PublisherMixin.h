@@ -49,11 +49,11 @@ class PublisherMixin : public Base {
               << this->streamId_ << "): ";
   }
 
-  void onCleanResume() {
+  void onCleanResume() override {
     Base::requestHandler_->handleCleanResume(producingSubscription_);
     Base::onCleanResume();
   }
-  void onDirtyResume() {
+  void onDirtyResume() override {
     Base::requestHandler_->handleDirtyResume(producingSubscription_);
     Base::onDirtyResume();
   }
@@ -75,15 +75,20 @@ class PublisherMixin : public Base {
   }
 
   /// @{
-  void endStream(StreamCompletionSignal signal) {
+  void endStream(StreamCompletionSignal signal) override {
     producingSubscription_.cancel();
     Base::endStream(signal);
   }
 
+  using Base::onNextFrame;
+  void onNextFrame(Frame_REQUEST_N&& frame) override {
+    processRequestN(frame);
+  }
+
   /// Intercept frames that carry allowance.
   template <typename Frame>
-  typename std::enable_if<Frame::Trait_CarriesAllowance>::type onNextFrame(
-      Frame&& frame) {
+  typename std::enable_if<Frame::Trait_CarriesAllowance>::type processRequestN(
+      const Frame& frame) {
     // if producingSubscription_ == nullptr that means the instance is
     // new and onSubscribe hasn't been called yet or it is terminated
     if (size_t n = frame.requestN_) {
@@ -93,10 +98,9 @@ class PublisherMixin : public Base {
         initialRequestN_ += n;
       }
     }
-    Base::onNextFrame(std::move(frame));
   }
 
-  void onNextFrame(Frame_REQUEST_RESPONSE&& frame) {
+  void processRequest1() {
     // if producingSubscription_ == nullptr that means the instance is
     // new and onSubscribe hasn't been called yet or it is terminated
     if (producingSubscription_) {
@@ -104,16 +108,7 @@ class PublisherMixin : public Base {
     } else {
       initialRequestN_ = 1;
     }
-    Base::onNextFrame(std::move(frame));
   }
-
-  /// Remaining frames just pass through.
-  template <typename Frame>
-  typename std::enable_if<!Frame::Trait_CarriesAllowance>::type onNextFrame(
-      Frame&& frame) {
-    Base::onNextFrame(std::move(frame));
-  }
-  /// @}
 
  private:
   /// A Subscription that constrols production of payloads.

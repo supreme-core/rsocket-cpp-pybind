@@ -14,14 +14,12 @@ class SubscriptionResponder : public StreamSubscriptionResponderBase {
  public:
   using Base::Base;
 
-  std::ostream& logPrefix(std::ostream& os) {
-    return os << "SubscriptionResponder(" << &connection_ << ", " << streamId_
-              << "): ";
-  }
+  void processInitialFrame(Frame_REQUEST_SUB&&);
 
-  void onCompleteImpl() override {
-    LOG(FATAL) << "onComplete is not allowed on Subscription iteraction.";
-  }
+  std::ostream& logPrefix(std::ostream& os);
+
+ private:
+  void onCompleteImpl() override;
 };
 
 } // reactivesocket

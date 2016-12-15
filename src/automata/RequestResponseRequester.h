@@ -7,18 +7,17 @@
 
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"
-#include "src/mixins/MixinTerminator.h"
-#include "src/mixins/StreamIfMixin.h"
+#include "src/automata/StreamAutomatonBase.h"
 
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a RequestResponse
 /// requester
 class RequestResponseRequester
-    : public StreamIfMixin<MixinTerminator>,
+    : public StreamAutomatonBase,
       public SubscriptionBase,
       public EnableSharedFromThisBase<RequestResponseRequester> {
-  using Base = StreamIfMixin<MixinTerminator>;
+  using Base = StreamAutomatonBase;
 
  public:
   struct Parameters : Base::Parameters {
@@ -37,14 +36,7 @@ class RequestResponseRequester
   // TODO(lehecka): rename to avoid confusion
   void onNext(Payload);
 
-  /// @{
   bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
-  /// @}
-
-  /// Not all frames are intercepted, some just pass through.
-  using Base::onNextFrame;
-  void onNextFrame(Frame_RESPONSE&&) override;
-  void onNextFrame(Frame_ERROR&&) override;
 
   std::ostream& logPrefix(std::ostream& os);
 
@@ -54,6 +46,9 @@ class RequestResponseRequester
 
   void onNextImpl(Payload);
 
+  using Base::onNextFrame;
+  void onNextFrame(Frame_RESPONSE&&) override;
+  void onNextFrame(Frame_ERROR&&) override;
   void endStream(StreamCompletionSignal signal) override;
 
   /// State of the Subscription requester.

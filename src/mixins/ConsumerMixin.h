@@ -11,14 +11,17 @@
 #include "src/NullRequestHandler.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/automata/StreamAutomatonBase.h"
 
 namespace reactivesocket {
 
 enum class StreamCompletionSignal;
 
 /// A mixin that represents a flow-control-aware consumer of data.
-template <typename Frame, typename Base>
-class ConsumerMixin : public Base {
+template <typename Frame>
+class ConsumerMixin : public StreamAutomatonBase {
+  using Base = StreamAutomatonBase;
+
  public:
   using Base::Base;
 
@@ -61,7 +64,7 @@ class ConsumerMixin : public Base {
 
  protected:
   /// @{
-  void endStream(StreamCompletionSignal signal) {
+  void endStream(StreamCompletionSignal signal) override {
     if (signal == StreamCompletionSignal::GRACEFUL) {
       consumingSubscriber_.onComplete();
     } else {
@@ -70,10 +73,7 @@ class ConsumerMixin : public Base {
     Base::endStream(signal);
   }
 
-  /// Not all frames are intercepted, some just pass through.
-  using Base::onNextFrame;
-
-  void onNextFrame(Frame&&);
+  void processPayload(Frame&&);
 
   void onError(folly::exception_wrapper ex);
   /// @}

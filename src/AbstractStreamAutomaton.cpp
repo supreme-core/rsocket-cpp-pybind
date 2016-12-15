@@ -60,7 +60,7 @@ void AbstractStreamAutomaton::onNextFrame(
       return;
     case FrameType::RESERVED:
     default:
-      onBadFrame();
+      onUnknownFrame();
       return;
   }
 }

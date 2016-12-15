@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "RequestResponseResponder.h"
+#include "src/automata/RequestResponseResponder.h"
 
 namespace reactivesocket {
 
@@ -74,6 +74,10 @@ void RequestResponseResponder::onNextFrame(Frame_CANCEL&& frame) {
     case State::CLOSED:
       break;
   }
+}
+
+void RequestResponseResponder::processInitialFrame(Frame_REQUEST_RESPONSE&&) {
+  processRequest1();
 }
 
 std::ostream& RequestResponseResponder::logPrefix(std::ostream& os) {

@@ -96,6 +96,7 @@ class AbstractStreamAutomaton {
   /// Invoked when ::onNextFrame(Payload) failed to deserialize or was
   /// malformed.
   virtual void onBadFrame() = 0;
+  virtual void onUnknownFrame() = 0;
   /// @}
 
  private:
