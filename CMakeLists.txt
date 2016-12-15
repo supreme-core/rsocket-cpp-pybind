@@ -199,7 +199,8 @@ add_executable(
   test/ReactiveStreamsMocksCompat.h
   test/SubscriberBaseTest.cpp
   test/Test.cpp
-  test/folly/FollyKeepaliveTimerTest.cpp)
+  test/folly/FollyKeepaliveTimerTest.cpp
+  test/ReactiveSocketResumabilityTest.cpp)
 
 target_link_libraries(
   tests

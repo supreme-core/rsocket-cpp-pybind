@@ -85,6 +85,7 @@ int main(int argc, char* argv[]) {
         stats,
         folly::make_unique<FollyKeepaliveTimer>(
             *eventBaseThread.getEventBase(), std::chrono::milliseconds(5000)),
+        true,
         token);
 
     reactiveSocket->requestSubscription(
