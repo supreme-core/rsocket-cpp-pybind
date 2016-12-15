@@ -76,8 +76,8 @@ void RequestResponseResponder::onNextFrame(Frame_CANCEL&& frame) {
   }
 }
 
-void RequestResponseResponder::onNextFrame(Frame_REQUEST_RESPONSE&& frame) {
-  processRequestN(frame);
+void RequestResponseResponder::processInitialFrame(Frame_REQUEST_RESPONSE&&) {
+  processRequest1();
 }
 
 std::ostream& RequestResponseResponder::logPrefix(std::ostream& os) {

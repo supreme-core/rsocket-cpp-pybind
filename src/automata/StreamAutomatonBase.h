@@ -65,6 +65,7 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
   void onNextFrame(Frame_ERROR&&) override;
 
   void onBadFrame() override;
+  void onUnknownFrame() override;
 
  private:
   void onUnexpectedFrame();

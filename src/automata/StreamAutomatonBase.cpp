@@ -51,4 +51,9 @@ void StreamAutomatonBase::onUnexpectedFrame() {
   DCHECK(false) << "onUnexpectedFrame";
   connection_->disconnectWithError(Frame_ERROR::unexpectedFrame());
 }
+
+void StreamAutomatonBase::onUnknownFrame() {
+  // because of compatibility with future frame types we will just ignore
+  // unknown frames
+}
 } // reactivesocket

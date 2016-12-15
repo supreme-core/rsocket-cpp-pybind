@@ -9,7 +9,12 @@ void SubscriptionResponder::onCompleteImpl() {
   LOG(FATAL) << "onComplete is not allowed on Subscription iteraction.";
 }
 
-void SubscriptionResponder::onNextFrame(Frame_REQUEST_SUB&& frame) {
+void SubscriptionResponder::processInitialFrame(Frame_REQUEST_SUB&& frame) {
   processRequestN(frame);
+}
+
+std::ostream& SubscriptionResponder::logPrefix(std::ostream& os) {
+  return os << "SubscriptionResponder(" << &connection_ << ", " << streamId_
+            << "): ";
 }
 }

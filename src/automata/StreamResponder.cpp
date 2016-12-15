@@ -5,7 +5,7 @@
 
 namespace reactivesocket {
 
-void StreamResponder::onNextFrame(Frame_REQUEST_STREAM&& frame) {
+void StreamResponder::processInitialFrame(Frame_REQUEST_STREAM&& frame) {
   processRequestN(frame);
 }
 }

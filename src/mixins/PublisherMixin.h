@@ -100,7 +100,7 @@ class PublisherMixin : public Base {
     }
   }
 
-  void processRequestN(const Frame_REQUEST_RESPONSE&) {
+  void processRequest1() {
     // if producingSubscription_ == nullptr that means the instance is
     // new and onSubscribe hasn't been called yet or it is terminated
     if (producingSubscription_) {

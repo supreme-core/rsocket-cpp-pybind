@@ -30,11 +30,9 @@ class RequestResponseResponder
   explicit RequestResponseResponder(const Parameters& params)
       : ExecutorBase(params.executor, false), Base(params) {}
 
-  std::ostream& logPrefix(std::ostream& os);
+  void processInitialFrame(Frame_REQUEST_RESPONSE&&);
 
-  using Base::onNextFrame;
-  void onNextFrame(Frame_REQUEST_RESPONSE&&) override;
-  void onNextFrame(Frame_CANCEL&&) override;
+  std::ostream& logPrefix(std::ostream& os);
 
  private:
   /// @{
@@ -43,6 +41,9 @@ class RequestResponseResponder
   void onCompleteImpl() override;
   void onErrorImpl(folly::exception_wrapper) override;
   /// @}
+
+  using Base::onNextFrame;
+  void onNextFrame(Frame_CANCEL&&) override;
 
   void endStream(StreamCompletionSignal) override;
 

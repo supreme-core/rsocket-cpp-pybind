@@ -34,10 +34,6 @@ class StreamSubscriptionRequesterBase
   // TODO(lehecka): rename to avoid confusion
   void onNext(Payload);
 
-  using Base::onNextFrame;
-  void onNextFrame(Frame_RESPONSE&&) override;
-  void onNextFrame(Frame_ERROR&&) override;
-
  private:
   void onNextImpl(Payload);
 
@@ -46,6 +42,11 @@ class StreamSubscriptionRequesterBase
 
   void requestImpl(size_t) override;
   void cancelImpl() override;
+
+  using Base::onNextFrame;
+  void onNextFrame(Frame_RESPONSE&&) override;
+  void onNextFrame(Frame_ERROR&&) override;
+
   void endStream(StreamCompletionSignal) override;
 
   /// State of the Subscription requester.

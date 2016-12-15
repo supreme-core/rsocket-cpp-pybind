@@ -14,13 +14,9 @@ class SubscriptionResponder : public StreamSubscriptionResponderBase {
  public:
   using Base::Base;
 
-  std::ostream& logPrefix(std::ostream& os) {
-    return os << "SubscriptionResponder(" << &connection_ << ", " << streamId_
-              << "): ";
-  }
+  void processInitialFrame(Frame_REQUEST_SUB&&);
 
-  using Base::onNextFrame;
-  void onNextFrame(Frame_REQUEST_SUB&&) override;
+  std::ostream& logPrefix(std::ostream& os);
 
  private:
   void onCompleteImpl() override;

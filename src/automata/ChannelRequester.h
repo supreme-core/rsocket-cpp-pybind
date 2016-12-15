@@ -40,10 +40,6 @@ class ChannelRequester : public PublisherMixin<
 
   std::ostream& logPrefix(std::ostream& os);
 
-  using Base::onNextFrame;
-  void onNextFrame(Frame_RESPONSE&&) override;
-  void onNextFrame(Frame_ERROR&&) override;
-
  private:
   /// @{
   void onSubscribeImpl(std::shared_ptr<Subscription>) override;
@@ -56,6 +52,10 @@ class ChannelRequester : public PublisherMixin<
   void requestImpl(size_t) override;
   void cancelImpl() override;
   /// @}
+
+  using Base::onNextFrame;
+  void onNextFrame(Frame_RESPONSE&&) override;
+  void onNextFrame(Frame_ERROR&&) override;
 
   void endStream(StreamCompletionSignal) override;
 

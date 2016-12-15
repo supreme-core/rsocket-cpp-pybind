@@ -31,18 +31,17 @@ class StreamSubscriptionResponderBase
   explicit StreamSubscriptionResponderBase(const Parameters& params)
       : ExecutorBase(params.executor, false), Base(params) {}
 
+ protected:
   using Base::onNextFrame;
   void onNextFrame(Frame_CANCEL&&) override;
 
  private:
-  void endStream(StreamCompletionSignal) override;
-
-  /// @{
   void onSubscribeImpl(std::shared_ptr<Subscription>) override;
   void onNextImpl(Payload) override;
   void onCompleteImpl() override;
   void onErrorImpl(folly::exception_wrapper) override;
-  /// @}
+
+  void endStream(StreamCompletionSignal) override;
 
   /// State of the Subscription responder.
   enum class State : uint8_t {

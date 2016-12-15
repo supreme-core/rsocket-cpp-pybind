@@ -19,7 +19,6 @@ class StreamResponder : public StreamSubscriptionResponderBase {
               << "): ";
   }
 
-  using Base::onNextFrame;
-  void onNextFrame(Frame_REQUEST_STREAM&&) override;
+  void processInitialFrame(Frame_REQUEST_STREAM&&);
 };
 } // reactivesocket

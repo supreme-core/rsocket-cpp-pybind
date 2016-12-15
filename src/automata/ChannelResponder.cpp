@@ -81,6 +81,10 @@ void ChannelResponder::endStream(StreamCompletionSignal signal) {
   Base::endStream(signal);
 }
 
+void ChannelResponder::processInitialFrame(Frame_REQUEST_CHANNEL&& frame) {
+  onNextFrame(std::move(frame));
+}
+
 void ChannelResponder::onNextFrame(Frame_REQUEST_CHANNEL&& frame) {
   bool end = false;
   switch (state_) {
