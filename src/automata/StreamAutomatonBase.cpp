@@ -43,13 +43,12 @@ void StreamAutomatonBase::onNextFrame(Frame_ERROR&&) {
 }
 
 void StreamAutomatonBase::onBadFrame() {
-  connection_->disconnectWithError(
-      Frame_ERROR::invalid(streamId_, "bad frame"));
+  connection_->closeWithError(Frame_ERROR::invalid(streamId_, "bad frame"));
 }
 
 void StreamAutomatonBase::onUnexpectedFrame() {
   DCHECK(false) << "onUnexpectedFrame";
-  connection_->disconnectWithError(Frame_ERROR::unexpectedFrame());
+  connection_->closeWithError(Frame_ERROR::unexpectedFrame());
 }
 
 void StreamAutomatonBase::onUnknownFrame() {

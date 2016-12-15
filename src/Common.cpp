@@ -26,4 +26,24 @@ StreamInterruptedException::StreamInterruptedException(int _terminatingSignal)
     : std::runtime_error(getTerminatingSignalErrorMessage(_terminatingSignal)),
       terminatingSignal(_terminatingSignal) {}
 
+ResumeIdentificationToken ResumeIdentificationToken::empty() {
+  return ResumeIdentificationToken(
+      Data() = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}});
+}
+ResumeIdentificationToken ResumeIdentificationToken::generateNew() {
+  // TODO
+  return empty();
+}
+
+ResumeIdentificationToken ResumeIdentificationToken::fromString(
+    const std::string& /*str*/) {
+  // TODO
+  return empty();
+}
+
+std::string ResumeIdentificationToken::toString() const {
+  // TODO
+  return "";
+}
+
 } // reactivesocket

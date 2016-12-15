@@ -18,14 +18,14 @@ namespace {
 class MockConnectionAutomaton : public FrameSink {
  public:
   MOCK_METHOD0(sendKeepalive_, void());
-  MOCK_METHOD1(disconnectWithError_, void(Frame_ERROR&));
+  MOCK_METHOD1(closeWithError_, void(Frame_ERROR&));
 
   void sendKeepalive() override {
     sendKeepalive_();
   }
 
-  void disconnectWithError(Frame_ERROR&& error) override {
-    disconnectWithError_(error);
+  void closeWithError(Frame_ERROR&& error) override {
+    closeWithError_(error);
   }
 };
 }
@@ -56,7 +56,7 @@ TEST(FollyKeepaliveTimerTest, NoResponse) {
       std::make_shared<StrictMock<MockConnectionAutomaton>>();
 
   EXPECT_CALL(*connectionAutomaton, sendKeepalive_()).Times(1);
-  EXPECT_CALL(*connectionAutomaton, disconnectWithError_(_)).Times(1);
+  EXPECT_CALL(*connectionAutomaton, closeWithError_(_)).Times(1);
 
   folly::EventBase eventBase;
 

@@ -15,7 +15,7 @@ class ConnectionSetupPayload {
       std::string _dataMimeType = "",
       Payload _payload = Payload(),
       const ResumeIdentificationToken& _token =
-          {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}})
+          ResumeIdentificationToken::generateNew())
       : metadataMimeType(std::move(_metadataMimeType)),
         dataMimeType(std::move(_dataMimeType)),
         payload(std::move(_payload)),
@@ -24,6 +24,8 @@ class ConnectionSetupPayload {
   std::string metadataMimeType;
   std::string dataMimeType;
   Payload payload;
+  // TODO(lehecka) the value is already specified in the ReactiveSocket ctor
+  // we should set it only once
   const ResumeIdentificationToken token;
 };
 

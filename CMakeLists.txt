@@ -160,12 +160,12 @@ add_library(
   src/SubscriptionBase.h
   src/tcp/TcpDuplexConnection.cpp
   src/tcp/TcpDuplexConnection.h
+  src/ClientResumeStatusCallback.h
   src/Executor.h
   src/automata/StreamAutomatonBase.cpp
   src/automata/StreamAutomatonBase.h
   src/automata/StreamResponder.cpp
   src/automata/SubscriptionResponder.cpp)
-
 
 target_link_libraries(
   ReactiveSocket

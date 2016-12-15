@@ -4,8 +4,8 @@
 
 #include <folly/ExceptionWrapper.h>
 #include <folly/String.h>
-
 #include "src/AbstractStreamAutomaton.h"
+#include "src/ClientResumeStatusCallback.h"
 
 namespace reactivesocket {
 
@@ -16,13 +16,19 @@ ConnectionAutomaton::ConnectionAutomaton(
     ResumeListener resumeListener,
     Stats& stats,
     const std::shared_ptr<KeepaliveTimer>& keepaliveTimer,
-    bool isServer)
+    bool isServer,
+    std::function<void()> onConnected,
+    std::function<void()> onDisconnected,
+    std::function<void()> onClosed)
     : connection_(std::move(connection)),
       factory_(std::move(factory)),
       streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
       isResumable_(true),
+      onConnected_(std::move(onConnected)),
+      onDisconnected_(std::move(onDisconnected)),
+      onClosed_(std::move(onClosed)),
       resumeListener_(resumeListener),
       keepaliveTimer_(keepaliveTimer) {
   // We deliberately do not "open" input or output to avoid having c'tor on the
@@ -30,6 +36,9 @@ ConnectionAutomaton::ConnectionAutomaton(
   // ::onSubscribe.
   CHECK(connection_);
   CHECK(streamState_);
+  CHECK(onConnected_);
+  CHECK(onDisconnected_);
+  CHECK(onClosed_);
 }
 
 void ConnectionAutomaton::connect() {
@@ -55,19 +64,31 @@ void ConnectionAutomaton::connect() {
 
   // TODO: move to appropriate place
   stats_.socketCreated();
+  onConnected_();
 }
 
-void ConnectionAutomaton::disconnect() {
+std::unique_ptr<DuplexConnection> ConnectionAutomaton::disconnect() {
   VLOG(6) << "disconnect";
+  // TODO(lehecka):
+  // 1. make sure that all streams will stay intact
+  // 2. make sure duplex connection will not call back into *this
+  // 3. keep output buffers open, so that existing streams can write output
+  // frames
+  onDisconnected_();
+  return nullptr;
+}
+
+void ConnectionAutomaton::close() {
+  VLOG(6) << "close";
   closeDuplexConnection(folly::exception_wrapper());
 }
 
-void ConnectionAutomaton::disconnectWithError(Frame_ERROR&& error) {
-  VLOG(4) << "disconnectWithError "
+void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
+  VLOG(4) << "closeWithError "
           << error.payload_.data->cloneAsValue().moveToFbString();
 
   outputFrameOrEnqueue(error.serializeOut());
-  disconnect();
+  close();
 }
 
 void ConnectionAutomaton::closeDuplexConnection(folly::exception_wrapper ex) {
@@ -76,8 +97,8 @@ void ConnectionAutomaton::closeDuplexConnection(folly::exception_wrapper ex) {
   }
 
   LOG_IF(WARNING, !streamState_->pendingWrites_.empty())
-      << "disconnecting with pending writes ("
-      << streamState_->pendingWrites_.size() << ")";
+      << "closing with pending writes (" << streamState_->pendingWrites_.size()
+      << ")";
 
   // Send terminal signals to the DuplexConnection's input and output before
   // tearing it down. We must do this per DuplexConnection specification (see
@@ -91,14 +112,16 @@ void ConnectionAutomaton::closeDuplexConnection(folly::exception_wrapper ex) {
   connection_.reset();
 
   stats_.socketClosed();
-
-  for (auto closeListener : closeListeners_) {
-    closeListener();
-  }
+  onClosed_();
 }
 
 void ConnectionAutomaton::reconnect(
-    std::unique_ptr<DuplexConnection> newConnection) {
+    std::unique_ptr<DuplexConnection> newConnection,
+    std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
+  // TODO(lehecka)
+  if (resumeCallback) {
+    resumeCallback->onResumeError(std::runtime_error("not implemented"));
+  }
   disconnect();
   connection_ = std::shared_ptr<DuplexConnection>(std::move(newConnection));
   connect();
@@ -174,7 +197,7 @@ void ConnectionAutomaton::onNext(std::unique_ptr<folly::IOBuf> frame) {
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
-    disconnectWithError(Frame_ERROR::connectionError("invalid frame"));
+    closeWithError(Frame_ERROR::connectionError("invalid frame"));
     return;
   }
   auto streamId = *streamIdPtr;
@@ -212,21 +235,21 @@ void ConnectionAutomaton::onConnectionFrame(
             frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
             outputFrameOrEnqueue(frame.serializeOut());
           } else {
-            disconnectWithError(
+            closeWithError(
                 Frame_ERROR::connectionError("keepalive without flag"));
           }
 
           streamState_->resumeCache_->resetUpToPosition(frame.position_);
         } else {
           if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
-            disconnectWithError(Frame_ERROR::connectionError(
+            closeWithError(Frame_ERROR::connectionError(
                 "client received keepalive with respond flag"));
           } else if (keepaliveTimer_) {
             keepaliveTimer_->keepaliveReceived();
           }
         }
       } else {
-        disconnectWithError(Frame_ERROR::unexpectedFrame());
+        closeWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
     }
@@ -271,10 +294,10 @@ void ConnectionAutomaton::onConnectionFrame(
             }
           }
         } else {
-          disconnectWithError(Frame_ERROR::connectionError("can not resume"));
+          closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
       } else {
-        disconnectWithError(Frame_ERROR::unexpectedFrame());
+        closeWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
     }
@@ -284,15 +307,15 @@ void ConnectionAutomaton::onConnectionFrame(
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
         } else {
-          disconnectWithError(Frame_ERROR::connectionError("can not resume"));
+          closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
       } else {
-        disconnectWithError(Frame_ERROR::unexpectedFrame());
+        closeWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
     }
     default:
-      disconnectWithError(Frame_ERROR::unexpectedFrame());
+      closeWithError(Frame_ERROR::unexpectedFrame());
       return;
   }
 }
@@ -340,7 +363,9 @@ void ConnectionAutomaton::cancel() {
 
   streamState_->pendingWrites_.clear();
 
-  disconnect();
+  // TODO(lehecka): if this is resumable, then call disconnect, otherwise call
+  // close
+  close();
 }
 /// @}
 
@@ -351,7 +376,7 @@ void ConnectionAutomaton::handleUnknownStream(
   // TODO(stupaq): there are some rules about monotonically increasing stream
   // IDs -- let's forget about them for a moment
   if (!factory_(*this, streamId, std::move(payload))) {
-    disconnectWithError(Frame_ERROR::connectionError(
+    closeWithError(Frame_ERROR::connectionError(
         folly::to<std::string>("unknown stream ", streamId)));
   }
 }
@@ -378,10 +403,6 @@ bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
 ResumePosition ConnectionAutomaton::positionDifference(
     ResumePosition position) {
   return streamState_->resumeCache_->position() - position;
-}
-
-void ConnectionAutomaton::onClose(ConnectionCloseListener listener) {
-  closeListeners_.push_back(listener);
 }
 
 void ConnectionAutomaton::outputFrameOrEnqueue(
