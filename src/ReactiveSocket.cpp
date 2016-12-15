@@ -380,8 +380,7 @@ void ReactiveSocket::close() {
   if (keepaliveTimer_) {
     keepaliveTimer_->stop();
   }
-
-  connection_->disconnect();
+  connection_->close();
 }
 
 void ReactiveSocket::onConnected(ReactiveSocketCallback listener) {
@@ -402,9 +401,12 @@ void ReactiveSocket::onClosed(ReactiveSocketCallback listener) {
 void ReactiveSocket::tryClientResume(
     const ResumeIdentificationToken& token,
     std::unique_ptr<DuplexConnection> newConnection,
-    std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
+    std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
+    bool /*closeReactiveSocketOnFailure*/) {
   connection_->reconnect(std::move(newConnection), std::move(resumeCallback));
   connection_->sendResume(token);
+
+  // TODO: use closeReactiveSocketOnFailure
 }
 
 std::function<void()> ReactiveSocket::executeListenersFunc(
