@@ -18,7 +18,7 @@ static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
       return "reactive socket closed";
     case StreamCompletionSignal::GRACEFUL:
       DCHECK(false) << "throwing exception for GRACEFUL termination?";
-      return "gracefull termination";
+      return "graceful termination";
     default:
       return "stream interrupted";
   }

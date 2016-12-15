@@ -60,11 +60,9 @@ void ConnectionAutomaton::connect() {
     // provided
     // subscription, which might deliver frames in-line.
     // it can also call onComplete which will call disconnect/close and reset
-    // the
-    // connection_
-    // while still inside of the connection_::setInput method. We will create
-    // a hard reference for that case and keep the object alive until we
-    // return from the setInput method
+    // the connection_ while still inside of the connection_::setInput method.
+    // We will create a hard reference for that case and keep the object alive
+    // until setInput method returns
     auto connectionCopy = connection_;
     connectionCopy->setInput(shared_from_this());
   }
