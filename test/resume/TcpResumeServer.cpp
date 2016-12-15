@@ -145,7 +145,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::make_unique<ServerRequestHandler>(streamState_);
 
     std::unique_ptr<ReactiveSocket> rs = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler), stats_);
+        std::move(framedConnection), std::move(requestHandler), stats_, true);
 
     std::cout << "RS " << rs.get() << std::endl;
 

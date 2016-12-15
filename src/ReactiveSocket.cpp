@@ -25,6 +25,7 @@ ReactiveSocket::~ReactiveSocket() {
   // delivered to all stream automata.
   close();
 
+  // no more callbacks after the destructor is executed
   onConnectListeners_->clear();
   onDisconnectListeners_->clear();
   onCloseListeners_->clear();
@@ -32,6 +33,7 @@ ReactiveSocket::~ReactiveSocket() {
 
 ReactiveSocket::ReactiveSocket(
     bool isServer,
+    bool isResumable,
     std::unique_ptr<DuplexConnection> connection,
     std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
@@ -55,6 +57,7 @@ ReactiveSocket::ReactiveSocket(
           stats,
           keepaliveTimer_,
           isServer,
+          isResumable,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
@@ -66,9 +69,11 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     ConnectionSetupPayload setupPayload,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
+    bool isResumable,
     const ResumeIdentificationToken& token) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       false,
+      isResumable,
       std::move(connection),
       std::move(handler),
       stats,
@@ -102,9 +107,11 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandlerBase> handler,
-    Stats& stats) {
+    Stats& stats,
+    bool isResumable) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
+      isResumable,
       std::move(connection),
       std::move(handler),
       stats,
@@ -116,6 +123,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
 std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
     const std::shared_ptr<Subscriber<Payload>>& responseSink,
     folly::Executor& executor) {
+  checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -133,6 +141,7 @@ void ReactiveSocket::requestStream(
     Payload request,
     const std::shared_ptr<Subscriber<Payload>>& responseSink,
     folly::Executor& executor) {
+  checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -150,6 +159,7 @@ void ReactiveSocket::requestSubscription(
     Payload request,
     const std::shared_ptr<Subscriber<Payload>>& responseSink,
     folly::Executor& executor) {
+  checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -164,6 +174,7 @@ void ReactiveSocket::requestSubscription(
 }
 
 void ReactiveSocket::requestFireAndForget(Payload request) {
+  checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -176,6 +187,7 @@ void ReactiveSocket::requestResponse(
     Payload payload,
     const std::shared_ptr<Subscriber<Payload>>& responseSink,
     folly::Executor& executor) {
+  checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -190,6 +202,7 @@ void ReactiveSocket::requestResponse(
 }
 
 void ReactiveSocket::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
+  checkNotClosed();
   connection_->outputFrameOrEnqueue(
       Frame_METADATA_PUSH(std::move(metadata)).serializeOut());
 }
@@ -380,20 +393,36 @@ void ReactiveSocket::close() {
   if (keepaliveTimer_) {
     keepaliveTimer_->stop();
   }
-  connection_->close();
+  if (connection_) {
+    connection_->close();
+    connection_ = nullptr;
+  }
+}
+
+void ReactiveSocket::disconnect() {
+  checkNotClosed();
+  // Stop scheduling keepalives since the socket is now disconnected
+  // TODO(lehecka): reenable keepaliveTimer on Resume_OK
+  if (keepaliveTimer_) {
+    keepaliveTimer_->stop();
+  }
+  connection_->disconnect();
 }
 
 void ReactiveSocket::onConnected(ReactiveSocketCallback listener) {
+  checkNotClosed();
   CHECK(listener);
   onConnectListeners_->push_back(std::move(listener));
 }
 
 void ReactiveSocket::onDisconnected(ReactiveSocketCallback listener) {
+  checkNotClosed();
   CHECK(listener);
   onDisconnectListeners_->push_back(std::move(listener));
 }
 
 void ReactiveSocket::onClosed(ReactiveSocketCallback listener) {
+  checkNotClosed();
   CHECK(listener);
   onCloseListeners_->push_back(std::move(listener));
 }
@@ -403,6 +432,7 @@ void ReactiveSocket::tryClientResume(
     std::unique_ptr<DuplexConnection> newConnection,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
     bool /*closeReactiveSocketOnFailure*/) {
+  checkNotClosed();
   connection_->reconnect(std::move(newConnection), std::move(resumeCallback));
   connection_->sendResume(token);
 
@@ -416,6 +446,10 @@ std::function<void()> ReactiveSocket::executeListenersFunc(
       listener(*this);
     }
   };
+}
+
+void ReactiveSocket::checkNotClosed() const {
+  CHECK(connection_) << "ReactiveSocket already closed";
 }
 
 } // reactivesocket

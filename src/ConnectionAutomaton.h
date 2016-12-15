@@ -79,6 +79,7 @@ class ConnectionAutomaton :
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
       bool client,
+      bool isResumable,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
@@ -99,7 +100,7 @@ class ConnectionAutomaton :
 
   /// Disconnects DuplexConnection from the automaton.
   /// Existing streams will stay intact.
-  std::unique_ptr<DuplexConnection> disconnect();
+  void disconnect();
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
@@ -160,8 +161,6 @@ class ConnectionAutomaton :
   ResumePosition positionDifference(ResumePosition position);
 
  private:
-  void closeDuplexConnection(folly::exception_wrapper ex);
-
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.
   ///
@@ -170,21 +169,15 @@ class ConnectionAutomaton :
 
   /// @{
   void onSubscribe(std::shared_ptr<Subscription>) override;
-
   void onNext(std::unique_ptr<folly::IOBuf>) override;
-
   void onComplete() override;
-
   void onError(folly::exception_wrapper) override;
-
-  void onTerminal(folly::exception_wrapper ex);
 
   void onConnectionFrame(std::unique_ptr<folly::IOBuf>);
   /// @}
 
   /// @{
   void request(size_t) override;
-
   void cancel() override;
   /// @}
 
@@ -197,6 +190,13 @@ class ConnectionAutomaton :
 
   void drainOutputFramesQueue();
   void outputFrame(std::unique_ptr<folly::IOBuf>);
+
+  void onDuplexConnectionTerminal(
+      folly::exception_wrapper,
+      StreamCompletionSignal);
+  void close(folly::exception_wrapper, StreamCompletionSignal);
+  void closeStreams(StreamCompletionSignal);
+  void closeDuplexConnection(folly::exception_wrapper ex);
 
   std::shared_ptr<DuplexConnection> connection_;
   StreamAutomatonFactory factory_;

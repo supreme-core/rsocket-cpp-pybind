@@ -8,13 +8,16 @@ namespace reactivesocket {
 class NoopStats : public Stats {
  public:
   void socketCreated() override{};
+  void socketDisconnected() override{};
   void socketClosed() override{};
-  void connectionCreated(
+
+  void duplexConnectionCreated(
       const std::string& type,
       reactivesocket::DuplexConnection* connection) override{};
-  void connectionClosed(
+  void duplexConnectionClosed(
       const std::string& type,
       reactivesocket::DuplexConnection* connection) override{};
+
   void bytesWritten(size_t bytes) override{};
   void bytesRead(size_t bytes) override{};
   void frameWritten(const std::string& frameType) override{};

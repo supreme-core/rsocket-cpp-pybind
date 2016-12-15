@@ -29,6 +29,7 @@ enum class StreamCompletionSignal {
   REJECTED_SETUP,
   CONNECTION_ERROR,
   CONNECTION_END,
+  SOCKET_CLOSED,
 };
 
 std::ostream& operator<<(std::ostream&, StreamCompletionSignal);
