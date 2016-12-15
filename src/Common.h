@@ -3,6 +3,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <stdexcept>
 #include <string>
@@ -16,6 +17,7 @@ namespace reactivesocket {
 class ReactiveSocket;
 
 using ReactiveSocketCallback = std::function<void(ReactiveSocket&)>;
+using StreamId = uint32_t;
 
 /// Indicates the reason why the stream automaton received a terminal signal
 /// from the connection.

@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "StreamRequester.h"
+#include "src/automata/StreamRequester.h"
 
 namespace reactivesocket {
 

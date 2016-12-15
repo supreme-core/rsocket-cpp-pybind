@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "SubscriptionRequester.h"
+#include "src/automata/SubscriptionRequester.h"
 
 namespace reactivesocket {
 

@@ -7,18 +7,17 @@
 #include "src/AbstractStreamAutomaton.h"
 #include "src/Frame.h"
 #include "src/SubscriberBase.h"
-#include "src/mixins/MixinTerminator.h"
+#include "src/automata/StreamAutomatonBase.h"
 #include "src/mixins/PublisherMixin.h"
-#include "src/mixins/StreamIfMixin.h"
 
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a Stream/Subscription
 /// responder.
 class StreamSubscriptionResponderBase
-    : public StreamIfMixin<PublisherMixin<Frame_RESPONSE, MixinTerminator>>,
+    : public PublisherMixin<Frame_RESPONSE, StreamAutomatonBase>,
       public SubscriberBase {
-  using Base = StreamIfMixin<PublisherMixin<Frame_RESPONSE, MixinTerminator>>;
+  using Base = PublisherMixin<Frame_RESPONSE, StreamAutomatonBase>;
 
  public:
   struct Parameters : Base::Parameters {
@@ -32,19 +31,17 @@ class StreamSubscriptionResponderBase
   explicit StreamSubscriptionResponderBase(const Parameters& params)
       : ExecutorBase(params.executor, false), Base(params) {}
 
-  /// Not all frames are intercepted, some just pass through.
+ protected:
   using Base::onNextFrame;
   void onNextFrame(Frame_CANCEL&&) override;
 
  private:
-  void endStream(StreamCompletionSignal) override;
-
-  /// @{
   void onSubscribeImpl(std::shared_ptr<Subscription>) override;
   void onNextImpl(Payload) override;
   void onCompleteImpl() override;
   void onErrorImpl(folly::exception_wrapper) override;
-  /// @}
+
+  void endStream(StreamCompletionSignal) override;
 
   /// State of the Subscription responder.
   enum class State : uint8_t {

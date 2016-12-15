@@ -6,18 +6,17 @@
 
 #include "src/Frame.h"
 #include "src/SubscriberBase.h"
-#include "src/mixins/MixinTerminator.h"
+#include "src/automata/StreamAutomatonBase.h"
 #include "src/mixins/PublisherMixin.h"
-#include "src/mixins/StreamIfMixin.h"
 
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a RequestResponse
 /// responder
 class RequestResponseResponder
-    : public StreamIfMixin<PublisherMixin<Frame_RESPONSE, MixinTerminator>>,
+    : public PublisherMixin<Frame_RESPONSE, StreamAutomatonBase>,
       public SubscriberBase {
-  using Base = StreamIfMixin<PublisherMixin<Frame_RESPONSE, MixinTerminator>>;
+  using Base = PublisherMixin<Frame_RESPONSE, StreamAutomatonBase>;
 
  public:
   struct Parameters : Base::Parameters {
@@ -31,12 +30,9 @@ class RequestResponseResponder
   explicit RequestResponseResponder(const Parameters& params)
       : ExecutorBase(params.executor, false), Base(params) {}
 
-  std::ostream& logPrefix(std::ostream& os);
+  void processInitialFrame(Frame_REQUEST_RESPONSE&&);
 
-  /// Not all frames are intercepted, some just pass through.
-  using Base::onNextFrame;
-  void onNextFrame(Frame_CANCEL&&) override;
-  /// @}
+  std::ostream& logPrefix(std::ostream& os);
 
  private:
   /// @{
@@ -45,6 +41,9 @@ class RequestResponseResponder
   void onCompleteImpl() override;
   void onErrorImpl(folly::exception_wrapper) override;
   /// @}
+
+  using Base::onNextFrame;
+  void onNextFrame(Frame_CANCEL&&) override;
 
   void endStream(StreamCompletionSignal) override;
 

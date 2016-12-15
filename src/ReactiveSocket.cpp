@@ -259,10 +259,10 @@ bool ReactiveSocket::createResponder(
         // TODO(lehecka): move the onSubscribe call to subscribe method
         requestSink->onSubscribe(automaton);
       }
-      // onNextFrame executes directly, it may cause to call request(n)
+      // processInitialFrame executes directly, it may cause to call request(n)
       // which may call back and it will be queued after the calls from
       // the onSubscribe method
-      automaton->onNextFrame(std::move(frame));
+      automaton->processInitialFrame(std::move(frame));
       automaton->start();
       break;
     }
@@ -288,7 +288,7 @@ bool ReactiveSocket::createResponder(
         subscriber->onSubscribe(std::make_shared<NullSubscription>());
         subscriber->onError(std::runtime_error("unhandled STREAM"));
       }
-      automaton->onNextFrame(std::move(frame));
+      automaton->processInitialFrame(std::move(frame));
       automaton->start();
       break;
     }
@@ -314,7 +314,7 @@ bool ReactiveSocket::createResponder(
         subscriber->onSubscribe(std::make_shared<NullSubscription>());
         subscriber->onError(std::runtime_error("unhandled SUBSCRIPTION"));
       }
-      automaton->onNextFrame(std::move(frame));
+      automaton->processInitialFrame(std::move(frame));
       automaton->start();
       break;
     }
@@ -341,7 +341,7 @@ bool ReactiveSocket::createResponder(
         subscriber->onSubscribe(std::make_shared<NullSubscription>());
         subscriber->onError(std::runtime_error("unhandled REQUEST/RESPONSE"));
       }
-      automaton->onNextFrame(std::move(frame));
+      automaton->processInitialFrame(std::move(frame));
       automaton->start();
       break;
     }
