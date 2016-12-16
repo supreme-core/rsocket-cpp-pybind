@@ -3,9 +3,9 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
-#include <reactive-streams/utilities/SmartPointers.h>
 #include <vector>
 #include "src/ReactiveStreamsCompat.h"
+#include "src/SmartPointers.h"
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 

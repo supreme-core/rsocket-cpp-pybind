@@ -7,7 +7,6 @@
 #include <memory>
 #include <utility>
 
-
 ///
 ///
 /// This file and all its classes are going away in the near future.
@@ -39,7 +38,8 @@ class SubscriberPtr {
   using SharedPtrT = std::shared_ptr<S>;
 
   SubscriberPtr() = default;
-  explicit SubscriberPtr(std::shared_ptr<S> subscriber) : subscriber_(std::move(subscriber)) {
+  explicit SubscriberPtr(std::shared_ptr<S> subscriber)
+      : subscriber_(std::move(subscriber)) {
     assert(subscriber_);
   }
 
@@ -134,7 +134,7 @@ class SubscriptionPtr {
 
   SubscriptionPtr() = default;
   explicit SubscriptionPtr(std::shared_ptr<S> subscription)
-    : subscription_(std::move(subscription)) {
+      : subscription_(std::move(subscription)) {
     assert(subscription_);
   }
 

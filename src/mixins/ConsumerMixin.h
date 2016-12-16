@@ -3,14 +3,14 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
-#include "src/AllowanceSemaphore.h"
-#include "src/SmartPointers.h"
 #include <cstddef>
 #include <iostream>
+#include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
 #include "src/NullRequestHandler.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/SmartPointers.h"
 #include "src/automata/StreamAutomatonBase.h"
 
 namespace reactivesocket {
@@ -89,10 +89,10 @@ class ConsumerMixin : public StreamAutomatonBase {
   reactivestreams::SubscriberPtr<Subscriber<Payload>> consumingSubscriber_;
 
   /// A total, net allowance (requested less delivered) by this consumer.
-  reactivestreams::AllowanceSemaphore allowance_;
+  AllowanceSemaphore allowance_;
   /// An allowance that have yet to be synced to the other end by sending
   /// REQUEST_N frames.
-  reactivestreams::AllowanceSemaphore pendingAllowance_;
+  AllowanceSemaphore pendingAllowance_;
 };
 }
 

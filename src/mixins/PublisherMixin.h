@@ -2,16 +2,14 @@
 
 #pragma once
 
+#include <glog/logging.h>
 #include <iostream>
 #include <type_traits>
-
-#include <glog/logging.h>
-
-#include <reactive-streams/utilities/SmartPointers.h>
 #include "src/ConnectionAutomaton.h"
 #include "src/Frame.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 

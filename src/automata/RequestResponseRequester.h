@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <reactive-streams/utilities/SmartPointers.h>
 #include <iosfwd>
+#include "src/SmartPointers.h"
 
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"

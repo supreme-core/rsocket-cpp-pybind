@@ -200,7 +200,9 @@ add_executable(
   test/SubscriberBaseTest.cpp
   test/Test.cpp
   test/folly/FollyKeepaliveTimerTest.cpp
-  test/ReactiveSocketResumabilityTest.cpp)
+  test/ReactiveSocketResumabilityTest.cpp
+  test/SmartPointersTest.cpp
+  test/AllowanceSemaphoreTest.cpp)
 
 target_link_libraries(
   tests
