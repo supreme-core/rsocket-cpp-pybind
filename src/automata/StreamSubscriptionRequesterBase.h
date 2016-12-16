@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <reactive-streams/utilities/AllowanceSemaphore.h>
+#include "src/AllowanceSemaphore.h"
 #include "src/AbstractStreamAutomaton.h"
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"

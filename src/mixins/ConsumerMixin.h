@@ -3,8 +3,8 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
-#include <reactive-streams/utilities/AllowanceSemaphore.h>
-#include <reactive-streams/utilities/SmartPointers.h>
+#include "src/AllowanceSemaphore.h"
+#include "src/SmartPointers.h"
 #include <cstddef>
 #include <iostream>
 #include "src/Common.h"

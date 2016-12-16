@@ -4,8 +4,8 @@
 
 #include <folly/ExceptionWrapper.h>
 #include <folly/io/IOBufQueue.h>
-#include <reactive-streams/utilities/AllowanceSemaphore.h>
-#include <reactive-streams/utilities/SmartPointers.h>
+#include "src/AllowanceSemaphore.h"
+#include "src/SmartPointers.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
