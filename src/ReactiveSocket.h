@@ -3,7 +3,6 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
 #include <list>
 #include <memory>
 
@@ -24,25 +23,8 @@ class ConnectionAutomaton;
 class DuplexConnection;
 class RequestHandlerBase;
 class ReactiveSocket;
-class FrameSink;
-
-enum class FrameType : uint16_t;
-using StreamId = uint32_t;
 
 folly::Executor& defaultExecutor();
-
-// Client Side Keepalive Timer
-class KeepaliveTimer {
- public:
-  virtual ~KeepaliveTimer() = default;
-
-  virtual std::chrono::milliseconds keepaliveTime() = 0;
-  virtual void stop() = 0;
-  virtual void start(const std::shared_ptr<FrameSink>& connection) = 0;
-  virtual void keepaliveReceived() = 0;
-};
-
-// TODO(stupaq): consider using error codes in place of folly::exception_wrapper
 
 // TODO(stupaq): Here is some heavy problem with the recursion on shutdown.
 // Giving someone ownership over this object would probably lead to a deadlock
@@ -68,10 +50,7 @@ class ReactiveSocket {
       ConnectionSetupPayload setupPayload = ConnectionSetupPayload(),
       Stats& stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
-          std::unique_ptr<KeepaliveTimer>(nullptr),
-      bool isResumable = false,
-      const ResumeIdentificationToken& token =
-          ResumeIdentificationToken::generateNew());
+          std::unique_ptr<KeepaliveTimer>(nullptr));
 
   static std::unique_ptr<ReactiveSocket> fromServerConnection(
       std::unique_ptr<DuplexConnection> connection,

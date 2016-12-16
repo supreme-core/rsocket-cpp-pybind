@@ -6,6 +6,7 @@
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
 #include "src/ConnectionAutomaton.h"
+#include "src/StreamState.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedWriter.h"
 #include "test/InlineConnection.h"

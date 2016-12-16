@@ -2,28 +2,25 @@
 
 #pragma once
 
-#include <deque>
 #include <memory>
-#include <unordered_map>
-
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
 #include "src/Payload.h"
-#include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/SmartPointers.h"
-#include "src/Stats.h"
-#include "src/StreamState.h"
 
 namespace reactivesocket {
 
 class AbstractStreamAutomaton;
-class DuplexConnection;
-enum class FrameType : uint16_t;
-enum class StreamCompletionSignal;
-using StreamId = uint32_t;
-
+class ClientResumeStatusCallback;
 class ConnectionAutomaton;
+class DuplexConnection;
+class KeepaliveTimer;
+class Frame_ERROR;
+class Stats;
+class StreamState;
+
+enum class FrameType : uint16_t;
 
 /// Creates, registers and spins up responder for provided new stream ID and
 /// serialised frame.
@@ -220,5 +217,7 @@ class ConnectionAutomaton :
 
   ResumeListener resumeListener_;
   const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
+
+  std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
 };
 }

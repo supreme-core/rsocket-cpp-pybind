@@ -81,12 +81,10 @@ int main(int argc, char* argv[]) {
         std::move(framedConnection),
         std::move(requestHandler),
         ConnectionSetupPayload(
-            "text/plain", "text/plain", Payload("meta", "data")),
+            "text/plain", "text/plain", Payload("meta", "data"), true, token),
         stats,
         folly::make_unique<FollyKeepaliveTimer>(
-            *eventBaseThread.getEventBase(), std::chrono::milliseconds(5000)),
-        true,
-        token);
+            *eventBaseThread.getEventBase(), std::chrono::milliseconds(5000)));
 
     reactiveSocket->requestSubscription(
         Payload("from client"), std::make_shared<PrintSubscriber>());

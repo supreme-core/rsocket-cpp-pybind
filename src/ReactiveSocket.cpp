@@ -68,12 +68,10 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<RequestHandlerBase> handler,
     ConnectionSetupPayload setupPayload,
     Stats& stats,
-    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
-    bool isResumable,
-    const ResumeIdentificationToken& token) {
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       false,
-      isResumable,
+      setupPayload.resumable,
       std::move(connection),
       std::move(handler),
       stats,
@@ -90,10 +88,14 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
       0,
       keepaliveTime,
       std::numeric_limits<uint32_t>::max(),
-      token,
+      // TODO: resumability,
+      setupPayload.token,
       std::move(setupPayload.metadataMimeType),
       std::move(setupPayload.dataMimeType),
       std::move(setupPayload.payload));
+
+  // TODO: when the server returns back that it doesn't support resumability, we
+  // should retry without resumability
 
   socket->connection_->outputFrameOrEnqueue(frame.serializeOut());
 
@@ -109,6 +111,8 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
     std::unique_ptr<RequestHandlerBase> handler,
     Stats& stats,
     bool isResumable) {
+  // TODO: isResumable should come as a flag on Setup frame and it should be
+  // exposed to the application code. We should then remove this parameter
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
       isResumable,
@@ -231,6 +235,7 @@ bool ReactiveSocket::createResponder(
             std::move(frame.metadataMimeType_),
             std::move(frame.dataMimeType_),
             std::move(frame.payload_),
+            false, // TODO: resumable flag should be received in SETUP frame
             frame.token_));
 
         connection.useStreamState(streamState);

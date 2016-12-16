@@ -52,6 +52,8 @@ TEST(AllowanceSemaphoreTest, Infinite) {
   ASSERT_TRUE(sem.isInfinite());
   ASSERT_EQ(infty, sem.drain());
   ASSERT_TRUE(sem.isInfinite());
+  sem.reset();
+  ASSERT_FALSE(sem.tryAcquire());
 }
 
 TEST(AllowanceSemaphoreTest, DrainWithLimit) {
