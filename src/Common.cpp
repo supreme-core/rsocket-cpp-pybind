@@ -2,6 +2,7 @@
 
 #include "src/Common.h"
 #include <folly/io/IOBuf.h>
+#include <random>
 #include "src/AbstractStreamAutomaton.h"
 
 namespace reactivesocket {
@@ -56,19 +57,34 @@ ResumeIdentificationToken ResumeIdentificationToken::empty() {
       Data() = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}});
 }
 ResumeIdentificationToken ResumeIdentificationToken::generateNew() {
-  // TODO
-  return empty();
+  // TODO: this will be replaced with a variable length bit array and the value
+  // will be generated outside of reactivesocket
+  // for now we will use temporary number generator
+  std::mt19937 rng;
+  rng.seed(std::random_device()());
+  auto num = rng();
+
+  static_assert(sizeof(num) <= sizeof(Data), "FIXME");
+
+  Data data;
+  for (size_t i = 0; i < sizeof(num); i++) {
+    data[i] = ((uint8_t*)&num)[i];
+  }
+  return ResumeIdentificationToken(std::move(data));
 }
 
 ResumeIdentificationToken ResumeIdentificationToken::fromString(
     const std::string& /*str*/) {
-  // TODO
+  CHECK(false) << "not implemented";
   return empty();
 }
 
 std::string ResumeIdentificationToken::toString() const {
-  // TODO
-  return "";
+  std::ostringstream str;
+  for (auto& i : bits_) {
+    str << i << " ";
+  }
+  return str.str();
 }
 
 } // reactivesocket

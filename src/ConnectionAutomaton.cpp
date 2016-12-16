@@ -6,27 +6,26 @@
 #include <folly/String.h>
 #include "src/AbstractStreamAutomaton.h"
 #include "src/ClientResumeStatusCallback.h"
+#include "src/DuplexConnection.h"
+#include "src/Stats.h"
+#include "src/StreamState.h"
 
 namespace reactivesocket {
 
 ConnectionAutomaton::ConnectionAutomaton(
-    std::unique_ptr<DuplexConnection> connection,
     StreamAutomatonFactory factory,
     std::shared_ptr<StreamState> streamState,
     ResumeListener resumeListener,
     Stats& stats,
     const std::shared_ptr<KeepaliveTimer>& keepaliveTimer,
     bool isServer,
-    bool isResumable,
     std::function<void()> onConnected,
     std::function<void()> onDisconnected,
     std::function<void()> onClosed)
-    : connection_(std::move(connection)),
-      factory_(std::move(factory)),
+    : factory_(std::move(factory)),
       streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
-      isResumable_(isResumable),
       onConnected_(std::move(onConnected)),
       onDisconnected_(std::move(onDisconnected)),
       onClosed_(std::move(onClosed)),
@@ -35,7 +34,6 @@ ConnectionAutomaton::ConnectionAutomaton(
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
-  CHECK(connection_);
   CHECK(streamState_);
   CHECK(onConnected_);
   CHECK(onDisconnected_);
@@ -46,10 +44,22 @@ ConnectionAutomaton::~ConnectionAutomaton() {
   VLOG(6) << "~ConnectionAutomaton";
   // We rely on SubscriptionPtr and SubscriberPtr to dispatch appropriate
   // terminal signals.
+  DCHECK(!resumeCallback_);
 }
 
-void ConnectionAutomaton::connect() {
-  CHECK(connection_);
+void ConnectionAutomaton::setResumable(bool resumable) {
+  DCHECK(!connection_); // we allow to set this flag before we are connected
+  isResumable_ = resumable;
+}
+
+void ConnectionAutomaton::connect(
+    std::unique_ptr<DuplexConnection> connection) {
+  CHECK(static_cast<bool>(connection_) ^ static_cast<bool>(connection));
+
+  if (connection) {
+    connection_ = std::move(connection);
+  }
+
   connectionOutput_.reset(connection_->getOutput());
   connectionOutput_.onSubscribe(shared_from_this());
 
@@ -105,10 +115,19 @@ void ConnectionAutomaton::close(
 
 void ConnectionAutomaton::closeDuplexConnection(folly::exception_wrapper ex) {
   if (!connection_) {
+    DCHECK(!resumeCallback_);
+    DCHECK(!writeAllowance_.canAcquire(1));
     return;
   }
 
+  if (resumeCallback_) {
+    resumeCallback_->onConnectionError(
+        std::runtime_error(ex ? ex.what().c_str() : "connection closing"));
+    resumeCallback_.reset();
+  }
+
   auto oldConnection = std::move(connection_);
+  writeAllowance_.reset();
 
   // Send terminal signals to the DuplexConnection's input and output before
   // tearing it down. We must do this per DuplexConnection specification (see
@@ -132,13 +151,17 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
 void ConnectionAutomaton::reconnect(
     std::unique_ptr<DuplexConnection> newConnection,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
-  // TODO(lehecka)
-  if (resumeCallback) {
-    resumeCallback->onResumeError(std::runtime_error("not implemented"));
-  }
+  CHECK(newConnection);
+  CHECK(resumeCallback);
+  CHECK(!resumeCallback_);
+  CHECK(isResumable_);
+  CHECK(!isServer_);
+
   disconnect();
-  connection_ = std::shared_ptr<DuplexConnection>(std::move(newConnection));
-  connect();
+  // TODO: output frame buffer should not be written to the new connection until
+  // we receive resume ok
+  resumeCallback_ = std::move(resumeCallback);
+  connect(std::move(newConnection));
 }
 
 void ConnectionAutomaton::addStream(
@@ -340,15 +363,34 @@ void ConnectionAutomaton::onConnectionFrame(
     }
     case FrameType::RESUME_OK: {
       Frame_RESUME_OK frame;
-      if (frame.deserializeFrom(std::move(payload))) {
+      if (resumeCallback_ && frame.deserializeFrom(std::move(payload))) {
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
+          // TODO(lehecka): finish stuff here
+          resumeCallback_->onResumeOk();
+          resumeCallback_.reset();
         } else {
           closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
       } else {
         closeWithError(Frame_ERROR::unexpectedFrame());
       }
+      return;
+    }
+    case FrameType::ERROR: {
+      Frame_ERROR frame;
+      if (frame.deserializeFrom(std::move(payload))) {
+        // TODO: handle INVALID_SETUP, UNSUPPORTED_SETUP, REJECTED_SETUP
+
+        if (frame.errorCode_ == ErrorCode::CONNECTION_ERROR &&
+            resumeCallback_) {
+          resumeCallback_->onResumeError(
+              std::runtime_error(frame.payload_.moveDataToString()));
+          resumeCallback_.reset();
+          // fall through
+        }
+      }
+      closeWithError(std::move(frame));
       return;
     }
     default:
@@ -359,6 +401,12 @@ void ConnectionAutomaton::onConnectionFrame(
 /// @}
 
 void ConnectionAutomaton::request(size_t n) {
+  if (!connection_) {
+    // request(n) can be delivered during disconnecting
+    // we don't care for it anymore
+    return;
+  }
+
   if (writeAllowance_.release(n) > 0) {
     // There are no pending writes or we already have this method on the
     // stack.

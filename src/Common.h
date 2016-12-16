@@ -3,8 +3,10 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -77,6 +79,18 @@ class ResumeIdentificationToken {
   ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
 
   Data bits_;
+};
+
+class FrameSink;
+// Client Side Keepalive Timer
+class KeepaliveTimer {
+ public:
+  virtual ~KeepaliveTimer() = default;
+
+  virtual std::chrono::milliseconds keepaliveTime() = 0;
+  virtual void stop() = 0;
+  virtual void start(const std::shared_ptr<FrameSink>& connection) = 0;
+  virtual void keepaliveReceived() = 0;
 };
 
 } // reactive socket

@@ -2,28 +2,25 @@
 
 #pragma once
 
-#include <deque>
 #include <memory>
-#include <unordered_map>
-
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
 #include "src/Payload.h"
-#include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/SmartPointers.h"
-#include "src/Stats.h"
-#include "src/StreamState.h"
 
 namespace reactivesocket {
 
 class AbstractStreamAutomaton;
-class DuplexConnection;
-enum class FrameType : uint16_t;
-enum class StreamCompletionSignal;
-using StreamId = uint32_t;
-
+class ClientResumeStatusCallback;
 class ConnectionAutomaton;
+class DuplexConnection;
+class KeepaliveTimer;
+class Frame_ERROR;
+class Stats;
+class StreamState;
+
+enum class FrameType : uint16_t;
 
 /// Creates, registers and spins up responder for provided new stream ID and
 /// serialised frame.
@@ -71,7 +68,6 @@ class ConnectionAutomaton :
     public std::enable_shared_from_this<ConnectionAutomaton> {
  public:
   ConnectionAutomaton(
-      std::unique_ptr<DuplexConnection> connection,
       // TODO(stupaq): for testing only, can devirtualise if necessary
       StreamAutomatonFactory factory,
       std::shared_ptr<StreamState> streamState,
@@ -79,7 +75,6 @@ class ConnectionAutomaton :
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
       bool client,
-      bool isResumable,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
@@ -90,7 +85,8 @@ class ConnectionAutomaton :
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect();
+  void connect(
+      std::unique_ptr<DuplexConnection> connection);
 
   /// Terminates underlying connection.
   ///
@@ -160,6 +156,8 @@ class ConnectionAutomaton :
   bool isPositionAvailable(ResumePosition position);
   ResumePosition positionDifference(ResumePosition position);
 
+  void setResumable(bool resumable);
+
  private:
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.
@@ -220,5 +218,7 @@ class ConnectionAutomaton :
 
   ResumeListener resumeListener_;
   const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
+
+  std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
 };
 }
