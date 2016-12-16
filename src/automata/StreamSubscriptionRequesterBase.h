@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <reactive-streams/utilities/AllowanceSemaphore.h>
 #include "src/AbstractStreamAutomaton.h"
+#include "src/AllowanceSemaphore.h"
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"
 #include "src/mixins/ConsumerMixin.h"
@@ -58,6 +58,6 @@ class StreamSubscriptionRequesterBase
 
   /// An allowance accumulated before the stream is initialised.
   /// Remaining part of the allowance is forwarded to the ConsumerMixin.
-  reactivestreams::AllowanceSemaphore initialResponseAllowance_;
+  AllowanceSemaphore initialResponseAllowance_;
 };
 }

@@ -67,7 +67,7 @@ class ChannelRequester : public PublisherMixin<
   } state_{State::NEW};
   /// An allowance accumulated before the stream is initialised.
   /// Remaining part of the allowance is forwarded to the ConsumerMixin.
-  reactivestreams::AllowanceSemaphore initialResponseAllowance_;
+  AllowanceSemaphore initialResponseAllowance_;
 };
 
 } // reactivesocket
