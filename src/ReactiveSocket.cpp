@@ -33,15 +33,12 @@ ReactiveSocket::~ReactiveSocket() {
 
 ReactiveSocket::ReactiveSocket(
     bool isServer,
-    bool isResumable,
-    std::unique_ptr<DuplexConnection> connection,
     std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
     : handler_(handler),
       keepaliveTimer_(std::move(keepaliveTimer)),
       connection_(new ConnectionAutomaton(
-          std::move(connection),
           [handler](
               ConnectionAutomaton& connection,
               StreamId streamId,
@@ -57,7 +54,6 @@ ReactiveSocket::ReactiveSocket(
           stats,
           keepaliveTimer_,
           isServer,
-          isResumable,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
@@ -81,8 +77,6 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedClient(
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       false,
-      false,
-      nullptr,
       std::move(handler),
       stats,
       std::move(keepaliveTimer)));
@@ -98,12 +92,11 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
   // exposed to the application code. We should then remove this parameter
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
-      isResumable,
-      std::move(connection),
       std::move(handler),
       stats,
       std::unique_ptr<KeepaliveTimer>(nullptr)));
-  socket->connection_->connect();
+  socket->connection_->setResumable(isResumable);
+  socket->connection_->connect(std::move(connection));
   return socket;
 }
 

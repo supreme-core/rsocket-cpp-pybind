@@ -13,23 +13,19 @@
 namespace reactivesocket {
 
 ConnectionAutomaton::ConnectionAutomaton(
-    std::unique_ptr<DuplexConnection> connection,
     StreamAutomatonFactory factory,
     std::shared_ptr<StreamState> streamState,
     ResumeListener resumeListener,
     Stats& stats,
     const std::shared_ptr<KeepaliveTimer>& keepaliveTimer,
     bool isServer,
-    bool isResumable,
     std::function<void()> onConnected,
     std::function<void()> onDisconnected,
     std::function<void()> onClosed)
-    : connection_(std::move(connection)),
-      factory_(std::move(factory)),
+    : factory_(std::move(factory)),
       streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
-      isResumable_(isResumable),
       onConnected_(std::move(onConnected)),
       onDisconnected_(std::move(onDisconnected)),
       onClosed_(std::move(onClosed)),
@@ -38,7 +34,6 @@ ConnectionAutomaton::ConnectionAutomaton(
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
-  CHECK(connection_ || !isServer);
   CHECK(streamState_);
   CHECK(onConnected_);
   CHECK(onDisconnected_);
@@ -165,9 +160,8 @@ void ConnectionAutomaton::reconnect(
   disconnect();
   // TODO: output frame buffer should not be written to the new connection until
   // we receive resume ok
-  connection_ = std::move(newConnection);
   resumeCallback_ = std::move(resumeCallback);
-  connect();
+  connect(std::move(newConnection));
 }
 
 void ConnectionAutomaton::addStream(
