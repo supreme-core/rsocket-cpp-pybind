@@ -38,7 +38,7 @@ ConnectionAutomaton::ConnectionAutomaton(
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
-  CHECK(connection_);
+  CHECK(connection_ || !isServer);
   CHECK(streamState_);
   CHECK(onConnected_);
   CHECK(onDisconnected_);
@@ -52,8 +52,19 @@ ConnectionAutomaton::~ConnectionAutomaton() {
   DCHECK(!resumeCallback_);
 }
 
-void ConnectionAutomaton::connect() {
-  CHECK(connection_);
+void ConnectionAutomaton::setResumable(bool resumable) {
+  DCHECK(!connection_); // we allow to set this flag before we are connected
+  isResumable_ = resumable;
+}
+
+void ConnectionAutomaton::connect(
+    std::unique_ptr<DuplexConnection> connection) {
+  CHECK(static_cast<bool>(connection_) ^ static_cast<bool>(connection));
+
+  if (connection) {
+    connection_ = std::move(connection);
+  }
+
   connectionOutput_.reset(connection_->getOutput());
   connectionOutput_.onSubscribe(shared_from_this());
 

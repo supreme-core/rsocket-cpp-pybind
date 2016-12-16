@@ -87,7 +87,9 @@ class ConnectionAutomaton :
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect();
+  void connect(
+      std::unique_ptr<DuplexConnection> connection =
+          std::unique_ptr<DuplexConnection>());
 
   /// Terminates underlying connection.
   ///
@@ -156,6 +158,8 @@ class ConnectionAutomaton :
 
   bool isPositionAvailable(ResumePosition position);
   ResumePosition positionDifference(ResumePosition position);
+
+  void setResumable(bool resumable);
 
  private:
   /// Performs the same actions as ::endStream without propagating closure
