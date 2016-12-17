@@ -59,10 +59,6 @@ class AllowanceSemaphore {
     return limit;
   }
 
-  void reset() {
-    value_ = 0;
-  }
-
  private:
   static_assert(
       !std::numeric_limits<ValueType>::is_signed,

@@ -6,6 +6,7 @@
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
 #include "src/ConnectionAutomaton.h"
+#include "src/FrameTransport.h"
 #include "src/StreamState.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedWriter.h"
@@ -83,7 +84,8 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
+      std::move(framedAutomatonConnection)));
 }
 
 static void terminateTest(
@@ -156,7 +158,8 @@ static void terminateTest(
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
+      std::move(framedAutomatonConnection)));
 }
 
 TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
@@ -243,5 +246,6 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
+      std::move(framedAutomatonConnection)));
 }

@@ -5,9 +5,10 @@
 #include <memory>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
+#include "src/Frame.h"
+#include "src/FrameProcessor.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 
@@ -19,6 +20,7 @@ class KeepaliveTimer;
 class Frame_ERROR;
 class Stats;
 class StreamState;
+class FrameTransport;
 
 enum class FrameType : uint16_t;
 
@@ -30,7 +32,7 @@ enum class FrameType : uint16_t;
 /// Returns true if the responder has been created successfully, false if the
 /// frame cannot start a new stream, in which case the frame (passed by a
 /// mutable referece) must not be modified.
-using StreamAutomatonFactory = std::function<bool(
+using StreamAutomatonFactory = std::function<void(
     ConnectionAutomaton& connection,
     StreamId,
     std::unique_ptr<folly::IOBuf>)>;
@@ -59,13 +61,10 @@ class FrameSink {
 /// The reason why such a simple memory management story is possible lies in the
 /// fact that there is no request(n)-based flow control between stream
 /// automata and ConnectionAutomaton.
-class ConnectionAutomaton :
-    /// Registered as an input in the DuplexConnection.
-    public Subscriber<std::unique_ptr<folly::IOBuf>>,
-    /// Receives signals about connection writability.
-    public Subscription,
-    public FrameSink,
-    public std::enable_shared_from_this<ConnectionAutomaton> {
+class ConnectionAutomaton
+    : public FrameSink,
+      public FrameProcessor,
+      public std::enable_shared_from_this<ConnectionAutomaton> {
  public:
   ConnectionAutomaton(
       // TODO(stupaq): for testing only, can devirtualise if necessary
@@ -85,8 +84,7 @@ class ConnectionAutomaton :
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect(
-      std::unique_ptr<DuplexConnection> connection);
+  void connect(std::shared_ptr<FrameTransport>);
 
   /// Terminates underlying connection.
   ///
@@ -100,8 +98,8 @@ class ConnectionAutomaton :
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
-      std::unique_ptr<DuplexConnection> newConnection,
-      std::unique_ptr<ClientResumeStatusCallback> resumeCallback);
+      std::shared_ptr<FrameTransport>,
+      std::unique_ptr<ClientResumeStatusCallback>);
 
   ~ConnectionAutomaton();
 
@@ -119,12 +117,6 @@ class ConnectionAutomaton :
   void addStream(
       StreamId streamId,
       std::shared_ptr<AbstractStreamAutomaton> automaton);
-
-  /// Enqueues provided frame to be written to the underlying connection.
-  /// Enqueuing a terminal frame does not end the stream.
-  ///
-  /// This signal corresponds to Subscriber::onNext.
-  void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
 
   /// Indicates that the stream should be removed from the connection.
   ///
@@ -157,6 +149,19 @@ class ConnectionAutomaton :
   ResumePosition positionDifference(ResumePosition position);
 
   void setResumable(bool resumable);
+  void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
+
+  template <typename TFrame>
+  bool deserializeFrameOrError(
+      TFrame& frame,
+      std::unique_ptr<folly::IOBuf> payload) {
+    if (frame.deserializeFrom(std::move(payload))) {
+      return true;
+    } else {
+      closeWithError(Frame_ERROR::unexpectedFrame());
+      return false;
+    }
+  }
 
  private:
   /// Performs the same actions as ::endStream without propagating closure
@@ -165,48 +170,24 @@ class ConnectionAutomaton :
   /// The call is idempotent and returns false iff a stream has not been found.
   bool endStreamInternal(StreamId streamId, StreamCompletionSignal signal);
 
-  /// @{
-  void onSubscribe(std::shared_ptr<Subscription>) override;
-  void onNext(std::unique_ptr<folly::IOBuf>) override;
-  void onComplete() override;
-  void onError(folly::exception_wrapper) override;
+  void processFrame(std::unique_ptr<folly::IOBuf>) override;
+  void onTerminal(folly::exception_wrapper, StreamCompletionSignal) override;
 
   void onConnectionFrame(std::unique_ptr<folly::IOBuf>);
-  /// @}
-
-  /// @{
-  void request(size_t) override;
-  void cancel() override;
-  /// @}
-
-  /// @{
-  /// State management at the connection level.
   void handleUnknownStream(
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> frame);
-  /// @}
 
-  void drainOutputFramesQueue();
-  void outputFrame(std::unique_ptr<folly::IOBuf>);
-
-  void onDuplexConnectionTerminal(
-      folly::exception_wrapper,
-      StreamCompletionSignal);
   void close(folly::exception_wrapper, StreamCompletionSignal);
   void closeStreams(StreamCompletionSignal);
-  void closeDuplexConnection(folly::exception_wrapper ex);
+  void closeFrameTransport(folly::exception_wrapper);
 
-  std::shared_ptr<DuplexConnection> connection_;
+  void outputFrame(std::unique_ptr<folly::IOBuf>);
+
   StreamAutomatonFactory factory_;
 
-  reactivestreams::SubscriberPtr<
-      reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
-      connectionOutput_;
-  reactivestreams::SubscriptionPtr<Subscription> connectionInputSub_;
-
   std::shared_ptr<StreamState> streamState_;
-
-  AllowanceSemaphore writeAllowance_;
+  std::shared_ptr<FrameTransport> frameTransport_;
 
   Stats& stats_;
   bool isServer_;

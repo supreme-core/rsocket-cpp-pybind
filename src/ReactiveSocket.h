@@ -52,16 +52,12 @@ class ReactiveSocket {
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
 
- private:
-  // TODO(lehecka): temporarily private because we are not handling the order of
-  // sent frames correctly yet. It will be fixed in another diff.
   static std::unique_ptr<ReactiveSocket> disconnectedClient(
       std::unique_ptr<RequestHandlerBase> handler,
       Stats& stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
 
- public:
   static std::unique_ptr<ReactiveSocket> fromServerConnection(
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandlerBase> handler,
@@ -114,11 +110,12 @@ class ReactiveSocket {
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer);
 
-  static bool createResponder(
+  static void createResponder(
       std::shared_ptr<RequestHandlerBase> handler,
       ConnectionAutomaton& connection,
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> frame);
+
   std::shared_ptr<StreamState> resumeListener(
       const ResumeIdentificationToken& token);
 
