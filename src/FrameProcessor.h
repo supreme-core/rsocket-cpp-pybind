@@ -6,6 +6,7 @@
 
 namespace folly {
 class IOBuf;
+class exception_wrapper;
 }
 
 namespace reactivesocket {

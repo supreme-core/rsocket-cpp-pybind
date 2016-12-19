@@ -51,9 +51,7 @@ void FrameTransport::setFrameProcessor(
     connectionInputSub_.request(std::numeric_limits<size_t>::max());
   }
 
-  if (connection_) {
-    drainOutputFramesQueue();
-  }
+  drainOutputFramesQueue();
 }
 
 void FrameTransport::close(folly::exception_wrapper ex) {
@@ -156,11 +154,13 @@ void FrameTransport::outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame) {
 }
 
 void FrameTransport::drainOutputFramesQueue() {
-  // Drain the queue or the allowance.
-  while (!pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
-    auto frame = std::move(pendingWrites_.front());
-    pendingWrites_.pop_front();
-    connectionOutput_.onNext(std::move(frame));
+  if (connection_ && frameProcessor_) {
+    // Drain the queue or the allowance.
+    while (!pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
+      auto frame = std::move(pendingWrites_.front());
+      pendingWrites_.pop_front();
+      connectionOutput_.onNext(std::move(frame));
+    }
   }
 }
 

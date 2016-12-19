@@ -73,8 +73,11 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
-        return false;
+      [](ConnectionAutomaton& connection,
+         StreamId,
+         std::unique_ptr<folly::IOBuf>) {
+        connection.closeWithError(
+            Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(),
       nullptr,
@@ -147,8 +150,11 @@ static void terminateTest(
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
-        return false;
+      [](ConnectionAutomaton& connection,
+         StreamId,
+         std::unique_ptr<folly::IOBuf>) {
+        connection.closeWithError(
+            Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(),
       nullptr,
@@ -160,6 +166,7 @@ static void terminateTest(
       [] {});
   connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
       std::move(framedAutomatonConnection)));
+  connectionAutomaton->close();
 }
 
 TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
@@ -235,8 +242,11 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
-        return false;
+      [](ConnectionAutomaton& connection,
+         StreamId,
+         std::unique_ptr<folly::IOBuf>) {
+        connection.closeWithError(
+            Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(),
       nullptr,
@@ -248,4 +258,5 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       [] {});
   connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
       std::move(framedAutomatonConnection)));
+  connectionAutomaton->close();
 }

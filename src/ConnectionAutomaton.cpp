@@ -46,6 +46,8 @@ ConnectionAutomaton::~ConnectionAutomaton() {
   // We rely on SubscriptionPtr and SubscriberPtr to dispatch appropriate
   // terminal signals.
   DCHECK(!resumeCallback_);
+  DCHECK(
+      !frameTransport_); // the instance should be closed by via close() method
 }
 
 void ConnectionAutomaton::setResumable(bool resumable) {
@@ -60,6 +62,11 @@ void ConnectionAutomaton::connect(
   CHECK(!frameTransport->isClosed());
 
   frameTransport_ = std::move(frameTransport);
+  // We need to create a hard reference to frameTransport_ to make sure the
+  // instance survives until the setFrameProcessor returns. There can be
+  // terminating signals processed in that call which will nullify
+  // frameTransport_
+  auto frameTransportCopy = frameTransport_;
   frameTransport_->setFrameProcessor(shared_from_this());
 
   // setFrameProcessor starts pulling frames from duplex connection
