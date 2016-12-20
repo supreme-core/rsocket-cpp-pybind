@@ -18,7 +18,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     std::shared_ptr<StreamState> streamState,
     ResumeListener resumeListener,
     Stats& stats,
-    const std::shared_ptr<KeepaliveTimer>& keepaliveTimer,
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     bool isServer,
     std::function<void()> onConnected,
     std::function<void()> onDisconnected,
@@ -31,7 +31,7 @@ ConnectionAutomaton::ConnectionAutomaton(
       onDisconnected_(std::move(onDisconnected)),
       onClosed_(std::move(onClosed)),
       resumeListener_(resumeListener),
-      keepaliveTimer_(keepaliveTimer) {
+      keepaliveTimer_(std::move(keepaliveTimer)) {
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
@@ -46,18 +46,19 @@ ConnectionAutomaton::~ConnectionAutomaton() {
   // We rely on SubscriptionPtr and SubscriberPtr to dispatch appropriate
   // terminal signals.
   DCHECK(!resumeCallback_);
-  DCHECK(
-      !frameTransport_); // the instance should be closed by via close() method
+  DCHECK(isDisconnectedOrClosed()); // the instance should be closed by via
+  // close() method
 }
 
 void ConnectionAutomaton::setResumable(bool resumable) {
-  DCHECK(!frameTransport_); // we allow to set this flag before we are connected
+  DCHECK(isDisconnectedOrClosed()); // we allow to set this flag before we are
+  // connected
   isResumable_ = resumable;
 }
 
 void ConnectionAutomaton::connect(
     std::shared_ptr<FrameTransport> frameTransport) {
-  CHECK(!frameTransport_);
+  CHECK(isDisconnectedOrClosed());
   CHECK(!resumeCallback_);
   CHECK(frameTransport);
   CHECK(!frameTransport->isClosed());
@@ -79,11 +80,15 @@ void ConnectionAutomaton::connect(
   for (auto& frame : outputFrames) {
     outputFrameOrEnqueue(std::move(frame));
   }
+
+  if (keepaliveTimer_) {
+    keepaliveTimer_->start(shared_from_this());
+  }
 }
 
 void ConnectionAutomaton::disconnect() {
   VLOG(6) << "disconnect";
-  if (!frameTransport_) {
+  if (isDisconnectedOrClosed()) {
     return;
   }
 
@@ -117,9 +122,14 @@ void ConnectionAutomaton::close(
 }
 
 void ConnectionAutomaton::closeFrameTransport(folly::exception_wrapper ex) {
-  if (!frameTransport_) {
+  if (isDisconnectedOrClosed()) {
     DCHECK(!resumeCallback_);
     return;
+  }
+
+  // Stop scheduling keepalives since the socket is now disconnected
+  if (keepaliveTimer_) {
+    keepaliveTimer_->stop();
   }
 
   if (resumeCallback_) {
@@ -335,12 +345,7 @@ void ConnectionAutomaton::onConnectionFrame(
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
           resumeCallback_->onResumeOk();
           resumeCallback_.reset();
-
-          streamState_->resumeCache_->sendFramesFromPosition(
-              frame.position_, *frameTransport_);
-          for (auto& frame : streamState_->moveOutputPendingFrames()) {
-            outputFrameOrEnqueue(std::move(frame));
-          }
+          resumeFromPosition(frame.position_);
         } else {
           closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
@@ -406,10 +411,23 @@ ResumePosition ConnectionAutomaton::positionDifference(
   return streamState_->resumeCache_->position() - position;
 }
 
+void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
+  streamState_->resumeCache_->sendFramesFromPosition(
+      position, *frameTransport_);
+
+  for (auto& frame : streamState_->moveOutputPendingFrames()) {
+    outputFrameOrEnqueue(std::move(frame));
+  }
+
+  if (!isDisconnectedOrClosed() && keepaliveTimer_) {
+    keepaliveTimer_->start(shared_from_this());
+  }
+}
+
 void ConnectionAutomaton::outputFrameOrEnqueue(
     std::unique_ptr<folly::IOBuf> frame) {
   // if we are resuming we cant send any frames until we receive RESUME_OK
-  if (frameTransport_ && !resumeCallback_) {
+  if (!isDisconnectedOrClosed() && !resumeCallback_) {
     outputFrame(std::move(frame));
   } else {
     streamState_->enqueueOutputPendingFrame(std::move(frame));
@@ -417,7 +435,7 @@ void ConnectionAutomaton::outputFrameOrEnqueue(
 }
 
 void ConnectionAutomaton::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
-  DCHECK(frameTransport_);
+  DCHECK(!isDisconnectedOrClosed());
 
   std::stringstream ss;
   ss << FrameHeader::peekType(*frame);
@@ -434,4 +452,14 @@ void ConnectionAutomaton::useStreamState(
     streamState_.swap(streamState);
   }
 }
+
+uint32_t ConnectionAutomaton::getKeepaliveTime() const {
+  return keepaliveTimer_ ? keepaliveTimer_->keepaliveTime().count()
+                         : std::numeric_limits<uint32_t>::max();
 }
+
+bool ConnectionAutomaton::isDisconnectedOrClosed() const {
+  return !frameTransport_;
+}
+
+} // reactivesocket

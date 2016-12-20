@@ -37,8 +37,7 @@ ReactiveSocket::ReactiveSocket(
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
     : handler_(handler),
-      keepaliveTimer_(std::move(keepaliveTimer)),
-      connection_(new ConnectionAutomaton(
+      connection_(std::make_shared<ConnectionAutomaton>(
           [handler](
               ConnectionAutomaton& connection,
               StreamId streamId,
@@ -52,7 +51,7 @@ ReactiveSocket::ReactiveSocket(
               this,
               std::placeholders::_1),
           stats,
-          keepaliveTimer_,
+          std::move(keepaliveTimer),
           isServer,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
@@ -69,7 +68,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   auto socket =
       disconnectedClient(std::move(handler), stats, std::move(keepaliveTimer));
-  socket->connect(std::move(connection), std::move(setupPayload));
+  socket->clientConnect(std::move(connection), std::move(setupPayload));
   return socket;
 }
 
@@ -89,14 +88,16 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
     bool isResumable) {
   // TODO: isResumable should come as a flag on Setup frame and it should be
   // exposed to the application code. We should then remove this parameter
-  std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
-      true,
-      std::move(handler),
-      stats,
-      std::unique_ptr<KeepaliveTimer>(nullptr)));
-  socket->connection_->setResumable(isResumable);
-  socket->connection_->connect(
-      FrameTransport::fromDuplexConnection(std::move(connection)));
+  auto socket = disconnectedServer(std::move(handler), stats);
+  socket->serverConnect(std::move(connection), isResumable);
+  return socket;
+}
+
+std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedServer(
+    std::unique_ptr<RequestHandlerBase> handler,
+    Stats& stats) {
+  std::unique_ptr<ReactiveSocket> socket(
+      new ReactiveSocket(false, std::move(handler), stats, nullptr));
   return socket;
 }
 
@@ -371,22 +372,18 @@ std::shared_ptr<StreamState> ReactiveSocket::resumeListener(
   return handler_->handleResume(token);
 }
 
-void ReactiveSocket::connect(
+void ReactiveSocket::clientConnect(
     std::unique_ptr<DuplexConnection> connection,
     ConnectionSetupPayload setupPayload) {
   CHECK(connection);
   checkNotClosed();
   connection_->setResumable(setupPayload.resumable);
 
-  uint32_t keepaliveTime = keepaliveTimer_
-      ? keepaliveTimer_->keepaliveTime().count()
-      : std::numeric_limits<uint32_t>::max();
-
   // TODO set correct version
   Frame_SETUP frame(
       FrameFlags_EMPTY,
       0,
-      keepaliveTime,
+      connection_->getKeepaliveTime(),
       std::numeric_limits<uint32_t>::max(),
       // TODO: resumability,
       setupPayload.token,
@@ -402,18 +399,17 @@ void ReactiveSocket::connect(
   // then the rest of the cached frames will be sent
   connection_->connect(
       FrameTransport::fromDuplexConnection(std::move(connection)));
+}
 
-  if (keepaliveTimer_) {
-    keepaliveTimer_->start(connection_);
-  }
+void ReactiveSocket::serverConnect(
+    std::unique_ptr<DuplexConnection> connection,
+    bool isResumable) {
+  connection_->setResumable(isResumable);
+  connection_->connect(
+      FrameTransport::fromDuplexConnection(std::move(connection)));
 }
 
 void ReactiveSocket::close() {
-  // Stop scheduling keepalives since the socket is now closed, but may be
-  // destructed later
-  if (keepaliveTimer_) {
-    keepaliveTimer_->stop();
-  }
   if (connection_) {
     connection_->close();
     connection_ = nullptr;
@@ -422,11 +418,6 @@ void ReactiveSocket::close() {
 
 void ReactiveSocket::disconnect() {
   checkNotClosed();
-  // Stop scheduling keepalives since the socket is now disconnected
-  // TODO(lehecka): reenable keepaliveTimer on Resume_OK
-  if (keepaliveTimer_) {
-    keepaliveTimer_->stop();
-  }
   connection_->disconnect();
 }
 

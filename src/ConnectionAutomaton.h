@@ -72,7 +72,7 @@ class ConnectionAutomaton
       std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
       Stats& stats,
-      const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
+      std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
       bool client,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
@@ -164,7 +164,12 @@ class ConnectionAutomaton
     }
   }
 
+  uint32_t getKeepaliveTime() const;
+  bool isDisconnectedOrClosed() const;
+
  private:
+  void resumeFromPosition(ResumePosition position);
+
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.
   ///
@@ -199,7 +204,7 @@ class ConnectionAutomaton
   std::function<void()> onClosed_;
 
   ResumeListener resumeListener_;
-  const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
+  const std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
 
   std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
 };

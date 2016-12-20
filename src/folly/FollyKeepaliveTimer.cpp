@@ -24,10 +24,7 @@ void FollyKeepaliveTimer::schedule() {
       [this, running]() {
         if (*running) {
           sendKeepalive();
-
-          if (*running) {
-            schedule();
-          }
+          schedule();
         }
       },
       keepaliveTime().count());

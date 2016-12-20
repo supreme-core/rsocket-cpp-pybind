@@ -64,6 +64,10 @@ class ReactiveSocket {
       Stats& stats = Stats::noop(),
       bool isResumable = false);
 
+  static std::unique_ptr<ReactiveSocket> disconnectedServer(
+      std::unique_ptr<RequestHandlerBase> handler,
+      Stats& stats = Stats::noop());
+
   std::shared_ptr<Subscriber<Payload>> requestChannel(
       const std::shared_ptr<Subscriber<Payload>>& responseSink,
       folly::Executor& executor = defaultExecutor());
@@ -85,9 +89,14 @@ class ReactiveSocket {
 
   void requestFireAndForget(Payload request);
 
-  void connect(
+  void clientConnect(
       std::unique_ptr<DuplexConnection> connection,
       ConnectionSetupPayload setupPayload = ConnectionSetupPayload());
+
+  void serverConnect(
+      std::unique_ptr<DuplexConnection> connection,
+      bool isResumable);
+
   void close();
   void disconnect();
 
@@ -125,7 +134,6 @@ class ReactiveSocket {
   void checkNotClosed() const;
 
   std::shared_ptr<RequestHandlerBase> handler_;
-  const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
 
   std::shared_ptr<std::list<ReactiveSocketCallback>> onConnectListeners_{
       std::make_shared<std::list<ReactiveSocketCallback>>()};
