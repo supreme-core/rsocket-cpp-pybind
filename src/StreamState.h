@@ -31,11 +31,11 @@ class StreamState {
   std::unique_ptr<ResumeTracker> resumeTracker_;
   std::unique_ptr<ResumeCache> resumeCache_;
 
-  void enqueueOutputFrame(std::unique_ptr<folly::IOBuf> frame) {
+  void enqueueOutputPendingFrame(std::unique_ptr<folly::IOBuf> frame) {
     outputFrames_.push_back(std::move(frame));
   }
 
-  std::deque<std::unique_ptr<folly::IOBuf>> moveOutputFrames() {
+  std::deque<std::unique_ptr<folly::IOBuf>> moveOutputPendingFrames() {
     return std::move(outputFrames_);
   }
 

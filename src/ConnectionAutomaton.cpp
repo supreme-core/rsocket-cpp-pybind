@@ -58,10 +58,13 @@ void ConnectionAutomaton::setResumable(bool resumable) {
 void ConnectionAutomaton::connect(
     std::shared_ptr<FrameTransport> frameTransport) {
   CHECK(!frameTransport_);
+  CHECK(!resumeCallback_);
   CHECK(frameTransport);
   CHECK(!frameTransport->isClosed());
 
   frameTransport_ = std::move(frameTransport);
+  onConnected_();
+
   // We need to create a hard reference to frameTransport_ to make sure the
   // instance survives until the setFrameProcessor returns. There can be
   // terminating signals processed in that call which will nullify
@@ -69,22 +72,13 @@ void ConnectionAutomaton::connect(
   auto frameTransportCopy = frameTransport_;
   frameTransport_->setFrameProcessor(shared_from_this());
 
-  // setFrameProcessor starts pulling frames from duplex connection
-  // the connection may also get closed before the method returns so
-  // we need to check again
-  auto outputFrames = streamState_->moveOutputFrames();
-  if (frameTransport_) {
-    for (auto& frame : outputFrames) {
-      outputFrame(std::move(frame));
-    }
-    onConnected_();
-  } else {
-    LOG_IF(WARNING, !outputFrames.empty()) << "transport closed, throwing away "
-                                           << outputFrames.size() << " frames.";
+  // we are free to try ti send frames again
+  // not all frames might be sent if the connection breaks, the rest of them
+  // will queue up again
+  auto outputFrames = streamState_->moveOutputPendingFrames();
+  for (auto& frame : outputFrames) {
+    outputFrameOrEnqueue(std::move(frame));
   }
-
-  // TODO: move to appropriate place
-  stats_.socketCreated();
 }
 
 void ConnectionAutomaton::disconnect() {
@@ -106,6 +100,13 @@ void ConnectionAutomaton::close(
     folly::exception_wrapper ex,
     StreamCompletionSignal signal) {
   VLOG(6) << "close";
+
+  if (resumeCallback_) {
+    resumeCallback_->onResumeError(
+        std::runtime_error(ex ? ex.what().c_str() : "RS closing"));
+    resumeCallback_.reset();
+  }
+
   closeStreams(signal);
   closeFrameTransport(std::move(ex));
   if (onClosed_) {
@@ -332,14 +333,18 @@ void ConnectionAutomaton::onConnectionFrame(
       if (resumeCallback_) {
         if (!isServer_ && isResumable_ &&
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
-          // TODO(lehecka): finish stuff here
           resumeCallback_->onResumeOk();
           resumeCallback_.reset();
+
+          streamState_->resumeCache_->sendFramesFromPosition(
+              frame.position_, *frameTransport_);
+          for (auto& frame : streamState_->moveOutputPendingFrames()) {
+            outputFrameOrEnqueue(std::move(frame));
+          }
         } else {
           closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
       } else {
-        // TODO: this will be handled in the new way in a different automaton
         closeWithError(Frame_ERROR::unexpectedFrame());
       }
       return;
@@ -358,6 +363,10 @@ void ConnectionAutomaton::onConnectionFrame(
         resumeCallback_.reset();
         // fall through
       }
+
+      close(
+          std::runtime_error(frame.payload_.moveDataToString()),
+          StreamCompletionSignal::ERROR);
       return;
     }
     default:
@@ -383,10 +392,9 @@ void ConnectionAutomaton::sendKeepalive() {
   outputFrameOrEnqueue(pingFrame.serializeOut());
 }
 
-void ConnectionAutomaton::sendResume(const ResumeIdentificationToken& token) {
-  Frame_RESUME resumeFrame(
-      token, streamState_->resumeTracker_->impliedPosition());
-  outputFrameOrEnqueue(resumeFrame.serializeOut());
+Frame_RESUME ConnectionAutomaton::createResumeFrame(
+    const ResumeIdentificationToken& token) const {
+  return Frame_RESUME(token, streamState_->resumeTracker_->impliedPosition());
 }
 
 bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
@@ -400,10 +408,11 @@ ResumePosition ConnectionAutomaton::positionDifference(
 
 void ConnectionAutomaton::outputFrameOrEnqueue(
     std::unique_ptr<folly::IOBuf> frame) {
-  if (frameTransport_) {
+  // if we are resuming we cant send any frames until we receive RESUME_OK
+  if (frameTransport_ && !resumeCallback_) {
     outputFrame(std::move(frame));
   } else {
-    streamState_->enqueueOutputFrame(std::move(frame));
+    streamState_->enqueueOutputPendingFrame(std::move(frame));
   }
 }
 

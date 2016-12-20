@@ -143,12 +143,13 @@ class ConnectionAutomaton
   /// @}
 
   void sendKeepalive() override;
-  void sendResume(const ResumeIdentificationToken& token);
+
+  void setResumable(bool resumable);
+  Frame_RESUME createResumeFrame(const ResumeIdentificationToken& token) const;
 
   bool isPositionAvailable(ResumePosition position);
   ResumePosition positionDifference(ResumePosition position);
 
-  void setResumable(bool resumable);
   void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
 
   template <typename TFrame>

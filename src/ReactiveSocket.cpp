@@ -57,7 +57,9 @@ ReactiveSocket::ReactiveSocket(
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
-      nextStreamId_(isServer ? 1 : 2) {}
+      nextStreamId_(isServer ? 1 : 2) {
+  stats.socketCreated();
+}
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,
@@ -450,14 +452,17 @@ void ReactiveSocket::tryClientResume(
     const ResumeIdentificationToken& token,
     std::unique_ptr<DuplexConnection> newConnection,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
-    bool /*closeReactiveSocketOnFailure*/) {
+    bool closeStreamsOnResumeFail) {
   checkNotClosed();
-  connection_->reconnect(
-      FrameTransport::fromDuplexConnection(std::move(newConnection)),
-      std::move(resumeCallback));
-  connection_->sendResume(token);
 
-  // TODO: use closeReactiveSocketOnFailure
+  auto frameTransport =
+      FrameTransport::fromDuplexConnection(std::move(newConnection));
+  frameTransport->outputFrameOrEnqueue(
+      connection_->createResumeFrame(token).serializeOut());
+
+  resumeCallback->closeStreamsOnResumeFail = closeStreamsOnResumeFail;
+
+  connection_->reconnect(std::move(frameTransport), std::move(resumeCallback));
 }
 
 std::function<void()> ReactiveSocket::executeListenersFunc(

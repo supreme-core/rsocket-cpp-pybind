@@ -22,6 +22,9 @@ class ClientResumeStatusCallback {
   // Called when the resume operation was interrupted due to network
   // the application code may try to resume again.
   virtual void onConnectionError(folly::exception_wrapper ex) = 0;
+
+  // TODO: move this param somewhere else
+  bool closeStreamsOnResumeFail{true};
 };
 
 } // reactivesocket

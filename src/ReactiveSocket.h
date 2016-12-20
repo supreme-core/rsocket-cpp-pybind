@@ -101,7 +101,7 @@ class ReactiveSocket {
       const ResumeIdentificationToken& token,
       std::unique_ptr<DuplexConnection> newConnection,
       std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
-      bool closeReactiveSocketOnFailure = true);
+      bool closeStreamsOnResumeFail = true);
 
  private:
   ReactiveSocket(

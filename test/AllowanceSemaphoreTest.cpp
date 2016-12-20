@@ -38,7 +38,7 @@ TEST(AllowanceSemaphoreTest, Finite) {
 TEST(AllowanceSemaphoreTest, Infinite) {
   AllowanceSemaphore sem;
 
-  auto infty = std::numeric_limits<decltype(sem)::ValueType>::max();
+  auto infty = decltype(sem)::max();
   auto overHalfOfInfty = infty / 2 + 1;
   ASSERT_EQ(0U, sem.release(overHalfOfInfty));
   ASSERT_FALSE(sem.isInfinite());
@@ -52,6 +52,8 @@ TEST(AllowanceSemaphoreTest, Infinite) {
   ASSERT_TRUE(sem.isInfinite());
   ASSERT_EQ(infty, sem.drain());
   ASSERT_TRUE(sem.isInfinite());
+  sem.reset();
+  ASSERT_FALSE(sem.tryAcquire());
 }
 
 TEST(AllowanceSemaphoreTest, DrainWithLimit) {
