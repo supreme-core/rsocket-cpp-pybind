@@ -84,7 +84,9 @@ class ConnectionAutomaton
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect(std::shared_ptr<FrameTransport>);
+  void connect(
+      std::shared_ptr<FrameTransport>,
+      bool sendingPendingFrames = true);
 
   /// Terminates underlying connection.
   ///
@@ -95,6 +97,8 @@ class ConnectionAutomaton
   /// Disconnects DuplexConnection from the automaton.
   /// Existing streams will stay intact.
   void disconnect();
+
+  std::shared_ptr<FrameTransport> detachFrameTransport();
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
@@ -164,12 +168,12 @@ class ConnectionAutomaton
     }
   }
 
+  bool resumeFromPositionOrClose(ResumePosition position);
+
   uint32_t getKeepaliveTime() const;
   bool isDisconnectedOrClosed() const;
 
  private:
-  void resumeFromPosition(ResumePosition position);
-
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.
   ///

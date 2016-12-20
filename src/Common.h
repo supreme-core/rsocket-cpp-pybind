@@ -20,6 +20,7 @@ class ReactiveSocket;
 
 using ReactiveSocketCallback = std::function<void(ReactiveSocket&)>;
 using StreamId = uint32_t;
+using ResumePosition = int64_t;
 
 /// Indicates the reason why the stream automaton received a terminal signal
 /// from the connection.

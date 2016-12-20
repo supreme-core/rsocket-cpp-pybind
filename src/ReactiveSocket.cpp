@@ -68,7 +68,9 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   auto socket =
       disconnectedClient(std::move(handler), stats, std::move(keepaliveTimer));
-  socket->clientConnect(std::move(connection), std::move(setupPayload));
+  socket->clientConnect(
+      FrameTransport::fromDuplexConnection(std::move(connection)),
+      std::move(setupPayload));
   return socket;
 }
 
@@ -89,7 +91,8 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
   // TODO: isResumable should come as a flag on Setup frame and it should be
   // exposed to the application code. We should then remove this parameter
   auto socket = disconnectedServer(std::move(handler), stats);
-  socket->serverConnect(std::move(connection), isResumable);
+  socket->serverConnect(
+      FrameTransport::fromDuplexConnection(std::move(connection)), isResumable);
   return socket;
 }
 
@@ -219,6 +222,15 @@ void ReactiveSocket::createResponder(
           frame.token_));
 
       connection.useStreamState(streamState);
+      break;
+    }
+    case FrameType::RESUME: {
+      Frame_RESUME frame;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
+      }
+      handler->handleResume(frame.token_, frame.position_);
       break;
     }
     case FrameType::REQUEST_CHANNEL: {
@@ -369,13 +381,16 @@ void ReactiveSocket::createResponder(
 
 std::shared_ptr<StreamState> ReactiveSocket::resumeListener(
     const ResumeIdentificationToken& token) {
-  return handler_->handleResume(token);
+  CHECK(false) << "not implemented";
+  // TODO(lehecka)
+  return nullptr;
+  //  return handler_->handleResume(token);
 }
 
 void ReactiveSocket::clientConnect(
-    std::unique_ptr<DuplexConnection> connection,
+    std::shared_ptr<FrameTransport> frameTransport,
     ConnectionSetupPayload setupPayload) {
-  CHECK(connection);
+  CHECK(frameTransport);
   checkNotClosed();
   connection_->setResumable(setupPayload.resumable);
 
@@ -395,18 +410,16 @@ void ReactiveSocket::clientConnect(
   // should retry without resumability
 
   // making sure we send setup frame first
-  connection_->outputFrameOrEnqueue(frame.serializeOut());
+  frameTransport->outputFrameOrEnqueue(frame.serializeOut());
   // then the rest of the cached frames will be sent
-  connection_->connect(
-      FrameTransport::fromDuplexConnection(std::move(connection)));
+  connection_->connect(std::move(frameTransport));
 }
 
 void ReactiveSocket::serverConnect(
-    std::unique_ptr<DuplexConnection> connection,
+    std::shared_ptr<FrameTransport> frameTransport,
     bool isResumable) {
   connection_->setResumable(isResumable);
-  connection_->connect(
-      FrameTransport::fromDuplexConnection(std::move(connection)));
+  connection_->connect(std::move(frameTransport));
 }
 
 void ReactiveSocket::close() {
@@ -419,6 +432,11 @@ void ReactiveSocket::close() {
 void ReactiveSocket::disconnect() {
   checkNotClosed();
   connection_->disconnect();
+}
+
+std::shared_ptr<FrameTransport> ReactiveSocket::detachFrameTransport() {
+  checkNotClosed();
+  return connection_->detachFrameTransport();
 }
 
 void ReactiveSocket::onConnected(ReactiveSocketCallback listener) {
@@ -442,8 +460,8 @@ void ReactiveSocket::onClosed(ReactiveSocketCallback listener) {
 void ReactiveSocket::tryClientResume(
     const ResumeIdentificationToken& token,
     std::unique_ptr<DuplexConnection> newConnection,
-    std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
-    bool closeStreamsOnResumeFail) {
+    std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
+  // TODO: verify/assert that the new frameTransport is on the same event base
   checkNotClosed();
 
   auto frameTransport =
@@ -451,9 +469,18 @@ void ReactiveSocket::tryClientResume(
   frameTransport->outputFrameOrEnqueue(
       connection_->createResumeFrame(token).serializeOut());
 
-  resumeCallback->closeStreamsOnResumeFail = closeStreamsOnResumeFail;
-
   connection_->reconnect(std::move(frameTransport), std::move(resumeCallback));
+}
+
+bool ReactiveSocket::tryResumeServer(
+    std::shared_ptr<FrameTransport> frameTransport,
+    ResumePosition position) {
+  // TODO: verify/assert that the new frameTransport is on the same event base
+  checkNotClosed();
+
+  // TODO: verify, we should not be receiving any frames, not a single one
+  connection_->connect(std::move(frameTransport), /*sendPendingFrames=*/false);
+  return connection_->resumeFromPositionOrClose(position);
 }
 
 std::function<void()> ReactiveSocket::executeListenersFunc(

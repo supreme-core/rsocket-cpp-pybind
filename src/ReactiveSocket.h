@@ -21,6 +21,7 @@ namespace reactivesocket {
 class ClientResumeStatusCallback;
 class ConnectionAutomaton;
 class DuplexConnection;
+class FrameTransport;
 class RequestHandlerBase;
 class ReactiveSocket;
 
@@ -90,15 +91,16 @@ class ReactiveSocket {
   void requestFireAndForget(Payload request);
 
   void clientConnect(
-      std::unique_ptr<DuplexConnection> connection,
+      std::shared_ptr<FrameTransport> frameTransport,
       ConnectionSetupPayload setupPayload = ConnectionSetupPayload());
 
   void serverConnect(
-      std::unique_ptr<DuplexConnection> connection,
+      std::shared_ptr<FrameTransport> frameTransport,
       bool isResumable);
 
   void close();
   void disconnect();
+  std::shared_ptr<FrameTransport> detachFrameTransport();
 
   void onConnected(ReactiveSocketCallback listener);
   void onDisconnected(ReactiveSocketCallback listener);
@@ -109,8 +111,11 @@ class ReactiveSocket {
   void tryClientResume(
       const ResumeIdentificationToken& token,
       std::unique_ptr<DuplexConnection> newConnection,
-      std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
-      bool closeStreamsOnResumeFail = true);
+      std::unique_ptr<ClientResumeStatusCallback> resumeCallback);
+
+  bool tryResumeServer(
+      std::shared_ptr<FrameTransport> frameTransport,
+      ResumePosition position);
 
  private:
   ReactiveSocket(

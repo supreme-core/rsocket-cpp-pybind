@@ -37,9 +37,11 @@ class MockRequestHandlerBase : public RequestHandlerBase {
   MOCK_METHOD1(
       handleSetupPayload_,
       std::shared_ptr<StreamState>(ConnectionSetupPayload& request));
-  MOCK_METHOD1(
+  MOCK_METHOD2(
       handleResume_,
-      std::shared_ptr<StreamState>(const ResumeIdentificationToken& token));
+      std::shared_ptr<StreamState>(
+          const ResumeIdentificationToken& token,
+          ResumePosition position));
 
   std::shared_ptr<Subscriber<Payload>> onRequestChannel(
       Payload request,
@@ -83,8 +85,9 @@ class MockRequestHandlerBase : public RequestHandlerBase {
   }
 
   std::shared_ptr<StreamState> handleResume(
-      const ResumeIdentificationToken& token) override {
-    return handleResume_(token);
+      const ResumeIdentificationToken& token,
+      ResumePosition position) override {
+    return handleResume_(token, position);
   }
 
   void handleCleanResume(std::shared_ptr<Subscription> response) override {}
@@ -126,9 +129,11 @@ class MockRequestHandler : public RequestHandler {
   MOCK_METHOD1(
       handleSetupPayload_,
       std::shared_ptr<StreamState>(ConnectionSetupPayload& request));
-  MOCK_METHOD1(
+  MOCK_METHOD2(
       handleResume_,
-      std::shared_ptr<StreamState>(const ResumeIdentificationToken& token));
+      std::shared_ptr<StreamState>(
+          const ResumeIdentificationToken& token,
+          ResumePosition position));
 
   std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
@@ -172,8 +177,9 @@ class MockRequestHandler : public RequestHandler {
   }
 
   std::shared_ptr<StreamState> handleResume(
-      const ResumeIdentificationToken& token) override {
-    return handleResume_(token);
+      const ResumeIdentificationToken& token,
+      ResumePosition position) override {
+    return handleResume_(token, position);
   }
 
   void handleCleanResume(std::shared_ptr<Subscription> response) override {}

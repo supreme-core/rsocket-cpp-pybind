@@ -91,7 +91,8 @@ class ServerRequestHandler : public DefaultRequestHandler {
   }
 
   std::shared_ptr<StreamState> handleResume(
-      const ResumeIdentificationToken& token) override {
+      const ResumeIdentificationToken& token,
+      ResumePosition position) override {
     std::stringstream str;
 
     str << "ServerRequestHandler.handleResume resume token <";

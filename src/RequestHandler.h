@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "src/Common.h"
 #include "src/ConnectionSetupPayload.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
@@ -73,7 +74,8 @@ class RequestHandlerBase {
   /// Temporary home - this should accompany handleSetupPayload
   /// Return stream state for the given token. Return nullptr to disable resume
   virtual std::shared_ptr<StreamState> handleResume(
-      const ResumeIdentificationToken& token) = 0;
+      const ResumeIdentificationToken& token,
+      ResumePosition position) = 0;
 
   // Handle a stream that can resume in a "clean" state. Client and Server are
   // up-to-date.

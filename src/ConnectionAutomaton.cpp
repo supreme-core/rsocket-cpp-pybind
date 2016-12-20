@@ -57,7 +57,8 @@ void ConnectionAutomaton::setResumable(bool resumable) {
 }
 
 void ConnectionAutomaton::connect(
-    std::shared_ptr<FrameTransport> frameTransport) {
+    std::shared_ptr<FrameTransport> frameTransport,
+    bool sendingPendingFrames) {
   CHECK(isDisconnectedOrClosed());
   CHECK(!resumeCallback_);
   CHECK(frameTransport);
@@ -73,17 +74,28 @@ void ConnectionAutomaton::connect(
   auto frameTransportCopy = frameTransport_;
   frameTransport_->setFrameProcessor(shared_from_this());
 
-  // we are free to try ti send frames again
-  // not all frames might be sent if the connection breaks, the rest of them
-  // will queue up again
-  auto outputFrames = streamState_->moveOutputPendingFrames();
-  for (auto& frame : outputFrames) {
-    outputFrameOrEnqueue(std::move(frame));
+  if (sendingPendingFrames) {
+    // we are free to try to send frames again
+    // not all frames might be sent if the connection breaks, the rest of them
+    // will queue up again
+    auto outputFrames = streamState_->moveOutputPendingFrames();
+    for (auto& frame : outputFrames) {
+      outputFrameOrEnqueue(std::move(frame));
+    }
+
+    if (keepaliveTimer_) {
+      keepaliveTimer_->start(shared_from_this());
+    }
+  }
+}
+
+std::shared_ptr<FrameTransport> ConnectionAutomaton::detachFrameTransport() {
+  if (isDisconnectedOrClosed()) {
+    return nullptr;
   }
 
-  if (keepaliveTimer_) {
-    keepaliveTimer_->start(shared_from_this());
-  }
+  frameTransport_->setFrameProcessor(nullptr);
+  return std::move(frameTransport_);
 }
 
 void ConnectionAutomaton::disconnect() {
@@ -243,6 +255,15 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
     onConnectionFrame(std::move(frame));
     return;
   }
+
+  // during the time when we are resuming we are can't receive any other
+  // than connection level frames which drives the resumption
+  if (!resumeCallback_) {
+    LOG(ERROR) << "received stream frames during resumption";
+    closeWithError(Frame_ERROR::unexpectedFrame());
+    return;
+  }
+
   auto it = streamState_->streams_.find(streamId);
   if (it == streamState_->streams_.end()) {
     handleUnknownStream(streamId, std::move(frame));
@@ -302,34 +323,36 @@ void ConnectionAutomaton::onConnectionFrame(
       return;
     }
     case FrameType::RESUME: {
-      Frame_RESUME frame;
-      if (!deserializeFrameOrError(frame, std::move(payload))) {
-        return;
-      }
-      bool canResume = false;
-
       if (isServer_ && isResumable_) {
-        auto streamState = resumeListener_(frame.token_);
-        if (nullptr != streamState) {
-          canResume = true;
-          useStreamState(streamState);
-        }
-      }
-
-      if (canResume) {
-        outputFrameOrEnqueue(
-            Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
-                .serializeOut());
-        for (auto it : streamState_->streams_) {
-          const StreamId streamId = it.first;
-
-          if (streamState_->resumeCache_->isPositionAvailable(
-                  frame.position_, streamId)) {
-            it.second->onCleanResume();
-          } else {
-            it.second->onDirtyResume();
-          }
-        }
+        factory_(*this, 0, std::move(payload));
+        //      Frame_RESUME frame;
+        //      if (!deserializeFrameOrError(frame, std::move(payload))) {
+        //        return;
+        //      }
+        //      bool canResume = false;
+        //
+        //      if (isServer_ && isResumable_) {
+        //        auto streamState = resumeListener_(frame.token_);
+        //        if (nullptr != streamState) {
+        //          canResume = true;
+        //          useStreamState(streamState);
+        //        }
+        //      }
+        //
+        //      if (canResume) {
+        //        outputFrameOrEnqueue(
+        //            Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
+        //                .serializeOut());
+        //        for (auto it : streamState_->streams_) {
+        //          const StreamId streamId = it.first;
+        //
+        //          if (streamState_->resumeCache_->isPositionAvailable(
+        //                  frame.position_, streamId)) {
+        //            it.second->onCleanResume();
+        //          } else {
+        //            it.second->onDirtyResume();
+        //          }
+        //        }
       } else {
         closeWithError(Frame_ERROR::connectionError("can not resume"));
       }
@@ -345,7 +368,7 @@ void ConnectionAutomaton::onConnectionFrame(
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
           resumeCallback_->onResumeOk();
           resumeCallback_.reset();
-          resumeFromPosition(frame.position_);
+          CHECK(resumeFromPositionOrClose(frame.position_));
         } else {
           closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
@@ -411,16 +434,24 @@ ResumePosition ConnectionAutomaton::positionDifference(
   return streamState_->resumeCache_->position() - position;
 }
 
-void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
-  streamState_->resumeCache_->sendFramesFromPosition(
-      position, *frameTransport_);
+bool ConnectionAutomaton::resumeFromPositionOrClose(ResumePosition position) {
+  DCHECK(!resumeCallback_);
 
-  for (auto& frame : streamState_->moveOutputPendingFrames()) {
-    outputFrameOrEnqueue(std::move(frame));
-  }
+  if (streamState_->resumeCache_->isPositionAvailable(position)) {
+    streamState_->resumeCache_->sendFramesFromPosition(
+        position, *frameTransport_);
 
-  if (!isDisconnectedOrClosed() && keepaliveTimer_) {
-    keepaliveTimer_->start(shared_from_this());
+    for (auto& frame : streamState_->moveOutputPendingFrames()) {
+      outputFrameOrEnqueue(std::move(frame));
+    }
+
+    if (!isDisconnectedOrClosed() && keepaliveTimer_) {
+      keepaliveTimer_->start(shared_from_this());
+    }
+    return true;
+  } else {
+    closeWithError(Frame_ERROR::connectionError("can not resume"));
+    return false;
   }
 }
 
