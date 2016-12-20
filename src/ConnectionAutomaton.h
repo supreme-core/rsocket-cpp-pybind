@@ -2,27 +2,25 @@
 
 #pragma once
 
-#include <deque>
 #include <memory>
-#include <unordered_map>
-
-#include <reactive-streams/utilities/AllowanceSemaphore.h>
-#include <reactive-streams/utilities/SmartPointers.h>
+#include "src/AllowanceSemaphore.h"
+#include "src/Common.h"
 #include "src/Payload.h"
-#include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/Stats.h"
-#include "src/StreamState.h"
+#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 
 class AbstractStreamAutomaton;
-class DuplexConnection;
-enum class FrameType : uint16_t;
-enum class StreamCompletionSignal;
-using StreamId = uint32_t;
-
+class ClientResumeStatusCallback;
 class ConnectionAutomaton;
+class DuplexConnection;
+class KeepaliveTimer;
+class Frame_ERROR;
+class Stats;
+class StreamState;
+
+enum class FrameType : uint16_t;
 
 /// Creates, registers and spins up responder for provided new stream ID and
 /// serialised frame.
@@ -40,7 +38,19 @@ using StreamAutomatonFactory = std::function<bool(
 using ResumeListener = std::function<std::shared_ptr<StreamState>(
     const ResumeIdentificationToken& token)>;
 
-using ConnectionCloseListener = std::function<void()>;
+class FrameSink {
+ public:
+  virtual ~FrameSink() = default;
+
+  /// Terminates underlying connection sending the error frame
+  /// on the connection.
+  ///
+  /// This may synchronously deliver terminal signals to all
+  /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
+  virtual void closeWithError(Frame_ERROR&& error) = 0;
+
+  virtual void sendKeepalive() = 0;
+};
 
 /// Handles connection-level frames and (de)multiplexes streams.
 ///
@@ -54,39 +64,44 @@ class ConnectionAutomaton :
     public Subscriber<std::unique_ptr<folly::IOBuf>>,
     /// Receives signals about connection writability.
     public Subscription,
+    public FrameSink,
     public std::enable_shared_from_this<ConnectionAutomaton> {
  public:
   ConnectionAutomaton(
-      std::unique_ptr<DuplexConnection> connection,
       // TODO(stupaq): for testing only, can devirtualise if necessary
       StreamAutomatonFactory factory,
       std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
-      bool client);
+      bool client,
+      std::function<void()> onConnected,
+      std::function<void()> onDisconnected,
+      std::function<void()> onClosed);
+
+  void closeWithError(Frame_ERROR&& error) override;
 
   /// Kicks off connection procedure.
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect();
+  void connect(
+      std::unique_ptr<DuplexConnection> connection);
 
   /// Terminates underlying connection.
   ///
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
+  void close();
+
+  /// Disconnects DuplexConnection from the automaton.
+  /// Existing streams will stay intact.
   void disconnect();
 
-  /// Terminates underlying connection sending the error frame
-  /// on the connection.
-  ///
-  /// This may synchronously deliver terminal signals to all
-  /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
-  void disconnectWithError(Frame_ERROR&& error);
-
   /// Terminate underlying connection and connect new connection
-  void reconnect(std::unique_ptr<DuplexConnection> newConnection);
+  void reconnect(
+      std::unique_ptr<DuplexConnection> newConnection,
+      std::unique_ptr<ClientResumeStatusCallback> resumeCallback);
 
   ~ConnectionAutomaton();
 
@@ -135,17 +150,15 @@ class ConnectionAutomaton :
   void useStreamState(std::shared_ptr<StreamState> streamState);
   /// @}
 
-  void sendKeepalive();
+  void sendKeepalive() override;
   void sendResume(const ResumeIdentificationToken& token);
 
   bool isPositionAvailable(ResumePosition position);
   ResumePosition positionDifference(ResumePosition position);
 
-  void onClose(ConnectionCloseListener listener);
+  void setResumable(bool resumable);
 
  private:
-  void closeDuplexConnection(folly::exception_wrapper ex);
-
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.
   ///
@@ -154,21 +167,15 @@ class ConnectionAutomaton :
 
   /// @{
   void onSubscribe(std::shared_ptr<Subscription>) override;
-
   void onNext(std::unique_ptr<folly::IOBuf>) override;
-
   void onComplete() override;
-
   void onError(folly::exception_wrapper) override;
-
-  void onTerminal(folly::exception_wrapper ex);
 
   void onConnectionFrame(std::unique_ptr<folly::IOBuf>);
   /// @}
 
   /// @{
   void request(size_t) override;
-
   void cancel() override;
   /// @}
 
@@ -182,6 +189,13 @@ class ConnectionAutomaton :
   void drainOutputFramesQueue();
   void outputFrame(std::unique_ptr<folly::IOBuf>);
 
+  void onDuplexConnectionTerminal(
+      folly::exception_wrapper,
+      StreamCompletionSignal);
+  void close(folly::exception_wrapper, StreamCompletionSignal);
+  void closeStreams(StreamCompletionSignal);
+  void closeDuplexConnection(folly::exception_wrapper ex);
+
   std::shared_ptr<DuplexConnection> connection_;
   StreamAutomatonFactory factory_;
 
@@ -192,13 +206,19 @@ class ConnectionAutomaton :
 
   std::shared_ptr<StreamState> streamState_;
 
-  reactivestreams::AllowanceSemaphore writeAllowance_;
+  AllowanceSemaphore writeAllowance_;
 
   Stats& stats_;
   bool isServer_;
   bool isResumable_;
-  std::vector<ConnectionCloseListener> closeListeners_;
+
+  std::function<void()> onConnected_;
+  std::function<void()> onDisconnected_;
+  std::function<void()> onClosed_;
+
   ResumeListener resumeListener_;
   const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
+
+  std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
 };
 }

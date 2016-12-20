@@ -6,6 +6,7 @@
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
 #include "src/ConnectionAutomaton.h"
+#include "src/StreamState.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedWriter.h"
 #include "test/InlineConnection.h"
@@ -71,7 +72,6 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      std::move(framedAutomatonConnection),
       [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
         return false;
       },
@@ -79,8 +79,11 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       nullptr,
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
-      false);
-  connectionAutomaton->connect();
+      false,
+      [] {},
+      [] {},
+      [] {});
+  connectionAutomaton->connect(std::move(framedAutomatonConnection));
 }
 
 static void terminateTest(
@@ -142,7 +145,6 @@ static void terminateTest(
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      std::move(framedAutomatonConnection),
       [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
         return false;
       },
@@ -150,8 +152,11 @@ static void terminateTest(
       nullptr,
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
-      false);
-  connectionAutomaton->connect();
+      false,
+      [] {},
+      [] {},
+      [] {});
+  connectionAutomaton->connect(std::move(framedAutomatonConnection));
 }
 
 TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
@@ -227,7 +232,6 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      std::move(framedAutomatonConnection),
       [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
         return false;
       },
@@ -235,6 +239,9 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       nullptr,
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
-      false);
-  connectionAutomaton->connect();
+      false,
+      [] {},
+      [] {},
+      [] {});
+  connectionAutomaton->connect(std::move(framedAutomatonConnection));
 }

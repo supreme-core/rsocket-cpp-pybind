@@ -5,6 +5,7 @@
 #include <gmock/gmock.h>
 #include "src/NullRequestHandler.h"
 #include "src/ReactiveSocket.h"
+#include "src/SmartPointers.h"
 #include "src/SubscriptionBase.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/tcp/TcpDuplexConnection.h"
@@ -80,7 +81,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
 
     str << "ServerRequestHandler.handleSetupPayload " << request
         << " setup token <";
-    for (uint8_t byte : request.token) {
+    for (uint8_t byte : request.token.data()) {
       str << (int)byte;
     }
     str << "> " << streamState_.get() << " " << streamState_->streams_.size()
@@ -94,7 +95,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
     std::stringstream str;
 
     str << "ServerRequestHandler.handleResume resume token <";
-    for (uint8_t byte : token) {
+    for (uint8_t byte : token.data()) {
       str << (int)byte;
     }
     str << "> " << streamState_.get() << " " << streamState_->streams_.size()
@@ -144,7 +145,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::make_unique<ServerRequestHandler>(streamState_);
 
     std::unique_ptr<ReactiveSocket> rs = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler), stats_);
+        std::move(framedConnection), std::move(requestHandler), stats_, true);
 
     std::cout << "RS " << rs.get() << std::endl;
 

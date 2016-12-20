@@ -2,7 +2,7 @@
 
 #include "TcpDuplexConnection.h"
 #include <folly/ExceptionWrapper.h>
-#include <reactive-streams/utilities/SmartPointers.h>
+#include "src/SmartPointers.h"
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 
@@ -126,11 +126,11 @@ TcpDuplexConnection::TcpDuplexConnection(
     : tcpReaderWriter_(
           std::make_shared<TcpReaderWriter>(std::move(socket), stats)),
       stats_(stats) {
-  stats_.connectionCreated("tcp", this);
+  stats_.duplexConnectionCreated("tcp", this);
 }
 
 TcpDuplexConnection::~TcpDuplexConnection() {
-  stats_.connectionClosed("tcp", this);
+  stats_.duplexConnectionClosed("tcp", this);
 }
 
 std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
