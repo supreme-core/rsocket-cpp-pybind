@@ -28,7 +28,7 @@ std::vector<
 class ServerSubscription : public SubscriptionBase {
  public:
   explicit ServerSubscription(std::shared_ptr<Subscriber<Payload>> response)
-      : response_(std::move(response)) {}
+      : ExecutorBase(defaultExecutor()), response_(std::move(response)) {}
 
   ~ServerSubscription() {
     LOG(INFO) << "~ServerSubscription " << this;

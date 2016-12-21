@@ -486,9 +486,19 @@ bool ReactiveSocket::tryResumeServer(
 
 std::function<void()> ReactiveSocket::executeListenersFunc(
     std::shared_ptr<std::list<ReactiveSocketCallback>> listeners) {
-  return [this, listeners]() {
-    for (auto& listener : *listeners) {
-      listener(*this);
+  auto* thisPtr = this;
+  return [thisPtr, listeners]() mutable {
+    // we will make a copy of listeners so that destructor won't delete them
+    // when iterating them
+    auto listenersCopy = *listeners;
+    for (auto& listener : listenersCopy) {
+      if (listeners->empty()) {
+        // destructor deleted listeners
+        thisPtr = nullptr;
+      }
+      // TODO: change parameter from reference to pointer to be able send null
+      // when this instance is destroyed in the callback
+      listener(*thisPtr);
     }
   };
 }

@@ -91,6 +91,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       FrameTransport::fromDuplexConnection(
           std::move(framedAutomatonConnection)),
       true);
+  connectionAutomaton->close();
 }
 
 static void terminateTest(

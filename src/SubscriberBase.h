@@ -76,8 +76,11 @@ class SubscriberBaseT : public Subscriber<T>,
 
  public:
   // in c++11 we have to declare this explicitly, instead of
-  // using ExecutorBase::ExecutorBase because of atomic cancelled :(
-  // maybe its gcc issue
+  // using ExecutorBase::ExecutorBase because of atomic cancelled_ member :(
+  // maybe it is gcc issue
+  // initializaiton of the ExecutorBase will be ignored for any of the
+  // classes deriving from SubscriberBaseT
+  // providing the default param values just to make the compiler happy
   explicit SubscriberBaseT(
       folly::Executor& executor = defaultExecutor(),
       bool startExecutor = true)

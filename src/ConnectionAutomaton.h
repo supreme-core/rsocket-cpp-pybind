@@ -7,6 +7,7 @@
 #include "src/Common.h"
 #include "src/Frame.h"
 #include "src/FrameProcessor.h"
+#include "src/DuplexConnection.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
@@ -202,7 +203,7 @@ class ConnectionAutomaton
 
   Stats& stats_;
   bool isServer_;
-  bool isResumable_;
+  bool isResumable_{false};
 
   std::function<void()> onConnected_;
   std::function<void()> onDisconnected_;

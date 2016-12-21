@@ -15,9 +15,7 @@ class ExecutorBase {
  public:
   // if startExecutor == false then all incoming signals will by queued
   // until start() method is called
-  explicit ExecutorBase(
-      folly::Executor& executor = defaultExecutor(),
-      bool startExecutor = true);
+  explicit ExecutorBase(folly::Executor& executor, bool startExecutor = true);
 
   /// We start in a queueing mode, where it merely queues signal
   /// deliveries until ::start is invoked.

@@ -48,7 +48,7 @@ set(GMOCK_LIBS
 # ReactiveStreams C++
 ExternalProject_Add(
   ReactiveStreams
-  #GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
+  GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
   CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release" "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/reactivestreams"
 )
 
@@ -165,7 +165,10 @@ add_library(
   src/automata/StreamAutomatonBase.cpp
   src/automata/StreamAutomatonBase.h
   src/automata/StreamResponder.cpp
-  src/automata/SubscriptionResponder.cpp src/FrameTransport.cpp src/FrameTransport.h src/FrameProcessor.h)
+  src/automata/SubscriptionResponder.cpp
+  src/FrameTransport.cpp
+  src/FrameTransport.h
+  src/FrameProcessor.h)
 
 target_link_libraries(
   ReactiveSocket

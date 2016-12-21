@@ -128,8 +128,9 @@ void ConnectionAutomaton::close(
   closeFrameTransport(std::move(ex));
   if (onClosed_) {
     stats_.socketClosed();
-    onClosed_();
+    auto onClosed = std::move(onClosed_);
     onClosed_ = nullptr;
+    onClosed();
   }
 }
 
