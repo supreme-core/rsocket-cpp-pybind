@@ -16,6 +16,13 @@ class SubscriptionBase : public Subscription,
 
  public:
   using ExecutorBase::ExecutorBase;
+  // initializaiton of the ExecutorBase will be ignored for any of the
+  // classes deriving from SubscriptionBase
+  // providing the default param values just to make the compiler happy
+  explicit SubscriptionBase(
+      folly::Executor& executor = defaultExecutor(),
+      bool startExecutor = true)
+      : ExecutorBase(executor, startExecutor) {}
 
   void request(size_t n) override final {
     auto thisPtr = this->shared_from_this();

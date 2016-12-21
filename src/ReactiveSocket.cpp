@@ -33,12 +33,15 @@ ReactiveSocket::~ReactiveSocket() {
 
 ReactiveSocket::ReactiveSocket(
     bool isServer,
+    bool isResumable,
+    std::unique_ptr<DuplexConnection> connection,
     std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
     : handler_(handler),
       keepaliveTimer_(std::move(keepaliveTimer)),
       connection_(new ConnectionAutomaton(
+          std::move(connection),
           [handler](
               ConnectionAutomaton& connection,
               StreamId streamId,
@@ -54,6 +57,7 @@ ReactiveSocket::ReactiveSocket(
           stats,
           keepaliveTimer_,
           isServer,
+          isResumable,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
@@ -77,6 +81,8 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedClient(
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       false,
+      false,
+      nullptr,
       std::move(handler),
       stats,
       std::move(keepaliveTimer)));
@@ -92,11 +98,12 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
   // exposed to the application code. We should then remove this parameter
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
+      isResumable,
+      std::move(connection),
       std::move(handler),
       stats,
       std::unique_ptr<KeepaliveTimer>(nullptr)));
-  socket->connection_->setResumable(isResumable);
-  socket->connection_->connect(std::move(connection));
+  socket->connection_->connect();
   return socket;
 }
 
@@ -457,9 +464,19 @@ void ReactiveSocket::tryClientResume(
 
 std::function<void()> ReactiveSocket::executeListenersFunc(
     std::shared_ptr<std::list<ReactiveSocketCallback>> listeners) {
-  return [this, listeners]() {
-    for (auto& listener : *listeners) {
-      listener(*this);
+  auto* thisPtr = this;
+  return [thisPtr, listeners]() mutable {
+    // we will make a copy of listeners so that destructor won't delete them
+    // when iterating them
+    auto listenersCopy = *listeners;
+    for (auto& listener : listenersCopy) {
+      if (listeners->empty()) {
+        // destructor deleted listeners
+        thisPtr = nullptr;
+      }
+      // TODO: change parameter from reference to pointer to be able send null
+      // when this instance is destroyed in the callback
+      listener(*thisPtr);
     }
   };
 }
