@@ -100,7 +100,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedServer(
     std::unique_ptr<RequestHandlerBase> handler,
     Stats& stats) {
   std::unique_ptr<ReactiveSocket> socket(
-      new ReactiveSocket(false, std::move(handler), stats, nullptr));
+      new ReactiveSocket(true, std::move(handler), stats, nullptr));
   return socket;
 }
 
@@ -221,7 +221,8 @@ void ReactiveSocket::createResponder(
           false, // TODO: resumable flag should be received in SETUP frame
           frame.token_));
 
-      connection.useStreamState(streamState);
+      // TODO(lehecka): use again
+      // connection.useStreamState(streamState);
       break;
     }
     case FrameType::RESUME: {
@@ -412,14 +413,14 @@ void ReactiveSocket::clientConnect(
   // making sure we send setup frame first
   frameTransport->outputFrameOrEnqueue(frame.serializeOut());
   // then the rest of the cached frames will be sent
-  connection_->connect(std::move(frameTransport));
+  connection_->connect(std::move(frameTransport), true);
 }
 
 void ReactiveSocket::serverConnect(
     std::shared_ptr<FrameTransport> frameTransport,
     bool isResumable) {
   connection_->setResumable(isResumable);
-  connection_->connect(std::move(frameTransport));
+  connection_->connect(std::move(frameTransport), true);
 }
 
 void ReactiveSocket::close() {
@@ -480,7 +481,7 @@ bool ReactiveSocket::tryResumeServer(
 
   // TODO: verify, we should not be receiving any frames, not a single one
   connection_->connect(std::move(frameTransport), /*sendPendingFrames=*/false);
-  return connection_->resumeFromPositionOrClose(position);
+  return connection_->resumeFromPositionOrClose(position, true);
 }
 
 std::function<void()> ReactiveSocket::executeListenersFunc(

@@ -60,7 +60,6 @@ void ConnectionAutomaton::connect(
     std::shared_ptr<FrameTransport> frameTransport,
     bool sendingPendingFrames) {
   CHECK(isDisconnectedOrClosed());
-  CHECK(!resumeCallback_);
   CHECK(frameTransport);
   CHECK(!frameTransport->isClosed());
 
@@ -75,6 +74,7 @@ void ConnectionAutomaton::connect(
   frameTransport_->setFrameProcessor(shared_from_this());
 
   if (sendingPendingFrames) {
+    DCHECK(!resumeCallback_);
     // we are free to try to send frames again
     // not all frames might be sent if the connection breaks, the rest of them
     // will queue up again
@@ -175,7 +175,7 @@ void ConnectionAutomaton::reconnect(
   // TODO: output frame buffer should not be written to the new connection until
   // we receive resume ok
   resumeCallback_ = std::move(resumeCallback);
-  connect(std::move(newFrameTransport));
+  connect(std::move(newFrameTransport), false);
 }
 
 void ConnectionAutomaton::addStream(
@@ -258,7 +258,9 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
 
   // during the time when we are resuming we are can't receive any other
   // than connection level frames which drives the resumption
-  if (!resumeCallback_) {
+  // TODO(lehecka): this assertion should be handled more elegantly using
+  // different state machine
+  if (resumeCallback_) {
     LOG(ERROR) << "received stream frames during resumption";
     closeWithError(Frame_ERROR::unexpectedFrame());
     return;
@@ -368,7 +370,7 @@ void ConnectionAutomaton::onConnectionFrame(
             streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
           resumeCallback_->onResumeOk();
           resumeCallback_.reset();
-          CHECK(resumeFromPositionOrClose(frame.position_));
+          resumeFromPosition(frame.position_);
         } else {
           closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
@@ -429,29 +431,46 @@ bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
   return streamState_->resumeCache_->isPositionAvailable(position);
 }
 
-ResumePosition ConnectionAutomaton::positionDifference(
-    ResumePosition position) {
-  return streamState_->resumeCache_->position() - position;
-}
+// ResumePosition ConnectionAutomaton::positionDifference(
+//    ResumePosition position) {
+//  return streamState_->resumeCache_->position() - position;
+//}
 
-bool ConnectionAutomaton::resumeFromPositionOrClose(ResumePosition position) {
+bool ConnectionAutomaton::resumeFromPositionOrClose(
+    ResumePosition position,
+    bool writeResumeOkFrame) {
   DCHECK(!resumeCallback_);
+  DCHECK(!isDisconnectedOrClosed());
 
   if (streamState_->resumeCache_->isPositionAvailable(position)) {
-    streamState_->resumeCache_->sendFramesFromPosition(
-        position, *frameTransport_);
-
-    for (auto& frame : streamState_->moveOutputPendingFrames()) {
-      outputFrameOrEnqueue(std::move(frame));
+    if (writeResumeOkFrame) {
+      frameTransport_->outputFrameOrEnqueue(
+          Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
+              .serializeOut());
     }
 
-    if (!isDisconnectedOrClosed() && keepaliveTimer_) {
-      keepaliveTimer_->start(shared_from_this());
-    }
+    resumeFromPosition(position);
     return true;
   } else {
     closeWithError(Frame_ERROR::connectionError("can not resume"));
     return false;
+  }
+}
+
+void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
+  DCHECK(!resumeCallback_);
+  DCHECK(!isDisconnectedOrClosed());
+  DCHECK(streamState_->resumeCache_->isPositionAvailable(position));
+
+  streamState_->resumeCache_->sendFramesFromPosition(
+      position, *frameTransport_);
+
+  for (auto& frame : streamState_->moveOutputPendingFrames()) {
+    outputFrameOrEnqueue(std::move(frame));
+  }
+
+  if (!isDisconnectedOrClosed() && keepaliveTimer_) {
+    keepaliveTimer_->start(shared_from_this());
   }
 }
 

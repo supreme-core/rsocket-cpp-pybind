@@ -26,21 +26,19 @@ class ResumeCache {
   // resuming)
   void resetUpToPosition(const position_t position);
 
-  bool isPositionAvailable(position_t position) const {
-    return (position == position_);
-  }
+  bool isPositionAvailable(position_t position) const;
 
   bool isPositionAvailable(position_t position, StreamId streamId) const;
-
-  position_t position() const {
-    return position_;
-  }
 
   void sendFramesFromPosition(position_t position, FrameTransport& transport)
       const;
 
  private:
   void addFrame(const folly::IOBuf&);
+
+  position_t position() const {
+    return position_;
+  }
 
   position_t position_;
   position_t resetPosition_;

@@ -69,13 +69,6 @@ class ResumeIdentificationToken {
     return data() != right.data();
   }
 
-  ResumeIdentificationToken& operator=(const ResumeIdentificationToken&) =
-      delete;
-  ResumeIdentificationToken& operator=(ResumeIdentificationToken&&) = delete;
-
-  ResumeIdentificationToken(const ResumeIdentificationToken&) = default;
-  ResumeIdentificationToken(ResumeIdentificationToken&&) = default;
-
  private:
   explicit ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
 

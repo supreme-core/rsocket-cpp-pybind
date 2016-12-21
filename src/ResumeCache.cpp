@@ -59,6 +59,18 @@ void ResumeCache::resetUpToPosition(const position_t position) {
           }));
 }
 
+bool ResumeCache::isPositionAvailable(position_t position) const {
+  return (position == position_) ||
+      std::binary_search(
+             frames_.begin(),
+             frames_.end(),
+             std::make_pair(position, std::unique_ptr<folly::IOBuf>()),
+             [](decltype(frames_.back())& pairA,
+                decltype(frames_.back())& pairB) {
+               return pairA.first < pairB.first;
+             });
+}
+
 bool ResumeCache::isPositionAvailable(position_t position, StreamId streamId)
     const {
   bool result = false;
@@ -84,6 +96,12 @@ void ResumeCache::sendFramesFromPosition(
     position_t position,
     FrameTransport& frameTransport) const {
   DCHECK(isPositionAvailable(position));
+
+  if (position == resetPosition_) {
+    // idle resumption
+    return;
+  }
+
   auto found = std::lower_bound(
       frames_.begin(),
       frames_.end(),

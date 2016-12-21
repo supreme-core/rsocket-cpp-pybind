@@ -84,9 +84,7 @@ class ConnectionAutomaton
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect(
-      std::shared_ptr<FrameTransport>,
-      bool sendingPendingFrames = true);
+  void connect(std::shared_ptr<FrameTransport>, bool sendingPendingFrames);
 
   /// Terminates underlying connection.
   ///
@@ -152,7 +150,7 @@ class ConnectionAutomaton
   Frame_RESUME createResumeFrame(const ResumeIdentificationToken& token) const;
 
   bool isPositionAvailable(ResumePosition position);
-  ResumePosition positionDifference(ResumePosition position);
+  //  ResumePosition positionDifference(ResumePosition position);
 
   void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
 
@@ -168,7 +166,9 @@ class ConnectionAutomaton
     }
   }
 
-  bool resumeFromPositionOrClose(ResumePosition position);
+  bool resumeFromPositionOrClose(
+      ResumePosition position,
+      bool writeResumeOkFrame);
 
   uint32_t getKeepaliveTime() const;
   bool isDisconnectedOrClosed() const;
@@ -192,6 +192,7 @@ class ConnectionAutomaton
   void closeStreams(StreamCompletionSignal);
   void closeFrameTransport(folly::exception_wrapper);
 
+  void resumeFromPosition(ResumePosition position);
   void outputFrame(std::unique_ptr<folly::IOBuf>);
 
   StreamAutomatonFactory factory_;

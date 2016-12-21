@@ -87,7 +87,7 @@ void FrameTransport::onSubscribe(std::shared_ptr<Subscription> subscription) {
 void FrameTransport::onNext(std::unique_ptr<folly::IOBuf> frame) {
   if (connection_) {
     CHECK(frameProcessor_); // if *this is not closed and is pulling frames, it
-                            // should have frameProcessor
+    // should have frameProcessor
     frameProcessor_->processFrame(std::move(frame));
   }
 }
