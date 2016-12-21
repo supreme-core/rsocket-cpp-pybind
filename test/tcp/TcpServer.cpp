@@ -24,7 +24,9 @@ class ServerSubscription : public SubscriptionBase {
   explicit ServerSubscription(
       std::shared_ptr<Subscriber<Payload>> response,
       size_t numElems = 2)
-      : response_(std::move(response)), numElems_(numElems) {}
+      : ExecutorBase(defaultExecutor()),
+        response_(std::move(response)),
+        numElems_(numElems) {}
 
  private:
   // Subscription methods
