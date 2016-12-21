@@ -33,6 +33,7 @@ ReactiveSocket::~ReactiveSocket() {
 
 ReactiveSocket::ReactiveSocket(
     bool isServer,
+    bool isResumable,
     std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
@@ -54,6 +55,7 @@ ReactiveSocket::ReactiveSocket(
           stats,
           keepaliveTimer_,
           isServer,
+          isResumable,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
@@ -76,7 +78,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedClient(
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
-      false, std::move(handler), stats, std::move(keepaliveTimer)));
+      false, false, std::move(handler), stats, std::move(keepaliveTimer)));
   return socket;
 }
 
@@ -89,6 +91,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
   // exposed to the application code. We should then remove this parameter
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
+      isResumable,
       std::move(handler),
       stats,
       std::unique_ptr<KeepaliveTimer>(nullptr)));
@@ -462,9 +465,19 @@ void ReactiveSocket::tryClientResume(
 
 std::function<void()> ReactiveSocket::executeListenersFunc(
     std::shared_ptr<std::list<ReactiveSocketCallback>> listeners) {
-  return [this, listeners]() {
-    for (auto& listener : *listeners) {
-      listener(*this);
+  auto* thisPtr = this;
+  return [thisPtr, listeners]() mutable {
+    // we will make a copy of listeners so that destructor won't delete them
+    // when iterating them
+    auto listenersCopy = *listeners;
+    for (auto& listener : listenersCopy) {
+      if (listeners->empty()) {
+        // destructor deleted listeners
+        thisPtr = nullptr;
+      }
+      // TODO: change parameter from reference to pointer to be able send null
+      // when this instance is destroyed in the callback
+      listener(*thisPtr);
     }
   };
 }

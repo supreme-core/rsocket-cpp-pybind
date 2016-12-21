@@ -7,6 +7,7 @@
 #include "src/Common.h"
 #include "src/Frame.h"
 #include "src/FrameProcessor.h"
+#include "src/DuplexConnection.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
@@ -74,6 +75,7 @@ class ConnectionAutomaton
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
       bool client,
+      bool isResumable,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);

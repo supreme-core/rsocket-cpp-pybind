@@ -84,11 +84,13 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
       false,
+      false,
       [] {},
       [] {},
       [] {});
   connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
       std::move(framedAutomatonConnection)));
+  connectionAutomaton->close();
 }
 
 static void terminateTest(
@@ -160,6 +162,7 @@ static void terminateTest(
       nullptr,
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
+      false,
       false,
       [] {},
       [] {},
@@ -252,6 +255,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       nullptr,
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
+      false,
       false,
       [] {},
       [] {},

@@ -20,6 +20,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     Stats& stats,
     const std::shared_ptr<KeepaliveTimer>& keepaliveTimer,
     bool isServer,
+    bool isResumable,
     std::function<void()> onConnected,
     std::function<void()> onDisconnected,
     std::function<void()> onClosed)
@@ -27,6 +28,7 @@ ConnectionAutomaton::ConnectionAutomaton(
       streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
+      isResumable_(isResumable),
       onConnected_(std::move(onConnected)),
       onDisconnected_(std::move(onDisconnected)),
       onClosed_(std::move(onClosed)),
@@ -110,8 +112,9 @@ void ConnectionAutomaton::close(
   closeFrameTransport(std::move(ex));
   if (onClosed_) {
     stats_.socketClosed();
-    onClosed_();
+    auto onClosed = std::move(onClosed_);
     onClosed_ = nullptr;
+    onClosed();
   }
 }
 

@@ -106,6 +106,7 @@ class ReactiveSocket {
  private:
   ReactiveSocket(
       bool isServer,
+      bool isResumable,
       std::shared_ptr<RequestHandlerBase> handler,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer);

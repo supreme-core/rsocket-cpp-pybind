@@ -17,7 +17,9 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   explicit TcpReaderWriter(
       folly::AsyncSocket::UniquePtr&& socket,
       Stats& stats = Stats::noop())
-      : socket_(std::move(socket)), stats_(stats) {}
+      : ExecutorBase(defaultExecutor()),
+        socket_(std::move(socket)),
+        stats_(stats) {}
 
   ~TcpReaderWriter() {
     socket_->close();
