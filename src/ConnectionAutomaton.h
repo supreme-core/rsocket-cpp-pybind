@@ -5,6 +5,7 @@
 #include <memory>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
+#include "src/DuplexConnection.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/SmartPointers.h"
@@ -68,6 +69,7 @@ class ConnectionAutomaton :
     public std::enable_shared_from_this<ConnectionAutomaton> {
  public:
   ConnectionAutomaton(
+      std::unique_ptr<DuplexConnection> connection,
       // TODO(stupaq): for testing only, can devirtualise if necessary
       StreamAutomatonFactory factory,
       std::shared_ptr<StreamState> streamState,
@@ -75,6 +77,7 @@ class ConnectionAutomaton :
       Stats& stats,
       const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
       bool client,
+      bool isResumable,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
@@ -86,7 +89,8 @@ class ConnectionAutomaton :
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
   void connect(
-      std::unique_ptr<DuplexConnection> connection);
+      std::unique_ptr<DuplexConnection> connection =
+          std::unique_ptr<DuplexConnection>());
 
   /// Terminates underlying connection.
   ///

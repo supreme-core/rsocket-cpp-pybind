@@ -2,9 +2,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstddef>
-#include <exception>
-#include <limits>
 #include "src/SmartPointers.h"
 #include "test/streams/Mocks.h"
 

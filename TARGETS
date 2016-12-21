@@ -5,6 +5,13 @@ cpp_library(
     headers = subdir_glob([
         ('src', '**/*.h')
     ]),
+    srcs = [
+        'src/Executor.cpp',
+    ],
+    deps = [
+        '@/folly/futures:futures',
+        '@/lithium/reactive-streams-cpp:reactive-streams',
+    ],
 )
 
 # A target, on which implementations of various pluggable strategies depend.
@@ -36,7 +43,6 @@ cpp_library(
         '@/folly:exception_wrapper',
         '@/folly/io:iobuf',
         '@/folly/io/async:async',
-        '@/lithium/reactive-streams-cpp:reactive-streams-utilities',
     ],
 )
 
@@ -44,29 +50,23 @@ cpp_library(
     name = 'reactivesocket',
 
     headers = [
+        'src/ClientResumeStatusCallback.h',
         'src/EnableSharedFromThis.h',
         'src/NullRequestHandler.h',
         'src/Payload.h',
         'src/ReactiveSocket.h',
         'src/RequestHandler.h',
+        'src/SmartPointers.h', #will be removed soon
         'src/Stats.h',
         'src/SubscriberBase.h',
         'src/SubscriptionBase.h',
     ],
-    srcs = [
+    srcs = glob([
         'src/AbstractStreamAutomaton.cpp',
-        'src/automata/ChannelRequester.cpp',
-        'src/automata/ChannelResponder.cpp',
-        'src/automata/RequestResponseRequester.cpp',
-        'src/automata/RequestResponseResponder.cpp',
-        'src/automata/StreamRequester.cpp',
-        'src/automata/StreamSubscriptionRequesterBase.cpp',
-        'src/automata/StreamSubscriptionResponderBase.cpp',
-        'src/automata/SubscriptionRequester.cpp',
+        'src/automata/*.cpp',
         'src/Common.cpp',
         'src/ConnectionAutomaton.cpp',
         'src/ConnectionSetupPayload.cpp',
-        'src/Executor.cpp',
         'src/Frame.cpp',
         'src/NullRequestHandler.cpp',
         'src/Payload.cpp',
@@ -74,14 +74,13 @@ cpp_library(
         'src/RequestHandler.cpp',
         'src/ResumeCache.cpp',
         'src/Stats.cpp',
-    ],
+    ]),
     deps = [
         ':reactivesocket-internal',
         ':reactivesocket-streams',
         '@/folly/futures:futures',
         '@/folly/io:iobuf',
         '@/folly:exception_wrapper',
-        '@/lithium/reactive-streams-cpp:reactive-streams-utilities',
         '@/lithium/reactivesocket-utils:reactivesocket-external-utils',
     ],
     compiler_flags=['-DREACTIVE_SOCKET_EXTERNAL_STACK_TRACE_UTILS'],
@@ -110,7 +109,6 @@ cpp_library(
     deps = [
         ':reactivesocket-tcp-internal',
         '@/lithium/reactive-streams-cpp:reactive-streams',
-        '@/lithium/reactive-streams-cpp:reactive-streams-utilities',
         '//folly/io/async:async',
     ],
 )
@@ -133,7 +131,11 @@ cpp_unittest(
         ':reactivesocket',
         ':reactivesocket-plugins',
         ':reactivesocket-streams-mocks',
-        '//folly/io/async:util',
+        '//folly/io/async:scoped_event_base_thread',
+    ],
+    external_deps = [
+        'gmock',
+        'gtest',
     ],
 )
 

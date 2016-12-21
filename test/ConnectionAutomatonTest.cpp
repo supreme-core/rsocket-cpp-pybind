@@ -72,6 +72,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+      std::move(framedAutomatonConnection),
       [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
         return false;
       },
@@ -80,10 +81,11 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
       false,
+      false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect();
 }
 
 static void terminateTest(
@@ -145,6 +147,7 @@ static void terminateTest(
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+      std::move(framedAutomatonConnection),
       [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
         return false;
       },
@@ -153,10 +156,11 @@ static void terminateTest(
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
       false,
+      false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect();
 }
 
 TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
@@ -232,6 +236,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+      std::move(framedAutomatonConnection),
       [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
         return false;
       },
@@ -240,8 +245,9 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       Stats::noop(),
       std::shared_ptr<KeepaliveTimer>(),
       false,
+      false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect();
 }
