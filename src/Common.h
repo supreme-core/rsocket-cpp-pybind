@@ -76,7 +76,7 @@ class ResumeIdentificationToken {
   ResumeIdentificationToken(ResumeIdentificationToken&&) = default;
 
  private:
-  ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
+  explicit ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
 
   Data bits_;
 };

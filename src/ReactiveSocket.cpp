@@ -5,9 +5,9 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
-
 #include "src/ClientResumeStatusCallback.h"
 #include "src/ConnectionAutomaton.h"
+#include "src/FrameTransport.h"
 #include "src/ReactiveSocketSubscriberFactory.h"
 #include "src/automata/ChannelRequester.h"
 #include "src/automata/ChannelResponder.h"
@@ -34,19 +34,17 @@ ReactiveSocket::~ReactiveSocket() {
 ReactiveSocket::ReactiveSocket(
     bool isServer,
     bool isResumable,
-    std::unique_ptr<DuplexConnection> connection,
     std::shared_ptr<RequestHandlerBase> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer)
     : handler_(handler),
       keepaliveTimer_(std::move(keepaliveTimer)),
       connection_(new ConnectionAutomaton(
-          std::move(connection),
           [handler](
               ConnectionAutomaton& connection,
               StreamId streamId,
               std::unique_ptr<folly::IOBuf> serializedFrame) {
-            return ReactiveSocket::createResponder(
+            ReactiveSocket::createResponder(
                 handler, connection, streamId, std::move(serializedFrame));
           },
           std::make_shared<StreamState>(),
@@ -80,12 +78,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedClient(
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
-      false,
-      false,
-      nullptr,
-      std::move(handler),
-      stats,
-      std::move(keepaliveTimer)));
+      false, false, std::move(handler), stats, std::move(keepaliveTimer)));
   return socket;
 }
 
@@ -99,11 +92,12 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       true,
       isResumable,
-      std::move(connection),
       std::move(handler),
       stats,
       std::unique_ptr<KeepaliveTimer>(nullptr)));
-  socket->connection_->connect();
+  socket->connection_->setResumable(isResumable);
+  socket->connection_->connect(
+      FrameTransport::fromDuplexConnection(std::move(connection)));
   return socket;
 }
 
@@ -194,7 +188,7 @@ void ReactiveSocket::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
       Frame_METADATA_PUSH(std::move(metadata)).serializeOut());
 }
 
-bool ReactiveSocket::createResponder(
+void ReactiveSocket::createResponder(
     std::shared_ptr<RequestHandlerBase> handler,
     ConnectionAutomaton& connection,
     StreamId streamId,
@@ -203,40 +197,35 @@ bool ReactiveSocket::createResponder(
   switch (type) {
     case FrameType::SETUP: {
       Frame_SETUP frame;
-      if (frame.deserializeFrom(std::move(serializedFrame))) {
-        if (frame.header_.flags_ & FrameFlags_LEASE) {
-          // TODO(yschimke) We don't have the correct lease and wait logic above
-          // yet
-          LOG(WARNING) << "ignoring setup frame with lease";
-          //          connectionOutput_.onNext(
-          //              Frame_ERROR::badSetupFrame("leases not supported")
-          //                  .serializeOut());
-          //          disconnect();
-        }
-
-        auto streamState = handler->handleSetupPayload(ConnectionSetupPayload(
-            std::move(frame.metadataMimeType_),
-            std::move(frame.dataMimeType_),
-            std::move(frame.payload_),
-            false, // TODO: resumable flag should be received in SETUP frame
-            frame.token_));
-
-        connection.useStreamState(streamState);
-      } else {
-        // TODO(yschimke) enable this later after clients upgraded
-        LOG(WARNING) << "ignoring bad setup frame";
-        //        connectionOutput_.onNext(
-        //            Frame_ERROR::badSetupFrame("bad setup
-        //            frame").serializeOut());
-        //        disconnect();
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
+      }
+      if (frame.header_.flags_ & FrameFlags_LEASE) {
+        // TODO(yschimke) We don't have the correct lease and wait logic above
+        // yet
+        LOG(WARNING) << "ignoring setup frame with lease";
+        //          connectionOutput_.onNext(
+        //              Frame_ERROR::badSetupFrame("leases not supported")
+        //                  .serializeOut());
+        //          disconnect();
       }
 
+      auto streamState = handler->handleSetupPayload(ConnectionSetupPayload(
+          std::move(frame.metadataMimeType_),
+          std::move(frame.dataMimeType_),
+          std::move(frame.payload_),
+          false, // TODO: resumable flag should be received in SETUP frame
+          frame.token_));
+
+      connection.useStreamState(streamState);
       break;
     }
     case FrameType::REQUEST_CHANNEL: {
       Frame_REQUEST_CHANNEL frame;
-      if (!frame.deserializeFrom(std::move(serializedFrame))) {
-        return false;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
       }
       std::shared_ptr<ChannelResponder> automaton;
       ReactiveSocketSubscriberFactory subscriberFactory(
@@ -269,8 +258,9 @@ bool ReactiveSocket::createResponder(
     }
     case FrameType::REQUEST_STREAM: {
       Frame_REQUEST_STREAM frame;
-      if (!frame.deserializeFrom(std::move(serializedFrame))) {
-        return false;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
       }
       std::shared_ptr<StreamResponder> automaton;
       ReactiveSocketSubscriberFactory subscriberFactory(
@@ -295,8 +285,9 @@ bool ReactiveSocket::createResponder(
     }
     case FrameType::REQUEST_SUB: {
       Frame_REQUEST_SUB frame;
-      if (!frame.deserializeFrom(std::move(serializedFrame))) {
-        return false;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
       }
       std::shared_ptr<SubscriptionResponder> automaton;
       ReactiveSocketSubscriberFactory subscriberFactory(
@@ -321,8 +312,9 @@ bool ReactiveSocket::createResponder(
     }
     case FrameType::REQUEST_RESPONSE: {
       Frame_REQUEST_RESPONSE frame;
-      if (!frame.deserializeFrom(std::move(serializedFrame))) {
-        return false;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
       }
       std::shared_ptr<RequestResponseResponder> automaton;
       ReactiveSocketSubscriberFactory subscriberFactory(
@@ -348,8 +340,9 @@ bool ReactiveSocket::createResponder(
     }
     case FrameType::REQUEST_FNF: {
       Frame_REQUEST_FNF frame;
-      if (!frame.deserializeFrom(std::move(serializedFrame))) {
-        return false;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
       }
       // no stream tracking is necessary
       handler->handleFireAndForgetRequest(std::move(frame.payload_), streamId);
@@ -357,17 +350,21 @@ bool ReactiveSocket::createResponder(
     }
     case FrameType::METADATA_PUSH: {
       Frame_METADATA_PUSH frame;
-      if (!frame.deserializeFrom(std::move(serializedFrame))) {
-        return false;
+      if (!connection.deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
       }
       handler->handleMetadataPush(std::move(frame.metadata_));
       break;
     }
     // Other frames cannot start a stream.
+
+    case FrameType::LEASE:
+    case FrameType::KEEPALIVE:
+    case FrameType::RESERVED:
     default:
-      return false;
+      connection.closeWithError(Frame_ERROR::unexpectedFrame());
   }
-  return true;
 }
 
 std::shared_ptr<StreamState> ReactiveSocket::resumeListener(
@@ -381,7 +378,6 @@ void ReactiveSocket::connect(
   CHECK(connection);
   checkNotClosed();
   connection_->setResumable(setupPayload.resumable);
-  connection_->connect(std::move(connection));
 
   uint32_t keepaliveTime = keepaliveTimer_
       ? keepaliveTimer_->keepaliveTime().count()
@@ -402,8 +398,11 @@ void ReactiveSocket::connect(
   // TODO: when the server returns back that it doesn't support resumability, we
   // should retry without resumability
 
-  // TODO: make sure we send setup frame first
+  // making sure we send setup frame first
   connection_->outputFrameOrEnqueue(frame.serializeOut());
+  // then the rest of the cached frames will be sent
+  connection_->connect(
+      FrameTransport::fromDuplexConnection(std::move(connection)));
 
   if (keepaliveTimer_) {
     keepaliveTimer_->start(connection_);
@@ -456,7 +455,9 @@ void ReactiveSocket::tryClientResume(
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
     bool /*closeReactiveSocketOnFailure*/) {
   checkNotClosed();
-  connection_->reconnect(std::move(newConnection), std::move(resumeCallback));
+  connection_->reconnect(
+      FrameTransport::fromDuplexConnection(std::move(newConnection)),
+      std::move(resumeCallback));
   connection_->sendResume(token);
 
   // TODO: use closeReactiveSocketOnFailure

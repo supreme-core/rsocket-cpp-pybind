@@ -165,7 +165,10 @@ add_library(
   src/automata/StreamAutomatonBase.cpp
   src/automata/StreamAutomatonBase.h
   src/automata/StreamResponder.cpp
-  src/automata/SubscriptionResponder.cpp)
+  src/automata/SubscriptionResponder.cpp
+  src/FrameTransport.cpp
+  src/FrameTransport.h
+  src/FrameProcessor.h)
 
 target_link_libraries(
   ReactiveSocket
