@@ -82,14 +82,15 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
-      std::shared_ptr<KeepaliveTimer>(),
-      false,
+      nullptr,
       false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
-      std::move(framedAutomatonConnection)));
+  connectionAutomaton->connect(
+      FrameTransport::fromDuplexConnection(
+          std::move(framedAutomatonConnection)),
+      true);
   connectionAutomaton->close();
 }
 
@@ -161,14 +162,15 @@ static void terminateTest(
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
-      std::shared_ptr<KeepaliveTimer>(),
-      false,
+      nullptr,
       false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
-      std::move(framedAutomatonConnection)));
+  connectionAutomaton->connect(
+      FrameTransport::fromDuplexConnection(
+          std::move(framedAutomatonConnection)),
+      true);
   connectionAutomaton->close();
 }
 
@@ -254,13 +256,14 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
-      std::shared_ptr<KeepaliveTimer>(),
-      false,
+      nullptr,
       false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(FrameTransport::fromDuplexConnection(
-      std::move(framedAutomatonConnection)));
+  connectionAutomaton->connect(
+      FrameTransport::fromDuplexConnection(
+          std::move(framedAutomatonConnection)),
+      true);
   connectionAutomaton->close();
 }

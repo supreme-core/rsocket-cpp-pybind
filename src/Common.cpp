@@ -14,7 +14,7 @@ static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
     case StreamCompletionSignal::CONNECTION_ERROR:
       return "connection error";
     case StreamCompletionSignal::ERROR:
-      return "general error";
+      return "socket error";
     case StreamCompletionSignal::SOCKET_CLOSED:
       return "reactive socket closed";
     case StreamCompletionSignal::GRACEFUL:

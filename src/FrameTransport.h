@@ -39,6 +39,10 @@ class FrameTransport :
     return !connection_;
   }
 
+  bool outputQueueEmpty() const {
+    return pendingWrites_.empty();
+  }
+
  private:
   void connect(std::unique_ptr<DuplexConnection> connection);
 

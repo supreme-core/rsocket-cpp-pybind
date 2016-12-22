@@ -3,12 +3,13 @@
 #include "FollyKeepaliveTimer.h"
 
 namespace reactivesocket {
+
 FollyKeepaliveTimer::FollyKeepaliveTimer(
     folly::EventBase& eventBase,
     std::chrono::milliseconds period)
-    : eventBase_(eventBase), period_(period) {
-  running_ = std::make_shared<bool>(false);
-};
+    : eventBase_(eventBase),
+      running_(std::make_shared<bool>(false)),
+      period_(period) {}
 
 FollyKeepaliveTimer::~FollyKeepaliveTimer() {
   stop();
@@ -24,10 +25,7 @@ void FollyKeepaliveTimer::schedule() {
       [this, running]() {
         if (*running) {
           sendKeepalive();
-
-          if (*running) {
-            schedule();
-          }
+          schedule();
         }
       },
       keepaliveTime().count());
@@ -36,7 +34,6 @@ void FollyKeepaliveTimer::schedule() {
 void FollyKeepaliveTimer::sendKeepalive() {
   if (pending_) {
     stop();
-
     connection_->closeWithError(
         Frame_ERROR::connectionError("no response to keepalive"));
   } else {
@@ -48,12 +45,14 @@ void FollyKeepaliveTimer::sendKeepalive() {
 // must be called from the same thread as start
 void FollyKeepaliveTimer::stop() {
   *running_ = false;
+  pending_ = false;
 }
 
 // must be called from the same thread as stop
 void FollyKeepaliveTimer::start(const std::shared_ptr<FrameSink>& connection) {
   connection_ = connection;
   *running_ = true;
+  DCHECK(!pending_);
 
   schedule();
 }

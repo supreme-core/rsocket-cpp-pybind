@@ -44,10 +44,9 @@ void FrameTransport::connect(std::unique_ptr<DuplexConnection> connection) {
 
 void FrameTransport::setFrameProcessor(
     std::shared_ptr<FrameProcessor> frameProcessor) {
-  CHECK(frameProcessor);
   frameProcessor_ = std::move(frameProcessor);
 
-  if (connectionInputSub_) {
+  if (frameProcessor_ && connectionInputSub_) {
     connectionInputSub_.request(std::numeric_limits<size_t>::max());
   }
 
@@ -86,11 +85,10 @@ void FrameTransport::onSubscribe(std::shared_ptr<Subscription> subscription) {
 }
 
 void FrameTransport::onNext(std::unique_ptr<folly::IOBuf> frame) {
-  if (frameProcessor_) {
+  if (connection_) {
+    CHECK(frameProcessor_); // if *this is not closed and is pulling frames, it
+    // should have frameProcessor
     frameProcessor_->processFrame(std::move(frame));
-  } else {
-    // this should not happen normally because we should be using SubscriberBase
-    LOG(WARNING) << "receiving frame after closing";
   }
 }
 

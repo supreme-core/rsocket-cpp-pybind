@@ -20,6 +20,7 @@ class ReactiveSocket;
 
 using ReactiveSocketCallback = std::function<void(ReactiveSocket&)>;
 using StreamId = uint32_t;
+using ResumePosition = int64_t;
 
 /// Indicates the reason why the stream automaton received a terminal signal
 /// from the connection.
@@ -67,13 +68,6 @@ class ResumeIdentificationToken {
   bool operator!=(const ResumeIdentificationToken& right) const {
     return data() != right.data();
   }
-
-  ResumeIdentificationToken& operator=(const ResumeIdentificationToken&) =
-      delete;
-  ResumeIdentificationToken& operator=(ResumeIdentificationToken&&) = delete;
-
-  ResumeIdentificationToken(const ResumeIdentificationToken&) = default;
-  ResumeIdentificationToken(ResumeIdentificationToken&&) = default;
 
  private:
   explicit ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}

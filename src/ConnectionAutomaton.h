@@ -73,9 +73,8 @@ class ConnectionAutomaton
       std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
       Stats& stats,
-      const std::shared_ptr<KeepaliveTimer>& keepaliveTimer_,
+      std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
       bool client,
-      bool isResumable,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
@@ -86,7 +85,7 @@ class ConnectionAutomaton
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  void connect(std::shared_ptr<FrameTransport>);
+  void connect(std::shared_ptr<FrameTransport>, bool sendingPendingFrames);
 
   /// Terminates underlying connection.
   ///
@@ -97,6 +96,8 @@ class ConnectionAutomaton
   /// Disconnects DuplexConnection from the automaton.
   /// Existing streams will stay intact.
   void disconnect();
+
+  std::shared_ptr<FrameTransport> detachFrameTransport();
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
@@ -145,12 +146,13 @@ class ConnectionAutomaton
   /// @}
 
   void sendKeepalive() override;
-  void sendResume(const ResumeIdentificationToken& token);
-
-  bool isPositionAvailable(ResumePosition position);
-  ResumePosition positionDifference(ResumePosition position);
 
   void setResumable(bool resumable);
+  Frame_RESUME createResumeFrame(const ResumeIdentificationToken& token) const;
+
+  bool isPositionAvailable(ResumePosition position);
+  //  ResumePosition positionDifference(ResumePosition position);
+
   void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
 
   template <typename TFrame>
@@ -164,6 +166,13 @@ class ConnectionAutomaton
       return false;
     }
   }
+
+  bool resumeFromPositionOrClose(
+      ResumePosition position,
+      bool writeResumeOkFrame);
+
+  uint32_t getKeepaliveTime() const;
+  bool isDisconnectedOrClosed() const;
 
  private:
   /// Performs the same actions as ::endStream without propagating closure
@@ -184,6 +193,7 @@ class ConnectionAutomaton
   void closeStreams(StreamCompletionSignal);
   void closeFrameTransport(folly::exception_wrapper);
 
+  void resumeFromPosition(ResumePosition position);
   void outputFrame(std::unique_ptr<folly::IOBuf>);
 
   StreamAutomatonFactory factory_;
@@ -193,14 +203,14 @@ class ConnectionAutomaton
 
   Stats& stats_;
   bool isServer_;
-  bool isResumable_;
+  bool isResumable_{false};
 
   std::function<void()> onConnected_;
   std::function<void()> onDisconnected_;
   std::function<void()> onClosed_;
 
   ResumeListener resumeListener_;
-  const std::shared_ptr<KeepaliveTimer> keepaliveTimer_;
+  const std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
 
   std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
 };

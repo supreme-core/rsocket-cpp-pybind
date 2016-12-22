@@ -31,7 +31,7 @@ class AllowanceSemaphore {
     auto old_value = value_;
     value_ += n;
     if (old_value > value_) {
-      value_ = std::numeric_limits<ValueType>::max();
+      value_ = max();
     }
     return old_value;
   }
@@ -41,11 +41,11 @@ class AllowanceSemaphore {
   }
 
   bool isInfinite() const {
-    return value_ == std::numeric_limits<ValueType>::max();
+    return value_ == max();
   }
 
   ValueType drain() {
-    return drainWithLimit(std::numeric_limits<ValueType>::max());
+    return drainWithLimit(max());
   }
 
   ValueType drainWithLimit(ValueType limit) {
@@ -57,6 +57,10 @@ class AllowanceSemaphore {
     }
     value_ -= limit;
     return limit;
+  }
+
+  static ValueType max() {
+    return std::numeric_limits<ValueType>::max();
   }
 
  private:
