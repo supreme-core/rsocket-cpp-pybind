@@ -52,6 +52,7 @@ cpp_library(
     headers = [
         'src/ClientResumeStatusCallback.h',
         'src/EnableSharedFromThis.h',
+        'src/FrameTransport.h',
         'src/NullRequestHandler.h',
         'src/Payload.h',
         'src/ReactiveSocket.h',
@@ -68,6 +69,7 @@ cpp_library(
         'src/ConnectionAutomaton.cpp',
         'src/ConnectionSetupPayload.cpp',
         'src/Frame.cpp',
+        'src/FrameTransport.cpp',
         'src/NullRequestHandler.cpp',
         'src/Payload.cpp',
         'src/ReactiveSocket.cpp',
@@ -109,8 +111,10 @@ cpp_library(
     deps = [
         ':reactivesocket-tcp-internal',
         '@/lithium/reactive-streams-cpp:reactive-streams',
+        '@/lithium/reactivesocket-utils:reactivesocket-external-utils',
         '//folly/io/async:async',
     ],
+    compiler_flags=['-DREACTIVE_SOCKET_EXTERNAL_STACK_TRACE_UTILS'],
 )
 
 cpp_unittest(
