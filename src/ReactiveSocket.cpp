@@ -458,7 +458,6 @@ void ReactiveSocket::tryClientResume(
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
   // TODO: verify/assert that the new frameTransport is on the same event base
   checkNotClosed();
-
   CHECK(frameTransport && !frameTransport->isClosed());
 
   frameTransport->outputFrameOrEnqueue(
