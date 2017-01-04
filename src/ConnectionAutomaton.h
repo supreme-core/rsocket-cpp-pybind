@@ -5,9 +5,9 @@
 #include <memory>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
+#include "src/DuplexConnection.h"
 #include "src/Frame.h"
 #include "src/FrameProcessor.h"
-#include "src/DuplexConnection.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 

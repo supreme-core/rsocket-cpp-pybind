@@ -25,6 +25,9 @@ class ExecutorBase {
 
  protected:
   void runInExecutor(folly::Func func);
+  folly::Executor& executor() {
+    return executor_;
+  }
 
  private:
   using PendingSignals = std::vector<folly::Func>;

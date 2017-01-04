@@ -159,6 +159,8 @@ class SubscriberBaseT : public Subscriber<T>,
 };
 
 extern template class SubscriberBaseT<Payload>;
+extern template class SubscriberBaseT<folly::IOBuf>;
+
 using SubscriberBase = SubscriberBaseT<Payload>;
 
 } // reactivesocket

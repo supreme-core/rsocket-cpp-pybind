@@ -88,8 +88,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       [] {},
       [] {});
   connectionAutomaton->connect(
-      FrameTransport::fromDuplexConnection(
-          std::move(framedAutomatonConnection)),
+      std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
   connectionAutomaton->close();
 }
@@ -168,8 +167,7 @@ static void terminateTest(
       [] {},
       [] {});
   connectionAutomaton->connect(
-      FrameTransport::fromDuplexConnection(
-          std::move(framedAutomatonConnection)),
+      std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
   connectionAutomaton->close();
 }
@@ -262,8 +260,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       [] {},
       [] {});
   connectionAutomaton->connect(
-      FrameTransport::fromDuplexConnection(
-          std::move(framedAutomatonConnection)),
+      std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
   connectionAutomaton->close();
 }
