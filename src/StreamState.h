@@ -21,15 +21,13 @@ using StreamId = uint32_t;
 
 class StreamState {
  public:
-  StreamState()
-      : resumeTracker_(new ResumeTracker()), resumeCache_(new ResumeCache()) {}
-
+  StreamState() = default;
   virtual ~StreamState() = default;
 
   std::unordered_map<StreamId, std::shared_ptr<AbstractStreamAutomaton>>
       streams_;
-  std::unique_ptr<ResumeTracker> resumeTracker_;
-  std::unique_ptr<ResumeCache> resumeCache_;
+  ResumeTracker resumeTracker_;
+  ResumeCache resumeCache_;
 
   void enqueueOutputPendingFrame(std::unique_ptr<folly::IOBuf> frame) {
     outputFrames_.push_back(std::move(frame));
