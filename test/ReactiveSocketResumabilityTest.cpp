@@ -53,8 +53,8 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
 
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1);
   EXPECT_CALL(*testInputSubscription, cancel_()).Times(1);
-  EXPECT_CALL(stats, socketDisconnected_()).Times(1);
-  EXPECT_CALL(stats, socketClosed_()).Times(0);
+  EXPECT_CALL(stats, socketDisconnected()).Times(1);
+  EXPECT_CALL(stats, socketClosed()).Times(0);
 
   socket->disconnect();
 
@@ -64,8 +64,8 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
   Mock::VerifyAndClearExpectations(&stats);
 
   EXPECT_CALL(*responseSubscriber, onError_(_)).Times(1);
-  EXPECT_CALL(stats, socketDisconnected_()).Times(0);
-  EXPECT_CALL(stats, socketClosed_()).Times(1);
+  EXPECT_CALL(stats, socketDisconnected()).Times(0);
+  EXPECT_CALL(stats, socketClosed()).Times(1);
 
   socket->close();
   socket.reset();

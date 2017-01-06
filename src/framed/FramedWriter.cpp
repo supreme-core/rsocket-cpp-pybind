@@ -73,7 +73,11 @@ void FramedWriter::onErrorImpl(folly::exception_wrapper ex) {
 }
 
 void FramedWriter::requestImpl(size_t n) {
-  writerSubscription_.request(n);
+  // it is possible to receive requestImpl after on{Complete,Error}
+  // because it is a different interface and can be hooked up somewhere else
+  if (writerSubscription_) {
+    writerSubscription_.request(n);
+  }
 }
 
 void FramedWriter::cancelImpl() {
