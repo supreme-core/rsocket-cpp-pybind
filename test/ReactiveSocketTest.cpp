@@ -678,7 +678,7 @@ TEST(ReactiveSocketTest, SetupWithKeepaliveAndStats) {
   std::unique_ptr<MockKeepaliveTimer> clientKeepalive =
       folly::make_unique<MockKeepaliveTimer>();
 
-  EXPECT_CALL(*clientKeepalive, start_(_)).InSequence(s);
+  EXPECT_CALL(*clientKeepalive, start(_)).InSequence(s);
 
   auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
   auto& serverHandlerRef = *serverHandler;
@@ -687,7 +687,7 @@ TEST(ReactiveSocketTest, SetupWithKeepaliveAndStats) {
       .InSequence(s)
       .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
-  EXPECT_CALL(*clientKeepalive, stop_()).InSequence(s);
+  EXPECT_CALL(*clientKeepalive, stop()).InSequence(s);
 
   auto clientSock = ReactiveSocket::fromClientConnection(
       std::move(clientConn),
@@ -727,10 +727,10 @@ TEST(ReactiveSocketTest, Destructor) {
   std::array<std::shared_ptr<Subscription>, 2> clientInputSubs;
   std::array<std::shared_ptr<Subscriber<Payload>>, 2> serverOutputs;
 
-  EXPECT_CALL(clientStats, socketCreated_()).Times(1);
-  EXPECT_CALL(serverStats, socketCreated_()).Times(1);
-  EXPECT_CALL(clientStats, socketClosed_()).Times(1);
-  EXPECT_CALL(serverStats, socketClosed_()).Times(1);
+  EXPECT_CALL(clientStats, socketCreated()).Times(1);
+  EXPECT_CALL(serverStats, socketCreated()).Times(1);
+  EXPECT_CALL(clientStats, socketClosed()).Times(1);
+  EXPECT_CALL(serverStats, socketClosed()).Times(1);
 
   auto clientSock = ReactiveSocket::fromClientConnection(
       std::move(clientConn),
