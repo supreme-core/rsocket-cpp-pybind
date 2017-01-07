@@ -63,14 +63,14 @@ ReactiveSocket::ReactiveSocket(
 }
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
+    folly::Executor& executor,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandlerBase> handler,
     ConnectionSetupPayload setupPayload,
     Stats& stats,
-    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
-    folly::Executor& executor) {
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   auto socket = disconnectedClient(
-      std::move(handler), stats, std::move(keepaliveTimer), executor);
+      executor, std::move(handler), stats, std::move(keepaliveTimer));
   socket->clientConnect(
       std::make_shared<FrameTransport>(std::move(connection)),
       std::move(setupPayload));
@@ -78,33 +78,33 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::fromClientConnection(
 }
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedClient(
+    folly::Executor& executor,
     std::unique_ptr<RequestHandlerBase> handler,
     Stats& stats,
-    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
-    folly::Executor& executor) {
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       false, std::move(handler), stats, std::move(keepaliveTimer), executor));
   return socket;
 }
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::fromServerConnection(
+    folly::Executor& executor,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandlerBase> handler,
     Stats& stats,
-    bool isResumable,
-    folly::Executor& executor) {
+    bool isResumable) {
   // TODO: isResumable should come as a flag on Setup frame and it should be
   // exposed to the application code. We should then remove this parameter
-  auto socket = disconnectedServer(std::move(handler), stats, executor);
+  auto socket = disconnectedServer(executor, std::move(handler), stats);
   socket->serverConnect(
       std::make_shared<FrameTransport>(std::move(connection)), isResumable);
   return socket;
 }
 
 std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedServer(
+    folly::Executor& executor,
     std::unique_ptr<RequestHandlerBase> handler,
-    Stats& stats,
-    folly::Executor& executor) {
+    Stats& stats) {
   std::unique_ptr<ReactiveSocket> socket(
       new ReactiveSocket(true, std::move(handler), stats, nullptr, executor));
   return socket;

@@ -213,6 +213,7 @@ TEST(FramedReaderTest, InvalidDataStream) {
   testConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto reactiveSocket = ReactiveSocket::fromClientConnection(
+      defaultExecutor(),
       std::move(framedRsAutomatonConnection),
       // No interactions on this mock, the client will not accept any
       // requests.

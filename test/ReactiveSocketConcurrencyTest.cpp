@@ -28,14 +28,14 @@ class ClientSideConcurrencyTest : public testing::Test {
     clientConn->connectTo(*serverConn);
 
     clientSock = ReactiveSocket::fromClientConnection(
+        *thread2.getEventBase(),
         std::move(clientConn),
         // No interactions on this mock, the client will not accept any
         // requests.
         folly::make_unique<StrictMock<MockRequestHandler>>(),
         ConnectionSetupPayload("", "", Payload()),
         Stats::noop(),
-        nullptr,
-        *thread2.getEventBase());
+        nullptr);
 
     auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
     auto& serverHandlerRef = *serverHandler;
@@ -44,7 +44,7 @@ class ClientSideConcurrencyTest : public testing::Test {
         .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
     serverSock = ReactiveSocket::fromServerConnection(
-        std::move(serverConn), std::move(serverHandler));
+        defaultExecutor(), std::move(serverConn), std::move(serverHandler));
 
     EXPECT_CALL(*clientInput, onSubscribe_(_))
         .WillOnce(Invoke([&](std::shared_ptr<Subscription> sub) {
@@ -234,6 +234,7 @@ class ServerSideConcurrencyTest : public testing::Test {
     clientConn->connectTo(*serverConn);
 
     clientSock = ReactiveSocket::fromClientConnection(
+        defaultExecutor(),
         std::move(clientConn),
         // No interactions on this mock, the client will not accept any
         // requests.
@@ -248,11 +249,11 @@ class ServerSideConcurrencyTest : public testing::Test {
         .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
     serverSock = ReactiveSocket::fromServerConnection(
+        *thread2.getEventBase(),
         std::move(serverConn),
         std::move(serverHandler),
         Stats::noop(),
-        false,
-        *thread2.getEventBase());
+        false);
 
     EXPECT_CALL(*clientInput, onSubscribe_(_))
         .WillOnce(Invoke([&](std::shared_ptr<Subscription> sub) {
@@ -520,12 +521,12 @@ class InitialRequestNDeliveredTest : public testing::Test {
             }));
 
     serverSocket = ReactiveSocket::fromServerConnection(
+        eventBase_,
         folly::make_unique<FramedDuplexConnection>(
             std::move(serverSocketConnection)),
         std::move(serverHandler),
         Stats::noop(),
-        false,
-        eventBase_);
+        false);
 
     testConnection->getOutput()->onNext(
         Frame_SETUP(
