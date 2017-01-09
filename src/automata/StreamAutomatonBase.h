@@ -7,12 +7,10 @@
 #include <memory>
 #include "src/AbstractStreamAutomaton.h"
 
-#include "src/RequestHandler.h"
-
 namespace reactivesocket {
 
 class ConnectionAutomaton;
-class RequestHandlerBase;
+class RequestHandler;
 
 ///
 /// A common base class of all automatons.
@@ -27,14 +25,14 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
     Parameters(
         std::shared_ptr<ConnectionAutomaton> _connection,
         StreamId _streamId,
-        std::shared_ptr<RequestHandlerBase> _handler)
+        std::shared_ptr<RequestHandler> _handler)
         : connection(std::move(_connection)),
           streamId(_streamId),
           handler(std::move(_handler)) {}
 
     std::shared_ptr<ConnectionAutomaton> connection;
     StreamId streamId{0};
-    std::shared_ptr<RequestHandlerBase> handler;
+    std::shared_ptr<RequestHandler> handler;
   };
 
   explicit StreamAutomatonBase(Parameters params)
@@ -76,6 +74,6 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
   /// An ID of the stream (within the connection) this automaton manages.
   const StreamId streamId_;
   bool isTerminated_{false};
-  std::shared_ptr<RequestHandlerBase> requestHandler_;
+  std::shared_ptr<RequestHandler> requestHandler_;
 };
 }

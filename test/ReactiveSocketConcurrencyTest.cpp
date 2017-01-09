@@ -241,8 +241,7 @@ class ServerSideConcurrencyTest : public testing::Test {
         folly::make_unique<StrictMock<MockRequestHandler>>(),
         ConnectionSetupPayload("", "", Payload()));
 
-    auto serverHandler =
-        folly::make_unique<StrictMock<MockRequestHandlerBase>>();
+    auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
     auto& serverHandlerRef = *serverHandler;
 
     EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
@@ -267,11 +266,8 @@ class ServerSideConcurrencyTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
-              serverOutput =
-                  subscriberFactory.createSubscriber(*thread2.getEventBase());
-              // TODO: should onSubscribe be queued and also called from
-              // thread1?
+                const std::shared_ptr<Subscriber<Payload>>& response) {
+              serverOutput = response;
               serverOutput->onSubscribe(serverOutputSub);
             }));
     EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _, _))
@@ -279,9 +275,8 @@ class ServerSideConcurrencyTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
-              serverOutput =
-                  subscriberFactory.createSubscriber(*thread2.getEventBase());
+                const std::shared_ptr<Subscriber<Payload>>& response) {
+              serverOutput = response;
               serverOutput->onSubscribe(serverOutputSub);
             }));
     EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _, _))
@@ -289,9 +284,8 @@ class ServerSideConcurrencyTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
-              serverOutput =
-                  subscriberFactory.createSubscriber(*thread2.getEventBase());
+                const std::shared_ptr<Subscriber<Payload>>& response) {
+              serverOutput = response;
               serverOutput->onSubscribe(serverOutputSub);
             }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _, _))
@@ -299,7 +293,7 @@ class ServerSideConcurrencyTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
+                const std::shared_ptr<Subscriber<Payload>>& response) {
               clientTerminatesInteraction_ = false;
 
               EXPECT_CALL(*serverInput, onSubscribe_(_))
@@ -314,8 +308,7 @@ class ServerSideConcurrencyTest : public testing::Test {
                 EXPECT_TRUE(thread2.getEventBase()->isInEventBaseThread());
               }));
 
-              serverOutput =
-                  subscriberFactory.createSubscriber(*thread2.getEventBase());
+              serverOutput = response;
               serverOutput->onSubscribe(serverOutputSub);
 
               return serverInput;
@@ -473,8 +466,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
           serverSocket.reset();
         }));
 
-    auto serverHandler =
-        folly::make_unique<StrictMock<MockRequestHandlerBase>>();
+    auto serverHandler = folly::make_unique<StrictMock<MockRequestHandler>>();
     auto& serverHandlerRef = *serverHandler;
 
     EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_))
@@ -485,8 +477,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
-              auto response = subscriberFactory.createSubscriber();
+                const std::shared_ptr<Subscriber<Payload>>& response) {
               thread2.getEventBase()->runInEventBaseThread([response, this] {
                 /* sleep override */ std::this_thread::sleep_for(
                     std::chrono::milliseconds(5));
@@ -498,8 +489,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
-              auto response = subscriberFactory.createSubscriber();
+                const std::shared_ptr<Subscriber<Payload>>& response) {
               thread2.getEventBase()->runInEventBaseThread([response, this] {
                 /* sleep override */ std::this_thread::sleep_for(
                     std::chrono::milliseconds(5));
@@ -511,8 +501,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
         .WillOnce(Invoke(
             [&](Payload& request,
                 StreamId streamId,
-                SubscriberFactory& subscriberFactory) {
-              auto response = subscriberFactory.createSubscriber();
+                const std::shared_ptr<Subscriber<Payload>>& response) {
               thread2.getEventBase()->runInEventBaseThread([response, this] {
                 /* sleep override */ std::this_thread::sleep_for(
                     std::chrono::milliseconds(5));

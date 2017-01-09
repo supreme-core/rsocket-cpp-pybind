@@ -22,7 +22,7 @@ class ClientResumeStatusCallback;
 class ConnectionAutomaton;
 class DuplexConnection;
 class FrameTransport;
-class RequestHandlerBase;
+class RequestHandler;
 class ReactiveSocket;
 
 folly::Executor& defaultExecutor();
@@ -48,7 +48,7 @@ class ReactiveSocket {
   static std::unique_ptr<ReactiveSocket> fromClientConnection(
       folly::Executor& executor,
       std::unique_ptr<DuplexConnection> connection,
-      std::unique_ptr<RequestHandlerBase> handler,
+      std::unique_ptr<RequestHandler> handler,
       ConnectionSetupPayload setupPayload = ConnectionSetupPayload(),
       Stats& stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
@@ -56,7 +56,7 @@ class ReactiveSocket {
 
   static std::unique_ptr<ReactiveSocket> disconnectedClient(
       folly::Executor& executor,
-      std::unique_ptr<RequestHandlerBase> handler,
+      std::unique_ptr<RequestHandler> handler,
       Stats& stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
@@ -64,13 +64,13 @@ class ReactiveSocket {
   static std::unique_ptr<ReactiveSocket> fromServerConnection(
       folly::Executor& executor,
       std::unique_ptr<DuplexConnection> connection,
-      std::unique_ptr<RequestHandlerBase> handler,
+      std::unique_ptr<RequestHandler> handler,
       Stats& stats = Stats::noop(),
       bool isResumable = false);
 
   static std::unique_ptr<ReactiveSocket> disconnectedServer(
       folly::Executor& executor,
-      std::unique_ptr<RequestHandlerBase> handler,
+      std::unique_ptr<RequestHandler> handler,
       Stats& stats = Stats::noop());
 
   std::shared_ptr<Subscriber<Payload>> requestChannel(
@@ -126,13 +126,13 @@ class ReactiveSocket {
  private:
   ReactiveSocket(
       bool isServer,
-      std::shared_ptr<RequestHandlerBase> handler,
+      std::shared_ptr<RequestHandler> handler,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer,
       folly::Executor& executor);
 
   void createResponder(
-      std::shared_ptr<RequestHandlerBase> handler,
+      std::shared_ptr<RequestHandler> handler,
       ConnectionAutomaton& connection,
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> frame);
@@ -145,7 +145,7 @@ class ReactiveSocket {
 
   void checkNotClosed() const;
 
-  std::shared_ptr<RequestHandlerBase> handler_;
+  std::shared_ptr<RequestHandler> handler_;
 
   std::shared_ptr<std::list<ReactiveSocketCallback>> onConnectListeners_{
       std::make_shared<std::list<ReactiveSocketCallback>>()};

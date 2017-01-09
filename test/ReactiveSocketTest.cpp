@@ -845,30 +845,6 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
 
 class ReactiveSocketIgnoreRequestTest : public testing::Test {
  public:
-  class TestRequestHandler : public NullRequestHandler {
-    std::shared_ptr<Subscriber<Payload>> onRequestChannel(
-        Payload /*request*/,
-        StreamId streamId,
-        SubscriberFactory& subscriberFactory) override {
-      return std::make_shared<NullSubscriber>();
-    }
-
-    void onRequestStream(
-        Payload /*request*/,
-        StreamId streamId,
-        SubscriberFactory& subscriberFactory) override {}
-
-    void onRequestSubscription(
-        Payload /*request*/,
-        StreamId streamId,
-        SubscriberFactory& subscriberFactory) override {}
-
-    void onRequestResponse(
-        Payload /*request*/,
-        StreamId streamId,
-        SubscriberFactory& subscriberFactory) override {}
-  };
-
   ReactiveSocketIgnoreRequestTest() {
     auto clientConn = folly::make_unique<InlineConnection>();
     auto serverConn = folly::make_unique<InlineConnection>();
@@ -885,7 +861,7 @@ class ReactiveSocketIgnoreRequestTest : public testing::Test {
     serverSock = ReactiveSocket::fromServerConnection(
         defaultExecutor(),
         std::move(serverConn),
-        folly::make_unique<TestRequestHandler>());
+        folly::make_unique<DefaultRequestHandler>());
 
     // Client request.
     EXPECT_CALL(*clientInput, onSubscribe_(_))

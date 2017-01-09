@@ -60,7 +60,8 @@ void ConnectionAutomaton::connect(
     std::shared_ptr<FrameTransport> frameTransport,
     bool sendingPendingFrames) {
   CHECK(isDisconnectedOrClosed());
-  CHECK(frameTransport && !frameTransport->isClosed());
+  CHECK(frameTransport);
+  CHECK(!frameTransport->isClosed());
 
   frameTransport_ = std::move(frameTransport);
   onConnected_();
