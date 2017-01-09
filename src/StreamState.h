@@ -21,9 +21,6 @@ using StreamId = uint32_t;
 
 class StreamState {
  public:
-  StreamState() = default;
-  virtual ~StreamState() = default;
-
   std::unordered_map<StreamId, std::shared_ptr<AbstractStreamAutomaton>>
       streams_;
   ResumeTracker resumeTracker_;
