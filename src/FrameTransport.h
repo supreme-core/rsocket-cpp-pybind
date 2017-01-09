@@ -42,6 +42,8 @@ class FrameTransport :
     return pendingWrites_.empty();
   }
 
+  DuplexConnection* duplexConnection() const;
+
  private:
   void connect();
 
