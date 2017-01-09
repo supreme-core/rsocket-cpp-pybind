@@ -7,59 +7,37 @@
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
-namespace folly {
-class Executor;
-}
-
 namespace reactivesocket {
 
 class StreamState;
 
-// TODO: remove this interface and everything where this is used.
-class SubscriberFactory {
+class RequestHandler {
  public:
-  virtual ~SubscriberFactory() = default;
-  virtual std::shared_ptr<Subscriber<Payload>> createSubscriber() = 0;
-  // the following override of the method is not used anymore
-  // remove the whole thing
-  virtual std::shared_ptr<Subscriber<Payload>> createSubscriber(
-      folly::Executor& executor) = 0;
-};
-
-class RequestHandlerBase {
- public:
-  virtual ~RequestHandlerBase() = default;
-
-  //
-  // client code uses subscriberFactory to create instances of subcsribers
-  // there is an optional executor instance which can be passed to
-  // SubscriberFactory::createSubscriber() method
-  // client can ignore the subscriber factory if it desires to
-  //
+  virtual ~RequestHandler() = default;
 
   /// Handles a new Channel requested by the other end.
-  virtual std::shared_ptr<Subscriber<Payload>> onRequestChannel(
+  virtual std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
       StreamId streamId,
-      SubscriberFactory& subscriberFactory) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new Stream requested by the other end.
-  virtual void onRequestStream(
+  virtual void handleRequestStream(
       Payload request,
       StreamId streamId,
-      SubscriberFactory& subscriberFactory) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new inbound Subscription requested by the other end.
-  virtual void onRequestSubscription(
+  virtual void handleRequestSubscription(
       Payload request,
       StreamId streamId,
-      SubscriberFactory& subscriberFactory) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new inbound RequestResponse requested by the other end.
-  virtual void onRequestResponse(
+  virtual void handleRequestResponse(
       Payload request,
       StreamId streamId,
-      SubscriberFactory& subscriberFactory) = 0;
+      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
 
   /// Handles a new fire-and-forget request sent by the other end.
   virtual void handleFireAndForgetRequest(
@@ -87,61 +65,5 @@ class RequestHandlerBase {
   // Handle a stream that can resume in a "dirty" state. Client is "behind"
   // Server.
   virtual void handleDirtyResume(std::shared_ptr<Subscription> response) = 0;
-};
-
-class RequestHandler : public RequestHandlerBase {
- public:
-  //
-  // Modelled after Publisher::subscribe, hence must synchronously call
-  // Subscriber::onSubscribe, and provide a valid Subscription.
-  //
-
-  /// Handles a new Channel requested by the other end.
-  virtual std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
-
-  /// Handles a new Stream requested by the other end.
-  virtual void handleRequestStream(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
-
-  /// Handles a new inbound Subscription requested by the other end.
-  virtual void handleRequestSubscription(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
-
-  /// Handles a new inbound RequestResponse requested by the other end.
-  virtual void handleRequestResponse(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) = 0;
-
- private:
-  std::shared_ptr<Subscriber<Payload>> onRequestChannel(
-      Payload request,
-      StreamId streamId,
-      SubscriberFactory& subscriberFactory) override;
-
-  /// Handles a new Stream requested by the other end.
-  void onRequestStream(
-      Payload request,
-      StreamId streamId,
-      SubscriberFactory& subscriberFactory) override;
-
-  /// Handles a new inbound Subscription requested by the other end.
-  void onRequestSubscription(
-      Payload request,
-      StreamId streamId,
-      SubscriberFactory& subscriberFactory) override;
-
-  /// Handles a new inbound RequestResponse requested by the other end.
-  void onRequestResponse(
-      Payload request,
-      StreamId streamId,
-      SubscriberFactory& subscriberFactory) override;
 };
 }

@@ -9,6 +9,7 @@
 #include "src/Frame.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/RequestHandler.h"
 #include "src/SmartPointers.h"
 
 namespace reactivesocket {

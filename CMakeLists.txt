@@ -146,9 +146,7 @@ add_library(
   src/Payload.h
   src/ReactiveSocket.cpp
   src/ReactiveSocket.h
-  src/ReactiveSocketSubscriberFactory.h
   src/ReactiveStreamsCompat.h
-  src/RequestHandler.cpp
   src/RequestHandler.h
   src/ResumeCache.cpp
   src/ResumeCache.h
