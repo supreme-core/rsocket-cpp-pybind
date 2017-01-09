@@ -36,7 +36,7 @@ class RequestResponseRequester
   // TODO(lehecka): rename to avoid confusion
   void onNext(Payload);
 
-  bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
+  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
 
   std::ostream& logPrefix(std::ostream& os);
 

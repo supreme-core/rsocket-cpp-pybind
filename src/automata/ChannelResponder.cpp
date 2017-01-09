@@ -49,7 +49,7 @@ void ChannelResponder::onErrorImpl(folly::exception_wrapper ex) {
 void ChannelResponder::requestImpl(size_t n) {
   switch (state_) {
     case State::RESPONDING:
-      Base::request(n);
+      Base::generateRequest(n);
     case State::CLOSED:
       break;
   }

@@ -8,15 +8,12 @@
 
 namespace reactivesocket {
 
-bool RequestResponseRequester::subscribe(
+void RequestResponseRequester::subscribe(
     std::shared_ptr<Subscriber<Payload>> subscriber) {
   DCHECK(!isTerminated());
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_.reset(std::move(subscriber));
-  // FIXME(lehecka): now it is possible to move it here
-  // Subscriber::onSubscribe is delivered externally, as it may attempt to
-  // synchronously deliver Subscriber::request.
-  return true;
+  consumingSubscriber_.onSubscribe(SubscriptionBase::shared_from_this());
 }
 
 void RequestResponseRequester::onNext(Payload request) {
