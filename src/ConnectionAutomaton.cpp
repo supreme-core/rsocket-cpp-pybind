@@ -242,7 +242,7 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   // TODO(tmont): If a frame is invalid, it will still be tracked. However, we
   // actually want that. We want to keep
   // each side in sync, even if a frame is invalid.
-  streamState_->resumeTracker_->trackReceivedFrame(*frame);
+  streamState_->resumeTracker_.trackReceivedFrame(*frame);
 
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
@@ -304,7 +304,7 @@ void ConnectionAutomaton::onConnectionFrame(
               Frame_ERROR::connectionError("keepalive without flag"));
         }
 
-        streamState_->resumeCache_->resetUpToPosition(frame.position_);
+        streamState_->resumeCache_.resetUpToPosition(frame.position_);
       } else {
         if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
           closeWithError(Frame_ERROR::connectionError(
@@ -343,12 +343,12 @@ void ConnectionAutomaton::onConnectionFrame(
         //
         //      if (canResume) {
         //        outputFrameOrEnqueue(
-        //            Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
+        //            Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
         //                .serializeOut());
         //        for (auto it : streamState_->streams_) {
         //          const StreamId streamId = it.first;
         //
-        //          if (streamState_->resumeCache_->isPositionAvailable(
+        //          if (streamState_->resumeCache_.isPositionAvailable(
         //                  frame.position_, streamId)) {
         //            it.second->onCleanResume();
         //          } else {
@@ -367,7 +367,7 @@ void ConnectionAutomaton::onConnectionFrame(
       }
       if (resumeCallback_) {
         if (!isServer_ && isResumable_ &&
-            streamState_->resumeCache_->isPositionAvailable(frame.position_)) {
+            streamState_->resumeCache_.isPositionAvailable(frame.position_)) {
           resumeCallback_->onResumeOk();
           resumeCallback_.reset();
           resumeFromPosition(frame.position_);
@@ -417,23 +417,23 @@ void ConnectionAutomaton::handleUnknownStream(
 void ConnectionAutomaton::sendKeepalive() {
   Frame_KEEPALIVE pingFrame(
       FrameFlags_KEEPALIVE_RESPOND,
-      streamState_->resumeTracker_->impliedPosition(),
+      streamState_->resumeTracker_.impliedPosition(),
       folly::IOBuf::create(0));
   outputFrameOrEnqueue(pingFrame.serializeOut());
 }
 
 Frame_RESUME ConnectionAutomaton::createResumeFrame(
     const ResumeIdentificationToken& token) const {
-  return Frame_RESUME(token, streamState_->resumeTracker_->impliedPosition());
+  return Frame_RESUME(token, streamState_->resumeTracker_.impliedPosition());
 }
 
 bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
-  return streamState_->resumeCache_->isPositionAvailable(position);
+  return streamState_->resumeCache_.isPositionAvailable(position);
 }
 
 // ResumePosition ConnectionAutomaton::positionDifference(
 //    ResumePosition position) {
-//  return streamState_->resumeCache_->position() - position;
+//  return streamState_->resumeCache_.position() - position;
 //}
 
 bool ConnectionAutomaton::resumeFromPositionOrClose(
@@ -442,10 +442,10 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(
   DCHECK(!resumeCallback_);
   DCHECK(!isDisconnectedOrClosed());
 
-  if (streamState_->resumeCache_->isPositionAvailable(position)) {
+  if (streamState_->resumeCache_.isPositionAvailable(position)) {
     if (writeResumeOkFrame) {
       frameTransport_->outputFrameOrEnqueue(
-          Frame_RESUME_OK(streamState_->resumeTracker_->impliedPosition())
+          Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
               .serializeOut());
     }
 
@@ -460,9 +460,9 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(
 void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
   DCHECK(!resumeCallback_);
   DCHECK(!isDisconnectedOrClosed());
-  DCHECK(streamState_->resumeCache_->isPositionAvailable(position));
+  DCHECK(streamState_->resumeCache_.isPositionAvailable(position));
 
-  streamState_->resumeCache_->sendFramesFromPosition(
+  streamState_->resumeCache_.sendFramesFromPosition(
       position, *frameTransport_);
 
   for (auto& frame : streamState_->moveOutputPendingFrames()) {
@@ -491,7 +491,7 @@ void ConnectionAutomaton::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
   ss << FrameHeader::peekType(*frame);
   stats_.frameWritten(ss.str());
 
-  streamState_->resumeCache_->trackSentFrame(*frame);
+  streamState_->resumeCache_.trackSentFrame(*frame);
   frameTransport_->outputFrameOrEnqueue(std::move(frame));
 }
 
