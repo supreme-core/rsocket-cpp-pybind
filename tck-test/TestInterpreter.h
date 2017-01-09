@@ -27,10 +27,7 @@ class AssertCommand;
 
 class TestInterpreter {
  public:
-  TestInterpreter(
-      const Test& test,
-      ReactiveSocket& reactiveSocket,
-      folly::EventBase& rsEventBase);
+  TestInterpreter(const Test& test, ReactiveSocket& reactiveSocket);
 
   bool run();
 
@@ -48,7 +45,6 @@ class TestInterpreter {
   const Test& test_;
   std::map<std::string, std::string> interactionIdToType_;
   std::map<std::string, std::shared_ptr<TestSubscriber>> testSubscribers_;
-  folly::EventBase* rsEventBase_;
 };
 
 } // tck

@@ -2,7 +2,6 @@
 
 #include "TestInterpreter.h"
 
-#include <folly/io/async/EventBase.h>
 #include <glog/logging.h>
 #include <src/ReactiveSocket.h>
 #include "TypedCommands.h"
@@ -14,11 +13,8 @@ namespace tck {
 
 TestInterpreter::TestInterpreter(
     const Test& test,
-    ReactiveSocket& reactiveSocket,
-    EventBase& rsEventBase)
-    : reactiveSocket_(&reactiveSocket),
-      test_(test),
-      rsEventBase_(&rsEventBase) {
+    ReactiveSocket& reactiveSocket)
+    : reactiveSocket_(&reactiveSocket), test_(test) {
   DCHECK(!test.empty());
 }
 
@@ -74,12 +70,9 @@ void TestInterpreter::handleSubscribe(const SubscribeCommand& command) {
     LOG(ERROR) << "request response not implemented";
   } else if (command.isRequestStreamType()) {
     auto testSubscriber = createTestSubscriber(command.id());
-    rsEventBase_->runInEventBaseThreadAndWait([&]() {
-      reactiveSocket_->requestStream(
-          Payload(command.payloadData(), command.payloadMetadata()),
-          testSubscriber,
-          *rsEventBase_);
-    });
+    reactiveSocket_->requestStream(
+        Payload(command.payloadData(), command.payloadMetadata()),
+        std::move(testSubscriber));
   } else {
     throw std::runtime_error("unsupported interaction type");
   }

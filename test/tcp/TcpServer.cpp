@@ -114,7 +114,10 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::make_unique<ServerRequestHandler>();
 
     auto rs = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler), stats_);
+        eventBase_,
+        std::move(framedConnection),
+        std::move(requestHandler),
+        stats_);
 
     rs->onClosed(
         std::bind(&Callback::removeSocket, this, std::placeholders::_1));

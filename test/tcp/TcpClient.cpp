@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
             folly::make_unique<DefaultRequestHandler>();
 
         reactiveSocket = ReactiveSocket::fromClientConnection(
+            *eventBaseThread.getEventBase(),
             std::move(framedConnection),
             std::move(requestHandler),
             ConnectionSetupPayload(

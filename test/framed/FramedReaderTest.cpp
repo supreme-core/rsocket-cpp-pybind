@@ -201,7 +201,11 @@ TEST(FramedReaderTest, InvalidDataStream) {
         // allow receiving frames from the automaton
         subscription->request(std::numeric_limits<size_t>::max());
       }));
-  EXPECT_CALL(*testOutputSubscriber, onNext_(_)).Times(0);
+  EXPECT_CALL(*testOutputSubscriber, onNext_(_))
+      .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& p) {
+        // SETUP frame with leading frame size
+      }));
+
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(0);
   EXPECT_CALL(*testOutputSubscriber, onError_(_)).Times(1);
 
@@ -209,9 +213,10 @@ TEST(FramedReaderTest, InvalidDataStream) {
   testConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto reactiveSocket = ReactiveSocket::fromClientConnection(
+      defaultExecutor(),
       std::move(framedRsAutomatonConnection),
       // No interactions on this mock, the client will not accept any
       // requests.
       folly::make_unique<StrictMock<MockRequestHandler>>(),
-      ConnectionSetupPayload("", "", Payload()));
+      ConnectionSetupPayload("", "", Payload("test client payload")));
 }

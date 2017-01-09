@@ -22,8 +22,7 @@ class FrameTransport :
     public Subscription,
     public std::enable_shared_from_this<FrameTransport> {
  public:
-  static std::shared_ptr<FrameTransport> fromDuplexConnection(
-      std::unique_ptr<DuplexConnection> connection);
+  explicit FrameTransport(std::unique_ptr<DuplexConnection> connection);
   ~FrameTransport();
 
   void setFrameProcessor(std::shared_ptr<FrameProcessor>);
@@ -44,7 +43,7 @@ class FrameTransport :
   }
 
  private:
-  void connect(std::unique_ptr<DuplexConnection> connection);
+  void connect();
 
   void onSubscribe(std::shared_ptr<Subscription>) override;
   void onNext(std::unique_ptr<folly::IOBuf>) override;

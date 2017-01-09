@@ -15,10 +15,13 @@ namespace reactivesocket {
 
 class StreamState;
 
+// TODO: remove this interface and everything where this is used.
 class SubscriberFactory {
  public:
   virtual ~SubscriberFactory() = default;
   virtual std::shared_ptr<Subscriber<Payload>> createSubscriber() = 0;
+  // the following override of the method is not used anymore
+  // remove the whole thing
   virtual std::shared_ptr<Subscriber<Payload>> createSubscriber(
       folly::Executor& executor) = 0;
 };

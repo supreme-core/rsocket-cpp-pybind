@@ -9,8 +9,7 @@ namespace reactivesocket {
 
 namespace {
 
-const char* HEX_CHARS = { "0123456789abcdef" };
-
+const char* HEX_CHARS = {"0123456789abcdef"};
 }
 
 static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {

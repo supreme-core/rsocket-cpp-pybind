@@ -7,22 +7,22 @@
 
 namespace reactivesocket {
 
+FrameTransport::FrameTransport(std::unique_ptr<DuplexConnection> connection)
+    : connection_(std::move(connection)) {
+  CHECK(connection_);
+}
+
 FrameTransport::~FrameTransport() {
   VLOG(6) << "~FrameTransport";
 }
 
-std::shared_ptr<FrameTransport> FrameTransport::fromDuplexConnection(
-    std::unique_ptr<DuplexConnection> connection) {
-  auto instance = std::make_shared<FrameTransport>();
-  instance->connect(std::move(connection));
-  return instance;
-}
+void FrameTransport::connect() {
+  DCHECK(connection_);
 
-void FrameTransport::connect(std::unique_ptr<DuplexConnection> connection) {
-  CHECK(connection);
-  CHECK(!connection_);
-
-  connection_ = std::move(connection);
+  if (connectionOutput_) {
+    // already connected
+    return;
+  }
 
   connectionOutput_.reset(connection_->getOutput());
   connectionOutput_.onSubscribe(shared_from_this());
@@ -46,8 +46,9 @@ void FrameTransport::setFrameProcessor(
     std::shared_ptr<FrameProcessor> frameProcessor) {
   frameProcessor_ = std::move(frameProcessor);
 
-  if (frameProcessor_ && connectionInputSub_) {
-    connectionInputSub_.request(std::numeric_limits<size_t>::max());
+  if (frameProcessor_) {
+    CHECK(!isClosed());
+    connect();
   }
 
   drainOutputFramesQueue();
@@ -76,12 +77,9 @@ void FrameTransport::close(folly::exception_wrapper ex) {
 
 void FrameTransport::onSubscribe(std::shared_ptr<Subscription> subscription) {
   CHECK(!connectionInputSub_);
+  CHECK(frameProcessor_);
   connectionInputSub_.reset(std::move(subscription));
-  // This may result in signals being issued by the connection in-line, see
-  // ::connect.
-  if (frameProcessor_) {
-    connectionInputSub_.request(std::numeric_limits<size_t>::max());
-  }
+  connectionInputSub_.request(std::numeric_limits<size_t>::max());
 }
 
 void FrameTransport::onNext(std::unique_ptr<folly::IOBuf> frame) {

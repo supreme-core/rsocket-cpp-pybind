@@ -171,8 +171,8 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     std::unique_ptr<RequestHandler> requestHandler =
         folly::make_unique<ServerRequestHandler>(streamState_);
 
-    std::unique_ptr<ReactiveSocket> rs =
-        ReactiveSocket::disconnectedServer(std::move(requestHandler), stats_);
+    std::unique_ptr<ReactiveSocket> rs = ReactiveSocket::disconnectedServer(
+        eventBase_, std::move(requestHandler), stats_);
 
     rs->onConnected([](ReactiveSocket& socket) {
       LOG(INFO) << "socket connected " << &socket;
@@ -195,8 +195,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
 
     LOG(INFO) << "serverConnecting ...";
     rs->serverConnect(
-        FrameTransport::fromDuplexConnection(std::move(framedConnection)),
-        true);
+        std::make_shared<FrameTransport>(std::move(framedConnection)), true);
 
     LOG(INFO) << "RS " << rs.get();
 

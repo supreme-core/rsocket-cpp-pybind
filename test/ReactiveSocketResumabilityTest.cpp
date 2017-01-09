@@ -34,6 +34,7 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
   MockStats stats;
 
   auto socket = ReactiveSocket::fromClientConnection(
+      defaultExecutor(),
       std::move(socketConnection),
       folly::make_unique<DefaultRequestHandler>(),
       ConnectionSetupPayload(),

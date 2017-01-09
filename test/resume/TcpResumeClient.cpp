@@ -85,6 +85,7 @@ int main(int argc, char* argv[]) {
         folly::make_unique<DefaultRequestHandler>();
 
     reactiveSocket = ReactiveSocket::disconnectedClient(
+        *eventBaseThread.getEventBase(),
         std::move(requestHandler),
         stats,
         folly::make_unique<FollyKeepaliveTimer>(
@@ -106,7 +107,7 @@ int main(int argc, char* argv[]) {
 
     LOG(INFO) << "connecting RS ...";
     reactiveSocket->clientConnect(
-        FrameTransport::fromDuplexConnection(std::move(framedConnection)),
+        std::make_shared<FrameTransport>(std::move(framedConnection)),
         ConnectionSetupPayload(
             "text/plain", "text/plain", Payload("meta", "data"), true, token));
   });
@@ -140,7 +141,7 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "try resume ...";
     reactiveSocket->tryClientResume(
         token,
-        std::move(framedConnectionResume),
+        std::make_shared<FrameTransport>(std::move(framedConnectionResume)),
         folly::make_unique<ResumeCallback>());
   });
 
