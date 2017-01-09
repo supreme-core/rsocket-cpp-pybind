@@ -70,3 +70,6 @@ install_manifest.txt
 
 # Metadata files created by Mac OS.
 .DS_Store
+
+#CLion
+cmake-build-debug/

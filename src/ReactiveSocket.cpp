@@ -500,4 +500,8 @@ void ReactiveSocket::checkNotClosed() const {
   CHECK(connection_) << "ReactiveSocket already closed";
 }
 
+DuplexConnection* ReactiveSocket::duplexConnection() const {
+  return connection_ ? connection_->duplexConnection() : nullptr;
+}
+
 } // reactivesocket

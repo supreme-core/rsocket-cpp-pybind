@@ -121,6 +121,8 @@ class ReactiveSocket {
     return executor_;
   }
 
+  DuplexConnection* duplexConnection() const;
+
  private:
   ReactiveSocket(
       bool isServer,

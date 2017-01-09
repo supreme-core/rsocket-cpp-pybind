@@ -174,6 +174,8 @@ class ConnectionAutomaton
   uint32_t getKeepaliveTime() const;
   bool isDisconnectedOrClosed() const;
 
+  DuplexConnection* duplexConnection() const;
+
  private:
   /// Performs the same actions as ::endStream without propagating closure
   /// signal to the underlying connection.

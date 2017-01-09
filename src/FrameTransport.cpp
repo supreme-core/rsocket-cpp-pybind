@@ -160,4 +160,8 @@ void FrameTransport::drainOutputFramesQueue() {
   }
 }
 
+DuplexConnection* FrameTransport::duplexConnection() const {
+  return connection_.get();
+}
+
 } // reactivesocket

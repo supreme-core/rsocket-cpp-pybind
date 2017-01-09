@@ -462,8 +462,7 @@ void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
   DCHECK(!isDisconnectedOrClosed());
   DCHECK(streamState_->resumeCache_.isPositionAvailable(position));
 
-  streamState_->resumeCache_.sendFramesFromPosition(
-      position, *frameTransport_);
+  streamState_->resumeCache_.sendFramesFromPosition(position, *frameTransport_);
 
   for (auto& frame : streamState_->moveOutputPendingFrames()) {
     outputFrameOrEnqueue(std::move(frame));
@@ -510,6 +509,10 @@ uint32_t ConnectionAutomaton::getKeepaliveTime() const {
 
 bool ConnectionAutomaton::isDisconnectedOrClosed() const {
   return !frameTransport_;
+}
+
+DuplexConnection* ConnectionAutomaton::duplexConnection() const {
+  return frameTransport_ ? frameTransport_->duplexConnection() : nullptr;
 }
 
 } // reactivesocket
