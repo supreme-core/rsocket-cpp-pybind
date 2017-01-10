@@ -204,7 +204,7 @@ add_executable(
   test/SmartPointersTest.cpp
   test/AllowanceSemaphoreTest.cpp
   test/ResumeIdentificationTokenTest.cpp
-  test/PayloadTest.cpp.cpp)
+  test/PayloadTest.cpp)
 
 target_link_libraries(
   tests

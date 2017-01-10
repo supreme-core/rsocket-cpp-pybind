@@ -114,7 +114,7 @@ void RequestResponseRequester::onNextFrame(Frame_RESPONSE&& frame) {
       break;
     case State::CLOSED:
       // should not be receiving frames when closed
-      // if we ended up here, we broke some internal invariant fo the class
+      // if we ended up here, we broke some internal invariant of the class
       CHECK(false);
       break;
   }
