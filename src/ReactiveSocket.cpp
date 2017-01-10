@@ -135,7 +135,7 @@ void ReactiveSocket::requestStream(
                                         executor_};
   auto automaton = std::make_shared<StreamRequester>(params);
   connection_->addStream(streamId, automaton);
-  automaton->subscribe(responseSink);
+  automaton->subscribe(std::move(responseSink));
   automaton->processInitialPayload(std::move(request));
   automaton->start();
 }
