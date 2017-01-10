@@ -74,19 +74,19 @@ class ReactiveSocket {
       Stats& stats = Stats::noop());
 
   std::shared_ptr<Subscriber<Payload>> requestChannel(
-      const std::shared_ptr<Subscriber<Payload>>& responseSink);
+      std::shared_ptr<Subscriber<Payload>> responseSink);
 
   void requestStream(
       Payload payload,
-      const std::shared_ptr<Subscriber<Payload>>& responseSink);
+      std::shared_ptr<Subscriber<Payload>> responseSink);
 
   void requestSubscription(
       Payload payload,
-      const std::shared_ptr<Subscriber<Payload>>& responseSink);
+      std::shared_ptr<Subscriber<Payload>> responseSink);
 
   void requestResponse(
       Payload payload,
-      const std::shared_ptr<Subscriber<Payload>>& responseSink);
+      std::shared_ptr<Subscriber<Payload>> responseSink);
 
   void requestFireAndForget(Payload request);
 
