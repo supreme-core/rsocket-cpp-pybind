@@ -120,7 +120,6 @@ std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
   auto automaton = std::make_shared<ChannelRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink->onSubscribe(automaton);
   automaton->start();
   return automaton;
 }
@@ -137,7 +136,6 @@ void ReactiveSocket::requestStream(
   auto automaton = std::make_shared<StreamRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink->onSubscribe(automaton);
   automaton->onNext(std::move(request));
   automaton->start();
 }
@@ -154,7 +152,6 @@ void ReactiveSocket::requestSubscription(
   auto automaton = std::make_shared<SubscriptionRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink->onSubscribe(automaton);
   automaton->onNext(std::move(request));
   automaton->start();
 }
@@ -181,7 +178,7 @@ void ReactiveSocket::requestResponse(
   auto automaton = std::make_shared<RequestResponseRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  responseSink->onSubscribe(automaton);
+  // TODO(lehecka): rename the onNext to processInitialPayload
   automaton->onNext(std::move(payload));
   automaton->start();
 }
@@ -249,11 +246,7 @@ void ReactiveSocket::createResponder(
 
       auto requestSink = handler->handleRequestChannel(
           std::move(frame.payload_), streamId, automaton);
-      if (automaton->subscribe(requestSink)) {
-        // any calls from onSubscribe are queued until we start
-        // TODO(lehecka): move the onSubscribe call to subscribe method
-        requestSink->onSubscribe(automaton);
-      }
+      automaton->subscribe(requestSink);
 
       // processInitialFrame executes directly, it may cause to call request(n)
       // which may call back and it will be queued after the calls from

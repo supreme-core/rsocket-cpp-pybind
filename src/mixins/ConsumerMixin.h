@@ -19,11 +19,20 @@ enum class StreamCompletionSignal;
 
 /// A mixin that represents a flow-control-aware consumer of data.
 template <typename Frame>
-class ConsumerMixin : public StreamAutomatonBase {
+class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   using Base = StreamAutomatonBase;
 
  public:
-  using Base::Base;
+  struct Parameters : Base::Parameters {
+    Parameters(
+        const typename Base::Parameters& baseParams,
+        folly::Executor& _executor)
+        : Base::Parameters(baseParams), executor(_executor) {}
+    folly::Executor& executor;
+  };
+
+  explicit ConsumerMixin(const Parameters& params)
+      : ExecutorBase(params.executor, false), Base(params) {}
 
   /// Adds implicit allowance.
   ///
@@ -34,23 +43,19 @@ class ConsumerMixin : public StreamAutomatonBase {
   }
 
   /// @{
-  bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
+  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
     if (Base::isTerminated()) {
       subscriber->onSubscribe(std::make_shared<NullSubscription>());
       subscriber->onComplete();
-      return false;
+      return;
     }
 
     DCHECK(!consumingSubscriber_);
     consumingSubscriber_.reset(std::move(subscriber));
-
-    // TODO(lehecka): refactor this method to call
-    // subscriber->onSubscribe(enable_shared_from_this());
-    // and remove returning the boolean value
-    return true;
+    consumingSubscriber_.onSubscribe(shared_from_this());
   }
 
-  void request(size_t n) {
+  void generateRequest(size_t n) {
     allowance_.release(n);
     pendingAllowance_.release(n);
     sendRequests();
@@ -79,6 +84,13 @@ class ConsumerMixin : public StreamAutomatonBase {
   /// @}
 
  private:
+  // we don't want derived classes to call these methods.
+  // derived classes should be calling implementation methods, not the top level
+  // methods which are for the application code.
+  // avoiding potential bugs..
+  using SubscriptionBase::request;
+  using SubscriptionBase::cancel;
+
   void sendRequests();
 
   void handleFlowControlError();
