@@ -22,7 +22,7 @@ class ChannelResponder : public PublisherMixin<
 
  public:
   explicit ChannelResponder(const Base::Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   void processInitialFrame(Frame_REQUEST_CHANNEL&&);
 

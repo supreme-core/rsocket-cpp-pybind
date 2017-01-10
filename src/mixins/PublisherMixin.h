@@ -22,7 +22,7 @@ template <typename ProducedFrame, typename Base>
 class PublisherMixin : public Base {
  public:
   explicit PublisherMixin(const typename Base::Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   explicit PublisherMixin(
       const typename Base::Parameters& params,

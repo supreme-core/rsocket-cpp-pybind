@@ -27,7 +27,7 @@ class RequestResponseRequester : public StreamAutomatonBase,
   };
 
   explicit RequestResponseRequester(const Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
   void processInitialPayload(Payload);
