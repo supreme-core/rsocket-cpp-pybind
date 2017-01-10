@@ -185,7 +185,6 @@ add_executable(
   tests
   test/concurrent/OneToOneRingBufferTest.cpp
   test/ConnectionAutomatonTest.cpp
-  test/ExecutorTest.cpp
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
   test/FrameTest.cpp

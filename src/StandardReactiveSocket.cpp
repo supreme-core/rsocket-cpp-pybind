@@ -125,7 +125,6 @@ std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
   auto automaton = std::make_shared<ChannelRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
-  automaton->start();
   return automaton;
 }
 
@@ -142,7 +141,6 @@ void StandardReactiveSocket::requestStream(
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
   automaton->processInitialPayload(std::move(request));
-  automaton->start();
 }
 
 void StandardReactiveSocket::requestSubscription(
@@ -158,7 +156,6 @@ void StandardReactiveSocket::requestSubscription(
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
   automaton->processInitialPayload(std::move(request));
-  automaton->start();
 }
 
 void StandardReactiveSocket::requestFireAndForget(Payload request) {
@@ -184,7 +181,6 @@ void StandardReactiveSocket::requestResponse(
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
   automaton->processInitialPayload(std::move(payload));
-  automaton->start();
 }
 
 void StandardReactiveSocket::metadataPush(
@@ -257,7 +253,6 @@ void StandardReactiveSocket::createResponder(
       // which may call back and it will be queued after the calls from
       // the onSubscribe method
       automaton->processInitialFrame(std::move(frame));
-      automaton->start();
       break;
     }
     case FrameType::REQUEST_STREAM: {
@@ -275,7 +270,6 @@ void StandardReactiveSocket::createResponder(
           std::move(frame.payload_), streamId, automaton);
 
       automaton->processInitialFrame(std::move(frame));
-      automaton->start();
       break;
     }
     case FrameType::REQUEST_SUB: {
@@ -294,7 +288,6 @@ void StandardReactiveSocket::createResponder(
           std::move(frame.payload_), streamId, automaton);
 
       automaton->processInitialFrame(std::move(frame));
-      automaton->start();
       break;
     }
     case FrameType::REQUEST_RESPONSE: {
@@ -313,7 +306,6 @@ void StandardReactiveSocket::createResponder(
           std::move(frame.payload_), streamId, automaton);
 
       automaton->processInitialFrame(std::move(frame));
-      automaton->start();
       break;
     }
     case FrameType::REQUEST_FNF: {

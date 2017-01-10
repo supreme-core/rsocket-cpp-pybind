@@ -78,13 +78,11 @@ class SubscriberBaseT : public Subscriber<T>,
   // in c++11 we have to declare this explicitly, instead of
   // using ExecutorBase::ExecutorBase because of atomic cancelled_ member :(
   // maybe it is gcc issue
-  // initializaiton of the ExecutorBase will be ignored for any of the
+  // initialization of the ExecutorBase will be ignored for any of the
   // classes deriving from SubscriberBaseT
   // providing the default param values just to make the compiler happy
-  explicit SubscriberBaseT(
-      folly::Executor& executor = defaultExecutor(),
-      bool startExecutor = true)
-      : ExecutorBase(executor, startExecutor), cancelled_(false) {}
+  explicit SubscriberBaseT(folly::Executor& executor = defaultExecutor())
+      : ExecutorBase(executor), cancelled_(false) {}
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override final {
     auto thisPtr = this->shared_from_this();
