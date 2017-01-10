@@ -16,7 +16,7 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin<Frame_RESPONSE> {
 
  public:
   explicit StreamSubscriptionRequesterBase(const Base::Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   void processInitialPayload(Payload);
 

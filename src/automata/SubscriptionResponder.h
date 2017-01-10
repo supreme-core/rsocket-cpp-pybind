@@ -13,7 +13,7 @@ class SubscriptionResponder : public StreamSubscriptionResponderBase {
 
  public:
   explicit SubscriptionResponder(const Base::Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   void processInitialFrame(Frame_REQUEST_SUB&&);
 

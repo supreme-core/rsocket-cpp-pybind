@@ -32,7 +32,7 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   };
 
   explicit ConsumerMixin(const Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   /// Adds implicit allowance.
   ///

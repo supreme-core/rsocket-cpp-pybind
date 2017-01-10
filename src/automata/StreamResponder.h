@@ -13,7 +13,7 @@ class StreamResponder : public StreamSubscriptionResponderBase {
 
  public:
   explicit StreamResponder(const Base::Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
   std::ostream& logPrefix(std::ostream& os) {
     return os << "StreamResponder(" << &connection_ << ", " << streamId_
