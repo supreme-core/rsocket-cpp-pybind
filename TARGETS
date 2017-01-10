@@ -58,6 +58,7 @@ cpp_library(
         'src/ReactiveSocket.h',
         'src/RequestHandler.h',
         'src/SmartPointers.h', #will be removed soon
+        'src/StandardReactiveSocket.h',
         'src/Stats.h',
         'src/SubscriberBase.h',
         'src/SubscriptionBase.h',
@@ -72,9 +73,9 @@ cpp_library(
         'src/FrameTransport.cpp',
         'src/NullRequestHandler.cpp',
         'src/Payload.cpp',
-        'src/ReactiveSocket.cpp',
         'src/RequestHandler.cpp',
         'src/ResumeCache.cpp',
+        'src/StandardReactiveSocket.cpp',
         'src/Stats.cpp',
     ]),
     deps = [
@@ -115,6 +116,23 @@ cpp_library(
         '//folly/io/async:async',
     ],
     compiler_flags=['-DREACTIVE_SOCKET_EXTERNAL_STACK_TRACE_UTILS'],
+)
+
+cpp_library(
+    name='reactivesocket-inline-conn',
+    headers=[
+        'test/InlineConnection.h',
+    ],
+    srcs=[
+        'test/InlineConnection.cpp',
+    ],
+    deps=[
+        ':reactivesocket',
+        ':reactivesocket-streams-mocks',
+    ],
+    external_deps=[
+        'gmock',
+    ],
 )
 
 cpp_unittest(
