@@ -110,7 +110,7 @@ std::unique_ptr<ReactiveSocket> ReactiveSocket::disconnectedServer(
 }
 
 std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
-    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
@@ -119,14 +119,14 @@ std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
                                          executor_};
   auto automaton = std::make_shared<ChannelRequester>(params);
   connection_->addStream(streamId, automaton);
-  automaton->subscribe(responseSink);
+  automaton->subscribe(std::move(responseSink));
   automaton->start();
   return automaton;
 }
 
 void ReactiveSocket::requestStream(
     Payload request,
-    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
@@ -136,13 +136,13 @@ void ReactiveSocket::requestStream(
   auto automaton = std::make_shared<StreamRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(responseSink);
-  automaton->onNext(std::move(request));
+  automaton->processInitialPayload(std::move(request));
   automaton->start();
 }
 
 void ReactiveSocket::requestSubscription(
     Payload request,
-    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
@@ -151,8 +151,8 @@ void ReactiveSocket::requestSubscription(
                                               executor_};
   auto automaton = std::make_shared<SubscriptionRequester>(params);
   connection_->addStream(streamId, automaton);
-  automaton->subscribe(responseSink);
-  automaton->onNext(std::move(request));
+  automaton->subscribe(std::move(responseSink));
+  automaton->processInitialPayload(std::move(request));
   automaton->start();
 }
 
@@ -168,7 +168,7 @@ void ReactiveSocket::requestFireAndForget(Payload request) {
 
 void ReactiveSocket::requestResponse(
     Payload payload,
-    const std::shared_ptr<Subscriber<Payload>>& responseSink) {
+    std::shared_ptr<Subscriber<Payload>> responseSink) {
   checkNotClosed();
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
@@ -177,9 +177,8 @@ void ReactiveSocket::requestResponse(
       {connection_, streamId, handler_}, executor_};
   auto automaton = std::make_shared<RequestResponseRequester>(params);
   connection_->addStream(streamId, automaton);
-  automaton->subscribe(responseSink);
-  // TODO(lehecka): rename the onNext to processInitialPayload
-  automaton->onNext(std::move(payload));
+  automaton->subscribe(std::move(responseSink));
+  automaton->processInitialPayload(std::move(payload));
   automaton->start();
 }
 

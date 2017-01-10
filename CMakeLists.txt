@@ -203,7 +203,8 @@ add_executable(
   test/ReactiveSocketResumabilityTest.cpp
   test/SmartPointersTest.cpp
   test/AllowanceSemaphoreTest.cpp
-  test/ResumeIdentificationTokenTest.cpp)
+  test/ResumeIdentificationTokenTest.cpp
+  test/PayloadTest.cpp.cpp)
 
 target_link_libraries(
   tests
