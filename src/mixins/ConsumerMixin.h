@@ -84,8 +84,10 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   /// @}
 
  private:
-  // we don't want drived classes to call these methods.
-  // Protection against bugs of that kind.
+  // we don't want derived classes to call these methods.
+  // derived classes should be calling implementation methods, not the top level
+  // methods which are for the application code.
+  // avoiding potential bugs..
   using SubscriptionBase::request;
   using SubscriptionBase::cancel;
 
