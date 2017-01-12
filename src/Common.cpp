@@ -1,8 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/Common.h"
-#include <folly/io/IOBuf.h>
 #include <folly/Random.h>
+#include <folly/io/IOBuf.h>
 #include <random>
 #include "src/AbstractStreamAutomaton.h"
 

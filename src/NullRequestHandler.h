@@ -50,9 +50,11 @@ class NullRequestHandler : public RequestHandler {
   void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override;
 
   std::shared_ptr<StreamState> handleSetupPayload(
+      ReactiveSocket& socket,
       ConnectionSetupPayload request) override;
 
-  std::shared_ptr<StreamState> handleResume(
+  bool handleResume(
+      ReactiveSocket& socket,
       const ResumeIdentificationToken& token,
       ResumePosition position) override;
 
