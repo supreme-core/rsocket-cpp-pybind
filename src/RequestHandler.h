@@ -10,6 +10,7 @@
 namespace reactivesocket {
 
 class StreamState;
+class ReactiveSocket;
 
 class RequestHandler {
  public:
@@ -50,11 +51,13 @@ class RequestHandler {
   /// Temporary home - this should eventually be an input to asking for a
   /// RequestHandler so negotiation is possible
   virtual std::shared_ptr<StreamState> handleSetupPayload(
+      ReactiveSocket& socket,
       ConnectionSetupPayload request) = 0;
 
   /// Temporary home - this should accompany handleSetupPayload
   /// Return stream state for the given token. Return nullptr to disable resume
-  virtual std::shared_ptr<StreamState> handleResume(
+  virtual bool handleResume(
+      ReactiveSocket& socket,
       const ResumeIdentificationToken& token,
       ResumePosition position) = 0;
 

@@ -88,6 +88,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
+      ReactiveSocket& socket,
       ConnectionSetupPayload request) override {
     std::stringstream str;
 
@@ -101,10 +102,12 @@ class ServerRequestHandler : public DefaultRequestHandler {
     LOG(INFO) << str.str();
     // TODO: we need to get ReactiveSocket pointer somehow
     g_reactiveSockets[0].second = request.token;
+    // TODO: the return value is not used now
     return streamState_;
   }
 
-  std::shared_ptr<StreamState> handleResume(
+  bool handleResume(
+      ReactiveSocket& socket,
       const ResumeIdentificationToken& token,
       ResumePosition position) override {
     std::stringstream str;
@@ -130,7 +133,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
 
     // TODO(lehecka): unused, make it used again
     // return streamState_;
-    return nullptr;
+    return false;
   }
 
   void handleCleanResume(std::shared_ptr<Subscription> response) override {
