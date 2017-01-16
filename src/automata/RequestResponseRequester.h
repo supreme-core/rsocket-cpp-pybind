@@ -13,10 +13,8 @@ namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a RequestResponse
 /// requester
-class RequestResponseRequester
-    : public StreamAutomatonBase,
-      public SubscriptionBase,
-      public EnableSharedFromThisBase<RequestResponseRequester> {
+class RequestResponseRequester : public StreamAutomatonBase,
+                                 public SubscriptionBase {
   using Base = StreamAutomatonBase;
 
  public:
@@ -29,22 +27,16 @@ class RequestResponseRequester
   };
 
   explicit RequestResponseRequester(const Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
-  /// Degenerate form of the Subscriber interface -- only one request payload
-  /// will be sent to the server.
-  // TODO(lehecka): rename to avoid confusion
-  void onNext(Payload);
-
-  bool subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
+  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
+  void processInitialPayload(Payload);
 
   std::ostream& logPrefix(std::ostream& os);
 
  private:
   void requestImpl(size_t) override;
   void cancelImpl() override;
-
-  void onNextImpl(Payload);
 
   using Base::onNextFrame;
   void onNextFrame(Frame_RESPONSE&&) override;

@@ -144,11 +144,9 @@ add_library(
   src/NullRequestHandler.h
   src/Payload.cpp
   src/Payload.h
-  src/ReactiveSocket.cpp
-  src/ReactiveSocket.h
-  src/ReactiveSocketSubscriberFactory.h
+  src/StandardReactiveSocket.cpp
+  src/StandardReactiveSocket.h
   src/ReactiveStreamsCompat.h
-  src/RequestHandler.cpp
   src/RequestHandler.h
   src/ResumeCache.cpp
   src/ResumeCache.h
@@ -165,7 +163,11 @@ add_library(
   src/automata/StreamAutomatonBase.cpp
   src/automata/StreamAutomatonBase.h
   src/automata/StreamResponder.cpp
-  src/automata/SubscriptionResponder.cpp)
+  src/automata/SubscriptionResponder.cpp
+  src/FrameTransport.cpp
+  src/FrameTransport.h
+  src/FrameProcessor.h
+  src/ReactiveSocket.h)
 
 target_link_libraries(
   ReactiveSocket
@@ -183,14 +185,12 @@ add_executable(
   tests
   test/concurrent/OneToOneRingBufferTest.cpp
   test/ConnectionAutomatonTest.cpp
-  test/ExecutorTest.cpp
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
   test/FrameTest.cpp
   test/InlineConnection.cpp
   test/InlineConnection.h
   test/InlineConnectionTest.cpp
-  test/MockDuplexConnection.h
   test/MockKeepaliveTimer.h
   test/MockRequestHandler.h
   test/MockStats.h
@@ -202,7 +202,9 @@ add_executable(
   test/folly/FollyKeepaliveTimerTest.cpp
   test/ReactiveSocketResumabilityTest.cpp
   test/SmartPointersTest.cpp
-  test/AllowanceSemaphoreTest.cpp)
+  test/AllowanceSemaphoreTest.cpp
+  test/ResumeIdentificationTokenTest.cpp
+  test/PayloadTest.cpp)
 
 target_link_libraries(
   tests
@@ -222,8 +224,8 @@ add_executable(
         test/tcp/TcpClient.cpp
         test/simple/PrintSubscriber.cpp
         test/simple/PrintSubscriber.h
-        src/ReactiveSocket.cpp
-        src/ReactiveSocket.h
+        src/StandardReactiveSocket.cpp
+        src/StandardReactiveSocket.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 
@@ -285,8 +287,8 @@ add_executable(
         test/resume/TcpResumeClient.cpp
         test/simple/PrintSubscriber.cpp
         test/simple/PrintSubscriber.h
-        src/ReactiveSocket.cpp
-        src/ReactiveSocket.h
+        src/StandardReactiveSocket.cpp
+        src/StandardReactiveSocket.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 

@@ -4,8 +4,8 @@
 #include <folly/io/async/AsyncServerSocket.h>
 #include <gmock/gmock.h>
 #include "src/NullRequestHandler.h"
-#include "src/ReactiveSocket.h"
 #include "src/SmartPointers.h"
+#include "src/StandardReactiveSocket.h"
 #include "src/SubscriptionBase.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/tcp/TcpDuplexConnection.h"
@@ -24,7 +24,9 @@ class ServerSubscription : public SubscriptionBase {
   explicit ServerSubscription(
       std::shared_ptr<Subscriber<Payload>> response,
       size_t numElems = 2)
-      : response_(std::move(response)), numElems_(numElems) {}
+      : ExecutorBase(defaultExecutor()),
+        response_(std::move(response)),
+        numElems_(numElems) {}
 
  private:
   // Subscription methods
@@ -83,6 +85,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
+      ReactiveSocket& /*socket*/,
       ConnectionSetupPayload request) override {
     LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
     return std::make_shared<StreamState>();
@@ -111,8 +114,11 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     std::unique_ptr<RequestHandler> requestHandler =
         folly::make_unique<ServerRequestHandler>();
 
-    auto rs = ReactiveSocket::fromServerConnection(
-        std::move(framedConnection), std::move(requestHandler), stats_);
+    auto rs = StandardReactiveSocket::fromServerConnection(
+        eventBase_,
+        std::move(framedConnection),
+        std::move(requestHandler),
+        stats_);
 
     rs->onClosed(
         std::bind(&Callback::removeSocket, this, std::placeholders::_1));
@@ -120,12 +126,12 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     reactiveSockets_.push_back(std::move(rs));
   }
 
-  void removeSocket(ReactiveSocket& socket) {
+  void removeSocket(StandardReactiveSocket& socket) {
     if (!shuttingDown) {
       reactiveSockets_.erase(std::remove_if(
           reactiveSockets_.begin(),
           reactiveSockets_.end(),
-          [&socket](std::unique_ptr<ReactiveSocket>& vecSocket) {
+          [&socket](std::unique_ptr<StandardReactiveSocket>& vecSocket) {
             return vecSocket.get() == &socket;
           }));
     }
@@ -141,7 +147,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   }
 
  private:
-  std::vector<std::unique_ptr<ReactiveSocket>> reactiveSockets_;
+  std::vector<std::unique_ptr<StandardReactiveSocket>> reactiveSockets_;
   EventBase& eventBase_;
   Stats& stats_;
   bool shuttingDown{false};

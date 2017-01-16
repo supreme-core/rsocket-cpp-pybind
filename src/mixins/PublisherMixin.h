@@ -6,9 +6,11 @@
 #include <iostream>
 #include <type_traits>
 #include "src/ConnectionAutomaton.h"
+#include "src/Executor.h"
 #include "src/Frame.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/RequestHandler.h"
 #include "src/SmartPointers.h"
 
 namespace reactivesocket {
@@ -19,7 +21,13 @@ enum class StreamCompletionSignal;
 template <typename ProducedFrame, typename Base>
 class PublisherMixin : public Base {
  public:
-  using Base::Base;
+  explicit PublisherMixin(const typename Base::Parameters& params)
+      : ExecutorBase(params.executor), Base(params) {}
+
+  explicit PublisherMixin(
+      const typename Base::Parameters& params,
+      std::nullptr_t)
+      : Base(params) {}
 
   /// @{
   void onSubscribe(std::shared_ptr<Subscription> subscription) {

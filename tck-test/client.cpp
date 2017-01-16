@@ -9,7 +9,7 @@
 #include "TestInterpreter.h"
 #include "TestSuite.h"
 #include "src/NullRequestHandler.h"
-#include "src/ReactiveSocket.h"
+#include "src/StandardReactiveSocket.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/tcp/TcpDuplexConnection.h"
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
   folly::AsyncSocket::UniquePtr socket;
   std::unique_ptr<SocketConnectCallback> callback;
-  std::unique_ptr<ReactiveSocket> reactiveSocket;
+  std::unique_ptr<StandardReactiveSocket> reactiveSocket;
 
   evbt.getEventBase()->runInEventBaseThreadAndWait([&]() {
     socket.reset(new folly::AsyncSocket(evbt.getEventBase()));
@@ -92,15 +92,17 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<RequestHandler> requestHandler =
         folly::make_unique<DefaultRequestHandler>();
 
-    reactiveSocket = ReactiveSocket::fromClientConnection(
-        std::move(framedConnection), std::move(requestHandler));
+    reactiveSocket = StandardReactiveSocket::fromClientConnection(
+        *evbt.getEventBase(),
+        std::move(framedConnection),
+        std::move(requestHandler));
   });
 
   LOG(INFO) << "Test file parsed. Starting executing tests...";
 
   int passed = 0;
   for (const auto& test : testSuite.tests()) {
-    TestInterpreter interpreter(test, *reactiveSocket, *evbt.getEventBase());
+    TestInterpreter interpreter(test, *reactiveSocket);
     bool passing = interpreter.run();
     if (passing) {
       ++passed;

@@ -4,7 +4,7 @@
 #include <gmock/gmock.h>
 
 #include "src/NullRequestHandler.h"
-#include "src/ReactiveSocket.h"
+#include "src/StandardReactiveSocket.h"
 #include "test/InlineConnection.h"
 #include "test/MockStats.h"
 #include "test/ReactiveStreamsMocksCompat.h"
@@ -33,7 +33,8 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
 
   MockStats stats;
 
-  auto socket = ReactiveSocket::fromClientConnection(
+  auto socket = StandardReactiveSocket::fromClientConnection(
+      defaultExecutor(),
       std::move(socketConnection),
       folly::make_unique<DefaultRequestHandler>(),
       ConnectionSetupPayload(),
@@ -53,8 +54,8 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
 
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1);
   EXPECT_CALL(*testInputSubscription, cancel_()).Times(1);
-  EXPECT_CALL(stats, socketDisconnected_()).Times(1);
-  EXPECT_CALL(stats, socketClosed_()).Times(0);
+  EXPECT_CALL(stats, socketDisconnected()).Times(1);
+  EXPECT_CALL(stats, socketClosed()).Times(0);
 
   socket->disconnect();
 
@@ -64,8 +65,8 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
   Mock::VerifyAndClearExpectations(&stats);
 
   EXPECT_CALL(*responseSubscriber, onError_(_)).Times(1);
-  EXPECT_CALL(stats, socketDisconnected_()).Times(0);
-  EXPECT_CALL(stats, socketClosed_()).Times(1);
+  EXPECT_CALL(stats, socketDisconnected()).Times(0);
+  EXPECT_CALL(stats, socketClosed()).Times(1);
 
   socket->close();
   socket.reset();

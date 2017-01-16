@@ -6,6 +6,7 @@
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
 #include "src/ConnectionAutomaton.h"
+#include "src/FrameTransport.h"
 #include "src/StreamState.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedWriter.h"
@@ -72,18 +73,24 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
-        return false;
+      [](ConnectionAutomaton& connection,
+         StreamId,
+         std::unique_ptr<folly::IOBuf>) {
+        connection.closeWithError(
+            Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
-      std::shared_ptr<KeepaliveTimer>(),
+      nullptr,
       false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect(
+      std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
+      true);
+  connectionAutomaton->close();
 }
 
 static void terminateTest(
@@ -145,18 +152,24 @@ static void terminateTest(
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
-        return false;
+      [](ConnectionAutomaton& connection,
+         StreamId,
+         std::unique_ptr<folly::IOBuf>) {
+        connection.closeWithError(
+            Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
-      std::shared_ptr<KeepaliveTimer>(),
+      nullptr,
       false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect(
+      std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
+      true);
+  connectionAutomaton->close();
 }
 
 TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
@@ -232,16 +245,22 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
-      [](ConnectionAutomaton&, StreamId, std::unique_ptr<folly::IOBuf>) {
-        return false;
+      [](ConnectionAutomaton& connection,
+         StreamId,
+         std::unique_ptr<folly::IOBuf>) {
+        connection.closeWithError(
+            Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(),
       nullptr,
       Stats::noop(),
-      std::shared_ptr<KeepaliveTimer>(),
+      nullptr,
       false,
       [] {},
       [] {},
       [] {});
-  connectionAutomaton->connect(std::move(framedAutomatonConnection));
+  connectionAutomaton->connect(
+      std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
+      true);
+  connectionAutomaton->close();
 }

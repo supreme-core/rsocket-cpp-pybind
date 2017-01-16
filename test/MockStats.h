@@ -14,60 +14,20 @@ namespace reactivesocket {
 
 class MockStats : public Stats {
  public:
-  MOCK_METHOD0(socketCreated_, void());
-  MOCK_METHOD0(socketClosed_, void());
-  MOCK_METHOD0(socketDisconnected_, void());
+  MOCK_METHOD0(socketCreated, void());
+  MOCK_METHOD0(socketClosed, void());
+  MOCK_METHOD0(socketDisconnected, void());
 
   MOCK_METHOD2(
-      duplexConnectionCreated_,
+      duplexConnectionCreated,
       void(const std::string&, reactivesocket::DuplexConnection*));
   MOCK_METHOD2(
-      duplexConnectionClosed_,
+      duplexConnectionClosed,
       void(const std::string&, reactivesocket::DuplexConnection*));
 
-  MOCK_METHOD1(bytesWritten_, void(size_t));
-  MOCK_METHOD1(bytesRead_, void(size_t));
-  MOCK_METHOD1(frameWritten_, void(const std::string&));
-  MOCK_METHOD1(frameRead_, void(const std::string&));
-
-  void socketCreated() override {
-    socketCreated_();
-  }
-
-  void socketClosed() override {
-    socketClosed_();
-  }
-
-  void socketDisconnected() override {
-    socketDisconnected_();
-  }
-
-  void duplexConnectionCreated(
-      const std::string& type,
-      reactivesocket::DuplexConnection* connection) override {
-    duplexConnectionCreated_(type, connection);
-  }
-
-  void duplexConnectionClosed(
-      const std::string& type,
-      reactivesocket::DuplexConnection* connection) override {
-    duplexConnectionClosed_(type, connection);
-  }
-
-  virtual void bytesWritten(size_t bytes) override {
-    bytesWritten_(bytes);
-  }
-
-  virtual void bytesRead(size_t bytes) override {
-    bytesRead_(bytes);
-  }
-
-  virtual void frameWritten(const std::string& frameType) override {
-    frameWritten_(frameType);
-  }
-
-  virtual void frameRead(const std::string& frameType) override {
-    frameRead_(frameType);
-  }
+  MOCK_METHOD1(bytesWritten, void(size_t));
+  MOCK_METHOD1(bytesRead, void(size_t));
+  MOCK_METHOD1(frameWritten, void(const std::string&));
+  MOCK_METHOD1(frameRead, void(const std::string&));
 };
 }

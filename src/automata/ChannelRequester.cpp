@@ -37,7 +37,7 @@ void ChannelRequester::onNextImpl(Payload request) {
       // Pump the remaining allowance into the ConsumerMixin _after_ sending the
       // initial request.
       if (remainingN) {
-        Base::request(remainingN);
+        Base::generateRequest(remainingN);
       }
     } break;
     case State::REQUESTED:
@@ -93,7 +93,7 @@ void ChannelRequester::requestImpl(size_t n) {
       initialResponseAllowance_.release(n);
       break;
     case State::REQUESTED:
-      Base::request(n);
+      Base::generateRequest(n);
       break;
     case State::CLOSED:
       break;

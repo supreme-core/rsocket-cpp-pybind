@@ -16,22 +16,13 @@ namespace reactivesocket {
 class ChannelResponder : public PublisherMixin<
                              Frame_RESPONSE,
                              ConsumerMixin<Frame_REQUEST_CHANNEL>>,
-                         public SubscriberBase,
-                         public SubscriptionBase {
+                         public SubscriberBase {
   using Base =
       PublisherMixin<Frame_RESPONSE, ConsumerMixin<Frame_REQUEST_CHANNEL>>;
 
  public:
-  struct Parameters : Base::Parameters {
-    Parameters(
-        const typename Base::Parameters& baseParams,
-        folly::Executor& _executor)
-        : Base::Parameters(baseParams), executor(_executor) {}
-    folly::Executor& executor;
-  };
-
-  explicit ChannelResponder(const Parameters& params)
-      : ExecutorBase(params.executor, false), Base(params) {}
+  explicit ChannelResponder(const Base::Parameters& params)
+      : ExecutorBase(params.executor), Base(params) {}
 
   void processInitialFrame(Frame_REQUEST_CHANNEL&&);
 
@@ -43,6 +34,7 @@ class ChannelResponder : public PublisherMixin<
   void onCompleteImpl() override;
   void onErrorImpl(folly::exception_wrapper) override;
 
+  // implementation from ConsumerMixin::SubscriptionBase
   void requestImpl(size_t n) override;
   void cancelImpl() override;
 

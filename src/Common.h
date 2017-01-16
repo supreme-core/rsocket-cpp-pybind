@@ -16,10 +16,11 @@
 
 namespace reactivesocket {
 
-class ReactiveSocket;
+class StandardReactiveSocket;
 
-using ReactiveSocketCallback = std::function<void(ReactiveSocket&)>;
+using ReactiveSocketCallback = std::function<void(StandardReactiveSocket&)>;
 using StreamId = uint32_t;
+using ResumePosition = int64_t;
 
 /// Indicates the reason why the stream automaton received a terminal signal
 /// from the connection.
@@ -46,7 +47,9 @@ class ResumeIdentificationToken {
  public:
   using Data = std::array<uint8_t, 16>;
 
-  static ResumeIdentificationToken empty();
+  /// Creates an empty token.
+  ResumeIdentificationToken();
+
   static ResumeIdentificationToken generateNew();
   static ResumeIdentificationToken fromString(const std::string& str);
 
@@ -68,15 +71,8 @@ class ResumeIdentificationToken {
     return data() != right.data();
   }
 
-  ResumeIdentificationToken& operator=(const ResumeIdentificationToken&) =
-      delete;
-  ResumeIdentificationToken& operator=(ResumeIdentificationToken&&) = delete;
-
-  ResumeIdentificationToken(const ResumeIdentificationToken&) = default;
-  ResumeIdentificationToken(ResumeIdentificationToken&&) = default;
-
  private:
-  ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
+  explicit ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
 
   Data bits_;
 };

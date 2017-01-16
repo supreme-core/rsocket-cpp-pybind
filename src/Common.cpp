@@ -1,11 +1,17 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/Common.h"
+#include <folly/Random.h>
 #include <folly/io/IOBuf.h>
 #include <random>
 #include "src/AbstractStreamAutomaton.h"
 
 namespace reactivesocket {
+
+namespace {
+
+const char* HEX_CHARS = {"0123456789abcdef"};
+}
 
 static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
   switch ((StreamCompletionSignal)terminatingSignal) {
@@ -14,7 +20,7 @@ static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
     case StreamCompletionSignal::CONNECTION_ERROR:
       return "connection error";
     case StreamCompletionSignal::ERROR:
-      return "general error";
+      return "socket error";
     case StreamCompletionSignal::SOCKET_CLOSED:
       return "reactive socket closed";
     case StreamCompletionSignal::GRACEFUL:
@@ -52,23 +58,19 @@ StreamInterruptedException::StreamInterruptedException(int _terminatingSignal)
     : std::runtime_error(getTerminatingSignalErrorMessage(_terminatingSignal)),
       terminatingSignal(_terminatingSignal) {}
 
-ResumeIdentificationToken ResumeIdentificationToken::empty() {
-  return ResumeIdentificationToken(
-      Data() = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}});
-}
+ResumeIdentificationToken::ResumeIdentificationToken()
+    : ResumeIdentificationToken(
+          Data() = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}) {}
+
 ResumeIdentificationToken ResumeIdentificationToken::generateNew() {
   // TODO: this will be replaced with a variable length bit array and the value
   // will be generated outside of reactivesocket
   // for now we will use temporary number generator
-  std::mt19937 rng;
-  rng.seed(std::random_device()());
-  auto num = rng();
-
-  static_assert(sizeof(num) <= sizeof(Data), "FIXME");
+  folly::ThreadLocalPRNG rng;
 
   Data data;
-  for (size_t i = 0; i < sizeof(num); i++) {
-    data[i] = ((uint8_t*)&num)[i];
+  for (size_t i = 0; i < data.size(); i++) {
+    data[i] = folly::Random::rand32(rng);
   }
   return ResumeIdentificationToken(std::move(data));
 }
@@ -76,15 +78,16 @@ ResumeIdentificationToken ResumeIdentificationToken::generateNew() {
 ResumeIdentificationToken ResumeIdentificationToken::fromString(
     const std::string& /*str*/) {
   CHECK(false) << "not implemented";
-  return empty();
+  return ResumeIdentificationToken();
 }
 
 std::string ResumeIdentificationToken::toString() const {
-  std::ostringstream str;
-  for (auto& i : bits_) {
-    str << i << " ";
+  std::string str;
+  for (auto b : bits_) {
+    str += HEX_CHARS[(b & 0xF0) >> 4];
+    str += HEX_CHARS[b & 0x0F];
   }
-  return str.str();
+  return str;
 }
 
 } // reactivesocket

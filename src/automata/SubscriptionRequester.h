@@ -12,7 +12,8 @@ class SubscriptionRequester : public StreamSubscriptionRequesterBase {
   using Base = StreamSubscriptionRequesterBase;
 
  public:
-  using Base::Base;
+  explicit SubscriptionRequester(const Base::Parameters& params)
+      : ExecutorBase(params.executor), Base(params) {}
 
   std::ostream& logPrefix(std::ostream& os);
 
