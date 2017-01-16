@@ -155,8 +155,7 @@ void ConnectionAutomaton::closeFrameTransport(folly::exception_wrapper ex) {
   frameTransport_ = nullptr;
 }
 
-void ConnectionAutomaton::closeWithError(
-    Frame_ERROR&& error) {
+void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
   VLOG(4) << "closeWithError "
           << error.payload_.data->cloneAsValue().moveToFbString();
 
@@ -276,8 +275,7 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
-    closeWithError(
-      Frame_ERROR::connectionError("invalid frame"));
+    closeWithError(Frame_ERROR::connectionError("invalid frame"));
     return;
   }
   auto streamId = *streamIdPtr;
