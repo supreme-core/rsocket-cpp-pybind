@@ -50,7 +50,8 @@ class FrameSink {
   ///
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
-  virtual void closeWithError(Frame_ERROR&& error) = 0;
+  virtual void closeWithError(
+    Frame_ERROR&& error) = 0;
 
   virtual void sendKeepalive() = 0;
 };

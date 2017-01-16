@@ -9,7 +9,7 @@ class NoopStats : public Stats {
  public:
   void socketCreated() override{};
   void socketDisconnected() override{};
-  void socketClosed() override{};
+  void socketClosed(StreamCompletionSignal signal) override{};
 
   void duplexConnectionCreated(
       const std::string& type,

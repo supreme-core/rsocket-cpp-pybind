@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include "src/Common.h"
 #include "src/DuplexConnection.h"
 #include "src/Frame.h"
 
@@ -13,7 +14,7 @@ class Stats {
 
   virtual void socketCreated() = 0;
   virtual void socketDisconnected() = 0;
-  virtual void socketClosed() = 0;
+  virtual void socketClosed(StreamCompletionSignal signal) = 0;
 
   virtual void duplexConnectionCreated(
       const std::string& type,
