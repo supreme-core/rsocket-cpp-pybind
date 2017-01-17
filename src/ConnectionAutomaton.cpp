@@ -4,6 +4,7 @@
 
 #include <folly/ExceptionWrapper.h>
 #include <folly/String.h>
+#include <folly/MoveWrapper.h>
 #include "src/AbstractStreamAutomaton.h"
 #include "src/ClientResumeStatusCallback.h"
 #include "src/DuplexConnection.h"
@@ -14,6 +15,7 @@
 namespace reactivesocket {
 
 ConnectionAutomaton::ConnectionAutomaton(
+    folly::Executor& executor,
     StreamAutomatonFactory factory,
     std::shared_ptr<StreamState> streamState,
     ResumeListener resumeListener,
@@ -23,7 +25,8 @@ ConnectionAutomaton::ConnectionAutomaton(
     std::function<void()> onConnected,
     std::function<void()> onDisconnected,
     std::function<void()> onClosed)
-    : factory_(std::move(factory)),
+    : ExecutorBase(executor),
+    factory_(std::move(factory)),
       streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
@@ -233,6 +236,14 @@ void ConnectionAutomaton::closeStreams(StreamCompletionSignal signal) {
 }
 
 void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
+  auto thisPtr = this->shared_from_this();
+  auto movedFrame = folly::makeMoveWrapper(frame);
+  runInExecutor([thisPtr, movedFrame]() mutable {
+      thisPtr->processFrameImpl(movedFrame.move());
+  });
+}
+
+void ConnectionAutomaton::processFrameImpl(std::unique_ptr<folly::IOBuf> frame) {
   auto frameType = FrameHeader::peekType(*frame);
 
   std::stringstream ss;
@@ -278,6 +289,16 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
 }
 
 void ConnectionAutomaton::onTerminal(
+    folly::exception_wrapper ex,
+    StreamCompletionSignal signal) {
+  auto thisPtr = this->shared_from_this();
+  auto movedEx = folly::makeMoveWrapper(ex);
+  runInExecutor([thisPtr, movedEx, signal]() mutable {
+      thisPtr->onTerminalImpl(movedEx.move(), signal);
+  });
+}
+
+void ConnectionAutomaton::onTerminalImpl(
     folly::exception_wrapper ex,
     StreamCompletionSignal signal) {
   if (isResumable_) {

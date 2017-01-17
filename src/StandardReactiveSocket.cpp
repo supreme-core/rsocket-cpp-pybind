@@ -39,6 +39,7 @@ StandardReactiveSocket::StandardReactiveSocket(
     folly::Executor& executor)
     : handler_(handler),
       connection_(std::make_shared<ConnectionAutomaton>(
+          executor,
           [this, handler](
               ConnectionAutomaton& connection,
               StreamId streamId,

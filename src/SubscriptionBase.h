@@ -22,7 +22,7 @@ class SubscriptionBase : public Subscription,
   explicit SubscriptionBase(folly::Executor& executor = defaultExecutor())
       : ExecutorBase(executor) {}
 
-  void request(size_t n) override final {
+  void request(size_t n) override {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, n]() {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " request";

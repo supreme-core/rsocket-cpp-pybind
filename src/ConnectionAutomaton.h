@@ -5,6 +5,7 @@
 #include <memory>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
+#include "src/Executor.h"
 #include "src/DuplexConnection.h"
 #include "src/Frame.h"
 #include "src/FrameProcessor.h"
@@ -65,10 +66,11 @@ class FrameSink {
 class ConnectionAutomaton
     : public FrameSink,
       public FrameProcessor,
+      public ExecutorBase,
       public std::enable_shared_from_this<ConnectionAutomaton> {
  public:
   ConnectionAutomaton(
-      // TODO(stupaq): for testing only, can devirtualise if necessary
+      folly::Executor& executor,
       StreamAutomatonFactory factory,
       std::shared_ptr<StreamState> streamState,
       ResumeListener resumeListener,
@@ -183,8 +185,16 @@ class ConnectionAutomaton
   /// The call is idempotent and returns false iff a stream has not been found.
   bool endStreamInternal(StreamId streamId, StreamCompletionSignal signal);
 
+  /// @{
+  /// FrameProcessor methods are implemented with ExecutorBase and automatic marshaling
+  /// onto the right executor to allow DuplexConnection living on a different executor
+  /// and calling into ConnectionAutomaton.
   void processFrame(std::unique_ptr<folly::IOBuf>) override;
   void onTerminal(folly::exception_wrapper, StreamCompletionSignal) override;
+
+  void processFrameImpl(std::unique_ptr<folly::IOBuf>);
+  void onTerminalImpl(folly::exception_wrapper, StreamCompletionSignal);
+  /// @}
 
   void onConnectionFrame(std::unique_ptr<folly::IOBuf>);
   void handleUnknownStream(

@@ -73,6 +73,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+      defaultExecutor(),
       [](ConnectionAutomaton& connection,
          StreamId,
          std::unique_ptr<folly::IOBuf>) {
@@ -152,6 +153,7 @@ static void terminateTest(
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+      defaultExecutor(),
       [](ConnectionAutomaton& connection,
          StreamId,
          std::unique_ptr<folly::IOBuf>) {
@@ -220,8 +222,8 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       }));
 
   EXPECT_CALL(*inputSubscription, request_(_))
-      .InSequence(s)
-      .WillOnce(Invoke([&](size_t n) {
+//      .InSequence(s)
+      .WillRepeatedly(Invoke([&](size_t n) {
         auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(
             framedTestConnection->getOutput());
         CHECK(framedWriter);
@@ -245,6 +247,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
   auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+      defaultExecutor(),
       [](ConnectionAutomaton& connection,
          StreamId,
          std::unique_ptr<folly::IOBuf>) {
