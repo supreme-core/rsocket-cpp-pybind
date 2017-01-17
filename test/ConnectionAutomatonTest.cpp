@@ -49,7 +49,9 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       .InSequence(s)
       .WillOnce(Invoke([&](size_t n) {
         framedTestConnection->getOutput()->onNext(makeInvalidFrameHeader());
-      }));
+      }))
+      .WillOnce(
+          /*this call is because of async scheduling on executor*/ Return());
 
   auto testOutputSubscriber =
       std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
@@ -113,13 +115,21 @@ static void terminateTest(
   auto inputSubscription = std::make_shared<MockSubscription>();
 
   if (!inOnSubscribe) {
-    EXPECT_CALL(*inputSubscription, request_(_)).WillOnce(Invoke([&](size_t n) {
-      if (inRequest) {
-        framedTestConnection->getOutput()->onComplete();
-      } else {
-        framedTestConnection->getOutput()->onNext(makeInvalidFrameHeader());
-      }
-    }));
+    auto&& expexctation =
+        EXPECT_CALL(*inputSubscription, request_(_))
+            .WillOnce(Invoke([&](size_t n) {
+              if (inRequest) {
+                framedTestConnection->getOutput()->onComplete();
+              } else {
+                framedTestConnection->getOutput()->onNext(
+                    makeInvalidFrameHeader());
+              }
+            }));
+
+    if (!inRequest) {
+      expexctation.WillOnce(
+          /*this call is because of async scheduling on executor*/ Return());
+    }
   }
 
   auto testOutputSubscriber =
@@ -234,7 +244,9 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         frames.push_back(Frame_REQUEST_N(streamId + 2, 1).serializeOut());
 
         framedWriter->onNextMultiple(std::move(frames));
-      }));
+      }))
+      .WillOnce(
+          /*this call is because of async scheduling on executor*/ Return());
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .InSequence(s)
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
