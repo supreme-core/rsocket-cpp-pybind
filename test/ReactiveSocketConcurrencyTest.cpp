@@ -6,6 +6,7 @@
 #include <thread>
 
 #include <folly/Memory.h>
+#include <folly/MoveWrapper.h>
 #include <folly/io/IOBuf.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gmock/gmock.h>
@@ -145,6 +146,13 @@ class ClientSideConcurrencyTest : public testing::Test {
     }));
   }
 
+  ~ClientSideConcurrencyTest() {
+    auto socketMW = folly::makeMoveWrapper(clientSock);
+    thread2.getEventBase()->runImmediatelyOrRunInEventBaseThreadAndWait([socketMW] () mutable {
+      socketMW->reset();
+    });
+  }
+
   void done() {
     std::unique_lock<std::mutex> lock(mtx);
     isDone_ = true;
@@ -156,12 +164,16 @@ class ClientSideConcurrencyTest : public testing::Test {
     cv.wait(lock, [&]() { return isDone_; });
   }
 
-  std::unique_ptr<StandardReactiveSocket> clientSock;
-  std::unique_ptr<StandardReactiveSocket> serverSock;
-
   static std::unique_ptr<folly::IOBuf> originalPayload() {
     return folly::IOBuf::copyBuffer("foo");
   };
+
+  // we want these to be the first members, to be destroyed as last
+  folly::ScopedEventBaseThread thread1;
+  folly::ScopedEventBaseThread thread2;
+
+  std::unique_ptr<StandardReactiveSocket> clientSock;
+  std::unique_ptr<StandardReactiveSocket> serverSock;
 
   std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{
       std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
@@ -180,15 +192,12 @@ class ClientSideConcurrencyTest : public testing::Test {
   std::mutex mtx;
   std::condition_variable cv;
   bool isDone_{false};
-
-  // we want these to be the last members
-  folly::ScopedEventBaseThread thread1;
-  folly::ScopedEventBaseThread thread2;
 };
 
 TEST_F(ClientSideConcurrencyTest, RequestResponseTest) {
   clientSock->requestResponse(Payload(originalPayload()), clientInput);
   wainUntilDone();
+  LOG(INFO) << "test done";
 }
 
 TEST_F(ClientSideConcurrencyTest, RequestStreamTest) {
@@ -247,12 +256,14 @@ class ServerSideConcurrencyTest : public testing::Test {
     EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
         .WillRepeatedly(Return(std::make_shared<StreamState>()));
 
+    thread2.getEventBase()->runImmediatelyOrRunInEventBaseThreadAndWait([&]{
     serverSock = StandardReactiveSocket::fromServerConnection(
         *thread2.getEventBase(),
         std::move(serverConn),
         std::move(serverHandler),
         Stats::noop(),
         false);
+        });
 
     EXPECT_CALL(*clientInput, onSubscribe_(_))
         .WillOnce(Invoke([&](std::shared_ptr<Subscription> sub) {
@@ -289,8 +300,8 @@ class ServerSideConcurrencyTest : public testing::Test {
               serverOutput->onSubscribe(serverOutputSub);
             }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _, _))
-        .Times(AtMost(1))
-        .WillOnce(Invoke(
+//        .Times(AtMost(1))
+        .WillRepeatedly(Invoke(
             [&](Payload& request,
                 StreamId streamId,
                 const std::shared_ptr<Subscriber<Payload>>& response) {
@@ -355,6 +366,14 @@ class ServerSideConcurrencyTest : public testing::Test {
     }));
   }
 
+  ~ServerSideConcurrencyTest() {
+    auto socketMW = folly::makeMoveWrapper(serverSock);
+    thread2.getEventBase()->runImmediatelyOrRunInEventBaseThreadAndWait([socketMW] () mutable {
+        socketMW->reset();
+    });
+
+  }
+
   void done() {
     std::unique_lock<std::mutex> lock(mtx);
     isDone_ = true;
@@ -366,11 +385,15 @@ class ServerSideConcurrencyTest : public testing::Test {
     cv.wait(lock, [&]() { return isDone_; });
   }
 
-  std::unique_ptr<StandardReactiveSocket> clientSock;
-  std::unique_ptr<StandardReactiveSocket> serverSock;
+  // we want these to be the first members to be destroyed as last
+  folly::ScopedEventBaseThread thread1;
+  folly::ScopedEventBaseThread thread2;
 
   const std::unique_ptr<folly::IOBuf> originalPayload{
       folly::IOBuf::copyBuffer("foo")};
+
+  std::unique_ptr<StandardReactiveSocket> clientSock;
+  std::unique_ptr<StandardReactiveSocket> serverSock;
 
   std::shared_ptr<StrictMock<MockSubscriber<Payload>>> clientInput{
       std::make_shared<StrictMock<MockSubscriber<Payload>>>()};
@@ -389,10 +412,6 @@ class ServerSideConcurrencyTest : public testing::Test {
   std::mutex mtx;
   std::condition_variable cv;
   bool isDone_{false};
-
-  // we want these to be the last members
-  folly::ScopedEventBaseThread thread1;
-  folly::ScopedEventBaseThread thread2;
 };
 
 TEST_F(ServerSideConcurrencyTest, RequestResponseTest) {
@@ -540,6 +559,9 @@ class InitialRequestNDeliveredTest : public testing::Test {
     }
   }
 
+  // we want these to be the first members, to be destroyed as the last
+  folly::ScopedEventBaseThread thread2;
+
   std::unique_ptr<StandardReactiveSocket> serverSocket;
   std::shared_ptr<MockSubscription> testInputSubscription;
   std::unique_ptr<DuplexConnection> testConnection;
@@ -551,9 +573,6 @@ class InitialRequestNDeliveredTest : public testing::Test {
   std::atomic<bool> done{false};
   size_t expectedRequestN{kRequestN};
   folly::EventBase eventBase_;
-
-  // we want these to be the last members
-  folly::ScopedEventBaseThread thread2;
 };
 
 TEST_F(InitialRequestNDeliveredTest, RequestResponse) {

@@ -16,7 +16,7 @@ class ExecutorBase {
  protected:
   void runInExecutor(folly::Func func);
 
-  folly::Executor& executor() {
+  folly::Executor& executor() const {
     return executor_;
   }
 

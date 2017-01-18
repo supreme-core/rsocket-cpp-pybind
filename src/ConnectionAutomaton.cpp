@@ -5,6 +5,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/String.h>
 #include <folly/MoveWrapper.h>
+#include <folly/io/async/EventBase.h>
 #include "src/AbstractStreamAutomaton.h"
 #include "src/ClientResumeStatusCallback.h"
 #include "src/DuplexConnection.h"
@@ -45,6 +46,7 @@ ConnectionAutomaton::ConnectionAutomaton(
 }
 
 ConnectionAutomaton::~ConnectionAutomaton() {
+  //TODO: debugCheckCorrectExecutor();
   VLOG(6) << "~ConnectionAutomaton";
   // We rely on SubscriptionPtr and SubscriberPtr to dispatch appropriate
   // terminal signals.
@@ -54,6 +56,7 @@ ConnectionAutomaton::~ConnectionAutomaton() {
 }
 
 void ConnectionAutomaton::setResumable(bool resumable) {
+  debugCheckCorrectExecutor();
   DCHECK(isDisconnectedOrClosed()); // we allow to set this flag before we are
   // connected
   isResumable_ = resumable;
@@ -62,6 +65,7 @@ void ConnectionAutomaton::setResumable(bool resumable) {
 void ConnectionAutomaton::connect(
     std::shared_ptr<FrameTransport> frameTransport,
     bool sendingPendingFrames) {
+  debugCheckCorrectExecutor();
   CHECK(isDisconnectedOrClosed());
   CHECK(frameTransport);
   CHECK(!frameTransport->isClosed());
@@ -93,6 +97,7 @@ void ConnectionAutomaton::connect(
 }
 
 std::shared_ptr<FrameTransport> ConnectionAutomaton::detachFrameTransport() {
+  debugCheckCorrectExecutor();
   if (isDisconnectedOrClosed()) {
     return nullptr;
   }
@@ -102,6 +107,7 @@ std::shared_ptr<FrameTransport> ConnectionAutomaton::detachFrameTransport() {
 }
 
 void ConnectionAutomaton::disconnect() {
+  debugCheckCorrectExecutor();
   VLOG(6) << "disconnect";
   if (isDisconnectedOrClosed()) {
     return;
@@ -119,6 +125,7 @@ void ConnectionAutomaton::close() {
 void ConnectionAutomaton::close(
     folly::exception_wrapper ex,
     StreamCompletionSignal signal) {
+  debugCheckCorrectExecutor();
   VLOG(6) << "close";
 
   if (resumeCallback_) {
@@ -159,6 +166,7 @@ void ConnectionAutomaton::closeFrameTransport(folly::exception_wrapper ex) {
 }
 
 void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
+  debugCheckCorrectExecutor();
   VLOG(4) << "closeWithError "
           << error.payload_.data->cloneAsValue().moveToFbString();
 
@@ -169,6 +177,7 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
 void ConnectionAutomaton::reconnect(
     std::shared_ptr<FrameTransport> newFrameTransport,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
+  debugCheckCorrectExecutor();
   CHECK(newFrameTransport);
   CHECK(resumeCallback);
   CHECK(!resumeCallback_);
@@ -185,6 +194,7 @@ void ConnectionAutomaton::reconnect(
 void ConnectionAutomaton::addStream(
     StreamId streamId,
     std::shared_ptr<AbstractStreamAutomaton> automaton) {
+  debugCheckCorrectExecutor();
   auto result = streamState_->streams_.emplace(streamId, std::move(automaton));
   (void)result;
   assert(result.second);
@@ -193,6 +203,7 @@ void ConnectionAutomaton::addStream(
 void ConnectionAutomaton::endStream(
     StreamId streamId,
     StreamCompletionSignal signal) {
+  debugCheckCorrectExecutor();
   VLOG(6) << "endStream";
   // The signal must be idempotent.
   if (!endStreamInternal(streamId, signal)) {
@@ -437,6 +448,7 @@ void ConnectionAutomaton::handleUnknownStream(
 /// @}
 
 void ConnectionAutomaton::sendKeepalive() {
+  debugCheckCorrectExecutor();
   Frame_KEEPALIVE pingFrame(
       FrameFlags_KEEPALIVE_RESPOND,
       streamState_->resumeTracker_.impliedPosition(),
@@ -450,6 +462,7 @@ Frame_RESUME ConnectionAutomaton::createResumeFrame(
 }
 
 bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
+  debugCheckCorrectExecutor();
   return streamState_->resumeCache_.isPositionAvailable(position);
 }
 
@@ -461,6 +474,7 @@ bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
 bool ConnectionAutomaton::resumeFromPositionOrClose(
     ResumePosition position,
     bool writeResumeOkFrame) {
+  debugCheckCorrectExecutor();
   DCHECK(!resumeCallback_);
   DCHECK(!isDisconnectedOrClosed());
 
@@ -497,6 +511,7 @@ void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
 
 void ConnectionAutomaton::outputFrameOrEnqueue(
     std::unique_ptr<folly::IOBuf> frame) {
+  debugCheckCorrectExecutor();
   // if we are resuming we cant send any frames until we receive RESUME_OK
   if (!isDisconnectedOrClosed() && !resumeCallback_) {
     outputFrame(std::move(frame));
@@ -525,6 +540,7 @@ void ConnectionAutomaton::useStreamState(
 }
 
 uint32_t ConnectionAutomaton::getKeepaliveTime() const {
+  debugCheckCorrectExecutor();
   return keepaliveTimer_ ? keepaliveTimer_->keepaliveTime().count()
                          : std::numeric_limits<uint32_t>::max();
 }
@@ -534,7 +550,13 @@ bool ConnectionAutomaton::isDisconnectedOrClosed() const {
 }
 
 DuplexConnection* ConnectionAutomaton::duplexConnection() const {
+  debugCheckCorrectExecutor();
   return frameTransport_ ? frameTransport_->duplexConnection() : nullptr;
+}
+
+void ConnectionAutomaton::debugCheckCorrectExecutor() const {
+  DCHECK(!dynamic_cast<folly::EventBase *>(&executor()) ||
+         dynamic_cast<folly::EventBase *>(&executor())->isInEventBaseThread());
 }
 
 } // reactivesocket

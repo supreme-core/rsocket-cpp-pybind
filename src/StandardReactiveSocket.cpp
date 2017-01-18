@@ -5,6 +5,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
+#include <folly/io/async/EventBase.h>
 #include "src/ClientResumeStatusCallback.h"
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
@@ -21,6 +22,16 @@
 namespace reactivesocket {
 
 StandardReactiveSocket::~StandardReactiveSocket() {
+//  DCHECK(dynamic_cast<folly::EventBase*>(&executor()));
+//  DCHECK(dynamic_cast<folly::EventBase*>(&executor())->isInEventBaseThread());
+
+  LOG(INFO) << "dtor " << dynamic_cast<folly::EventBase*>(&executor());
+  if(dynamic_cast<folly::EventBase*>(&executor())) {
+    LOG(INFO) << "isIn=" << dynamic_cast<folly::EventBase *>(&executor())->isInEventBaseThread();
+  }
+
+//  DCHECK(!dynamic_cast<folly::EventBase*>(&executor()) || dynamic_cast<folly::EventBase*>(&executor())->isInEventBaseThread());
+
   // Force connection closure, this will trigger terminal signals to be
   // delivered to all stream automata.
   close();

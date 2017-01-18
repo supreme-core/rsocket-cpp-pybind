@@ -208,6 +208,8 @@ class ConnectionAutomaton
   void resumeFromPosition(ResumePosition position);
   void outputFrame(std::unique_ptr<folly::IOBuf>);
 
+  void debugCheckCorrectExecutor() const;
+
   StreamAutomatonFactory factory_;
 
   std::shared_ptr<StreamState> streamState_;
