@@ -739,8 +739,8 @@ TEST(ReactiveSocketTest, Destructor) {
 
   EXPECT_CALL(clientStats, socketCreated()).Times(1);
   EXPECT_CALL(serverStats, socketCreated()).Times(1);
-  EXPECT_CALL(clientStats, socketClosed()).Times(1);
-  EXPECT_CALL(serverStats, socketClosed()).Times(1);
+  EXPECT_CALL(clientStats, socketClosed(_)).Times(1);
+  EXPECT_CALL(serverStats, socketClosed(_)).Times(1);
 
   auto clientSock = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),
