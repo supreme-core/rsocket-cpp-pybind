@@ -7,7 +7,7 @@ void StatsPrinter::socketCreated() {
   LOG(INFO) << "socketCreated";
 }
 
-void StatsPrinter::socketClosed() {
+void StatsPrinter::socketClosed(StreamCompletionSignal /*signal*/) {
   LOG(INFO) << "socketClosed";
 }
 
