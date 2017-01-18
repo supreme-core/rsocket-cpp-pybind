@@ -61,7 +61,8 @@ int main(int argc, char* argv[]) {
         std::unique_ptr<DuplexConnection> connection =
             folly::make_unique<TcpDuplexConnection>(std::move(socket), stats);
         std::unique_ptr<DuplexConnection> framedConnection =
-            folly::make_unique<FramedDuplexConnection>(std::move(connection));
+            folly::make_unique<FramedDuplexConnection>(
+                std::move(connection), inlineExecutor());
         std::unique_ptr<RequestHandler> requestHandler =
             folly::make_unique<DefaultRequestHandler>();
 

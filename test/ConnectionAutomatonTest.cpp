@@ -34,19 +34,17 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   automatonConnection->connectTo(*testConnection);
 
   auto framedAutomatonConnection = folly::make_unique<FramedDuplexConnection>(
-      std::move(automatonConnection));
+      std::move(automatonConnection), inlineExecutor());
 
-  auto framedTestConnection =
-      folly::make_unique<FramedDuplexConnection>(std::move(testConnection));
+  auto framedTestConnection = folly::make_unique<FramedDuplexConnection>(
+      std::move(testConnection), inlineExecutor());
 
   // Dump 1 invalid frame and expect an error
 
   auto inputSubscription = std::make_shared<MockSubscription>();
 
-  Sequence s;
-
   EXPECT_CALL(*inputSubscription, request_(_))
-      .InSequence(s)
+      .Times(AtMost(2))
       .WillOnce(Invoke([&](size_t n) {
         framedTestConnection->getOutput()->onNext(makeInvalidFrameHeader());
       }))
@@ -61,7 +59,6 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         subscription->request(std::numeric_limits<size_t>::max());
       }));
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
-      .InSequence(s)
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
         auto frameType = FrameHeader::peekType(*frame);
         Frame_ERROR error;
@@ -69,7 +66,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         ASSERT_TRUE(error.deserializeFrom(std::move(frame)));
         ASSERT_EQ("invalid frame", error.payload_.moveDataToString());
       }));
-  EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1).InSequence(s);
+  EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1);
 
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
@@ -107,16 +104,17 @@ static void terminateTest(
   automatonConnection->connectTo(*testConnection);
 
   auto framedAutomatonConnection = folly::make_unique<FramedDuplexConnection>(
-      std::move(automatonConnection));
+      std::move(automatonConnection), inlineExecutor());
 
-  auto framedTestConnection =
-      folly::make_unique<FramedDuplexConnection>(std::move(testConnection));
+  auto framedTestConnection = folly::make_unique<FramedDuplexConnection>(
+      std::move(testConnection), inlineExecutor());
 
   auto inputSubscription = std::make_shared<MockSubscription>();
 
   if (!inOnSubscribe) {
     auto&& expexctation =
         EXPECT_CALL(*inputSubscription, request_(_))
+            .Times(AtMost(2))
             .WillOnce(Invoke([&](size_t n) {
               if (inRequest) {
                 framedTestConnection->getOutput()->onComplete();
@@ -207,10 +205,10 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   automatonConnection->connectTo(*testConnection);
 
   auto framedAutomatonConnection = folly::make_unique<FramedDuplexConnection>(
-      std::move(automatonConnection));
+      std::move(automatonConnection), inlineExecutor());
 
-  auto framedTestConnection =
-      folly::make_unique<FramedDuplexConnection>(std::move(testConnection));
+  auto framedTestConnection = folly::make_unique<FramedDuplexConnection>(
+      std::move(testConnection), inlineExecutor());
 
   // dump 3 frames to ConnectionAutomaton
   // the first frame should be refused and the connection closed
@@ -232,6 +230,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       }));
 
   EXPECT_CALL(*inputSubscription, request_(_))
+      .Times(AtMost(2))
       .InSequence(s)
       .WillOnce(Invoke([&](size_t n) {
         auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(

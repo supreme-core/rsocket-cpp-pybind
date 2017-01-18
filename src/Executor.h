@@ -8,6 +8,7 @@
 namespace reactivesocket {
 
 folly::Executor& defaultExecutor();
+folly::Executor& inlineExecutor();
 
 class ExecutorBase {
  public:

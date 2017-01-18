@@ -473,7 +473,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
     serverSocketConnection->connectTo(*testInlineConnection);
 
     testConnection = folly::make_unique<FramedDuplexConnection>(
-        std::move(testInlineConnection));
+        std::move(testInlineConnection), inlineExecutor());
 
     testInputSubscription = std::make_shared<MockSubscription>();
 
@@ -545,7 +545,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
     serverSocket = StandardReactiveSocket::fromServerConnection(
         eventBase_,
         folly::make_unique<FramedDuplexConnection>(
-            std::move(serverSocketConnection)),
+            std::move(serverSocketConnection), inlineExecutor()),
         std::move(serverHandler),
         Stats::noop(),
         false);
