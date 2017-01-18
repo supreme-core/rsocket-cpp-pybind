@@ -232,7 +232,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       }));
 
   EXPECT_CALL(*inputSubscription, request_(_))
-//      .InSequence(s)
+      .InSequence(s)
       .WillOnce(Invoke([&](size_t n) {
         auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(
             framedTestConnection->getOutput());

@@ -5,8 +5,8 @@
 #include <memory>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
-#include "src/Executor.h"
 #include "src/DuplexConnection.h"
+#include "src/Executor.h"
 #include "src/Frame.h"
 #include "src/FrameProcessor.h"
 #include "src/Payload.h"
@@ -186,8 +186,10 @@ class ConnectionAutomaton
   bool endStreamInternal(StreamId streamId, StreamCompletionSignal signal);
 
   /// @{
-  /// FrameProcessor methods are implemented with ExecutorBase and automatic marshaling
-  /// onto the right executor to allow DuplexConnection living on a different executor
+  /// FrameProcessor methods are implemented with ExecutorBase and automatic
+  /// marshaling
+  /// onto the right executor to allow DuplexConnection living on a different
+  /// executor
   /// and calling into ConnectionAutomaton.
   void processFrame(std::unique_ptr<folly::IOBuf>) override;
   void onTerminal(folly::exception_wrapper, StreamCompletionSignal) override;

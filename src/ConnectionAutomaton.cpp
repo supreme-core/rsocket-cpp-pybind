@@ -3,8 +3,8 @@
 #include "src/ConnectionAutomaton.h"
 
 #include <folly/ExceptionWrapper.h>
-#include <folly/String.h>
 #include <folly/MoveWrapper.h>
+#include <folly/String.h>
 #include <folly/io/async/EventBase.h>
 #include "src/AbstractStreamAutomaton.h"
 #include "src/ClientResumeStatusCallback.h"
@@ -27,7 +27,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     std::function<void()> onDisconnected,
     std::function<void()> onClosed)
     : ExecutorBase(executor),
-    factory_(std::move(factory)),
+      factory_(std::move(factory)),
       streamState_(std::move(streamState)),
       stats_(stats),
       isServer_(isServer),
@@ -46,7 +46,10 @@ ConnectionAutomaton::ConnectionAutomaton(
 }
 
 ConnectionAutomaton::~ConnectionAutomaton() {
-  //TODO: debugCheckCorrectExecutor();
+  // this destructor can be called from a different thread because the stream
+  // automatons destroyed on different threads can be the last ones referencing
+  // this.
+
   VLOG(6) << "~ConnectionAutomaton";
   // We rely on SubscriptionPtr and SubscriberPtr to dispatch appropriate
   // terminal signals.
@@ -250,11 +253,12 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   auto thisPtr = this->shared_from_this();
   auto movedFrame = folly::makeMoveWrapper(frame);
   runInExecutor([thisPtr, movedFrame]() mutable {
-      thisPtr->processFrameImpl(movedFrame.move());
+    thisPtr->processFrameImpl(movedFrame.move());
   });
 }
 
-void ConnectionAutomaton::processFrameImpl(std::unique_ptr<folly::IOBuf> frame) {
+void ConnectionAutomaton::processFrameImpl(
+    std::unique_ptr<folly::IOBuf> frame) {
   auto frameType = FrameHeader::peekType(*frame);
 
   std::stringstream ss;
@@ -305,7 +309,7 @@ void ConnectionAutomaton::onTerminal(
   auto thisPtr = this->shared_from_this();
   auto movedEx = folly::makeMoveWrapper(ex);
   runInExecutor([thisPtr, movedEx, signal]() mutable {
-      thisPtr->onTerminalImpl(movedEx.move(), signal);
+    thisPtr->onTerminalImpl(movedEx.move(), signal);
   });
 }
 
@@ -441,8 +445,6 @@ void ConnectionAutomaton::onConnectionFrame(
 void ConnectionAutomaton::handleUnknownStream(
     StreamId streamId,
     std::unique_ptr<folly::IOBuf> payload) {
-  // TODO(stupaq): there are some rules about monotonically increasing stream
-  // IDs -- let's forget about them for a moment
   factory_(*this, streamId, std::move(payload));
 }
 /// @}
@@ -555,8 +557,9 @@ DuplexConnection* ConnectionAutomaton::duplexConnection() const {
 }
 
 void ConnectionAutomaton::debugCheckCorrectExecutor() const {
-  DCHECK(!dynamic_cast<folly::EventBase *>(&executor()) ||
-         dynamic_cast<folly::EventBase *>(&executor())->isInEventBaseThread());
+  DCHECK(
+      !dynamic_cast<folly::EventBase*>(&executor()) ||
+      dynamic_cast<folly::EventBase*>(&executor())->isInEventBaseThread());
 }
 
 } // reactivesocket

@@ -15,6 +15,8 @@ class RequestHandler;
 ///
 /// A common base class of all automatons.
 ///
+/// The instances might be destroyed on a different thread than they were
+/// created.
 class StreamAutomatonBase : public AbstractStreamAutomaton {
  public:
   /// A dependent type which encapsulates all parameters needed to initialise
@@ -70,6 +72,8 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
 
  protected:
   /// A partially-owning pointer to the connection, the stream runs on.
+  /// It is declared as const to allow only ctor to initialize it for thread
+  /// safety of the dtor.
   const std::shared_ptr<ConnectionAutomaton> connection_;
   /// An ID of the stream (within the connection) this automaton manages.
   const StreamId streamId_;

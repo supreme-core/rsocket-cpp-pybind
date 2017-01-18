@@ -35,7 +35,6 @@ class FramedWriter : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
   void onErrorImpl(folly::exception_wrapper ex) override;
 
   // Subscription methods
-  void request(size_t n) override;
   void requestImpl(size_t n) override;
   void cancelImpl() override;
 
