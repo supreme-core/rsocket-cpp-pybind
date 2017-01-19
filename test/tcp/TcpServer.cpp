@@ -88,7 +88,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
       ReactiveSocket&,
       ConnectionSetupPayload request) override {
     LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
-    return std::make_shared<StreamState>();
+    return std::make_shared<StreamState>(Stats::noop());
   }
 };
 
