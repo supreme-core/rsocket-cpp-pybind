@@ -9,6 +9,8 @@
 namespace reactivesocket {
 class Stats {
  public:
+  virtual ~Stats() = default;
+
   static Stats& noop();
 
   virtual void socketCreated() = 0;
@@ -26,7 +28,6 @@ class Stats {
   virtual void bytesRead(size_t bytes) = 0;
   virtual void frameWritten(const std::string& frameType) = 0;
   virtual void frameRead(const std::string& frameType) = 0;
-
-  virtual ~Stats() = default;
+  virtual void resumeBufferChanged(int framesCountDelta, int dataSizeDelta) = 0;
 };
 }
