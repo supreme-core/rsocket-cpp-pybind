@@ -79,7 +79,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         connection.closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
-      std::make_shared<StreamState>(),
+      std::make_shared<StreamState>(Stats::noop()),
       nullptr,
       Stats::noop(),
       nullptr,
@@ -168,7 +168,7 @@ static void terminateTest(
         connection.closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
-      std::make_shared<StreamState>(),
+      std::make_shared<StreamState>(Stats::noop()),
       nullptr,
       Stats::noop(),
       nullptr,
@@ -265,7 +265,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         connection.closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
-      std::make_shared<StreamState>(),
+      std::make_shared<StreamState>(Stats::noop()),
       nullptr,
       Stats::noop(),
       nullptr,

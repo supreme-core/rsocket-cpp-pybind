@@ -393,7 +393,8 @@ void ConnectionAutomaton::onConnectionFrame(
         //          }
         //        }
       } else {
-        closeWithError(Frame_ERROR::connectionError("can not resume"));
+        closeWithError(
+            Frame_ERROR::connectionError("RS not resumable. Can not resume"));
       }
       return;
     }
@@ -490,7 +491,8 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(
     resumeFromPosition(position);
     return true;
   } else {
-    closeWithError(Frame_ERROR::connectionError("can not resume"));
+    closeWithError(
+        Frame_ERROR::connectionError("Position not available. Can not resume"));
     return false;
   }
 }
