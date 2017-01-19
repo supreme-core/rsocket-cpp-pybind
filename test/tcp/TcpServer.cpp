@@ -85,7 +85,6 @@ class ServerRequestHandler : public DefaultRequestHandler {
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
-      ReactiveSocket& /*socket*/,
       ConnectionSetupPayload request) override {
     LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
     return std::make_shared<StreamState>();
