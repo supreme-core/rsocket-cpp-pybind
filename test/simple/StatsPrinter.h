@@ -12,16 +12,17 @@ class StatsPrinter : public Stats {
   void socketClosed() override;
   void socketDisconnected() override;
 
-  virtual void duplexConnectionCreated(
+  void duplexConnectionCreated(
       const std::string& type,
       reactivesocket::DuplexConnection* connection) override;
-  virtual void duplexConnectionClosed(
+  void duplexConnectionClosed(
       const std::string& type,
       reactivesocket::DuplexConnection* connection) override;
 
-  virtual void bytesWritten(size_t bytes) override;
-  virtual void bytesRead(size_t bytes) override;
-  virtual void frameWritten(const std::string& frameType) override;
-  virtual void frameRead(const std::string& frameType) override;
+  void bytesWritten(size_t bytes) override;
+  void bytesRead(size_t bytes) override;
+  void frameWritten(const std::string& frameType) override;
+  void frameRead(const std::string& frameType) override;
+  void resumeBufferChanged(int framesCountDelta, int dataSizeDelta) override;
 };
 }
