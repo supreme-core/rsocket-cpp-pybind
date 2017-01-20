@@ -9,7 +9,7 @@ namespace reactivesocket {
 class StatsPrinter : public Stats {
  public:
   void socketCreated() override;
-  void socketClosed() override;
+  void socketClosed(StreamCompletionSignal signal) override;
   void socketDisconnected() override;
 
   void duplexConnectionCreated(
