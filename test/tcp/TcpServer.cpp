@@ -127,7 +127,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     reactiveSockets_.push_back(std::move(rs));
   }
 
-  void removeSocket(StandardReactiveSocket& socket) {
+  void removeSocket(ReactiveSocket& socket) {
     if (!shuttingDown) {
       reactiveSockets_.erase(std::remove_if(
           reactiveSockets_.begin(),
