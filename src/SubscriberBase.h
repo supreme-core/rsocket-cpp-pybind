@@ -23,6 +23,7 @@ namespace reactivesocket {
 //    guaranteed that no more callbacks will be called. It is safe for the
 // client to do cleanup and releasing of resources. User doesn't have to call
 //    subscription::cancel in on{Complete,Error} methods.
+//
 template <typename T>
 class SubscriberBaseT : public Subscriber<T>,
                         public EnableSharedFromThisBase<SubscriberBaseT<T>>,
@@ -32,74 +33,78 @@ class SubscriberBaseT : public Subscriber<T>,
   virtual void onCompleteImpl() = 0;
   virtual void onErrorImpl(folly::exception_wrapper ex) = 0;
 
-  // used to be able to cancel subscription immediately
+  // used to be able to cancel subscription immediately, making sure we dont
+  // deliver any other signals after that
   // also to break the reference cycle involving storing subscription pointer
-  // in the derived class from the SubscriberBase
+  // for the users of the SubscriberBase
   class SubscriptionShim : public Subscription {
    public:
     explicit SubscriptionShim(
-        std::shared_ptr<Subscription> originalSubscription)
-        : cancelled_(false),
-          originalSubscription_(std::move(originalSubscription)) {
-      DCHECK(originalSubscription_);
-    }
+        std::shared_ptr<SubscriberBaseT<T>> parentSubscriber)
+        : parentSubscriber_(std::move(parentSubscriber)) {}
 
     void request(size_t n) override final {
-      // the original subscription is responsible to handle receiving
-      // request(n) after cancel in the case it happens
-      if (auto subscription = std::atomic_load(&originalSubscription_)) {
-        subscription->request(n);
+      if (auto parent = parentSubscriber_.lock()) {
+        parent->runInExecutor([parent, n]() {
+          if (!parent->cancelled_) {
+            parent->originalSubscription_->request(n);
+          }
+        });
       }
     }
 
     void cancel() override final {
-      if (!cancelled_.exchange(true)) {
-        cancelOriginalSubscription();
+      if (auto parent = parentSubscriber_.lock()) {
+        if (!parent->cancelled_.exchange(true)) {
+          parent->runInExecutor([parent]() {
+            parent->originalSubscription_->cancel();
+            parent->originalSubscription_ = nullptr;
+          });
+        }
       }
-    }
-
-    void cancelOriginalSubscription() {
-      if (auto subscription = std::atomic_exchange(
-              &originalSubscription_, std::shared_ptr<Subscription>())) {
-        subscription->cancel();
-      }
-    }
-
-    std::atomic<bool>& cancelledAtomic() {
-      return cancelled_;
     }
 
    private:
-    std::atomic<bool> cancelled_;
-    std::shared_ptr<Subscription> originalSubscription_;
+    // we don't want to create cycle with parent subscriber. If we do, we would
+    // have to make sure the class deriving from SubscriberBase would have to
+    // nullify subscription pointer after calling cancel. That is too strong of
+    // a requirement for the users.
+    std::weak_ptr<SubscriberBaseT<T>> parentSubscriber_;
   };
 
+  friend class SubscriptionShim;
+
  public:
+  // in c++11 we have to declare this explicitly, instead of
+  // using ExecutorBase::ExecutorBase because of atomic cancelled_ member :(
+  // maybe it is gcc issue
+  // initialization of the ExecutorBase will be ignored for any of the
+  // classes deriving from SubscriberBaseT
+  // providing the default param values just to make the compiler happy
   explicit SubscriberBaseT(folly::Executor& executor = defaultExecutor())
-      : ExecutorBase(executor) {}
+      : ExecutorBase(executor), cancelled_(false) {}
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override final {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, subscription]() {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onSubscribe";
-      CHECK(!thisPtr->subscriptionShim_);
-      thisPtr->subscriptionShim_ =
-          std::make_shared<SubscriptionShim>(std::move(subscription));
-      thisPtr->onSubscribeImpl(thisPtr->subscriptionShim_);
+      CHECK(!thisPtr->originalSubscription_);
+      thisPtr->originalSubscription_ = std::move(subscription);
+      // if the subscription got cancelled in the meantime, we will not try to
+      // subscribe. Instead we will let the instance die when released.
+      if (!thisPtr->cancelled_) {
+        thisPtr->onSubscribeImpl(
+            std::make_shared<SubscriptionShim>(thisPtr->shared_from_this()));
+      }
     });
   }
 
   void onNext(T payload) override final {
-    // Scheduling the calls is not atomic operation so it may very well happen
-    // that 2 threads race for sending onNext and onComplete. We need to make
-    // sure
-    // that once the terminating signal is delivered we no longer try to deliver
-    // onNext.
     auto movedPayload = folly::makeMoveWrapper(std::move(payload));
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, movedPayload]() mutable {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onNext";
-      if (!thisPtr->isCancelled()) {
+      if (!thisPtr->cancelled_) {
         thisPtr->onNextImpl(movedPayload.move());
       }
     });
@@ -109,10 +114,12 @@ class SubscriberBaseT : public Subscriber<T>,
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr]() {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onComplete";
-      if (thisPtr->setCancelled()) {
+      if (!thisPtr->cancelled_.exchange(true)) {
         thisPtr->onCompleteImpl();
-        thisPtr->subscriptionShim_->cancelOriginalSubscription();
-        thisPtr->subscriptionShim_ = nullptr;
+
+        DCHECK(thisPtr->originalSubscription_);
+        thisPtr->originalSubscription_->cancel();
+        thisPtr->originalSubscription_ = nullptr;
       }
     });
   }
@@ -122,26 +129,31 @@ class SubscriberBaseT : public Subscriber<T>,
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, movedEx]() mutable {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onError";
-      if (thisPtr->setCancelled()) {
+      if (!thisPtr->cancelled_.exchange(true)) {
         thisPtr->onErrorImpl(movedEx.move());
-        thisPtr->subscriptionShim_->cancelOriginalSubscription();
-        thisPtr->subscriptionShim_ = nullptr;
+
+        DCHECK(thisPtr->originalSubscription_);
+        thisPtr->originalSubscription_->cancel();
+        thisPtr->originalSubscription_ = nullptr;
       }
     });
   }
 
  protected:
   bool isCancelled() const {
-    return !subscriptionShim_ || subscriptionShim_->cancelledAtomic();
+    return cancelled_;
   }
 
  private:
-  bool setCancelled() {
-    return subscriptionShim_ &&
-        !subscriptionShim_->cancelledAtomic().exchange(true);
-  }
+  // Once the subscription is cancelled we will no longer deliver any
+  // other signals.
+  // Scheduling the calls is not atomic operation so it may very well happen
+  // that 2 threads race for sending onNext and onComplete. We need to make sure
+  // that once the terminating signal is delivered we no longer try to deliver
+  // onNext.
+  std::atomic<bool> cancelled_;
 
-  std::shared_ptr<SubscriptionShim> subscriptionShim_;
+  std::shared_ptr<Subscription> originalSubscription_;
 };
 
 extern template class SubscriberBaseT<Payload>;
