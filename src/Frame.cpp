@@ -430,7 +430,11 @@ std::unique_ptr<folly::IOBuf> Frame_SETUP::serializeOut() {
   appender.writeBE(static_cast<uint32_t>(version_));
   appender.writeBE(static_cast<uint32_t>(keepaliveTime_));
   appender.writeBE(static_cast<uint32_t>(maxLifetime_));
-  appender.push((const uint8_t*)token_.data().data(), token_.data().size());
+
+  // TODO: Remove hack: https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+  if (header_.flags_ & FrameFlags_RESUME_ENABLE) {
+    appender.push((const uint8_t*)token_.data().data(), token_.data().size());
+  }
 
   CHECK(metadataMimeType_.length() <= std::numeric_limits<uint8_t>::max());
   appender.writeBE(static_cast<uint8_t>(metadataMimeType_.length()));
@@ -452,9 +456,15 @@ bool Frame_SETUP::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
     version_ = cur.readBE<uint32_t>();
     keepaliveTime_ = cur.readBE<uint32_t>();
     maxLifetime_ = cur.readBE<uint32_t>();
-    ResumeIdentificationToken::Data data;
-    cur.pull(data.data(), data.size());
-    token_.set(std::move(data));
+
+    // TODO: Remove hack: https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+    if (header_.flags_ & FrameFlags_RESUME_ENABLE) {
+      ResumeIdentificationToken::Data data;
+      cur.pull(data.data(), data.size());
+      token_.set(std::move(data));
+    } else {
+      token_ = ResumeIdentificationToken();
+    }
 
     int mdmtLen = cur.readBE<uint8_t>();
     metadataMimeType_ = cur.readFixedString(mdmtLen);
