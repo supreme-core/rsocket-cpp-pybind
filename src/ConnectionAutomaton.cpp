@@ -65,7 +65,7 @@ void ConnectionAutomaton::setResumable(bool resumable) {
   debugCheckCorrectExecutor();
   DCHECK(isDisconnectedOrClosed()); // we allow to set this flag before we are
   // connected
-  isResumable_ = resumable;
+  remoteResumeable_ = isResumable_ = resumable;
 }
 
 void ConnectionAutomaton::connect(
@@ -369,13 +369,13 @@ void ConnectionAutomaton::onConnectionFrame(
   switch (type) {
     case FrameType::KEEPALIVE: {
       Frame_KEEPALIVE frame;
-      if (!deserializeFrameOrError(frame, std::move(payload))) {
+      if (!deserializeFrameOrError(remoteResumeable_, frame, std::move(payload))) {
         return;
       }
       if (isServer_) {
         if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
           frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
-          outputFrameOrEnqueue(frame.serializeOut());
+          outputFrameOrEnqueue(frame.serializeOut(remoteResumeable_));
         } else {
           closeWithError(
               Frame_ERROR::connectionError("keepalive without flag"));
@@ -394,6 +394,16 @@ void ConnectionAutomaton::onConnectionFrame(
     }
     case FrameType::SETUP: {
       // TODO(tmont): check for ENABLE_RESUME and make sure isResumable_ is true
+      Frame_SETUP frame;
+      if (!deserializeFrameOrError(frame, payload->clone())) {
+        return;
+      }
+      if (frame.header_.flags_ & FrameFlags_RESUME_ENABLE) {
+        remoteResumeable_ = true;
+      } else {
+        remoteResumeable_ = false;
+      }
+      // TODO(blom, t15719366): Don't pass the full frame here
       factory_(*this, 0, std::move(payload));
       return;
     }
@@ -505,7 +515,7 @@ void ConnectionAutomaton::sendKeepalive() {
       FrameFlags_KEEPALIVE_RESPOND,
       streamState_->resumeTracker_.impliedPosition(),
       folly::IOBuf::create(0));
-  outputFrameOrEnqueue(pingFrame.serializeOut());
+  outputFrameOrEnqueue(pingFrame.serializeOut(remoteResumeable_));
 }
 
 Frame_RESUME ConnectionAutomaton::createResumeFrame(

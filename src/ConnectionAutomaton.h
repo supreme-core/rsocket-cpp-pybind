@@ -171,6 +171,19 @@ class ConnectionAutomaton
     }
   }
 
+  template <typename TFrame>
+  bool deserializeFrameOrError(
+      bool resumable,
+      TFrame& frame,
+      std::unique_ptr<folly::IOBuf> payload) {
+    if (frame.deserializeFrom(resumable, std::move(payload))) {
+      return true;
+    } else {
+      closeWithError(Frame_ERROR::unexpectedFrame());
+      return false;
+    }
+  }
+
   bool resumeFromPositionOrClose(ResumePosition position);
 
   uint32_t getKeepaliveTime() const;
@@ -224,6 +237,7 @@ class ConnectionAutomaton
   Stats& stats_;
   bool isServer_;
   bool isResumable_{false};
+  bool remoteResumeable_{false};
 
   std::function<void()> onConnected_;
   std::function<void()> onDisconnected_;

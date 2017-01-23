@@ -402,8 +402,8 @@ class Frame_KEEPALIVE {
     assert(!(flags & FrameFlags_METADATA));
   }
 
-  std::unique_ptr<folly::IOBuf> serializeOut();
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
+  std::unique_ptr<folly::IOBuf> serializeOut(bool resumable);
+  bool deserializeFrom(bool resumable, std::unique_ptr<folly::IOBuf> in);
 
   FrameHeader header_;
   ResumePosition position_;
