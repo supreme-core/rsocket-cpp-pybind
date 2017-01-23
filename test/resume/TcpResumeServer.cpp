@@ -22,7 +22,7 @@ DEFINE_string(address, "9898", "host:port to listen to");
 namespace {
 
 std::vector<std::pair<
-    std::unique_ptr<StandardReactiveSocket>,
+    std::unique_ptr<ReactiveSocket>,
     ResumeIdentificationToken>>
     g_reactiveSockets;
 
