@@ -78,9 +78,18 @@ bool NullRequestHandler::handleResume(
 }
 
 void NullRequestHandler::handleCleanResume(
-    std::shared_ptr<Subscription> /* response */) {}
+    std::shared_ptr<Subscription> /* response */) noexcept {}
 
 void NullRequestHandler::handleDirtyResume(
-    std::shared_ptr<Subscription> /* response */) {}
+    std::shared_ptr<Subscription> /* response */) noexcept {}
+
+void NullRequestHandler::onSubscriptionPaused(
+    const std::shared_ptr<Subscription>&) noexcept {}
+void NullRequestHandler::onSubscriptionResumed(
+    const std::shared_ptr<Subscription>&) noexcept {}
+void NullRequestHandler::onSubscriberPaused(
+    const std::shared_ptr<Subscriber<Payload>>&) noexcept {}
+void NullRequestHandler::onSubscriberResumed(
+    const std::shared_ptr<Subscriber<Payload>>&) noexcept {}
 
 } // reactivesocket

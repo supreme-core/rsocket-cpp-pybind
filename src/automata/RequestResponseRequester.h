@@ -43,6 +43,9 @@ class RequestResponseRequester : public StreamAutomatonBase,
   void onNextFrame(Frame_ERROR&&) override;
   void endStream(StreamCompletionSignal signal) override;
 
+  void pauseStream(RequestHandler& requestHandler) override;
+  void resumeStream(RequestHandler& requestHandler) override;
+
   /// State of the Subscription requester.
   enum class State : uint8_t {
     NEW,

@@ -24,28 +24,19 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
     Parameters() = default;
     Parameters(
         std::shared_ptr<ConnectionAutomaton> _connection,
-        StreamId _streamId,
-        std::shared_ptr<RequestHandler> _handler)
-        : connection(std::move(_connection)),
-          streamId(_streamId),
-          handler(std::move(_handler)) {}
+        StreamId _streamId)
+        : connection(std::move(_connection)), streamId(_streamId) {}
 
     std::shared_ptr<ConnectionAutomaton> connection;
     StreamId streamId{0};
-    std::shared_ptr<RequestHandler> handler;
   };
 
   explicit StreamAutomatonBase(Parameters params)
-      : connection_(std::move(params.connection)),
-        streamId_(params.streamId),
-        requestHandler_(std::move(params.handler)) {}
+      : connection_(std::move(params.connection)), streamId_(params.streamId) {}
 
   /// Logs an identification string of the automaton.
   std::ostream& logPrefix(std::ostream& os) /* = 0 */;
   /// @}
-
-  void onCleanResume() override {}
-  void onDirtyResume() override {}
 
  protected:
   bool isTerminated() const {
@@ -74,6 +65,5 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
   /// An ID of the stream (within the connection) this automaton manages.
   const StreamId streamId_;
   bool isTerminated_{false};
-  std::shared_ptr<RequestHandler> requestHandler_;
 };
 }

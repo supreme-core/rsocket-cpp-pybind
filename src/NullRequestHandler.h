@@ -58,9 +58,19 @@ class NullRequestHandler : public RequestHandler {
       const ResumeIdentificationToken& token,
       ResumePosition position) override;
 
-  void handleCleanResume(std::shared_ptr<Subscription> response) override;
+  void handleCleanResume(
+      std::shared_ptr<Subscription> response) noexcept override;
+  void handleDirtyResume(
+      std::shared_ptr<Subscription> response) noexcept override;
 
-  void handleDirtyResume(std::shared_ptr<Subscription> response) override;
+  void onSubscriptionPaused(
+      const std::shared_ptr<Subscription>& subscription) noexcept override;
+  void onSubscriptionResumed(
+      const std::shared_ptr<Subscription>& subscription) noexcept override;
+  void onSubscriberPaused(
+      const std::shared_ptr<Subscriber<Payload>>& subscriber) noexcept override;
+  void onSubscriberResumed(
+      const std::shared_ptr<Subscriber<Payload>>& subscriber) noexcept override;
 };
 
 using DefaultRequestHandler = NullRequestHandler;

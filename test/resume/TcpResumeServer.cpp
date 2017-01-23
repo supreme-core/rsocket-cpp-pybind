@@ -21,9 +21,8 @@ DEFINE_string(address, "9898", "host:port to listen to");
 
 namespace {
 
-std::vector<std::pair<
-    std::unique_ptr<ReactiveSocket>,
-    ResumeIdentificationToken>>
+std::vector<
+    std::pair<std::unique_ptr<ReactiveSocket>, ResumeIdentificationToken>>
     g_reactiveSockets;
 
 class ServerSubscription : public SubscriptionBase {
@@ -136,14 +135,36 @@ class ServerRequestHandler : public DefaultRequestHandler {
     return false;
   }
 
-  void handleCleanResume(std::shared_ptr<Subscription> response) override {
+  void handleCleanResume(
+      std::shared_ptr<Subscription> response) noexcept override {
     LOG(INFO) << "clean resume stream"
               << "\n";
   }
 
-  void handleDirtyResume(std::shared_ptr<Subscription> response) override {
+  void handleDirtyResume(
+      std::shared_ptr<Subscription> response) noexcept override {
     LOG(INFO) << "dirty resume stream"
               << "\n";
+  }
+
+  void onSubscriptionPaused(
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    LOG(INFO) << "subscription paused " << &subscription;
+  }
+
+  void onSubscriptionResumed(
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    LOG(INFO) << "subscription resumed " << &subscription;
+  }
+
+  void onSubscriberPaused(const std::shared_ptr<Subscriber<Payload>>&
+                              subscriber) noexcept override {
+    LOG(INFO) << "subscriber paused " << &subscriber;
+  }
+
+  void onSubscriberResumed(const std::shared_ptr<Subscriber<Payload>>&
+                               subscriber) noexcept override {
+    LOG(INFO) << "subscriber resumed " << &subscriber;
   }
 
  private:

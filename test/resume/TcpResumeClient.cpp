@@ -52,6 +52,29 @@ class ResumeCallback : public ClientResumeStatusCallback {
 };
 }
 
+class ClientRequestHandler : public DefaultRequestHandler {
+ public:
+  void onSubscriptionPaused(
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    LOG(INFO) << "subscription paused " << &subscription;
+  }
+
+  void onSubscriptionResumed(
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    LOG(INFO) << "subscription resumed " << &subscription;
+  }
+
+  void onSubscriberPaused(const std::shared_ptr<Subscriber<Payload>>&
+                              subscriber) noexcept override {
+    LOG(INFO) << "subscriber paused " << &subscriber;
+  }
+
+  void onSubscriberResumed(const std::shared_ptr<Subscriber<Payload>>&
+                               subscriber) noexcept override {
+    LOG(INFO) << "subscriber resumed " << &subscriber;
+  }
+};
+
 int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
   FLAGS_minloglevel = 0;
@@ -82,7 +105,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<DuplexConnection> framedConnection =
         folly::make_unique<FramedDuplexConnection>(std::move(connection));
     std::unique_ptr<RequestHandler> requestHandler =
-        folly::make_unique<DefaultRequestHandler>();
+        folly::make_unique<ClientRequestHandler>();
 
     reactiveSocket = StandardReactiveSocket::disconnectedClient(
         *eventBaseThread.getEventBase(),

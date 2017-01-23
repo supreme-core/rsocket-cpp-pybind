@@ -78,6 +78,18 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
     Base::endStream(signal);
   }
 
+  void pauseStream(RequestHandler& requestHandler) override {
+    if (consumingSubscriber_) {
+      requestHandler.onSubscriberPaused(consumingSubscriber_);
+    }
+  }
+
+  void resumeStream(RequestHandler& requestHandler) override {
+    if (consumingSubscriber_) {
+      requestHandler.onSubscriberResumed(consumingSubscriber_);
+    }
+  }
+
   void processPayload(Frame&&);
 
   void onError(folly::exception_wrapper ex);
