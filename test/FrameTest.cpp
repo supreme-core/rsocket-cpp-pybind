@@ -36,7 +36,7 @@ TEST(FrameTest, Frame_REQUEST_STREAM) {
   FrameFlags flags =
       FrameFlags_COMPLETE | FrameFlags_REQN_PRESENT | FrameFlags_METADATA;
   uint32_t requestN = 3;
-  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acyonym");
+  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
   auto data = folly::IOBuf::copyBuffer("424242");
   auto frame = reserialize<Frame_REQUEST_STREAM>(
       streamId, flags, requestN, Payload(data->clone(), metadata->clone()));

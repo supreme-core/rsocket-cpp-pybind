@@ -16,7 +16,7 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
   switch (state_) {
     case State::NEW: {
       state_ = State::REQUESTED;
-      // FIXME: find a root cause of this assymetry; the problem here is that
+      // FIXME: find a root cause of this asymmetry; the problem here is that
       // the Base::request might be delivered after the whole thing is shut
       // down, if one uses InlineConnection.
       size_t initialN = initialResponseAllowance_.drainWithLimit(

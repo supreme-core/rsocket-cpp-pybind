@@ -17,27 +17,16 @@ void RequestResponseRequester::subscribe(
   consumingSubscriber_.onSubscribe(SubscriptionBase::shared_from_this());
 }
 
-void RequestResponseRequester::processInitialPayload(Payload request) {
-  switch (state_) {
-    case State::NEW: {
-      state_ = State::REQUESTED;
-      Frame_REQUEST_RESPONSE frame(
-          streamId_, FrameFlags_EMPTY, std::move(std::move(request)));
-      connection_->outputFrameOrEnqueue(frame.serializeOut());
-      break;
-    }
-    case State::REQUESTED:
-      // Cannot receive a request payload twice.
-      CHECK(false);
-      break;
-    case State::CLOSED:
-      break;
-  }
-}
-
 void RequestResponseRequester::requestImpl(size_t n) noexcept {
   if (n == 0) {
     return;
+  }
+
+  if (state_ == State::NEW) {
+    state_ = State::REQUESTED;
+    Frame_REQUEST_RESPONSE frame(
+            streamId_, FrameFlags_EMPTY, std::move(std::move(initialPayload_)));
+    connection_->outputFrameOrEnqueue(frame.serializeOut());
   }
 
   if (payload_) {
