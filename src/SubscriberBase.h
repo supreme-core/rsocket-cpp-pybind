@@ -28,10 +28,11 @@ template <typename T>
 class SubscriberBaseT : public Subscriber<T>,
                         public EnableSharedFromThisBase<SubscriberBaseT<T>>,
                         public virtual ExecutorBase {
-  virtual void onSubscribeImpl(std::shared_ptr<Subscription> subscription) = 0;
-  virtual void onNextImpl(T payload) = 0;
-  virtual void onCompleteImpl() = 0;
-  virtual void onErrorImpl(folly::exception_wrapper ex) = 0;
+  virtual void onSubscribeImpl(
+      std::shared_ptr<Subscription> subscription) noexcept = 0;
+  virtual void onNextImpl(T payload) noexcept = 0;
+  virtual void onCompleteImpl() noexcept = 0;
+  virtual void onErrorImpl(folly::exception_wrapper ex) noexcept = 0;
 
   // used to be able to cancel subscription immediately, making sure we dont
   // deliver any other signals after that
@@ -43,7 +44,7 @@ class SubscriberBaseT : public Subscriber<T>,
         std::shared_ptr<SubscriberBaseT<T>> parentSubscriber)
         : parentSubscriber_(std::move(parentSubscriber)) {}
 
-    void request(size_t n) override final {
+    void request(size_t n) noexcept override final {
       if (auto parent = parentSubscriber_.lock()) {
         parent->runInExecutor([parent, n]() {
           if (!parent->cancelled_) {
@@ -53,7 +54,7 @@ class SubscriberBaseT : public Subscriber<T>,
       }
     }
 
-    void cancel() override final {
+    void cancel() noexcept override final {
       if (auto parent = parentSubscriber_.lock()) {
         if (!parent->cancelled_.exchange(true)) {
           parent->runInExecutor([parent]() {
@@ -84,7 +85,8 @@ class SubscriberBaseT : public Subscriber<T>,
   explicit SubscriberBaseT(folly::Executor& executor = defaultExecutor())
       : ExecutorBase(executor), cancelled_(false) {}
 
-  void onSubscribe(std::shared_ptr<Subscription> subscription) override final {
+  void onSubscribe(
+      std::shared_ptr<Subscription> subscription) noexcept override final {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, subscription]() {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onSubscribe";
@@ -99,7 +101,7 @@ class SubscriberBaseT : public Subscriber<T>,
     });
   }
 
-  void onNext(T payload) override final {
+  void onNext(T payload) noexcept override final {
     auto movedPayload = folly::makeMoveWrapper(std::move(payload));
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, movedPayload]() mutable {
@@ -110,7 +112,7 @@ class SubscriberBaseT : public Subscriber<T>,
     });
   }
 
-  void onComplete() override final {
+  void onComplete() noexcept override final {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr]() {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onComplete";
@@ -124,7 +126,7 @@ class SubscriberBaseT : public Subscriber<T>,
     });
   }
 
-  void onError(folly::exception_wrapper ex) override final {
+  void onError(folly::exception_wrapper ex) noexcept override final {
     auto movedEx = folly::makeMoveWrapper(std::move(ex));
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, movedEx]() mutable {

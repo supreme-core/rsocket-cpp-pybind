@@ -35,7 +35,7 @@ void RequestResponseRequester::processInitialPayload(Payload request) {
   }
 }
 
-void RequestResponseRequester::requestImpl(size_t n) {
+void RequestResponseRequester::requestImpl(size_t n) noexcept {
   if (n == 0) {
     return;
   }
@@ -49,7 +49,7 @@ void RequestResponseRequester::requestImpl(size_t n) {
   }
 }
 
-void RequestResponseRequester::cancelImpl() {
+void RequestResponseRequester::cancelImpl() noexcept {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;

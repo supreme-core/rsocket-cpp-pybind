@@ -18,7 +18,7 @@ namespace reactivesocket {
 
 class ReactiveSocket;
 
-using ReactiveSocketCallback = std::function<void(ReactiveSocket&)>;
+using ReactiveSocketCallback = std::function<void(ReactiveSocket&) noexcept>;
 using StreamId = uint32_t;
 using ResumePosition = int64_t;
 

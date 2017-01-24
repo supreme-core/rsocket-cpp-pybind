@@ -7,24 +7,25 @@
 
 namespace reactivesocket {
 
-void NullSubscriber::onSubscribe(std::shared_ptr<Subscription> subscription) {
+void NullSubscriber::onSubscribe(
+    std::shared_ptr<Subscription> subscription) noexcept {
   subscription->cancel();
 }
 
-void NullSubscriber::onNext(Payload /*element*/) {}
+void NullSubscriber::onNext(Payload /*element*/) noexcept {}
 
-void NullSubscriber::onComplete() {}
+void NullSubscriber::onComplete() noexcept {}
 
-void NullSubscriber::onError(folly::exception_wrapper /*ex*/) {}
+void NullSubscriber::onError(folly::exception_wrapper /*ex*/) noexcept {}
 
-void NullSubscription::request(size_t /*n*/){};
+void NullSubscription::request(size_t /*n*/) noexcept {};
 
-void NullSubscription::cancel() {}
+void NullSubscription::cancel() noexcept {}
 
 std::shared_ptr<Subscriber<Payload>> NullRequestHandler::handleRequestChannel(
     Payload /*request*/,
     StreamId /*streamId*/,
-    const std::shared_ptr<Subscriber<Payload>>& response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
   // TODO(lehecka): get rid of onSubscribe call
   response->onSubscribe(std::make_shared<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
@@ -34,7 +35,7 @@ std::shared_ptr<Subscriber<Payload>> NullRequestHandler::handleRequestChannel(
 void NullRequestHandler::handleRequestStream(
     Payload /*request*/,
     StreamId /*streamId*/,
-    const std::shared_ptr<Subscriber<Payload>>& response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
   // TODO(lehecka): get rid of onSubscribe call
   response->onSubscribe(std::make_shared<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
@@ -43,7 +44,7 @@ void NullRequestHandler::handleRequestStream(
 void NullRequestHandler::handleRequestSubscription(
     Payload /*request*/,
     StreamId /*streamId*/,
-    const std::shared_ptr<Subscriber<Payload>>& response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
   // TODO(lehecka): get rid of onSubscribe call
   response->onSubscribe(std::make_shared<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
@@ -52,28 +53,28 @@ void NullRequestHandler::handleRequestSubscription(
 void NullRequestHandler::handleRequestResponse(
     Payload /*request*/,
     StreamId /*streamId*/,
-    const std::shared_ptr<Subscriber<Payload>>& response) {
+    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
   response->onSubscribe(std::make_shared<NullSubscription>());
   response->onError(std::runtime_error("NullRequestHandler"));
 }
 
 void NullRequestHandler::handleFireAndForgetRequest(
     Payload /*request*/,
-    StreamId /*streamId*/) {}
+    StreamId /*streamId*/) noexcept {}
 
 void NullRequestHandler::handleMetadataPush(
-    std::unique_ptr<folly::IOBuf> /*request*/) {}
+    std::unique_ptr<folly::IOBuf> /*request*/) noexcept {}
 
 std::shared_ptr<StreamState> NullRequestHandler::handleSetupPayload(
     ReactiveSocket& socket,
-    ConnectionSetupPayload /*request*/) {
+    ConnectionSetupPayload /*request*/) noexcept {
   return std::make_shared<StreamState>(Stats::noop());
 }
 
 bool NullRequestHandler::handleResume(
     ReactiveSocket& socket,
     const ResumeIdentificationToken& /*token*/,
-    ResumePosition /*position*/) {
+    ResumePosition /*position*/) noexcept {
   return false;
 }
 
