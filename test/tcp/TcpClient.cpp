@@ -49,7 +49,7 @@ class ClientSubscription : public SubscriptionBase {
       response_.onNext(Payload("from server " + std::to_string(i)));
     }
     // response_.onComplete();
-       response_.onError(std::runtime_error("XXX"));
+    response_.onError(std::runtime_error("XXX"));
   }
 
   void cancelImpl() override {}
@@ -57,7 +57,6 @@ class ClientSubscription : public SubscriptionBase {
   SubscriberPtr<Subscriber<Payload>> response_;
   size_t numElems_;
 };
-
 }
 
 class ClientRequestHandler : public DefaultRequestHandler {
