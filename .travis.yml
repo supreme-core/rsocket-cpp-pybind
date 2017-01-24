@@ -1,21 +1,52 @@
+# inspired by https://github.com/ericniebler/meta/blob/master/.travis.yml
+
 sudo: required
 dist: trusty
 
 language: cpp
 
-os:
-  - linux
-  
-compiler:
-  - gcc
-  - clang
+# Test matrix:
+ matrix:
+   include:
+    - env: CLANG_VERSION=3.9 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
+      os: linux
+      addons: &clang39
+        apt:
+          packages:
+            - util-linux
+            - clang-3.9
+            - valgrind
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise
+
+    - env: GCC_VERSION=5 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
+      os: linux
+      addons: &gcc5
+        apt:
+          packages:
+            - g++-5
+            - valgrind
+          sources:
+            - ubuntu-toolchain-r-test
 
 before_script:
   - ./scripts/fetch_folly_ubuntu_trusty.sh
   - ./scripts/prepare_ubuntu_trusty.sh
+  - if [ -n "$GCC_VERSION" ]; then export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}"; fi
+  - if [ -n "$CLANG_VERSION" ]; then export CXX="clang++-${CLANG_VERSION}" CC="clang-${CLANG_VERSION}"; fi
+  - which $CXX
+  - which $CC
+  - which valgrind
+  - $CXX --version
+#  - if [ -n "$CLANG_VERSION" ]; then sudo CXX=$CXX CC=$CC ./scripts/install_libcxx.sh; fi
+
 script:
   - mkdir build
   - cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=DEBUG
+  - if [ -n "$CLANG_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined,integer -fno-sanitize=unsigned-integer-overflow"; fi
+  - if [ -n "$GCC_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined "; fi
+  - if [ -n "$CLANG_VERSION" ]; then CXX_FLAGS="${CXX_FLAGS} -D__extern_always_inline=inline"; fi
+  - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${CXX_LINKER_FLAGS}" -DMETA_CXX_STD=$CPP
   - make -j8
   - ./tests
