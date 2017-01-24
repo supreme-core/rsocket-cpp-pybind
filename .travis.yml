@@ -3,7 +3,7 @@
 language: cpp
 
 # Test matrix:
- matrix:
+matrix:
    include:
     - env: CLANG_VERSION=3.9 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
       os: linux
