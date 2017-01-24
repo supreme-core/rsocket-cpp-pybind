@@ -16,6 +16,7 @@ namespace reactivesocket {
 ConnectionAutomaton::ConnectionAutomaton(
     StreamAutomatonFactory factory,
     std::shared_ptr<StreamState> streamState,
+    std::shared_ptr<RequestHandler> requestHandler,
     ResumeListener resumeListener,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
@@ -25,6 +26,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     std::function<void()> onClosed)
     : factory_(std::move(factory)),
       streamState_(std::move(streamState)),
+      requestHandler_(std::move(requestHandler)),
       stats_(stats),
       isServer_(isServer),
       onConnected_(std::move(onConnected)),
@@ -105,6 +107,7 @@ void ConnectionAutomaton::disconnect() {
   }
 
   closeFrameTransport(folly::exception_wrapper());
+  pauseStreams();
   stats_.socketDisconnected();
   onDisconnected_();
 }
@@ -256,6 +259,18 @@ void ConnectionAutomaton::closeStreams(StreamCompletionSignal signal) {
     // assertions?
     assert(result);
     assert(streamState_->streams_.size() == oldSize - 1);
+  }
+}
+
+void ConnectionAutomaton::pauseStreams() {
+  for (auto& streamKV : streamState_->streams_) {
+    streamKV.second->pauseStream(*requestHandler_);
+  }
+}
+
+void ConnectionAutomaton::resumeStreams() {
+  for (auto& streamKV : streamState_->streams_) {
+    streamKV.second->resumeStream(*requestHandler_);
   }
 }
 
@@ -477,7 +492,6 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(
           Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
               .serializeOut());
     }
-
     resumeFromPosition(position);
     return true;
   } else {
@@ -492,6 +506,7 @@ void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
   DCHECK(!isDisconnectedOrClosed());
   DCHECK(streamState_->resumeCache_.isPositionAvailable(position));
 
+  resumeStreams();
   streamState_->resumeCache_.sendFramesFromPosition(position, *frameTransport_);
 
   for (auto& frame : streamState_->moveOutputPendingFrames()) {

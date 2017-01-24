@@ -5,6 +5,7 @@
 #include <folly/MoveWrapper.h>
 #include "src/Common.h"
 #include "src/ConnectionAutomaton.h"
+#include "src/RequestHandler.h"
 
 namespace reactivesocket {
 
@@ -139,5 +140,17 @@ void RequestResponseRequester::onNextFrame(Frame_RESPONSE&& frame) {
 std::ostream& RequestResponseRequester::logPrefix(std::ostream& os) {
   return os << " RequestResponseRequester(" << &connection_ << ", " << streamId_
             << "): ";
+}
+
+void RequestResponseRequester::pauseStream(RequestHandler& requestHandler) {
+  if (consumingSubscriber_) {
+    requestHandler.onSubscriberPaused(consumingSubscriber_);
+  }
+}
+
+void RequestResponseRequester::resumeStream(RequestHandler& requestHandler) {
+  if (consumingSubscriber_) {
+    requestHandler.onSubscriberResumed(consumingSubscriber_);
+  }
 }
 }

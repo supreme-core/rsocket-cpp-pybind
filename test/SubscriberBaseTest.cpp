@@ -111,8 +111,8 @@ TEST(SubscriberBaseTest, CancelStopsOnNext) {
   EXPECT_CALL(*subscriber, onNextImpl_(_))
       .WillOnce(Invoke([&](int) {}))
       .WillOnce(Invoke([&](int) {
-        done = true;
         outSubscription->cancel();
+        done = true;
       }));
   EXPECT_CALL(*subscriber, onCompleteImpl_()).Times(0);
   EXPECT_CALL(*subscriber, onErrorImpl_(_)).Times(0);

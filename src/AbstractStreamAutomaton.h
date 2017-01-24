@@ -15,15 +15,15 @@ class exception_wrapper;
 namespace reactivesocket {
 
 class ConnectionAutomaton;
+class Frame_CANCEL;
+class Frame_ERROR;
+class Frame_REQUEST_CHANNEL;
+class Frame_REQUEST_N;
+class Frame_REQUEST_RESPONSE;
 class Frame_REQUEST_STREAM;
 class Frame_REQUEST_SUB;
-class Frame_REQUEST_CHANNEL;
-class Frame_REQUEST_RESPONSE;
-class Frame_REQUEST_N;
-class Frame_CANCEL;
 class Frame_RESPONSE;
-class Frame_ERROR;
-using StreamId = uint32_t;
+class RequestHandler;
 
 /// Represents an abtract stream, which can support one of the following:
 /// Channel, Subscription, Stream or RequestResponse.
@@ -73,10 +73,10 @@ class AbstractStreamAutomaton {
   /// 3. per "unsubscribe handshake", the automaton must deliver corresponding
   ///   terminal signal to the connection.
   virtual void endStream(StreamCompletionSignal signal) = 0;
-
-  virtual void onCleanResume() = 0;
-  virtual void onDirtyResume() = 0;
   /// @}
+
+  virtual void pauseStream(RequestHandler& requestHandler) = 0;
+  virtual void resumeStream(RequestHandler& requestHandler) = 0;
 
  protected:
   /// @{

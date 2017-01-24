@@ -63,10 +63,22 @@ class RequestHandler {
 
   // Handle a stream that can resume in a "clean" state. Client and Server are
   // up-to-date.
-  virtual void handleCleanResume(std::shared_ptr<Subscription> response) = 0;
+  virtual void handleCleanResume(
+      std::shared_ptr<Subscription> response) noexcept = 0;
 
   // Handle a stream that can resume in a "dirty" state. Client is "behind"
   // Server.
-  virtual void handleDirtyResume(std::shared_ptr<Subscription> response) = 0;
+  virtual void handleDirtyResume(
+      std::shared_ptr<Subscription> response) noexcept = 0;
+
+  // TODO: cleanup the methods above
+  virtual void onSubscriptionPaused(
+      const std::shared_ptr<Subscription>& subscription) noexcept = 0;
+  virtual void onSubscriptionResumed(
+      const std::shared_ptr<Subscription>& subscription) noexcept = 0;
+  virtual void onSubscriberPaused(
+      const std::shared_ptr<Subscriber<Payload>>& subscriber) noexcept = 0;
+  virtual void onSubscriberResumed(
+      const std::shared_ptr<Subscriber<Payload>>& subscriber) noexcept = 0;
 };
 }
