@@ -1,8 +1,5 @@
 # inspired by https://github.com/ericniebler/meta/blob/master/.travis.yml
 
-sudo: required
-dist: trusty
-
 language: cpp
 
 # Test matrix:
