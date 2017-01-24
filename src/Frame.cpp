@@ -431,7 +431,8 @@ std::unique_ptr<folly::IOBuf> Frame_SETUP::serializeOut() {
   appender.writeBE(static_cast<uint32_t>(keepaliveTime_));
   appender.writeBE(static_cast<uint32_t>(maxLifetime_));
 
-  // TODO: Remove hack: https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+  // TODO: Remove hack:
+  // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
   if (header_.flags_ & FrameFlags_RESUME_ENABLE) {
     appender.push((const uint8_t*)token_.data().data(), token_.data().size());
   }
@@ -457,7 +458,8 @@ bool Frame_SETUP::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
     keepaliveTime_ = cur.readBE<uint32_t>();
     maxLifetime_ = cur.readBE<uint32_t>();
 
-    // TODO: Remove hack: https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+    // TODO: Remove hack:
+    // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
     if (header_.flags_ & FrameFlags_RESUME_ENABLE) {
       ResumeIdentificationToken::Data data;
       cur.pull(data.data(), data.size());

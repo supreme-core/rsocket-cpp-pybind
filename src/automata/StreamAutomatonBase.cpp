@@ -8,11 +8,10 @@ namespace reactivesocket {
 
 namespace {
 
-template<typename T>
+template <typename T>
 void onUnexpectedFrame(const T& frame) {
   VLOG(4) << "Unexpected frame, ignoring: " << frame;
 }
-
 }
 
 void StreamAutomatonBase::endStream(StreamCompletionSignal) {
