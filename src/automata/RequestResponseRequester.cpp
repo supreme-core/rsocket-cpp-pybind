@@ -83,7 +83,8 @@ void RequestResponseRequester::endStream(StreamCompletionSignal signal) {
   if (signal == StreamCompletionSignal::GRACEFUL) {
     consumingSubscriber_.onComplete();
   } else {
-    consumingSubscriber_.onError(StreamInterruptedException((int)signal));
+    consumingSubscriber_.onError(
+        StreamInterruptedException(static_cast<int>(signal)));
   }
 }
 

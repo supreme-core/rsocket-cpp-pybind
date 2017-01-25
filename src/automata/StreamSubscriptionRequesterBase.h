@@ -15,6 +15,8 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin<Frame_RESPONSE> {
   using Base = ConsumerMixin<Frame_RESPONSE>;
 
  public:
+  // initialization of the ExecutorBase will be ignored for any of the
+  // derived classes
   explicit StreamSubscriptionRequesterBase(const Base::Parameters& params)
       : ExecutorBase(params.executor), Base(params) {}
 

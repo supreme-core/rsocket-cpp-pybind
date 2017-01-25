@@ -62,17 +62,19 @@ endif()
 
 # Common configuration for all build modes.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${META_CXX_STD}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Werror -Woverloaded-virtual")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Woverloaded-virtual")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -pedantic-errors")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++98-compat -Wno-c++98-compat-pedantic")
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Werror -Weverything -pedantic-errors)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-unreachable-code-break -Wno-covered-switch-default)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-padded -Wno-weak-vtables -Wno-weak-template-vtables)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-global-constructors -Wno-exit-time-destructors)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-unreachable-code-return)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-c++98-compat -Wno-c++98-compat-pedantic)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-abstract-vbase-init)
 elseif(CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -pedantic-errors")
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Werror -pedantic -pedantic-errors)
 endif()
-
-# Configuration for Debug build mode.
-#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 
 find_package(Folly REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -182,6 +184,10 @@ target_link_libraries(
   ${GLOG_LIBRARY})
 
 add_dependencies(ReactiveSocket ReactiveStreams)
+
+target_compile_options(
+  ReactiveSocket
+  PRIVATE ${EXTRA_CXX_FLAGS})
 
 enable_testing()
 
