@@ -22,6 +22,8 @@ class ResumeTracker {
       case FrameType::REQUEST_CHANNEL:
       case FrameType::REQUEST_STREAM:
       case FrameType::REQUEST_SUB:
+      case FrameType::REQUEST_RESPONSE:
+      case FrameType::REQUEST_FNF:
       case FrameType::REQUEST_N:
       case FrameType::CANCEL:
       case FrameType::ERROR:
@@ -36,8 +38,6 @@ class ResumeTracker {
       case FrameType::SETUP:
       case FrameType::LEASE:
       case FrameType::KEEPALIVE:
-      case FrameType::REQUEST_RESPONSE: // TODO:fix this bug
-      case FrameType::REQUEST_FNF:
       case FrameType::METADATA_PUSH:
       case FrameType::RESUME:
       case FrameType::RESUME_OK:
