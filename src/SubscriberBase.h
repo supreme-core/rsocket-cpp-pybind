@@ -100,12 +100,11 @@ class SubscriberBaseT : public Subscriber<T>,
   }
 
   void onNext(T payload) override final {
-    auto movedPayload = folly::makeMoveWrapper(std::move(payload));
     auto thisPtr = this->shared_from_this();
-    runInExecutor([thisPtr, movedPayload]() mutable {
+    runInExecutor([thisPtr, payload = std::move(payload)]() mutable {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onNext";
       if (!thisPtr->cancelled_) {
-        thisPtr->onNextImpl(movedPayload.move());
+        thisPtr->onNextImpl(std::move(payload));
       }
     });
   }

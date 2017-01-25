@@ -8,7 +8,7 @@ language: cpp
 # Test matrix:
 matrix:
    include:
-    - env: CLANG_VERSION=3.9 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
+    - env: CLANG_VERSION=3.9 BUILD_TYPE=Debug CPP=14 ASAN=On
       os: linux
       addons: &clang39
         apt:
@@ -20,7 +20,17 @@ matrix:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise
 
-    - env: GCC_VERSION=5 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
+    - env: GCC_VERSION=4.9 BUILD_TYPE=Debug CPP=14 ASAN=Off
+      os: linux
+      addons: &gcc49
+        apt:
+          packages:
+            - g++-4.9
+            - valgrind
+          sources:
+            - ubuntu-toolchain-r-test
+
+    - env: GCC_VERSION=5 BUILD_TYPE=Debug CPP=14 ASAN=On
       os: linux
       addons: &gcc5
         apt:
@@ -30,11 +40,11 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
-    - env: GCC_VERSION=5 BUILD_TYPE=Debug CPP=11 ASAN=Off LIBCXX=Off
+    - env: GCC_VERSION=5 BUILD_TYPE=Debug CPP=11 ASAN=Off
       os: linux
       addons: *gcc5
 
-    - env: GCC_VERSION=6 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
+    - env: GCC_VERSION=6 BUILD_TYPE=Debug CPP=14 ASAN=On
       os: linux
       addons: &gcc6
         apt:
@@ -53,7 +63,6 @@ before_script:
   - which $CC
   - which valgrind
   - $CXX --version
-#  - if [ -n "$CLANG_VERSION" ]; then sudo CXX=$CXX CC=$CC ./scripts/install_libcxx.sh; fi
 
 script:
   - mkdir build
