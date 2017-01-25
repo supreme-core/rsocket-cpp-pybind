@@ -367,7 +367,7 @@ void StandardReactiveSocket::clientConnect(
   // TODO set correct version
   Frame_SETUP frame(
       FrameFlags_EMPTY,
-      0,
+      setupPayload.resumable ? FrameFlags_RESUME_ENABLE : 0,
       connection_->getKeepaliveTime(),
       std::numeric_limits<uint32_t>::max(),
       // TODO: resumability,

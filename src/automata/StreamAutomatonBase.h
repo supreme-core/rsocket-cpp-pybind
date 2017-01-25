@@ -56,9 +56,6 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
   void onBadFrame() override;
   void onUnknownFrame() override;
 
- private:
-  void onUnexpectedFrame();
-
  protected:
   /// A partially-owning pointer to the connection, the stream runs on.
   const std::shared_ptr<ConnectionAutomaton> connection_;
