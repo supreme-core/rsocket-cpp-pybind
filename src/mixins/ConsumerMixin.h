@@ -31,7 +31,8 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
     folly::Executor& executor;
   };
 
-  using Base::Base;
+  explicit ConsumerMixin(const Parameters& params)
+      : ExecutorBase(params.executor), Base(params) {}
 
   /// Adds implicit allowance.
   ///
