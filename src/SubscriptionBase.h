@@ -11,11 +11,11 @@ namespace reactivesocket {
 class SubscriptionBase : public Subscription,
                          public EnableSharedFromThisBase<SubscriptionBase>,
                          public virtual ExecutorBase {
-  virtual void requestImpl(size_t n) = 0;
-  virtual void cancelImpl() = 0;
+  virtual void requestImpl(size_t n) noexcept = 0;
+  virtual void cancelImpl() noexcept = 0;
 
  public:
-  void request(size_t n) override final {
+  void request(size_t n) noexcept override final {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr, n]() {
       VLOG(1) << static_cast<ExecutorBase*>(thisPtr.get()) << " request";
@@ -23,7 +23,7 @@ class SubscriptionBase : public Subscription,
     });
   }
 
-  void cancel() override final {
+  void cancel() noexcept override final {
     auto thisPtr = this->shared_from_this();
     runInExecutor([thisPtr]() {
       VLOG(1) << static_cast<ExecutorBase*>(thisPtr.get()) << " cancel";

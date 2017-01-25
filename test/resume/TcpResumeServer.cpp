@@ -35,7 +35,7 @@ class ServerSubscription : public SubscriptionBase {
   }
 
   // Subscription methods
-  void requestImpl(size_t n) override {
+  void requestImpl(size_t n) noexcept override {
     LOG(INFO) << "request " << this;
     response_.onNext(Payload("from server"));
     response_.onNext(Payload("from server2"));
@@ -44,7 +44,7 @@ class ServerSubscription : public SubscriptionBase {
     //    response_.onError(std::runtime_error("XXX"));
   }
 
-  void cancelImpl() override {
+  void cancelImpl() noexcept override {
     LOG(INFO) << "cancel " << this;
   }
 
@@ -61,7 +61,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
   void handleRequestSubscription(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleRequestSubscription " << request;
     response->onSubscribe(std::make_shared<ServerSubscription>(response));
   }
@@ -70,25 +70,28 @@ class ServerRequestHandler : public DefaultRequestHandler {
   void handleRequestStream(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
 
     response->onSubscribe(std::make_shared<ServerSubscription>(response));
   }
 
-  void handleFireAndForgetRequest(Payload request, StreamId streamId) override {
+  void handleFireAndForgetRequest(
+      Payload request,
+      StreamId streamId) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleFireAndForgetRequest " << request
               << "\n";
   }
 
-  void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override {
+  void handleMetadataPush(
+      std::unique_ptr<folly::IOBuf> request) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleMetadataPush "
               << request->moveToFbString() << "\n";
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
       ReactiveSocket& socket,
-      ConnectionSetupPayload request) override {
+      ConnectionSetupPayload request) noexcept override {
     std::stringstream str;
 
     str << "ServerRequestHandler.handleSetupPayload " << request
@@ -108,7 +111,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
   bool handleResume(
       ReactiveSocket& socket,
       const ResumeIdentificationToken& token,
-      ResumePosition position) override {
+      ResumePosition position) noexcept override {
     std::stringstream str;
 
     str << "ServerRequestHandler.handleResume resume token <";

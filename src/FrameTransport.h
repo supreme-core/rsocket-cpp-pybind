@@ -47,13 +47,13 @@ class FrameTransport :
  private:
   void connect();
 
-  void onSubscribe(std::shared_ptr<Subscription>) override;
-  void onNext(std::unique_ptr<folly::IOBuf>) override;
-  void onComplete() override;
-  void onError(folly::exception_wrapper) override;
+  void onSubscribe(std::shared_ptr<Subscription>) noexcept override;
+  void onNext(std::unique_ptr<folly::IOBuf>) noexcept override;
+  void onComplete() noexcept override;
+  void onError(folly::exception_wrapper) noexcept override;
 
-  void request(size_t) override;
-  void cancel() override;
+  void request(size_t) noexcept override;
+  void cancel() noexcept override;
 
   void drainOutputFramesQueue();
 
