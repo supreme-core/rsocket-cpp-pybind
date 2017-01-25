@@ -76,6 +76,12 @@ class SubscriberBaseT : public Subscriber<T>,
   friend class SubscriptionShim;
 
  public:
+  // initialization of the ExecutorBase will be ignored for any of the
+  // classes deriving from SubscriberBase
+  // providing the default param values just to make the compiler happy
+  explicit SubscriberBaseT(folly::Executor& executor = defaultExecutor())
+      : ExecutorBase(executor) {}
+
   void onSubscribe(
       std::shared_ptr<Subscription> subscription) noexcept override final {
     auto thisPtr = this->shared_from_this();

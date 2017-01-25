@@ -28,7 +28,7 @@ class RequestResponseResponder
   };
 
   explicit RequestResponseResponder(const Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
+      : ExecutorBase(params.executor), Base(params, nullptr) {}
 
   void processInitialFrame(Frame_REQUEST_RESPONSE&&);
 

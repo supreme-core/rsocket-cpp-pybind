@@ -28,8 +28,10 @@ class StreamSubscriptionResponderBase
     folly::Executor& executor;
   };
 
+  // initialization of the ExecutorBase will be ignored for any of the
+  // derived classes
   explicit StreamSubscriptionResponderBase(const Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
+      : ExecutorBase(params.executor), Base(params, nullptr) {}
 
  protected:
   using Base::onNextFrame;
