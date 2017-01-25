@@ -44,7 +44,7 @@ class ClientSubscription : public SubscriptionBase {
 
  private:
   // Subscription methods
-  void requestImpl(size_t n) override {
+  void requestImpl(size_t n) noexcept override {
     for (size_t i = 0; i < numElems_; i++) {
       response_.onNext(Payload("from server " + std::to_string(i)));
     }
@@ -52,7 +52,7 @@ class ClientSubscription : public SubscriptionBase {
     response_.onError(std::runtime_error("XXX"));
   }
 
-  void cancelImpl() override {}
+  void cancelImpl() noexcept override {}
 
   SubscriberPtr<Subscriber<Payload>> response_;
   size_t numElems_;
@@ -65,7 +65,7 @@ class ClientRequestHandler : public DefaultRequestHandler {
   void handleRequestSubscription(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleRequestSubscription " << request;
 
     response->onSubscribe(std::make_shared<ClientSubscription>(response));
@@ -75,7 +75,7 @@ class ClientRequestHandler : public DefaultRequestHandler {
   void handleRequestStream(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
 
     response->onSubscribe(std::make_shared<ClientSubscription>(response));
@@ -84,24 +84,27 @@ class ClientRequestHandler : public DefaultRequestHandler {
   void handleRequestResponse(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleRequestResponse " << request;
 
     response->onSubscribe(std::make_shared<ClientSubscription>(response, 1));
   }
 
-  void handleFireAndForgetRequest(Payload request, StreamId streamId) override {
+  void handleFireAndForgetRequest(
+      Payload request,
+      StreamId streamId) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleFireAndForgetRequest " << request;
   }
 
-  void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override {
+  void handleMetadataPush(
+      std::unique_ptr<folly::IOBuf> request) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleMetadataPush "
               << request->moveToFbString();
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
       ReactiveSocket&,
-      ConnectionSetupPayload request) override {
+      ConnectionSetupPayload request) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
     return std::make_shared<StreamState>(Stats::noop());
   }
