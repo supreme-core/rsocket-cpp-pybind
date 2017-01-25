@@ -35,8 +35,8 @@ class RequestResponseRequester : public StreamAutomatonBase,
   std::ostream& logPrefix(std::ostream& os);
 
  private:
-  void requestImpl(size_t) override;
-  void cancelImpl() override;
+  void requestImpl(size_t) noexcept override;
+  void cancelImpl() noexcept override;
 
   using Base::onNextFrame;
   void onNextFrame(Frame_RESPONSE&&) override;

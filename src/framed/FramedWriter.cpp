@@ -5,7 +5,8 @@
 
 namespace reactivesocket {
 
-void FramedWriter::onSubscribeImpl(std::shared_ptr<Subscription> subscription) {
+void FramedWriter::onSubscribeImpl(
+    std::shared_ptr<Subscription> subscription) noexcept {
   CHECK(!writerSubscription_);
   writerSubscription_.reset(std::move(subscription));
   stream_.onSubscribe(shared_from_this());
@@ -36,7 +37,7 @@ static std::unique_ptr<folly::IOBuf> appendSize(
   }
 }
 
-void FramedWriter::onNextImpl(std::unique_ptr<folly::IOBuf> payload) {
+void FramedWriter::onNextImpl(std::unique_ptr<folly::IOBuf> payload) noexcept {
   auto sizedPayload = appendSize(std::move(payload));
   if (!sizedPayload) {
     VLOG(1) << "payload too big";
@@ -62,17 +63,17 @@ void FramedWriter::onNextMultiple(
   stream_.onNext(payloadQueue.move());
 }
 
-void FramedWriter::onCompleteImpl() {
+void FramedWriter::onCompleteImpl() noexcept {
   stream_.onComplete();
   writerSubscription_.cancel();
 }
 
-void FramedWriter::onErrorImpl(folly::exception_wrapper ex) {
+void FramedWriter::onErrorImpl(folly::exception_wrapper ex) noexcept {
   stream_.onError(std::move(ex));
   writerSubscription_.cancel();
 }
 
-void FramedWriter::requestImpl(size_t n) {
+void FramedWriter::requestImpl(size_t n) noexcept {
   // it is possible to receive requestImpl after on{Complete,Error}
   // because it is a different interface and can be hooked up somewhere else
   if (writerSubscription_) {
@@ -80,7 +81,7 @@ void FramedWriter::requestImpl(size_t n) {
   }
 }
 
-void FramedWriter::cancelImpl() {
+void FramedWriter::cancelImpl() noexcept {
   writerSubscription_.cancel();
   stream_.onComplete();
 }

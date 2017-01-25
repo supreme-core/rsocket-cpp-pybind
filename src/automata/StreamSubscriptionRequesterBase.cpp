@@ -36,7 +36,7 @@ void StreamSubscriptionRequesterBase::processInitialPayload(Payload request) {
   }
 }
 
-void StreamSubscriptionRequesterBase::requestImpl(size_t n) {
+void StreamSubscriptionRequesterBase::requestImpl(size_t n) noexcept {
   switch (state_) {
     case State::NEW:
       // The initial request has not been sent out yet, hence we must accumulate
@@ -53,7 +53,7 @@ void StreamSubscriptionRequesterBase::requestImpl(size_t n) {
   }
 }
 
-void StreamSubscriptionRequesterBase::cancelImpl() {
+void StreamSubscriptionRequesterBase::cancelImpl() noexcept {
   switch (state_) {
     case State::NEW:
       state_ = State::CLOSED;

@@ -58,49 +58,52 @@ class MockRequestHandler : public RequestHandler {
   std::shared_ptr<Subscriber<Payload>> handleRequestChannel(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     return handleRequestChannel_(request, streamId, response);
   }
 
   void handleRequestStream(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     handleRequestStream_(request, streamId, response);
   }
 
   void handleRequestSubscription(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     handleRequestSubscription_(request, streamId, response);
   }
 
   void handleRequestResponse(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) override {
+      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     handleRequestResponse_(request, streamId, response);
   }
 
-  void handleFireAndForgetRequest(Payload request, StreamId streamId) override {
+  void handleFireAndForgetRequest(
+      Payload request,
+      StreamId streamId) noexcept override {
     handleFireAndForgetRequest_(request, streamId);
   }
 
-  void handleMetadataPush(std::unique_ptr<folly::IOBuf> request) override {
+  void handleMetadataPush(
+      std::unique_ptr<folly::IOBuf> request) noexcept override {
     handleMetadataPush_(request);
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
       ReactiveSocket& socket,
-      ConnectionSetupPayload request) override {
+      ConnectionSetupPayload request) noexcept override {
     return handleSetupPayload_(socket, request);
   }
 
   bool handleResume(
       ReactiveSocket& socket,
       const ResumeIdentificationToken& token,
-      ResumePosition position) override {
+      ResumePosition position) noexcept override {
     return handleResume_(socket, token, position);
   }
 
