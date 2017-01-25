@@ -3,7 +3,6 @@
 #include "src/ConnectionAutomaton.h"
 
 #include <folly/ExceptionWrapper.h>
-#include <folly/MoveWrapper.h>
 #include <folly/String.h>
 #include <folly/io/async/EventBase.h>
 #include "src/AbstractStreamAutomaton.h"
@@ -289,11 +288,10 @@ void ConnectionAutomaton::resumeStreams() {
 }
 
 void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
-  auto thisPtr = this->shared_from_this();
-  auto movedFrame = folly::makeMoveWrapper(frame);
-  runInExecutor([thisPtr, movedFrame]() mutable {
-    thisPtr->processFrameImpl(movedFrame.move());
-  });
+  runInExecutor([
+    thisPtr = this->shared_from_this(),
+    movedFrame = std::move(frame)
+  ]() mutable { thisPtr->processFrameImpl(std::move(movedFrame)); });
 }
 
 void ConnectionAutomaton::processFrameImpl(
@@ -345,11 +343,11 @@ void ConnectionAutomaton::processFrameImpl(
 void ConnectionAutomaton::onTerminal(
     folly::exception_wrapper ex,
     StreamCompletionSignal signal) {
-  auto thisPtr = this->shared_from_this();
-  auto movedEx = folly::makeMoveWrapper(ex);
-  runInExecutor([thisPtr, movedEx, signal]() mutable {
-    thisPtr->onTerminalImpl(movedEx.move(), signal);
-  });
+  runInExecutor([
+    thisPtr = this->shared_from_this(),
+    movedEx = std::move(ex),
+    signal
+  ]() mutable { thisPtr->onTerminalImpl(std::move(movedEx), signal); });
 }
 
 void ConnectionAutomaton::onTerminalImpl(

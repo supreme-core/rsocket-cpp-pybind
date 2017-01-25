@@ -239,7 +239,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
           g_reactiveSockets.begin(),
           g_reactiveSockets.end(),
           [&socket](const std::pair<
-                    std::unique_ptr<StandardReactiveSocket>,
+                    std::unique_ptr<ReactiveSocket>,
                     ResumeIdentificationToken>& kv) {
             return kv.first.get() == &socket;
           }));
