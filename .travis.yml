@@ -31,18 +31,6 @@ matrix:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
 
-    - env: CLANG_VERSION=3.9 BUILD_TYPE=Debug CPP=14 ASAN=On
-      os: linux
-      addons: &clang39
-        apt:
-          packages:
-            - util-linux
-            - clang-3.9
-            - valgrind
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise
-
     - env: GCC_VERSION=4.9 BUILD_TYPE=Debug CPP=14 ASAN=Off
       os: linux
       addons: &gcc49
@@ -78,9 +66,8 @@ before_script:
   - ./scripts/prepare_ubuntu_trusty.sh
   - if [ -n "$GCC_VERSION" ]; then export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}"; fi
   - if [ -n "$CLANG_VERSION" ]; then export CXX="clang++-${CLANG_VERSION}" CC="clang-${CLANG_VERSION}"; fi
-  - if [ -n "$CLANG_VERSION" ]; then echo "kurnik sopa to to ne"; fi
-#  - which $CXX
-#  - which $CC
+  - which $CXX
+  - which $CC
   - which valgrind
   - $CXX --version
 
@@ -89,7 +76,6 @@ script:
   - cd build
   - if [ -n "$CLANG_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined,integer -fno-sanitize=unsigned-integer-overflow"; fi
   - if [ -n "$GCC_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined -fuse-ld=gold"; fi
-  - if [ -n "$CLANG_VERSION" ]; then CXX_FLAGS="${CXX_FLAGS} -D__extern_always_inline=inline"; fi
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${CXX_LINKER_FLAGS}" -DMETA_CXX_STD=$CPP
   - make -j8
   - ./tests
