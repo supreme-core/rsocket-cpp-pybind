@@ -51,6 +51,7 @@ StandardReactiveSocket::StandardReactiveSocket(
                 handler, connection, streamId, std::move(serializedFrame));
           },
           std::make_shared<StreamState>(stats),
+          handler,
           std::bind(
               &StandardReactiveSocket::resumeListener,
               this,
@@ -127,8 +128,7 @@ std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  ChannelRequester::Parameters params = {{connection_, streamId, handler_},
-                                         executor_};
+  ChannelRequester::Parameters params = {{connection_, streamId}, executor_};
   auto automaton = std::make_shared<ChannelRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
@@ -144,8 +144,7 @@ void StandardReactiveSocket::requestStream(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  StreamRequester::Parameters params = {{connection_, streamId, handler_},
-                                        executor_};
+  StreamRequester::Parameters params = {{connection_, streamId}, executor_};
   auto automaton = std::make_shared<StreamRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
@@ -161,7 +160,7 @@ void StandardReactiveSocket::requestSubscription(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  SubscriptionRequester::Parameters params = {{connection_, streamId, handler_},
+  SubscriptionRequester::Parameters params = {{connection_, streamId},
                                               executor_};
   auto automaton = std::make_shared<SubscriptionRequester>(params);
   connection_->addStream(streamId, automaton);
@@ -190,8 +189,8 @@ void StandardReactiveSocket::requestResponse(
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
-  RequestResponseRequester::Parameters params = {
-      {connection_, streamId, handler_}, executor_};
+  RequestResponseRequester::Parameters params = {{connection_, streamId},
+                                                 executor_};
   auto automaton = std::make_shared<RequestResponseRequester>(params);
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
@@ -284,7 +283,7 @@ void StandardReactiveSocket::createResponder(
       }
 
       ChannelResponder::Parameters params = {
-          {connection.shared_from_this(), streamId, handler}, executor_};
+          {connection.shared_from_this(), streamId}, executor_};
       auto automaton = std::make_shared<ChannelResponder>(params);
       connection.addStream(streamId, automaton);
 
@@ -306,7 +305,7 @@ void StandardReactiveSocket::createResponder(
       }
 
       StreamResponder::Parameters params = {
-          {connection.shared_from_this(), streamId, handler}, executor_};
+          {connection.shared_from_this(), streamId}, executor_};
       auto automaton = std::make_shared<StreamResponder>(params);
       connection.addStream(streamId, automaton);
       handler->handleRequestStream(
@@ -323,7 +322,7 @@ void StandardReactiveSocket::createResponder(
       }
 
       SubscriptionResponder::Parameters params = {
-          {connection.shared_from_this(), streamId, handler}, executor_};
+          {connection.shared_from_this(), streamId}, executor_};
       auto automaton = std::make_shared<SubscriptionResponder>(params);
       connection.addStream(streamId, automaton);
 
@@ -341,7 +340,7 @@ void StandardReactiveSocket::createResponder(
       }
 
       RequestResponseResponder::Parameters params = {
-          {connection.shared_from_this(), streamId, handler}, executor_};
+          {connection.shared_from_this(), streamId}, executor_};
       auto automaton = std::make_shared<RequestResponseResponder>(params);
       connection.addStream(streamId, automaton);
 
@@ -375,6 +374,11 @@ void StandardReactiveSocket::createResponder(
     case FrameType::LEASE:
     case FrameType::KEEPALIVE:
     case FrameType::RESERVED:
+    case FrameType::REQUEST_N:
+    case FrameType::CANCEL:
+    case FrameType::RESPONSE:
+    case FrameType::ERROR:
+    case FrameType::RESUME_OK:
     default:
       // TODO(lehecka): the "connection" and "this" arguments needs to be
       // cleaned up. It is not intuitive what is their lifetime.
@@ -403,7 +407,7 @@ void StandardReactiveSocket::clientConnect(
   // TODO set correct version
   Frame_SETUP frame(
       FrameFlags_EMPTY,
-      0,
+      setupPayload.resumable ? FrameFlags_RESUME_ENABLE : 0,
       connection_->getKeepaliveTime(),
       std::numeric_limits<uint32_t>::max(),
       // TODO: resumability,

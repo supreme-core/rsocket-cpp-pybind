@@ -15,6 +15,8 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin<Frame_RESPONSE> {
   using Base = ConsumerMixin<Frame_RESPONSE>;
 
  public:
+  // initialization of the ExecutorBase will be ignored for any of the
+  // derived classes
   explicit StreamSubscriptionRequesterBase(const Base::Parameters& params)
       : ExecutorBase(params.executor), Base(params) {}
 
@@ -25,8 +27,8 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin<Frame_RESPONSE> {
   virtual void sendRequestFrame(FrameFlags, size_t, Payload&&) = 0;
 
   // implementation from ConsumerMixin::SubscriptionBase
-  void requestImpl(size_t) override;
-  void cancelImpl() override;
+  void requestImpl(size_t) noexcept override;
+  void cancelImpl() noexcept override;
 
   using Base::onNextFrame;
   void onNextFrame(Frame_RESPONSE&&) override;

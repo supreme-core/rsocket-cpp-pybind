@@ -34,23 +34,46 @@ class Callback : public AsyncSocket::ConnectCallback {
 };
 
 class ResumeCallback : public ClientResumeStatusCallback {
-  void onResumeOk() override {
+  void onResumeOk() noexcept override {
     LOG(INFO) << "resumeOk";
   }
 
   // Called when an ERROR frame with CONNECTION_ERROR is received during
   // resuming operation
-  void onResumeError(folly::exception_wrapper ex) override {
+  void onResumeError(folly::exception_wrapper ex) noexcept override {
     LOG(INFO) << "resumeError: " << ex.what();
   }
 
   // Called when the resume operation was interrupted due to network
   // the application code may try to resume again.
-  void onConnectionError(folly::exception_wrapper ex) override {
+  void onConnectionError(folly::exception_wrapper ex) noexcept override {
     LOG(INFO) << "connectionError: " << ex.what();
   }
 };
 }
+
+class ClientRequestHandler : public DefaultRequestHandler {
+ public:
+  void onSubscriptionPaused(
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    LOG(INFO) << "subscription paused " << &subscription;
+  }
+
+  void onSubscriptionResumed(
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    LOG(INFO) << "subscription resumed " << &subscription;
+  }
+
+  void onSubscriberPaused(const std::shared_ptr<Subscriber<Payload>>&
+                              subscriber) noexcept override {
+    LOG(INFO) << "subscriber paused " << &subscriber;
+  }
+
+  void onSubscriberResumed(const std::shared_ptr<Subscriber<Payload>>&
+                               subscriber) noexcept override {
+    LOG(INFO) << "subscriber resumed " << &subscriber;
+  }
+};
 
 int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
@@ -83,7 +106,7 @@ int main(int argc, char* argv[]) {
         folly::make_unique<FramedDuplexConnection>(
             std::move(connection), inlineExecutor());
     std::unique_ptr<RequestHandler> requestHandler =
-        folly::make_unique<DefaultRequestHandler>();
+        folly::make_unique<ClientRequestHandler>();
 
     reactiveSocket = StandardReactiveSocket::disconnectedClient(
         *eventBaseThread.getEventBase(),

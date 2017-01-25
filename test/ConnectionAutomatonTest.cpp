@@ -5,6 +5,7 @@
 #include <folly/Memory.h>
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
+#include <src/NullRequestHandler.h>
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
 #include "src/StreamState.h"
@@ -80,6 +81,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
             Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(Stats::noop()),
+      std::make_shared<NullRequestHandler>(),
       nullptr,
       Stats::noop(),
       nullptr,
@@ -169,6 +171,7 @@ static void terminateTest(
             Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(Stats::noop()),
+      std::make_shared<NullRequestHandler>(),
       nullptr,
       Stats::noop(),
       nullptr,
@@ -266,6 +269,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
             Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(Stats::noop()),
+      std::make_shared<NullRequestHandler>(),
       nullptr,
       Stats::noop(),
       nullptr,

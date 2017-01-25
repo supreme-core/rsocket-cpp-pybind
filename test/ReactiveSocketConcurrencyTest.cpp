@@ -220,28 +220,28 @@ TEST_F(ClientSideConcurrencyTest, RequestSubscriptionTest) {
 TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
   clientTerminatesInteraction_ = false;
 
-  auto clientOutput = std::make_shared<std::shared_ptr<Subscriber<Payload>>>();
-  thread2.getEventBase()->runInEventBaseThreadAndWait([clientOutput, this] {
-    *clientOutput = clientSock->requestChannel(clientInput);
+  std::shared_ptr<Subscriber<Payload>> clientOutput;
+  thread2.getEventBase()->runInEventBaseThreadAndWait([&clientOutput, this] {
+    clientOutput = clientSock->requestChannel(clientInput);
   });
 
   auto clientOutputSub = std::make_shared<StrictMock<MockSubscription>>();
   EXPECT_CALL(*clientOutputSub, request_(1)).WillOnce(Invoke([&](size_t) {
     thread1.getEventBase()->runInEventBaseThread([clientOutput]() {
       // first payload for the server RequestHandler
-      (*clientOutput)->onNext(Payload(originalPayload()));
+      clientOutput->onNext(Payload(originalPayload()));
     });
   }));
   EXPECT_CALL(*clientOutputSub, request_(2))
       .WillOnce(Invoke([clientOutput](size_t) {
         // second payload for the server input subscriber
-        (*clientOutput)->onNext(Payload(originalPayload()));
+        clientOutput->onNext(Payload(originalPayload()));
       }));
   EXPECT_CALL(*clientOutputSub, cancel_()).Times(1);
 
   thread1.getEventBase()->runInEventBaseThread(
       [clientOutput, clientOutputSub]() {
-        (*clientOutput)->onSubscribe(clientOutputSub);
+        clientOutput->onSubscribe(clientOutputSub);
       });
 
   wainUntilDone();

@@ -34,8 +34,7 @@ class SocketConnectCallback : public folly::AsyncSocket::ConnectCallback {
   }
 
   void connectErr(const folly::AsyncSocketException& ex) noexcept override {
-    LOG(ERROR) << "unable to connect to TCP server: " << ex.what();
-    throw ex;
+    LOG(FATAL) << "unable to connect to TCP server: " << ex.what();
   }
 
   void waitToConnect() {

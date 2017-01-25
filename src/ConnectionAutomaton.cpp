@@ -19,6 +19,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     folly::Executor& executor,
     StreamAutomatonFactory factory,
     std::shared_ptr<StreamState> streamState,
+    std::shared_ptr<RequestHandler> requestHandler,
     ResumeListener resumeListener,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
@@ -29,6 +30,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     : ExecutorBase(executor),
       factory_(std::move(factory)),
       streamState_(std::move(streamState)),
+      requestHandler_(std::move(requestHandler)),
       stats_(stats),
       isServer_(isServer),
       onConnected_(std::move(onConnected)),
@@ -117,6 +119,7 @@ void ConnectionAutomaton::disconnect() {
   }
 
   closeFrameTransport(folly::exception_wrapper());
+  pauseStreams();
   stats_.socketDisconnected();
   onDisconnected_();
 }
@@ -187,15 +190,12 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
     case ErrorCode::CONNECTION_ERROR:
       signal = StreamCompletionSignal::CONNECTION_ERROR;
       break;
+
     case ErrorCode::APPLICATION_ERROR:
-      signal = StreamCompletionSignal::ERROR;
-      break;
     case ErrorCode::REJECTED:
-      signal = StreamCompletionSignal::ERROR;
-      break;
+    case ErrorCode::RESERVED:
+    case ErrorCode::CANCELED:
     case ErrorCode::INVALID:
-      signal = StreamCompletionSignal::ERROR;
-      break;
     default:
       signal = StreamCompletionSignal::ERROR;
   }
@@ -273,6 +273,18 @@ void ConnectionAutomaton::closeStreams(StreamCompletionSignal signal) {
     // assertions?
     assert(result);
     assert(streamState_->streams_.size() == oldSize - 1);
+  }
+}
+
+void ConnectionAutomaton::pauseStreams() {
+  for (auto& streamKV : streamState_->streams_) {
+    streamKV.second->pauseStream(*requestHandler_);
+  }
+}
+
+void ConnectionAutomaton::resumeStreams() {
+  for (auto& streamKV : streamState_->streams_) {
+    streamKV.second->resumeStream(*requestHandler_);
   }
 }
 
@@ -464,6 +476,16 @@ void ConnectionAutomaton::onConnectionFrame(
           StreamCompletionSignal::ERROR);
       return;
     }
+    case FrameType::RESERVED:
+    case FrameType::LEASE:
+    case FrameType::REQUEST_RESPONSE:
+    case FrameType::REQUEST_FNF:
+    case FrameType::REQUEST_STREAM:
+    case FrameType::REQUEST_SUB:
+    case FrameType::REQUEST_CHANNEL:
+    case FrameType::REQUEST_N:
+    case FrameType::CANCEL:
+    case FrameType::RESPONSE:
     default:
       closeWithError(Frame_ERROR::unexpectedFrame());
       return;
@@ -514,7 +536,6 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(
           Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
               .serializeOut());
     }
-
     resumeFromPosition(position);
     return true;
   } else {
@@ -529,6 +550,7 @@ void ConnectionAutomaton::resumeFromPosition(ResumePosition position) {
   DCHECK(!isDisconnectedOrClosed());
   DCHECK(streamState_->resumeCache_.isPositionAvailable(position));
 
+  resumeStreams();
   streamState_->resumeCache_.sendFramesFromPosition(position, *frameTransport_);
 
   for (auto& frame : streamState_->moveOutputPendingFrames()) {
@@ -572,8 +594,9 @@ void ConnectionAutomaton::useStreamState(
 
 uint32_t ConnectionAutomaton::getKeepaliveTime() const {
   debugCheckCorrectExecutor();
-  return keepaliveTimer_ ? keepaliveTimer_->keepaliveTime().count()
-                         : std::numeric_limits<uint32_t>::max();
+  return keepaliveTimer_
+      ? static_cast<uint32_t>(keepaliveTimer_->keepaliveTime().count())
+      : std::numeric_limits<uint32_t>::max();
 }
 
 bool ConnectionAutomaton::isDisconnectedOrClosed() const {

@@ -24,14 +24,14 @@ MATCHER_P(
     payload,
     "Payloads " + std::string(negation ? "don't" : "") + "match") {
   return folly::IOBufEqual()(*payload, arg.data);
-};
+}
 
 MATCHER_P(
     Equals2,
     payload,
     "Payloads " + std::string(negation ? "don't" : "") + "match") {
   return folly::IOBufEqual()(*payload, arg);
-};
+}
 
 TEST(ReactiveSocketTest, RequestChannel) {
   // InlineConnection forwards appropriate calls in-line, hence the order of

@@ -36,28 +36,29 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   }
 
  private:
-  void onSubscribeImpl(std::shared_ptr<Subscription> subscription) override {
+  void onSubscribeImpl(
+      std::shared_ptr<Subscription> subscription) noexcept override {
     // no flow control at tcp level, since we can't know the size of messages
     subscription->request(std::numeric_limits<size_t>::max());
   }
 
-  void onNextImpl(std::unique_ptr<folly::IOBuf> element) override {
+  void onNextImpl(std::unique_ptr<folly::IOBuf> element) noexcept override {
     send(std::move(element));
   }
 
-  void onCompleteImpl() override {
+  void onCompleteImpl() noexcept override {
     closeFromWriter();
   }
 
-  void onErrorImpl(folly::exception_wrapper ex) override {
+  void onErrorImpl(folly::exception_wrapper ex) noexcept override {
     closeFromWriter();
   }
 
-  void requestImpl(size_t n) override {
+  void requestImpl(size_t n) noexcept override {
     // ignored for now, currently flow control is only at higher layers
   }
 
-  void cancelImpl() override {
+  void cancelImpl() noexcept override {
     closeFromReader();
   }
 

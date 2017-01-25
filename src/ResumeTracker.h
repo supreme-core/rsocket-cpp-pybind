@@ -32,6 +32,15 @@ class ResumeTracker {
         implied_position_ += serializedFrame.computeChainDataLength();
         break;
 
+      case FrameType::RESERVED:
+      case FrameType::SETUP:
+      case FrameType::LEASE:
+      case FrameType::KEEPALIVE:
+      case FrameType::REQUEST_RESPONSE: // TODO:fix this bug
+      case FrameType::REQUEST_FNF:
+      case FrameType::METADATA_PUSH:
+      case FrameType::RESUME:
+      case FrameType::RESUME_OK:
       default:
         break;
     }

@@ -33,6 +33,15 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
       addFrame(serializedFrame);
       break;
 
+    case FrameType::RESERVED:
+    case FrameType::SETUP:
+    case FrameType::LEASE:
+    case FrameType::KEEPALIVE:
+    case FrameType::REQUEST_RESPONSE: // TODO: fix the bug
+    case FrameType::REQUEST_FNF:
+    case FrameType::METADATA_PUSH:
+    case FrameType::RESUME:
+    case FrameType::RESUME_OK:
     default:
       break;
   }
@@ -53,8 +62,8 @@ void ResumeCache::resetUpToPosition(const position_t position) {
       frames_.begin(),
       frames_.end(),
       position,
-      [](position_t position, decltype(frames_.back())& pair) {
-        return position < pair.first;
+      [](position_t pos, decltype(frames_.back())& pair) {
+        return pos < pair.first;
       });
   int dataSize = 0;
   int framesCount = 0;
@@ -99,7 +108,8 @@ bool ResumeCache::isPositionAvailable(position_t position, StreamId streamId)
 void ResumeCache::addFrame(const folly::IOBuf& frame) {
   // TODO: implement bounds to the buffer
   frames_.emplace_back(position_, frame.clone());
-  stats_.resumeBufferChanged(1, frame.computeChainDataLength());
+  stats_.resumeBufferChanged(
+      1, static_cast<int>(frame.computeChainDataLength()));
 }
 
 void ResumeCache::sendFramesFromPosition(
@@ -116,8 +126,8 @@ void ResumeCache::sendFramesFromPosition(
       frames_.begin(),
       frames_.end(),
       position,
-      [](decltype(frames_.back())& pair, position_t position) {
-        return pair.first < position;
+      [](decltype(frames_.back())& pair, position_t pos) {
+        return pair.first < pos;
       });
 
   DCHECK(found != frames_.end());

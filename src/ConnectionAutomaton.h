@@ -18,11 +18,12 @@ class AbstractStreamAutomaton;
 class ClientResumeStatusCallback;
 class ConnectionAutomaton;
 class DuplexConnection;
-class KeepaliveTimer;
 class Frame_ERROR;
+class FrameTransport;
+class KeepaliveTimer;
+class RequestHandler;
 class Stats;
 class StreamState;
-class FrameTransport;
 
 enum class FrameType : uint16_t;
 
@@ -73,6 +74,7 @@ class ConnectionAutomaton
       folly::Executor& executor,
       StreamAutomatonFactory factory,
       std::shared_ptr<StreamState> streamState,
+      std::shared_ptr<RequestHandler> requestHandler,
       ResumeListener resumeListener,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
@@ -212,9 +214,13 @@ class ConnectionAutomaton
 
   void debugCheckCorrectExecutor() const;
 
+  void pauseStreams();
+  void resumeStreams();
+
   StreamAutomatonFactory factory_;
 
   std::shared_ptr<StreamState> streamState_;
+  std::shared_ptr<RequestHandler> requestHandler_;
   std::shared_ptr<FrameTransport> frameTransport_;
 
   Stats& stats_;
