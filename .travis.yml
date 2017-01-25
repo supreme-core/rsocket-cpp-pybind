@@ -30,6 +30,16 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
+    - env: GCC_VERSION=6 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
+      os: linux
+      addons: &gcc6
+        apt:
+          packages:
+            - g++-6
+            - valgrind
+          sources:
+            - ubuntu-toolchain-r-test
+
 before_script:
   - ./scripts/fetch_folly_ubuntu_trusty.sh
   - ./scripts/prepare_ubuntu_trusty.sh
