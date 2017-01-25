@@ -101,7 +101,7 @@ class SubscriberBaseT : public Subscriber<T>,
 
   void onNext(T payload) override final {
     auto thisPtr = this->shared_from_this();
-    runInExecutor([thisPtr, payload = std::move(payload)]() mutable {
+    runInExecutor([thisPtr, payload = std::move(payload)]() {
       VLOG(1) << (ExecutorBase*)thisPtr.get() << " onNext";
       if (!thisPtr->cancelled_) {
         thisPtr->onNextImpl(std::move(payload));
