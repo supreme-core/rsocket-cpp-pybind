@@ -111,7 +111,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
 
     std::unique_ptr<DuplexConnection> connection =
-        folly::make_unique<TcpDuplexConnection>(std::move(socket), stats_);
+        folly::make_unique<TcpDuplexConnection>(std::move(socket), inlineExecutor(), stats_);
     std::unique_ptr<DuplexConnection> framedConnection =
         folly::make_unique<FramedDuplexConnection>(
             std::move(connection), inlineExecutor());

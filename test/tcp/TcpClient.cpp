@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
                   << std::endl;
 
         std::unique_ptr<DuplexConnection> connection =
-            folly::make_unique<TcpDuplexConnection>(std::move(socket), stats);
+            folly::make_unique<TcpDuplexConnection>(std::move(socket), inlineExecutor(), stats);
         std::unique_ptr<DuplexConnection> framedConnection =
             folly::make_unique<FramedDuplexConnection>(
                 std::move(connection), inlineExecutor());
