@@ -120,4 +120,4 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
 };
 }
 
-#include "ConsumerMixin-inl.h"
+#include "src/mixins/ConsumerMixin-inl.h"
