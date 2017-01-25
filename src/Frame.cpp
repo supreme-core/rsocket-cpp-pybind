@@ -324,7 +324,7 @@ bool Frame_RESPONSE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
 
 Frame_RESPONSE Frame_RESPONSE::complete(StreamId streamId) {
   return Frame_RESPONSE(streamId, FrameFlags_COMPLETE, Payload());
-};
+}
 
 std::ostream& operator<<(std::ostream& os, const Frame_RESPONSE& frame) {
   return os << frame.header_ << ", (" << frame.payload_;

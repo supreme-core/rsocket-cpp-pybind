@@ -17,7 +17,7 @@ void NullSubscriber::onComplete() {}
 
 void NullSubscriber::onError(folly::exception_wrapper /*ex*/) {}
 
-void NullSubscription::request(size_t /*n*/){};
+void NullSubscription::request(size_t /*n*/) {}
 
 void NullSubscription::cancel() {}
 
