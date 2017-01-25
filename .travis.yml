@@ -30,6 +30,10 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
+    - env: GCC_VERSION=5 BUILD_TYPE=Debug CPP=11 ASAN=Off LIBCXX=Off
+      os: linux
+      addons: *gcc5
+
     - env: GCC_VERSION=6 BUILD_TYPE=Debug CPP=14 ASAN=On LIBCXX=Off
       os: linux
       addons: &gcc6
@@ -55,7 +59,7 @@ script:
   - mkdir build
   - cd build
   - if [ -n "$CLANG_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined,integer -fno-sanitize=unsigned-integer-overflow"; fi
-  - if [ -n "$GCC_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined "; fi
+  - if [ -n "$GCC_VERSION" -a "$ASAN" == "On" ]; then CXX_FLAGS="${CXX_FLAGS} -fsanitize=address,undefined -fuse-ld=gold"; fi
   - if [ -n "$CLANG_VERSION" ]; then CXX_FLAGS="${CXX_FLAGS} -D__extern_always_inline=inline"; fi
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${CXX_LINKER_FLAGS}" -DMETA_CXX_STD=$CPP
   - make -j8
