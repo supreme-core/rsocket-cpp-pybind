@@ -341,6 +341,11 @@ void StandardReactiveSocket::createResponder(
     case FrameType::LEASE:
     case FrameType::KEEPALIVE:
     case FrameType::RESERVED:
+    case FrameType::REQUEST_N:
+    case FrameType::CANCEL:
+    case FrameType::RESPONSE:
+    case FrameType::ERROR:
+    case FrameType::RESUME_OK:
     default:
       // TODO(lehecka): the "connection" and "this" arguments needs to be
       // cleaned up. It is not intuitive what is their lifetime.

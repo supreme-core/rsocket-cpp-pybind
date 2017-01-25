@@ -29,7 +29,7 @@ class StreamSubscriptionResponderBase
   };
 
   explicit StreamSubscriptionResponderBase(const Parameters& params)
-      : ExecutorBase(params.executor), Base(params, nullptr) {}
+      : ExecutorBase(params.executor), Base(params) {}
 
  protected:
   using Base::onNextFrame;

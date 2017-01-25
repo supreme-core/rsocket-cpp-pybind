@@ -21,13 +21,7 @@ enum class StreamCompletionSignal;
 template <typename ProducedFrame, typename Base>
 class PublisherMixin : public Base {
  public:
-  explicit PublisherMixin(const typename Base::Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
-
-  explicit PublisherMixin(
-      const typename Base::Parameters& params,
-      std::nullptr_t)
-      : Base(params) {}
+  using Base::Base;
 
   /// @{
   void onSubscribe(std::shared_ptr<Subscription> subscription) {

@@ -25,12 +25,12 @@ static std::unique_ptr<folly::IOBuf> appendSize(
     // move the data pointer back and write value to the payload
     payload->prepend(sizeof(int32_t));
     folly::io::RWPrivateCursor c(payload.get());
-    c.writeBE<int32_t>(payloadLength);
+    c.writeBE<int32_t>(static_cast<int32_t>(payloadLength));
     return payload;
   } else {
     auto newPayload = folly::IOBuf::createCombined(sizeof(int32_t));
     folly::io::Appender appender(newPayload.get(), /* do not grow */ 0);
-    appender.writeBE<int32_t>(payloadLength);
+    appender.writeBE<int32_t>(static_cast<int32_t>(payloadLength));
     newPayload->appendChain(std::move(payload));
     return newPayload;
   }

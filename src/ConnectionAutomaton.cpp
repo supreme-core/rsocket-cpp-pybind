@@ -176,15 +176,12 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
     case ErrorCode::CONNECTION_ERROR:
       signal = StreamCompletionSignal::CONNECTION_ERROR;
       break;
+
     case ErrorCode::APPLICATION_ERROR:
-      signal = StreamCompletionSignal::ERROR;
-      break;
     case ErrorCode::REJECTED:
-      signal = StreamCompletionSignal::ERROR;
-      break;
+    case ErrorCode::RESERVED:
+    case ErrorCode::CANCELED:
     case ErrorCode::INVALID:
-      signal = StreamCompletionSignal::ERROR;
-      break;
     default:
       signal = StreamCompletionSignal::ERROR;
   }
@@ -443,6 +440,16 @@ void ConnectionAutomaton::onConnectionFrame(
           StreamCompletionSignal::ERROR);
       return;
     }
+    case FrameType::RESERVED:
+    case FrameType::LEASE:
+    case FrameType::REQUEST_RESPONSE:
+    case FrameType::REQUEST_FNF:
+    case FrameType::REQUEST_STREAM:
+    case FrameType::REQUEST_SUB:
+    case FrameType::REQUEST_CHANNEL:
+    case FrameType::REQUEST_N:
+    case FrameType::CANCEL:
+    case FrameType::RESPONSE:
     default:
       closeWithError(Frame_ERROR::unexpectedFrame());
       return;
@@ -548,8 +555,9 @@ void ConnectionAutomaton::useStreamState(
 }
 
 uint32_t ConnectionAutomaton::getKeepaliveTime() const {
-  return keepaliveTimer_ ? keepaliveTimer_->keepaliveTime().count()
-                         : std::numeric_limits<uint32_t>::max();
+  return keepaliveTimer_
+      ? static_cast<uint32_t>(keepaliveTimer_->keepaliveTime().count())
+      : std::numeric_limits<uint32_t>::max();
 }
 
 bool ConnectionAutomaton::isDisconnectedOrClosed() const {

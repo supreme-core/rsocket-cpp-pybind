@@ -50,6 +50,7 @@ void ChannelResponder::requestImpl(size_t n) {
   switch (state_) {
     case State::RESPONDING:
       Base::generateRequest(n);
+      break;
     case State::CLOSED:
       break;
   }
