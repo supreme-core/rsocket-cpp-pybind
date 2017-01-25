@@ -43,5 +43,5 @@ class NoopStats : public Stats {
 
 Stats& Stats::noop() {
   return NoopStats::instance();
-};
+}
 }
