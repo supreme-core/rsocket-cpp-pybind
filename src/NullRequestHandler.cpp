@@ -3,20 +3,9 @@
 #include "src/NullRequestHandler.h"
 #include "src/Stats.h"
 
-#include <folly/ExceptionWrapper.h>
-
 namespace reactivesocket {
 
-void NullSubscriber::onSubscribe(
-    std::shared_ptr<Subscription> subscription) noexcept {
-  subscription->cancel();
-}
-
-void NullSubscriber::onNext(Payload /*element*/) noexcept {}
-
-void NullSubscriber::onComplete() noexcept {}
-
-void NullSubscriber::onError(folly::exception_wrapper /*ex*/) noexcept {}
+template class NullSubscriberT<Payload>;
 
 void NullSubscription::request(size_t /*n*/) noexcept {}
 
