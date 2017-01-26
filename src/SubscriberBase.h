@@ -34,7 +34,7 @@ class SubscriberBaseT : public Subscriber<T>,
   virtual void onCompleteImpl() noexcept = 0;
   virtual void onErrorImpl(folly::exception_wrapper ex) noexcept = 0;
 
-  // used to be able to cancel subscription immediately, making sure we dont
+  // used to be able to cancel subscription immediately, making sure we don't
   // deliver any other signals after that
   // also to break the reference cycle involving storing subscription pointer
   // for the users of the SubscriberBase

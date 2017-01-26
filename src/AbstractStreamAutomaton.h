@@ -25,7 +25,7 @@ class Frame_REQUEST_SUB;
 class Frame_RESPONSE;
 class RequestHandler;
 
-/// Represents an abtract stream, which can support one of the following:
+/// Represents an abstract stream, which can support one of the following:
 /// Channel, Subscription, Stream or RequestResponse.
 ///
 /// The abstract class introduces no state, hence it is agnostic to the
@@ -35,10 +35,10 @@ class RequestHandler;
 /// Whenever a state transition occurs, the automata's state should be modified
 /// _before_ issuing any signals to other components, such as Subscribers,
 /// Subscriptions or the connection automaton.
-/// One must remember that any signal one delivers from inside of the atomaton
+/// One must remember that any signal one delivers from inside of the automaton
 /// might synchronously call back into the automaton and attempt to alter its
 /// state.
-/// By comitting state transition before sending any signals, one ensures that
+/// By committing state transition before sending any signals, one ensures that
 /// any signal delivered to the automaton synchronously will find automaton in a
 /// consistent state.
 ///
@@ -103,6 +103,6 @@ class AbstractStreamAutomaton {
   /// Deserializes and dispatches frame according to template frame type
   /// parameter.
   template <typename Frame>
-  void deserializeAndDispatch(std::unique_ptr<folly::IOBuf> paylaod);
+  void deserializeAndDispatch(std::unique_ptr<folly::IOBuf> payload);
 };
 }
