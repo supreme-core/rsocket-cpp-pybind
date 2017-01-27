@@ -426,45 +426,45 @@ TEST(ReactiveSocketTest, RequestStreamSendsOneRequest) {
   auto testInputSubscription = std::make_shared<MockSubscription>();
 
   auto testOutputSubscriber =
-          std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*testOutputSubscriber, onSubscribe_(_))
-  .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-    // allow receiving frames from the automaton
-    subscription->request(std::numeric_limits<size_t>::max());
-  }));
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+        // allow receiving frames from the automaton
+        subscription->request(std::numeric_limits<size_t>::max());
+      }));
 
   serverConn->setInput(testOutputSubscriber);
   serverConn->getOutput()->onSubscribe(testInputSubscription);
 
   auto socket = StandardReactiveSocket::fromClientConnection(
-          defaultExecutor(),
-          std::move(clientConn),
-          folly::make_unique<DefaultRequestHandler>(),
-          ConnectionSetupPayload());
+      defaultExecutor(),
+      std::move(clientConn),
+      folly::make_unique<DefaultRequestHandler>(),
+      ConnectionSetupPayload());
 
   const auto originalPayload = folly::IOBuf::copyBuffer("foo");
 
   auto responseSubscriber = std::make_shared<MockSubscriber<Payload>>();
   std::shared_ptr<Subscription> clientInputSub;
   EXPECT_CALL(*responseSubscriber, onSubscribe_(_))
-    .Times(1)
-    .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-      clientInputSub = subscription;
-    }));
+      .Times(1)
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+        clientInputSub = subscription;
+      }));
   EXPECT_CALL(*testOutputSubscriber, onNext_(_)).Times(0);
 
   socket->requestStream(Payload(originalPayload->clone()), responseSubscriber);
 
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
-    .Times(1)
-    .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-      auto frameType = FrameHeader::peekType(*frame);
-      Frame_REQUEST_STREAM request;
-      ASSERT_EQ(FrameType::REQUEST_STREAM, frameType);
-      ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
-      ASSERT_EQ("foo", request.payload_.moveDataToString());
-      ASSERT_EQ((uint32_t)7, request.requestN_);
-    }));
+      .Times(1)
+      .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
+        auto frameType = FrameHeader::peekType(*frame);
+        Frame_REQUEST_STREAM request;
+        ASSERT_EQ(FrameType::REQUEST_STREAM, frameType);
+        ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
+        ASSERT_EQ("foo", request.payload_.moveDataToString());
+        ASSERT_EQ((uint32_t)7, request.requestN_);
+      }));
 
   clientInputSub->request(7);
 
@@ -557,45 +557,46 @@ TEST(ReactiveSocketTest, RequestSubscriptionSendsOneRequest) {
   auto testInputSubscription = std::make_shared<MockSubscription>();
 
   auto testOutputSubscriber =
-          std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*testOutputSubscriber, onSubscribe_(_))
-  .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-    // allow receiving frames from the automaton
-    subscription->request(std::numeric_limits<size_t>::max());
-  }));
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+        // allow receiving frames from the automaton
+        subscription->request(std::numeric_limits<size_t>::max());
+      }));
 
   serverConn->setInput(testOutputSubscriber);
   serverConn->getOutput()->onSubscribe(testInputSubscription);
 
   auto socket = StandardReactiveSocket::fromClientConnection(
-          defaultExecutor(),
-          std::move(clientConn),
-          folly::make_unique<DefaultRequestHandler>(),
-          ConnectionSetupPayload());
+      defaultExecutor(),
+      std::move(clientConn),
+      folly::make_unique<DefaultRequestHandler>(),
+      ConnectionSetupPayload());
 
   const auto originalPayload = folly::IOBuf::copyBuffer("foo");
 
   auto responseSubscriber = std::make_shared<MockSubscriber<Payload>>();
   std::shared_ptr<Subscription> clientInputSub;
   EXPECT_CALL(*responseSubscriber, onSubscribe_(_))
-  .Times(1)
-  .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-    clientInputSub = subscription;
-  }));
+      .Times(1)
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+        clientInputSub = subscription;
+      }));
   EXPECT_CALL(*testOutputSubscriber, onNext_(_)).Times(0);
 
-  socket->requestSubscription(Payload(originalPayload->clone()), responseSubscriber);
+  socket->requestSubscription(
+      Payload(originalPayload->clone()), responseSubscriber);
 
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
-  .Times(1)
-  .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-    auto frameType = FrameHeader::peekType(*frame);
-    Frame_REQUEST_SUB request;
-    ASSERT_EQ(FrameType::REQUEST_SUB, frameType);
-    ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
-    ASSERT_EQ("foo", request.payload_.moveDataToString());
-    ASSERT_EQ((uint32_t)7, request.requestN_);
-  }));
+      .Times(1)
+      .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
+        auto frameType = FrameHeader::peekType(*frame);
+        Frame_REQUEST_SUB request;
+        ASSERT_EQ(FrameType::REQUEST_SUB, frameType);
+        ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
+        ASSERT_EQ("foo", request.payload_.moveDataToString());
+        ASSERT_EQ((uint32_t)7, request.requestN_);
+      }));
 
   clientInputSub->request(7);
 
@@ -689,44 +690,45 @@ TEST(ReactiveSocketTest, RequestResponseSendsOneRequest) {
   auto testInputSubscription = std::make_shared<MockSubscription>();
 
   auto testOutputSubscriber =
-          std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+      std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*testOutputSubscriber, onSubscribe_(_))
-  .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-    // allow receiving frames from the automaton
-    subscription->request(std::numeric_limits<size_t>::max());
-  }));
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+        // allow receiving frames from the automaton
+        subscription->request(std::numeric_limits<size_t>::max());
+      }));
 
   serverConn->setInput(testOutputSubscriber);
   serverConn->getOutput()->onSubscribe(testInputSubscription);
 
   auto socket = StandardReactiveSocket::fromClientConnection(
-          defaultExecutor(),
-          std::move(clientConn),
-          folly::make_unique<DefaultRequestHandler>(),
-          ConnectionSetupPayload());
+      defaultExecutor(),
+      std::move(clientConn),
+      folly::make_unique<DefaultRequestHandler>(),
+      ConnectionSetupPayload());
 
   const auto originalPayload = folly::IOBuf::copyBuffer("foo");
 
   auto responseSubscriber = std::make_shared<MockSubscriber<Payload>>();
   std::shared_ptr<Subscription> clientInputSub;
   EXPECT_CALL(*responseSubscriber, onSubscribe_(_))
-  .Times(1)
-  .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-    clientInputSub = subscription;
-  }));
+      .Times(1)
+      .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+        clientInputSub = subscription;
+      }));
   EXPECT_CALL(*testOutputSubscriber, onNext_(_)).Times(0);
 
-  socket->requestResponse(Payload(originalPayload->clone()), responseSubscriber);
+  socket->requestResponse(
+      Payload(originalPayload->clone()), responseSubscriber);
 
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
-  .Times(1)
-  .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-    auto frameType = FrameHeader::peekType(*frame);
-    Frame_REQUEST_RESPONSE request;
-    ASSERT_EQ(FrameType::REQUEST_RESPONSE, frameType);
-    ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
-    ASSERT_EQ("foo", request.payload_.moveDataToString());
-  }));
+      .Times(1)
+      .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
+        auto frameType = FrameHeader::peekType(*frame);
+        Frame_REQUEST_RESPONSE request;
+        ASSERT_EQ(FrameType::REQUEST_RESPONSE, frameType);
+        ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
+        ASSERT_EQ("foo", request.payload_.moveDataToString());
+      }));
 
   clientInputSub->request(7);
 

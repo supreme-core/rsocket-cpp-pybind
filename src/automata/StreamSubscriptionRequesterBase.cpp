@@ -16,10 +16,11 @@ void StreamSubscriptionRequesterBase::requestImpl(size_t n) noexcept {
       // FIXME: find a root cause of this asymmetry; the problem here is that
       // the Base::request might be delivered after the whole thing is shut
       // down, if one uses InlineConnection.
-      auto initialN = n > Frame_REQUEST_N::kMaxRequestN ?
-                      Frame_REQUEST_N::kMaxRequestN : n;
-      auto remainingN = n > Frame_REQUEST_N::kMaxRequestN ?
-                        n - Frame_REQUEST_N::kMaxRequestN : 0;
+      auto initialN =
+          n > Frame_REQUEST_N::kMaxRequestN ? Frame_REQUEST_N::kMaxRequestN : n;
+      auto remainingN = n > Frame_REQUEST_N::kMaxRequestN
+          ? n - Frame_REQUEST_N::kMaxRequestN
+          : 0;
 
       // Send as much as possible with the initial request.
       CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
@@ -27,8 +28,8 @@ void StreamSubscriptionRequesterBase::requestImpl(size_t n) noexcept {
       // We must inform ConsumerMixin about an implicit allowance we have
       // requested from the remote end.
       addImplicitAllowance(initialN);
-      sendRequestFrame(FrameFlags_REQN_PRESENT, initialN,
-                       std::move(initialPayload_));
+      sendRequestFrame(
+          FrameFlags_REQN_PRESENT, initialN, std::move(initialPayload_));
 
       // Pump the remaining allowance into the ConsumerMixin _after_ sending the
       // initial request.
