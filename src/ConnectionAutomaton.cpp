@@ -444,8 +444,7 @@ void ConnectionAutomaton::onConnectionFrame(
         return;
       }
       if (resumeCallback_) {
-        if (!isServer_ && isResumable_ &&
-            streamState_->resumeCache_.isPositionAvailable(frame.position_)) {
+        if (streamState_->resumeCache_.isPositionAvailable(frame.position_)) {
           resumeCallback_->onResumeOk();
           resumeCallback_.reset();
           resumeFromPosition(frame.position_);
@@ -524,19 +523,15 @@ bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
 //  return streamState_->resumeCache_.position() - position;
 //}
 
-bool ConnectionAutomaton::resumeFromPositionOrClose(
-    ResumePosition position,
-    bool writeResumeOkFrame) {
+bool ConnectionAutomaton::resumeFromPositionOrClose(ResumePosition position) {
   debugCheckCorrectExecutor();
   DCHECK(!resumeCallback_);
   DCHECK(!isDisconnectedOrClosed());
 
   if (streamState_->resumeCache_.isPositionAvailable(position)) {
-    if (writeResumeOkFrame) {
-      frameTransport_->outputFrameOrEnqueue(
-          Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
-              .serializeOut());
-    }
+    frameTransport_->outputFrameOrEnqueue(
+        Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
+            .serializeOut());
     resumeFromPosition(position);
     return true;
   } else {

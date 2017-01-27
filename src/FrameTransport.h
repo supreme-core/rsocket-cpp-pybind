@@ -31,8 +31,8 @@ class FrameTransport :
   /// Enqueuing a terminal frame does not end the stream.
   ///
   /// This signal corresponds to Subscriber::onNext.
-  void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
-  void close(folly::exception_wrapper ex);
+  virtual void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame);
+  virtual void close(folly::exception_wrapper ex);
 
   bool isClosed() const {
     return !connection_;
