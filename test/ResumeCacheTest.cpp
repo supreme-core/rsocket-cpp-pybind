@@ -1,9 +1,9 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <folly/io/IOBuf.h>
+#include <folly/Memory.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <memory>
 #include "src/Frame.h"
 #include "src/FrameTransport.h"
 #include "src/ResumeCache.h"
@@ -15,7 +15,7 @@ using namespace ::reactivesocket;
 
 class FrameTransportMock : public FrameTransport {
  public:
-  FrameTransportMock() : FrameTransport(std::make_unique<InlineConnection>()) {}
+  FrameTransportMock() : FrameTransport(folly::make_unique<InlineConnection>()) {}
 
   MOCK_METHOD1(outputFrameOrEnqueue_, void(std::unique_ptr<folly::IOBuf>&));
 
