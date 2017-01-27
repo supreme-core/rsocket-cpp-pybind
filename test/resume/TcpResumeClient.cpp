@@ -101,7 +101,8 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "attempting connection to " << addr.describe();
 
     std::unique_ptr<DuplexConnection> connection =
-        folly::make_unique<TcpDuplexConnection>(std::move(socket), inlineExecutor(), stats);
+        folly::make_unique<TcpDuplexConnection>(
+            std::move(socket), inlineExecutor(), stats);
     std::unique_ptr<DuplexConnection> framedConnection =
         folly::make_unique<FramedDuplexConnection>(
             std::move(connection), *eventBaseThread.getEventBase());
@@ -158,7 +159,8 @@ int main(int argc, char* argv[]) {
     socketResume->connect(&callback, addr);
 
     std::unique_ptr<DuplexConnection> connectionResume =
-        folly::make_unique<TcpDuplexConnection>(std::move(socketResume), inlineExecutor(), stats);
+        folly::make_unique<TcpDuplexConnection>(
+            std::move(socketResume), inlineExecutor(), stats);
     std::unique_ptr<DuplexConnection> framedConnectionResume =
         folly::make_unique<FramedDuplexConnection>(
             std::move(connectionResume), inlineExecutor());

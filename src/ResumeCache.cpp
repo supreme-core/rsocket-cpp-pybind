@@ -22,7 +22,6 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
     case FrameType::CANCEL:
     case FrameType::ERROR:
     case FrameType::RESPONSE: {
-
       // TODO(tmont): this could be expensive, find a better way to determine
       auto frameDataLength = serializedFrame.computeChainDataLength();
       addFrame(serializedFrame, frameDataLength);
@@ -35,8 +34,7 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
 
         streamMap_[streamId] = position_;
       }
-    }
-    break;
+    } break;
 
     case FrameType::RESERVED:
     case FrameType::SETUP:
