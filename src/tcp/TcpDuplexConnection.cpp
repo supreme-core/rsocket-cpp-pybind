@@ -16,8 +16,9 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
  public:
   explicit TcpReaderWriter(
       folly::AsyncSocket::UniquePtr&& socket,
+      folly::Executor& executor,
       Stats& stats = Stats::noop())
-      : ExecutorBase(defaultExecutor()),
+      : ExecutorBase(executor),
         socket_(std::move(socket)),
         stats_(stats) {}
 
@@ -125,9 +126,10 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
 
 TcpDuplexConnection::TcpDuplexConnection(
     folly::AsyncSocket::UniquePtr&& socket,
+    folly::Executor& executor,
     Stats& stats)
     : tcpReaderWriter_(
-          std::make_shared<TcpReaderWriter>(std::move(socket), stats)),
+          std::make_shared<TcpReaderWriter>(std::move(socket), executor, stats)),
       stats_(stats) {
   stats_.duplexConnectionCreated("tcp", this);
 }
