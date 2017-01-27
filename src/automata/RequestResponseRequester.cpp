@@ -25,7 +25,7 @@ void RequestResponseRequester::requestImpl(size_t n) noexcept {
   if (state_ == State::NEW) {
     state_ = State::REQUESTED;
     Frame_REQUEST_RESPONSE frame(
-            streamId_, FrameFlags_EMPTY, std::move(std::move(initialPayload_)));
+        streamId_, FrameFlags_EMPTY, std::move(std::move(initialPayload_)));
     connection_->outputFrameOrEnqueue(frame.serializeOut());
   }
 

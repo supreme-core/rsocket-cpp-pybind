@@ -3,6 +3,7 @@
 #include "src/ConnectionAutomaton.h"
 
 #include <folly/ExceptionWrapper.h>
+#include <folly/Optional.h>
 #include <folly/String.h>
 #include "src/AbstractStreamAutomaton.h"
 #include "src/ClientResumeStatusCallback.h"
