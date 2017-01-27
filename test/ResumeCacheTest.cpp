@@ -3,6 +3,7 @@
 #include <folly/io/IOBuf.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <memory>
 #include "src/Frame.h"
 #include "src/FrameTransport.h"
 #include "src/ResumeCache.h"
