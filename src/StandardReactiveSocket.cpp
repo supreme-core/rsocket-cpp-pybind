@@ -5,6 +5,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
+#include <folly/io/async/EventBase.h>
 #include "src/ClientResumeStatusCallback.h"
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
@@ -21,6 +22,8 @@
 namespace reactivesocket {
 
 StandardReactiveSocket::~StandardReactiveSocket() {
+  debugCheckCorrectExecutor();
+
   // Force connection closure, this will trigger terminal signals to be
   // delivered to all stream automata.
   close();
@@ -39,6 +42,7 @@ StandardReactiveSocket::StandardReactiveSocket(
     folly::Executor& executor)
     : handler_(handler),
       connection_(std::make_shared<ConnectionAutomaton>(
+          executor,
           [this, handler](
               ConnectionAutomaton& connection,
               StreamId streamId,
@@ -60,6 +64,7 @@ StandardReactiveSocket::StandardReactiveSocket(
           executeListenersFunc(onCloseListeners_))),
       nextStreamId_(isServer ? 1 : 2),
       executor_(executor) {
+  debugCheckCorrectExecutor();
   stats.socketCreated();
 }
 
@@ -117,7 +122,9 @@ StandardReactiveSocket::disconnectedServer(
 
 std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
     std::shared_ptr<Subscriber<Payload>> responseSink) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
+
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -131,7 +138,9 @@ std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
 void StandardReactiveSocket::requestStream(
     Payload request,
     std::shared_ptr<Subscriber<Payload>> responseSink) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
+
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -145,7 +154,9 @@ void StandardReactiveSocket::requestStream(
 void StandardReactiveSocket::requestSubscription(
     Payload request,
     std::shared_ptr<Subscriber<Payload>> responseSink) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
+
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -158,7 +169,9 @@ void StandardReactiveSocket::requestSubscription(
 }
 
 void StandardReactiveSocket::requestFireAndForget(Payload request) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
+
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -170,7 +183,9 @@ void StandardReactiveSocket::requestFireAndForget(Payload request) {
 void StandardReactiveSocket::requestResponse(
     Payload payload,
     std::shared_ptr<Subscriber<Payload>> responseSink) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
+
   // TODO(stupaq): handle any exceptions
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
@@ -184,6 +199,7 @@ void StandardReactiveSocket::requestResponse(
 
 void StandardReactiveSocket::metadataPush(
     std::unique_ptr<folly::IOBuf> metadata) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->outputFrameOrEnqueue(
       Frame_METADATA_PUSH(std::move(metadata)).serializeOut());
@@ -194,6 +210,23 @@ void StandardReactiveSocket::createResponder(
     ConnectionAutomaton& connection,
     StreamId streamId,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
+  debugCheckCorrectExecutor();
+
+  if (streamId != 0) {
+    if (nextStreamId_ % 2 == streamId % 2) {
+      // if this is an unknown stream to the socket and this socket is
+      // generating
+      // such stream ids, it is an incoming frame on the stream which no longer
+      // exist
+      return;
+    }
+    if (streamId <= lastPeerStreamId_) {
+      // receiving frame for a stream which no longer exists
+      return;
+    }
+    lastPeerStreamId_ = streamId;
+  }
+
   auto type = FrameHeader::peekType(*serializedFrame);
   switch (type) {
     case FrameType::SETUP: {
@@ -356,6 +389,7 @@ void StandardReactiveSocket::createResponder(
 
 std::shared_ptr<StreamState> StandardReactiveSocket::resumeListener(
     const ResumeIdentificationToken& token) {
+  debugCheckCorrectExecutor();
   CHECK(false) << "not implemented";
   // TODO(lehecka)
   return nullptr;
@@ -366,6 +400,7 @@ void StandardReactiveSocket::clientConnect(
     std::shared_ptr<FrameTransport> frameTransport,
     ConnectionSetupPayload setupPayload) {
   CHECK(frameTransport && !frameTransport->isClosed());
+  debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->setResumable(setupPayload.resumable);
 
@@ -392,39 +427,46 @@ void StandardReactiveSocket::clientConnect(
 void StandardReactiveSocket::serverConnect(
     std::shared_ptr<FrameTransport> frameTransport,
     bool isResumable) {
+  debugCheckCorrectExecutor();
   connection_->setResumable(isResumable);
   connection_->connect(std::move(frameTransport), true);
 }
 
 void StandardReactiveSocket::close() {
+  debugCheckCorrectExecutor();
   if (auto connectionCopy = std::move(connection_)) {
     connectionCopy->close();
   }
 }
 
 void StandardReactiveSocket::disconnect() {
+  debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->disconnect();
 }
 
 std::shared_ptr<FrameTransport> StandardReactiveSocket::detachFrameTransport() {
+  debugCheckCorrectExecutor();
   checkNotClosed();
   return connection_->detachFrameTransport();
 }
 
 void StandardReactiveSocket::onConnected(ReactiveSocketCallback listener) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
   CHECK(listener);
   onConnectListeners_->push_back(std::move(listener));
 }
 
 void StandardReactiveSocket::onDisconnected(ReactiveSocketCallback listener) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
   CHECK(listener);
   onDisconnectListeners_->push_back(std::move(listener));
 }
 
 void StandardReactiveSocket::onClosed(ReactiveSocketCallback listener) {
+  debugCheckCorrectExecutor();
   checkNotClosed();
   CHECK(listener);
   onCloseListeners_->push_back(std::move(listener));
@@ -435,6 +477,7 @@ void StandardReactiveSocket::tryClientResume(
     std::shared_ptr<FrameTransport> frameTransport,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
   // TODO: verify/assert that the new frameTransport is on the same event base
+  debugCheckCorrectExecutor();
   checkNotClosed();
   CHECK(frameTransport && !frameTransport->isClosed());
 
@@ -448,6 +491,7 @@ bool StandardReactiveSocket::tryResumeServer(
     std::shared_ptr<FrameTransport> frameTransport,
     ResumePosition position) {
   // TODO: verify/assert that the new frameTransport is on the same event base
+  debugCheckCorrectExecutor();
   checkNotClosed();
   disconnect();
   // TODO: verify, we should not be receiving any frames, not a single one
@@ -479,7 +523,14 @@ void StandardReactiveSocket::checkNotClosed() const {
 }
 
 DuplexConnection* StandardReactiveSocket::duplexConnection() const {
+  debugCheckCorrectExecutor();
   return connection_ ? connection_->duplexConnection() : nullptr;
+}
+
+void StandardReactiveSocket::debugCheckCorrectExecutor() const {
+  DCHECK(
+      !dynamic_cast<folly::EventBase*>(&executor_) ||
+      dynamic_cast<folly::EventBase*>(&executor_)->isInEventBaseThread());
 }
 
 } // reactivesocket

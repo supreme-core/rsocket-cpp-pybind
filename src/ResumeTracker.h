@@ -11,10 +11,6 @@ namespace reactivesocket {
 
 class ResumeTracker {
  public:
-  using position_t = ResumePosition;
-
-  ResumeTracker() : implied_position_(0) {}
-
   void trackReceivedFrame(const folly::IOBuf& serializedFrame) {
     auto frameType = FrameHeader::peekType(serializedFrame);
 
@@ -31,7 +27,7 @@ class ResumeTracker {
         // TODO(tmont): this could be expensive, find a better way to determine
         // frame length
         VLOG(6) << "received frame " << frameType;
-        implied_position_ += serializedFrame.computeChainDataLength();
+        impliedPosition_ += serializedFrame.computeChainDataLength();
         break;
 
       case FrameType::RESERVED:
@@ -46,11 +42,11 @@ class ResumeTracker {
     }
   }
 
-  position_t impliedPosition() {
-    return implied_position_;
+  ResumePosition impliedPosition() {
+    return impliedPosition_;
   }
 
  private:
-  position_t implied_position_;
+  ResumePosition impliedPosition_{0};
 };
 }

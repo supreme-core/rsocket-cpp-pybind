@@ -21,8 +21,9 @@ class FramedWriter : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
  public:
   explicit FramedWriter(
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
-          stream)
-      : ExecutorBase(defaultExecutor()), stream_(std::move(stream)) {}
+          stream,
+      folly::Executor& executor)
+      : ExecutorBase(executor), stream_(std::move(stream)) {}
 
   void onNextMultiple(std::vector<std::unique_ptr<folly::IOBuf>> element);
 

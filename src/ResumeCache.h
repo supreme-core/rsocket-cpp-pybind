@@ -2,13 +2,15 @@
 
 #pragma once
 
-#include <folly/Optional.h>
 #include <cstdint>
 #include <deque>
-#include <iostream>
 #include <memory>
 #include <unordered_map>
-#include "src/Frame.h"
+#include "src/Common.h"
+
+namespace folly {
+class IOBuf;
+}
 
 namespace reactivesocket {
 
@@ -17,10 +19,7 @@ class Stats;
 
 class ResumeCache {
  public:
-  using position_t = ResumePosition;
-
-  explicit ResumeCache(Stats& stats)
-      : stats_(stats), position_(0), resetPosition_(0) {}
+  explicit ResumeCache(Stats& stats) : stats_(stats) {}
 
   void trackSentFrame(const folly::IOBuf& serializedFrame);
 
@@ -28,28 +27,29 @@ class ResumeCache {
   // resuming)
   void resetUpToPosition(ResumePosition position);
 
-  bool isPositionAvailable(position_t position) const;
+  bool isPositionAvailable(ResumePosition position) const;
 
-  bool isPositionAvailable(position_t position, StreamId streamId) const;
+  bool isPositionAvailable(ResumePosition position, StreamId streamId) const;
 
-  void sendFramesFromPosition(position_t position, FrameTransport& transport)
-      const;
+  void sendFramesFromPosition(
+      ResumePosition position,
+      FrameTransport& transport) const;
 
   ResumePosition lastResetPosition() const {
     return resetPosition_;
   }
 
-  position_t position() const {
+  ResumePosition position() const {
     return position_;
   }
 
  private:
-  void addFrame(const folly::IOBuf&);
+  void addFrame(const folly::IOBuf&, size_t);
 
   Stats& stats_;
-  position_t position_;
-  position_t resetPosition_;
-  std::unordered_map<StreamId, position_t> streamMap_;
+  ResumePosition position_{0};
+  ResumePosition resetPosition_{0};
+  std::unordered_map<StreamId, ResumePosition> streamMap_;
 
   std::deque<std::pair<ResumePosition, std::unique_ptr<folly::IOBuf>>> frames_;
 };

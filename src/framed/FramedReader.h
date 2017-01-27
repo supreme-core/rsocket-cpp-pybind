@@ -18,8 +18,9 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
  public:
   explicit FramedReader(
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
-          frames)
-      : ExecutorBase(defaultExecutor()),
+          frames,
+      folly::Executor& executor)
+      : ExecutorBase(executor),
         frames_(std::move(frames)),
         payloadQueue_(folly::IOBufQueue::cacheChainLength()) {}
 
