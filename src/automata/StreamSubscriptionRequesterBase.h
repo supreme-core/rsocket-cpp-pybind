@@ -17,10 +17,12 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin<Frame_RESPONSE> {
  public:
   // initialization of the ExecutorBase will be ignored for any of the
   // derived classes
-  explicit StreamSubscriptionRequesterBase(const Base::Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
-
-  void processInitialPayload(Payload);
+  explicit StreamSubscriptionRequesterBase(
+      const Base::Parameters& params,
+      Payload payload)
+      : ExecutorBase(params.executor),
+        Base(params),
+        initialPayload_(std::move(payload)) {}
 
  private:
   /// Override in subclass to send the correct type of request frame
@@ -46,5 +48,8 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin<Frame_RESPONSE> {
   /// An allowance accumulated before the stream is initialised.
   /// Remaining part of the allowance is forwarded to the ConsumerMixin.
   AllowanceSemaphore initialResponseAllowance_;
+
+  /// Initial payload which has to be sent with 1st request.
+  Payload initialPayload_;
 };
 }

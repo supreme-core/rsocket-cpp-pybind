@@ -4,6 +4,7 @@
 
 #include <folly/ExceptionWrapper.h>
 #include <folly/MoveWrapper.h>
+#include <folly/Optional.h>
 #include <folly/String.h>
 #include <folly/io/async/EventBase.h>
 #include "src/AbstractStreamAutomaton.h"

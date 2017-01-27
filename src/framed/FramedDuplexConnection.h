@@ -30,4 +30,4 @@ class FramedDuplexConnection : public virtual DuplexConnection {
   folly::Executor& executor_;
 };
 
-} // reactive socket
+} // reactivesocket

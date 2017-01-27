@@ -145,10 +145,10 @@ void StandardReactiveSocket::requestStream(
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
   StreamRequester::Parameters params = {{connection_, streamId}, executor_};
-  auto automaton = std::make_shared<StreamRequester>(params);
+  auto automaton =
+      std::make_shared<StreamRequester>(params, std::move(request));
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
-  automaton->processInitialPayload(std::move(request));
 }
 
 void StandardReactiveSocket::requestSubscription(
@@ -162,10 +162,10 @@ void StandardReactiveSocket::requestSubscription(
   nextStreamId_ += 2;
   SubscriptionRequester::Parameters params = {{connection_, streamId},
                                               executor_};
-  auto automaton = std::make_shared<SubscriptionRequester>(params);
+  auto automaton =
+      std::make_shared<SubscriptionRequester>(params, std::move(request));
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
-  automaton->processInitialPayload(std::move(request));
 }
 
 void StandardReactiveSocket::requestFireAndForget(Payload request) {
@@ -191,10 +191,10 @@ void StandardReactiveSocket::requestResponse(
   nextStreamId_ += 2;
   RequestResponseRequester::Parameters params = {{connection_, streamId},
                                                  executor_};
-  auto automaton = std::make_shared<RequestResponseRequester>(params);
+  auto automaton =
+      std::make_shared<RequestResponseRequester>(params, std::move(payload));
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
-  automaton->processInitialPayload(std::move(payload));
 }
 
 void StandardReactiveSocket::metadataPush(
@@ -407,7 +407,7 @@ void StandardReactiveSocket::clientConnect(
   // TODO set correct version
   Frame_SETUP frame(
       setupPayload.resumable ? FrameFlags_RESUME_ENABLE : FrameFlags_EMPTY,
-      0,
+      /*version=*/0,
       connection_->getKeepaliveTime(),
       std::numeric_limits<uint32_t>::max(),
       setupPayload.token,

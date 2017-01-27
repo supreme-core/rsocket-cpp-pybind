@@ -2,20 +2,29 @@
 
 #pragma once
 
+#include <folly/ExceptionWrapper.h>
 #include "src/ConnectionSetupPayload.h"
 #include "src/RequestHandler.h"
 
 namespace reactivesocket {
 
-class NullSubscriber : public Subscriber<Payload> {
+template <typename T>
+class NullSubscriberT : public Subscriber<T> {
  public:
+  virtual ~NullSubscriberT() = default;
+
   // Subscriber methods
   void onSubscribe(
-      std::shared_ptr<Subscription> subscription) noexcept override;
-  void onNext(Payload element) noexcept override;
-  void onComplete() noexcept override;
-  void onError(folly::exception_wrapper ex) noexcept override;
+      std::shared_ptr<Subscription> subscription) noexcept override {
+    subscription->cancel();
+  }
+  void onNext(T element) noexcept override {}
+  void onComplete() noexcept override {}
+  void onError(folly::exception_wrapper ex) noexcept override {}
 };
+
+extern template class NullSubscriberT<Payload>;
+using NullSubscriber = NullSubscriberT<Payload>;
 
 class NullSubscription : public Subscription {
  public:

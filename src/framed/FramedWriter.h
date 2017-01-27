@@ -46,4 +46,4 @@ class FramedWriter : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
   SubscriptionPtr<::reactivestreams::Subscription> writerSubscription_;
 };
 
-} // reactive socket
+} // reactivesocket
