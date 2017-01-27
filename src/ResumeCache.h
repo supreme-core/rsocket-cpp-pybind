@@ -26,7 +26,7 @@ class ResumeCache {
 
   // called to clear up to a certain position from the cache (from keepalive or
   // resuming)
-  void resetUpToPosition(const position_t position);
+  void resetUpToPosition(ResumePosition position);
 
   bool isPositionAvailable(position_t position) const;
 
@@ -35,18 +35,22 @@ class ResumeCache {
   void sendFramesFromPosition(position_t position, FrameTransport& transport)
       const;
 
- private:
-  void addFrame(const folly::IOBuf&);
+  ResumePosition lastResetPosition() const {
+    return resetPosition_;
+  }
 
   position_t position() const {
     return position_;
   }
+
+ private:
+  void addFrame(const folly::IOBuf&);
 
   Stats& stats_;
   position_t position_;
   position_t resetPosition_;
   std::unordered_map<StreamId, position_t> streamMap_;
 
-  std::deque<std::pair<position_t, std::unique_ptr<folly::IOBuf>>> frames_;
+  std::deque<std::pair<ResumePosition, std::unique_ptr<folly::IOBuf>>> frames_;
 };
 }

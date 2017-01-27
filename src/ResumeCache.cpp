@@ -21,6 +21,8 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
     case FrameType::CANCEL:
     case FrameType::ERROR:
     case FrameType::RESPONSE:
+
+      addFrame(serializedFrame);
       // TODO(tmont): this could be expensive, find a better way to determine
       // frame length
       position_ += serializedFrame.computeChainDataLength();
@@ -32,7 +34,6 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
         streamMap_[streamId] = position_;
       }
 
-      addFrame(serializedFrame);
       break;
 
     case FrameType::RESERVED:
@@ -47,7 +48,15 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
   }
 }
 
-void ResumeCache::resetUpToPosition(const position_t position) {
+void ResumeCache::resetUpToPosition(ResumePosition position) {
+  if (position <= resetPosition_) {
+    return;
+  }
+
+  if (position > position_) {
+    position = position_;
+  }
+
   for (auto it = streamMap_.begin(); it != streamMap_.end();) {
     if (it->second <= position) {
       it = streamMap_.erase(it);
@@ -56,25 +65,34 @@ void ResumeCache::resetUpToPosition(const position_t position) {
     }
   }
 
-  resetPosition_ = position;
+  if (!frames_.empty()) {
+    auto end = std::lower_bound(
+        frames_.begin(),
+        frames_.end(),
+        position,
+        [](decltype(frames_.back())& pair, ResumePosition pos) {
+          return pair.first < pos;
+        });
 
-  auto end = std::upper_bound(
-      frames_.begin(),
-      frames_.end(),
-      position,
-      [](position_t pos, decltype(frames_.back())& pair) {
-        return pos < pair.first;
-      });
-  int dataSize = 0;
-  int framesCount = 0;
-  for (auto begin = frames_.begin(); begin != end; ++begin) {
-    dataSize += begin->second->computeChainDataLength();
-    ++framesCount;
+    if (end == frames_.end()) {
+      stats_.resumeBufferChanged(
+          -static_cast<int>(frames_.size()),
+          static_cast<int>(
+              static_cast<int64_t>(position_) -
+              static_cast<int64_t>(resetPosition_)));
+      frames_.clear();
+    } else {
+      stats_.resumeBufferChanged(
+          -static_cast<int>(std::distance(frames_.begin(), end)),
+          static_cast<int>(
+              static_cast<int64_t>(end->first) -
+              static_cast<int64_t>(resetPosition_)));
+      frames_.erase(frames_.begin(), end);
+    }
   }
 
-  frames_.erase(frames_.begin(), end);
-
-  stats_.resumeBufferChanged(-framesCount, -dataSize);
+  resetPosition_ = position;
+  DCHECK(frames_.empty() || frames_.front().first == resetPosition_);
 }
 
 bool ResumeCache::isPositionAvailable(position_t position) const {
@@ -117,7 +135,7 @@ void ResumeCache::sendFramesFromPosition(
     FrameTransport& frameTransport) const {
   DCHECK(isPositionAvailable(position));
 
-  if (position == resetPosition_) {
+  if (position == position_) {
     // idle resumption
     return;
   }
@@ -133,8 +151,9 @@ void ResumeCache::sendFramesFromPosition(
   DCHECK(found != frames_.end());
   DCHECK(found->first == position);
 
-  while (++found != frames_.end()) {
+  while (found != frames_.end()) {
     frameTransport.outputFrameOrEnqueue(found->second->clone());
+    found++;
   }
 }
 
