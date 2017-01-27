@@ -136,8 +136,8 @@ void StandardReactiveSocket::requestStream(
   StreamId streamId = nextStreamId_;
   nextStreamId_ += 2;
   StreamRequester::Parameters params = {{connection_, streamId}, executor_};
-  auto automaton = std::make_shared<StreamRequester>(
-          params, std::move(request));
+  auto automaton =
+      std::make_shared<StreamRequester>(params, std::move(request));
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
 }
@@ -151,8 +151,8 @@ void StandardReactiveSocket::requestSubscription(
   nextStreamId_ += 2;
   SubscriptionRequester::Parameters params = {{connection_, streamId},
                                               executor_};
-  auto automaton = std::make_shared<SubscriptionRequester>(
-          params, std::move(request));
+  auto automaton =
+      std::make_shared<SubscriptionRequester>(params, std::move(request));
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
 }
@@ -176,8 +176,8 @@ void StandardReactiveSocket::requestResponse(
   nextStreamId_ += 2;
   RequestResponseRequester::Parameters params = {{connection_, streamId},
                                                  executor_};
-  auto automaton = std::make_shared<RequestResponseRequester>(
-          params, std::move(payload));
+  auto automaton =
+      std::make_shared<RequestResponseRequester>(params, std::move(payload));
   connection_->addStream(streamId, automaton);
   automaton->subscribe(std::move(responseSink));
 }
