@@ -85,7 +85,8 @@ int main(int argc, char* argv[]) {
 
   evbt.getEventBase()->runInEventBaseThreadAndWait([&]() {
     std::unique_ptr<DuplexConnection> connection =
-        folly::make_unique<TcpDuplexConnection>(std::move(socket), inlineExecutor());
+        folly::make_unique<TcpDuplexConnection>(
+            std::move(socket), inlineExecutor());
     std::unique_ptr<DuplexConnection> framedConnection =
         folly::make_unique<FramedDuplexConnection>(
             std::move(connection), inlineExecutor());
