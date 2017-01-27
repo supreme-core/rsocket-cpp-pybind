@@ -171,9 +171,7 @@ class ConnectionAutomaton
     }
   }
 
-  bool resumeFromPositionOrClose(
-      ResumePosition position,
-      bool writeResumeOkFrame);
+  bool resumeFromPositionOrClose(ResumePosition position);
 
   uint32_t getKeepaliveTime() const;
   bool isDisconnectedOrClosed() const;

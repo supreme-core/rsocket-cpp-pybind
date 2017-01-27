@@ -496,7 +496,7 @@ bool StandardReactiveSocket::tryResumeServer(
   disconnect();
   // TODO: verify, we should not be receiving any frames, not a single one
   connection_->connect(std::move(frameTransport), /*sendPendingFrames=*/false);
-  return connection_->resumeFromPositionOrClose(position, true);
+  return connection_->resumeFromPositionOrClose(position);
 }
 
 std::function<void()> StandardReactiveSocket::executeListenersFunc(
