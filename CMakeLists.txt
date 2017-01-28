@@ -55,6 +55,7 @@ ExternalProject_Add(
 find_package(Threads)
 
 if(APPLE)
+  set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
