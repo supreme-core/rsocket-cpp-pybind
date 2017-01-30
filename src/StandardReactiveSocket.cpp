@@ -35,7 +35,7 @@ StandardReactiveSocket::~StandardReactiveSocket() {
 }
 
 StandardReactiveSocket::StandardReactiveSocket(
-    bool isServer,
+    ReactiveSocketMode mode,
     std::shared_ptr<RequestHandler> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
@@ -58,11 +58,11 @@ StandardReactiveSocket::StandardReactiveSocket(
               std::placeholders::_1),
           stats,
           std::move(keepaliveTimer),
-          isServer,
+          mode,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
-      nextStreamId_(isServer ? 1 : 2),
+      nextStreamId_(mode == ReactiveSocketMode::SERVER ? 1 : 2),
       executor_(executor) {
   debugCheckCorrectExecutor();
   stats.socketCreated();
@@ -91,7 +91,7 @@ StandardReactiveSocket::disconnectedClient(
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
-      false, std::move(handler), stats, std::move(keepaliveTimer), executor));
+      ReactiveSocketMode::CLIENT, std::move(handler), stats, std::move(keepaliveTimer), executor));
   return socket;
 }
 
@@ -116,7 +116,7 @@ StandardReactiveSocket::disconnectedServer(
     std::unique_ptr<RequestHandler> handler,
     Stats& stats) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
-      true, std::move(handler), stats, nullptr, executor));
+      ReactiveSocketMode::SERVER, std::move(handler), stats, nullptr, executor));
   return socket;
 }
 
