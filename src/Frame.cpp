@@ -387,23 +387,31 @@ std::ostream& operator<<(std::ostream& os, const Frame_ERROR& frame) {
 /// @}
 
 /// @{
-std::unique_ptr<folly::IOBuf> Frame_KEEPALIVE::serializeOut() {
+std::unique_ptr<folly::IOBuf> Frame_KEEPALIVE::serializeOut(bool resumeable) {
   auto queue = createBufferQueue(FrameHeader::kSize + sizeof(ResumePosition));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   header_.serializeInto(appender);
-  appender.writeBE(position_);
+  // TODO: Remove hack: https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+  if (resumeable) {
+    appender.writeBE(position_);
+  }
   if (data_) {
     appender.insert(std::move(data_));
   }
   return queue.move();
 }
 
-bool Frame_KEEPALIVE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
+bool Frame_KEEPALIVE::deserializeFrom(bool resumeable, std::unique_ptr<folly::IOBuf> in) {
   folly::io::Cursor cur(in.get());
   try {
     header_.deserializeFrom(cur);
     assert((header_.flags_ & FrameFlags_METADATA) == 0);
-    position_ = cur.readBE<ResumePosition>();
+    // TODO: Remove hack: https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+    if (resumeable) {
+      position_ = cur.readBE<ResumePosition>();
+    } else {
+      position_ = 0;
+    }
     data_ = Payload::deserializeDataFrom(cur);
   } catch (...) {
     return false;
