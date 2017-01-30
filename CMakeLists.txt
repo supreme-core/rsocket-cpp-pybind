@@ -48,7 +48,7 @@ set(GMOCK_LIBS
 # ReactiveStreams C++
 ExternalProject_Add(
   ReactiveStreams
-  GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
+  #GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
   CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release" "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/reactivestreams"
 )
 
@@ -175,7 +175,7 @@ add_library(
   src/FrameTransport.cpp
   src/FrameTransport.h
   src/FrameProcessor.h
-  src/ReactiveSocket.h)
+  src/ReactiveSocket.h src/StreamsFactory.cpp src/StreamsFactory.h)
 
 target_link_libraries(
   ReactiveSocket
