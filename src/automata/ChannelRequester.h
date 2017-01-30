@@ -27,9 +27,7 @@ class ChannelRequester : public PublisherMixin<
 
  public:
   explicit ChannelRequester(const Base::Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
-
-  std::ostream& logPrefix(std::ostream& os);
+      : ExecutorBase(params.executor), Base(0, params) {}
 
  private:
   /// @{

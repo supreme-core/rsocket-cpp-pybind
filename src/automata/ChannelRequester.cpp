@@ -170,8 +170,4 @@ void ChannelRequester::onNextFrame(Frame_ERROR&& frame) {
   }
 }
 
-std::ostream& ChannelRequester::logPrefix(std::ostream& os) {
-  return os << "ChannelRequester(" << &connection_ << ", " << streamId_
-            << "): ";
-}
 } // reactivesocket

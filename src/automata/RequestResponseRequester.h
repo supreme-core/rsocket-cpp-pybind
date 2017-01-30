@@ -33,8 +33,6 @@ class RequestResponseRequester : public StreamAutomatonBase,
 
   void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
 
-  std::ostream& logPrefix(std::ostream& os);
-
  private:
   void requestImpl(size_t) noexcept override;
   void cancelImpl() noexcept override;

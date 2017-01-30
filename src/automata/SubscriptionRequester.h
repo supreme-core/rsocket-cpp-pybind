@@ -17,8 +17,6 @@ class SubscriptionRequester : public StreamSubscriptionRequesterBase {
       Payload payload)
       : ExecutorBase(params.executor), Base(params, std::move(payload)) {}
 
-  std::ostream& logPrefix(std::ostream& os);
-
  private:
   void sendRequestFrame(FrameFlags, size_t, Payload&&) override;
 };

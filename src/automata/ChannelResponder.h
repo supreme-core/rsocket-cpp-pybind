@@ -21,12 +21,12 @@ class ChannelResponder : public PublisherMixin<
       PublisherMixin<Frame_RESPONSE, ConsumerMixin<Frame_REQUEST_CHANNEL>>;
 
  public:
-  explicit ChannelResponder(const Base::Parameters& params)
-      : ExecutorBase(params.executor), Base(params) {}
+  explicit ChannelResponder(
+      uint32_t initialRequestN,
+      const Base::Parameters& params)
+      : ExecutorBase(params.executor), Base(initialRequestN, params) {}
 
   void processInitialFrame(Frame_REQUEST_CHANNEL&&);
-
-  std::ostream& logPrefix(std::ostream& os);
 
  private:
   void onSubscribeImpl(std::shared_ptr<Subscription>) noexcept override;

@@ -36,10 +36,6 @@ class StreamAutomatonBase : public AbstractStreamAutomaton {
   explicit StreamAutomatonBase(Parameters params)
       : connection_(std::move(params.connection)), streamId_(params.streamId) {}
 
-  /// Logs an identification string of the automaton.
-  std::ostream& logPrefix(std::ostream& os) /* = 0 */;
-  /// @}
-
  protected:
   bool isTerminated() const {
     return isTerminated_;

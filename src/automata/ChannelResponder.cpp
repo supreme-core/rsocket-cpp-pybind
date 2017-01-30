@@ -99,7 +99,7 @@ void ChannelResponder::onNextFrame(Frame_REQUEST_CHANNEL&& frame) {
       break;
   }
 
-  processRequestN(frame);
+  processRequestN(frame.requestN_);
   processPayload(std::move(frame));
 
   if (end) {
@@ -116,10 +116,5 @@ void ChannelResponder::onNextFrame(Frame_CANCEL&& frame) {
     case State::CLOSED:
       break;
   }
-}
-
-std::ostream& ChannelResponder::logPrefix(std::ostream& os) {
-  return os << "ChannelResponder(" << &connection_ << ", " << streamId_
-            << "): ";
 }
 }
