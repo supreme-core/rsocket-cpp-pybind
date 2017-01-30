@@ -35,10 +35,7 @@ enum class StreamCompletionSignal {
   SOCKET_CLOSED,
 };
 
-enum class ReactiveSocketMode {
-  SERVER,
-  CLIENT
-};
+enum class ReactiveSocketMode { SERVER, CLIENT };
 
 std::string to_string(StreamCompletionSignal);
 std::ostream& operator<<(std::ostream&, StreamCompletionSignal);

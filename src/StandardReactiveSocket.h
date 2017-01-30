@@ -12,6 +12,7 @@
 #include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/Stats.h"
+#include "src/StreamsFactory.h"
 
 namespace folly {
 class Executor;
@@ -156,8 +157,7 @@ class StandardReactiveSocket : public ReactiveSocket {
       std::make_shared<std::list<ReactiveSocketCallback>>()};
 
   std::shared_ptr<ConnectionAutomaton> connection_;
-  StreamId nextStreamId_;
-  StreamId lastPeerStreamId_{0};
+  StreamsFactory streamsFactory_;
   folly::Executor& executor_;
 };
 }
