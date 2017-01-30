@@ -78,7 +78,7 @@ class ConnectionAutomaton
       ResumeListener resumeListener,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
-      bool isServer,
+      ReactiveSocketMode mode,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
@@ -222,7 +222,7 @@ class ConnectionAutomaton
   std::shared_ptr<FrameTransport> frameTransport_;
 
   Stats& stats_;
-  bool isServer_;
+  ReactiveSocketMode mode_;
   bool isResumable_{false};
 
   std::function<void()> onConnected_;
