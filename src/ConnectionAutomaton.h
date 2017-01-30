@@ -78,7 +78,7 @@ class ConnectionAutomaton
       ResumeListener resumeListener,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
-      bool client,
+      bool isServer,
       std::function<void()> onConnected,
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
