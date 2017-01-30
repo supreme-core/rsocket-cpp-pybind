@@ -25,7 +25,7 @@ class ResumeCache {
 
   // called to clear up to a certain position from the cache (from keepalive or
   // resuming)
-  void resetUpToPosition(const ResumePosition position);
+  void resetUpToPosition(ResumePosition position);
 
   bool isPositionAvailable(ResumePosition position) const;
 
@@ -35,12 +35,16 @@ class ResumeCache {
       ResumePosition position,
       FrameTransport& transport) const;
 
- private:
-  void addFrame(const folly::IOBuf&, size_t);
+  ResumePosition lastResetPosition() const {
+    return resetPosition_;
+  }
 
   ResumePosition position() const {
     return position_;
   }
+
+ private:
+  void addFrame(const folly::IOBuf&, size_t);
 
   Stats& stats_;
   ResumePosition position_{0};
