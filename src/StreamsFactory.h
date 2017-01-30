@@ -19,7 +19,7 @@ class StreamsFactory {
  public:
   StreamsFactory(
       std::shared_ptr<ConnectionAutomaton> connection,
-      bool isServer);
+      ReactiveSocketMode mode);
 
   std::shared_ptr<Subscriber<Payload>> createChannelRequester(
       std::shared_ptr<Subscriber<Payload>> responseSink,

@@ -28,7 +28,7 @@ StandardReactiveSocket::~StandardReactiveSocket() {
 }
 
 StandardReactiveSocket::StandardReactiveSocket(
-    bool isServer,
+    ReactiveSocketMode mode,
     std::shared_ptr<RequestHandler> handler,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
@@ -51,11 +51,11 @@ StandardReactiveSocket::StandardReactiveSocket(
               std::placeholders::_1),
           stats,
           std::move(keepaliveTimer),
-          isServer,
+          mode,
           executeListenersFunc(onConnectListeners_),
           executeListenersFunc(onDisconnectListeners_),
           executeListenersFunc(onCloseListeners_))),
-      streamsFactory_(connection_, isServer),
+      streamsFactory_(connection_, mode),
       executor_(executor) {
   debugCheckCorrectExecutor();
   stats.socketCreated();
@@ -84,7 +84,11 @@ StandardReactiveSocket::disconnectedClient(
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
-      false, std::move(handler), stats, std::move(keepaliveTimer), executor));
+      ReactiveSocketMode::CLIENT,
+      std::move(handler),
+      stats,
+      std::move(keepaliveTimer),
+      executor));
   return socket;
 }
 
@@ -109,7 +113,11 @@ StandardReactiveSocket::disconnectedServer(
     std::unique_ptr<RequestHandler> handler,
     Stats& stats) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
-      true, std::move(handler), stats, nullptr, executor));
+      ReactiveSocketMode::SERVER,
+      std::move(handler),
+      stats,
+      nullptr,
+      executor));
   return socket;
 }
 
@@ -231,13 +239,8 @@ void StandardReactiveSocket::createResponder(
               frame, std::move(serializedFrame))) {
         return;
       }
-
-      ChannelResponder::Parameters params = {
-          {connection.shared_from_this(), streamId}, executor_};
-      auto automaton =
-          std::make_shared<ChannelResponder>(frame.requestN_, params);
-      connection.addStream(streamId, automaton);
-
+      auto automaton = streamsFactory_.createChannelResponder(
+          frame.requestN_, streamId, executor_);
       auto requestSink = handler->handleRequestChannel(
           std::move(frame.payload_), streamId, automaton);
       automaton->subscribe(requestSink);

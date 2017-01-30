@@ -126,7 +126,7 @@ class StandardReactiveSocket : public ReactiveSocket {
 
  private:
   StandardReactiveSocket(
-      bool isServer,
+      ReactiveSocketMode mode,
       std::shared_ptr<RequestHandler> handler,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer,

@@ -15,8 +15,9 @@ namespace reactivesocket {
 
 StreamsFactory::StreamsFactory(
     std::shared_ptr<ConnectionAutomaton> connection,
-    bool isServer)
-    : connection_(std::move(connection)), nextStreamId_(isServer ? 1 : 2) {}
+    ReactiveSocketMode mode)
+    : connection_(std::move(connection)),
+      nextStreamId_(mode == ReactiveSocketMode::SERVER ? 1 : 2) {}
 
 std::shared_ptr<Subscriber<Payload>> StreamsFactory::createChannelRequester(
     std::shared_ptr<Subscriber<Payload>> responseSink,

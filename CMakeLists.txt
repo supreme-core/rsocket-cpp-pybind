@@ -48,14 +48,18 @@ set(GMOCK_LIBS
 # ReactiveStreams C++
 ExternalProject_Add(
   ReactiveStreams
-  #GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
+  GIT_REPOSITORY ${REACTIVE_STREAMS_GIT_URL}
+  GIT_TAG d2fd61252b51a57a2916ee52fcd54b7f5d563591
   CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release" "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/reactivestreams"
 )
 
 find_package(Threads)
 
-if(META_CXX_STD)
-else()
+if(APPLE)
+  set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+endif()
+
+if(NOT META_CXX_STD)
   # Defaults to C++14 if not set:
   set(META_CXX_STD 14)
 endif()

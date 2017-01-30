@@ -85,7 +85,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       nullptr,
       Stats::noop(),
       nullptr,
-      false,
+      ReactiveSocketMode::CLIENT,
       [] {},
       [] {},
       [] {});
@@ -175,7 +175,7 @@ static void terminateTest(
       nullptr,
       Stats::noop(),
       nullptr,
-      false,
+      ReactiveSocketMode::CLIENT,
       [] {},
       [] {},
       [] {});
@@ -273,7 +273,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       nullptr,
       Stats::noop(),
       nullptr,
-      false,
+      ReactiveSocketMode::CLIENT,
       [] {},
       [] {},
       [] {});
