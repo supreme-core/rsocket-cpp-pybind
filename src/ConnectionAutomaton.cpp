@@ -24,7 +24,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     ResumeListener resumeListener,
     Stats& stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
-    bool isServer,
+    ReactiveSocketMode mode,
     std::function<void()> onConnected,
     std::function<void()> onDisconnected,
     std::function<void()> onClosed)
@@ -33,7 +33,7 @@ ConnectionAutomaton::ConnectionAutomaton(
       streamState_(std::move(streamState)),
       requestHandler_(std::move(requestHandler)),
       stats_(stats),
-      isServer_(isServer),
+      mode_(mode),
       onConnected_(std::move(onConnected)),
       onDisconnected_(std::move(onDisconnected)),
       onClosed_(std::move(onClosed)),
@@ -213,7 +213,7 @@ void ConnectionAutomaton::reconnect(
   CHECK(resumeCallback);
   CHECK(!resumeCallback_);
   CHECK(isResumable_);
-  CHECK(!isServer_);
+  CHECK(mode_ == ReactiveSocketMode::CLIENT);
 
   disconnect();
   // TODO: output frame buffer should not be written to the new connection until
@@ -372,7 +372,7 @@ void ConnectionAutomaton::onConnectionFrame(
       if (!deserializeFrameOrError(frame, std::move(payload))) {
         return;
       }
-      if (isServer_) {
+      if (mode_ == ReactiveSocketMode::SERVER) {
         if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
           frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
           outputFrameOrEnqueue(frame.serializeOut());
@@ -402,7 +402,7 @@ void ConnectionAutomaton::onConnectionFrame(
       return;
     }
     case FrameType::RESUME: {
-      if (isServer_ && isResumable_) {
+      if (mode_ == ReactiveSocketMode::SERVER && isResumable_) {
         factory_(*this, 0, std::move(payload));
         //      Frame_RESUME frame;
         //      if (!deserializeFrameOrError(frame, std::move(payload))) {
@@ -583,7 +583,7 @@ void ConnectionAutomaton::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
 void ConnectionAutomaton::useStreamState(
     std::shared_ptr<StreamState> streamState) {
   CHECK(streamState);
-  if (isServer_ && isResumable_) {
+  if (mode_ == ReactiveSocketMode::SERVER && isResumable_) {
     streamState_.swap(streamState);
   }
 }
