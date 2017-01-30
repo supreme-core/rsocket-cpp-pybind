@@ -127,11 +127,6 @@ void RequestResponseRequester::onNextFrame(Frame_RESPONSE&& frame) {
   }
 }
 
-std::ostream& RequestResponseRequester::logPrefix(std::ostream& os) {
-  return os << " RequestResponseRequester(" << &connection_ << ", " << streamId_
-            << "): ";
-}
-
 void RequestResponseRequester::pauseStream(RequestHandler& requestHandler) {
   if (consumingSubscriber_) {
     requestHandler.onSubscriberPaused(consumingSubscriber_);

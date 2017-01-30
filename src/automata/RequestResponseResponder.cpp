@@ -77,12 +77,4 @@ void RequestResponseResponder::onNextFrame(Frame_CANCEL&& frame) {
   }
 }
 
-void RequestResponseResponder::processInitialFrame(Frame_REQUEST_RESPONSE&&) {
-  processRequest1();
-}
-
-std::ostream& RequestResponseResponder::logPrefix(std::ostream& os) {
-  return os << "RequestResponseResponder(" << &connection_ << ", " << streamId_
-            << "): ";
-}
-}
+} // reactivesocket

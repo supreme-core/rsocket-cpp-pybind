@@ -30,8 +30,10 @@ class StreamSubscriptionResponderBase
 
   // initialization of the ExecutorBase will be ignored for any of the
   // derived classes
-  explicit StreamSubscriptionResponderBase(const Parameters& params)
-      : ExecutorBase(params.executor), Base(params, nullptr) {}
+  explicit StreamSubscriptionResponderBase(
+      uint32_t initialRequestN,
+      const Parameters& params)
+      : ExecutorBase(params.executor), Base(initialRequestN, params, nullptr) {}
 
  protected:
   using Base::onNextFrame;

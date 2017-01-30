@@ -28,11 +28,7 @@ class RequestResponseResponder
   };
 
   explicit RequestResponseResponder(const Parameters& params)
-      : ExecutorBase(params.executor), Base(params, nullptr) {}
-
-  void processInitialFrame(Frame_REQUEST_RESPONSE&&);
-
-  std::ostream& logPrefix(std::ostream& os);
+      : ExecutorBase(params.executor), Base(1, params, nullptr) {}
 
  private:
   /// @{

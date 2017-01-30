@@ -62,11 +62,6 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   }
   /// @}
 
-  std::ostream& logPrefix(std::ostream& os) {
-    return os << "ConsumerMixin(" << &this->connection_ << ", "
-              << this->streamId_ << "): ";
-  }
-
  protected:
   /// @{
   void endStream(StreamCompletionSignal signal) override {
