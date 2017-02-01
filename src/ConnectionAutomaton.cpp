@@ -58,7 +58,7 @@ ConnectionAutomaton::~ConnectionAutomaton() {
   // terminal signals.
   DCHECK(!resumeCallback_);
   DCHECK(isDisconnectedOrClosed()); // the instance should be closed by via
-  // close() method
+  // close method
 }
 
 void ConnectionAutomaton::setResumable(bool resumable) {
@@ -172,13 +172,21 @@ void ConnectionAutomaton::closeFrameTransport(folly::exception_wrapper ex) {
   frameTransport_ = nullptr;
 }
 
-void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
+void ConnectionAutomaton::disconnectOrCloseWithError(ErrorCode errorCode, std::string errorMessage) {
   debugCheckCorrectExecutor();
-  VLOG(4) << "closeWithError "
-          << error.payload_.data->cloneAsValue().moveToFbString();
+  if (isResumable_) {
+    disconnect();
+  } else {
+    closeWithError(errorCode, std::move(errorMessage));
+  }
+}
+
+void ConnectionAutomaton::closeWithError(ErrorCode errorCode, std::string errorMessage) {
+  debugCheckCorrectExecutor();
+  VLOG(4) << "closeWithError " << errorMessage;
 
   StreamCompletionSignal signal;
-  switch (error.errorCode_) {
+  switch (errorCode) {
     case ErrorCode::INVALID_SETUP:
       signal = StreamCompletionSignal::INVALID_SETUP;
       break;
@@ -201,8 +209,10 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
       signal = StreamCompletionSignal::ERROR;
   }
 
-  outputFrameOrEnqueue(error.serializeOut());
-  close(folly::exception_wrapper(), signal);
+  //TODO: https://github.com/ReactiveSocket/reactivesocket/blob/master/Protocol.md#error-codes
+  //some error codes require streamId=0 and some !=0
+  outputFrameOrEnqueue(Frame_ERROR(0, errorCode, Payload(errorMessage)));
+  close(std::runtime_error(std::move(errorMessage)), signal);
 }
 
 void ConnectionAutomaton::reconnect(
@@ -314,7 +324,7 @@ void ConnectionAutomaton::processFrameImpl(
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
-    closeWithError(Frame_ERROR::connectionError("invalid frame"));
+    closeWithError(ErrorCode::INVALID, "invalid frame");
     return;
   }
   auto streamId = *streamIdPtr;
@@ -329,7 +339,7 @@ void ConnectionAutomaton::processFrameImpl(
   // different state machine
   if (resumeCallback_) {
     LOG(ERROR) << "received stream frames during resumption";
-    closeWithError(Frame_ERROR::unexpectedFrame());
+    closeWithError(ErrorCode::INVALID, "invalid frame");
     return;
   }
 
@@ -378,15 +388,13 @@ void ConnectionAutomaton::onConnectionFrame(
           frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
           outputFrameOrEnqueue(frame.serializeOut(remoteResumeable_));
         } else {
-          closeWithError(
-              Frame_ERROR::connectionError("keepalive without flag"));
+          closeWithError(ErrorCode::CONNECTION_ERROR, "keepalive without flag");
         }
 
         streamState_->resumeCache_.resetUpToPosition(frame.position_);
       } else {
         if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
-          closeWithError(Frame_ERROR::connectionError(
-              "client received keepalive with respond flag"));
+          closeWithError(ErrorCode::CONNECTION_ERROR, "client received keepalive with respond flag");
         } else if (keepaliveTimer_) {
           keepaliveTimer_->keepaliveReceived();
         }
@@ -444,8 +452,7 @@ void ConnectionAutomaton::onConnectionFrame(
         //          }
         //        }
       } else {
-        closeWithError(
-            Frame_ERROR::connectionError("RS not resumable. Can not resume"));
+        closeWithError(ErrorCode::CONNECTION_ERROR, "RS not resumable. Can not resume");
       }
       return;
     }
@@ -460,10 +467,10 @@ void ConnectionAutomaton::onConnectionFrame(
           resumeCallback_.reset();
           resumeFromPosition(frame.position_);
         } else {
-          closeWithError(Frame_ERROR::connectionError("can not resume"));
+          closeWithError(ErrorCode::CONNECTION_ERROR, "can not resume");
         }
       } else {
-        closeWithError(Frame_ERROR::unexpectedFrame());
+        closeWithError(ErrorCode::INVALID, "invalid frame");
       }
       return;
     }
@@ -498,7 +505,7 @@ void ConnectionAutomaton::onConnectionFrame(
     case FrameType::CANCEL:
     case FrameType::RESPONSE:
     default:
-      closeWithError(Frame_ERROR::unexpectedFrame());
+      closeWithError(ErrorCode::INVALID, "unexpected frame");
       return;
   }
 }
@@ -546,8 +553,7 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(ResumePosition position) {
     resumeFromPosition(position);
     return true;
   } else {
-    closeWithError(
-        Frame_ERROR::connectionError("Position not available. Can not resume"));
+    closeWithError(ErrorCode::CONNECTION_ERROR, "Position not available. Can not resume");
     return false;
   }
 }

@@ -52,7 +52,7 @@ class FrameSink {
   ///
   /// This may synchronously deliver terminal signals to all
   /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
-  virtual void closeWithError(Frame_ERROR&& error) = 0;
+  virtual void disconnectOrCloseWithError(ErrorCode errorCode, std::string errorMessage) = 0;
 
   virtual void sendKeepalive() = 0;
 };
@@ -83,7 +83,8 @@ class ConnectionAutomaton
       std::function<void()> onDisconnected,
       std::function<void()> onClosed);
 
-  void closeWithError(Frame_ERROR&& error) override;
+  void closeWithError(ErrorCode errorCode, std::string errorMessage);
+  void disconnectOrCloseWithError(ErrorCode errorCode, std::string errorMessage) override;
 
   /// Kicks off connection procedure.
   ///
@@ -166,7 +167,7 @@ class ConnectionAutomaton
     if (frame.deserializeFrom(std::move(payload))) {
       return true;
     } else {
-      closeWithError(Frame_ERROR::unexpectedFrame());
+      closeWithError(ErrorCode::INVALID, "invalid frame");
       return false;
     }
   }
@@ -179,7 +180,7 @@ class ConnectionAutomaton
     if (frame.deserializeFrom(resumable, std::move(payload))) {
       return true;
     } else {
-      closeWithError(Frame_ERROR::unexpectedFrame());
+      closeWithError(ErrorCode::INVALID, "invalid frame");
       return false;
     }
   }
