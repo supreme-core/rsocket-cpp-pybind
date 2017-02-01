@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
@@ -78,10 +79,7 @@ class ConnectionAutomaton
       ResumeListener resumeListener,
       Stats& stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
-      ReactiveSocketMode mode,
-      std::function<void()> onConnected,
-      std::function<void()> onDisconnected,
-      std::function<void()> onClosed);
+      ReactiveSocketMode mode);
 
   void closeWithError(ErrorCode errorCode, std::string errorMessage);
   void disconnectOrCloseWithError(ErrorCode errorCode, std::string errorMessage) override;
@@ -100,7 +98,7 @@ class ConnectionAutomaton
 
   /// Disconnects DuplexConnection from the automaton.
   /// Existing streams will stay intact.
-  void disconnect();
+  void disconnect(folly::exception_wrapper ex);
 
   std::shared_ptr<FrameTransport> detachFrameTransport();
 
@@ -187,8 +185,13 @@ class ConnectionAutomaton
 
   bool resumeFromPositionOrClose(ResumePosition position);
 
+  void addConnectedListener(std::function<void()> listener);
+  void addDisconnectedListener(ErrorCallback listener);
+  void addClosedListener(ErrorCallback listener);
+
   uint32_t getKeepaliveTime() const;
   bool isDisconnectedOrClosed() const;
+  bool isClosed() const;
 
   DuplexConnection* duplexConnection() const;
 
@@ -239,10 +242,11 @@ class ConnectionAutomaton
   ReactiveSocketMode mode_;
   bool isResumable_{false};
   bool remoteResumeable_{false};
+  bool isClosed_{false};
 
-  std::function<void()> onConnected_;
-  std::function<void()> onDisconnected_;
-  std::function<void()> onClosed_;
+  std::list<std::function<void()>> onConnectListeners_;
+  std::list<ErrorCallback> onDisconnectListeners_;
+  std::list<ErrorCallback> onCloseListeners_;
 
   ResumeListener resumeListener_;
   const std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
