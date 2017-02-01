@@ -8,7 +8,7 @@ FollyKeepaliveTimer::FollyKeepaliveTimer(
     folly::EventBase& eventBase,
     std::chrono::milliseconds period)
     : eventBase_(eventBase),
-      running_(std::make_shared<bool>(false)),
+      state_(std::make_shared<uint32_t>(0)),
       period_(period) {}
 
 FollyKeepaliveTimer::~FollyKeepaliveTimer() {
@@ -20,10 +20,13 @@ std::chrono::milliseconds FollyKeepaliveTimer::keepaliveTime() {
 }
 
 void FollyKeepaliveTimer::schedule() {
-  auto running = running_;
+  auto scheduledState = state_.get();
+  auto currentState = state_;
   eventBase_.runAfterDelay(
-      [this, running]() {
-        if (*running) {
+      [this, currentState, scheduledState]() {
+        LOG(INFO) << "State " << *currentState << " " << scheduledState;
+
+        if (currentState.get() == scheduledState) {
           sendKeepalive();
           schedule();
         }
@@ -44,7 +47,7 @@ void FollyKeepaliveTimer::sendKeepalive() {
 
 // must be called from the same thread as start
 void FollyKeepaliveTimer::stop() {
-  *running_ = false;
+  *state_ += 1;
   pending_ = false;
   connection_ = nullptr;
 }
@@ -52,7 +55,7 @@ void FollyKeepaliveTimer::stop() {
 // must be called from the same thread as stop
 void FollyKeepaliveTimer::start(const std::shared_ptr<FrameSink>& connection) {
   connection_ = connection;
-  *running_ = true;
+  *state_ += 1;
   DCHECK(!pending_);
 
   schedule();
