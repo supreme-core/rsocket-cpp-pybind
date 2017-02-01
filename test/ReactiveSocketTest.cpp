@@ -418,8 +418,8 @@ TEST(ReactiveSocketTest, RequestSubscription) {
 }
 
 TEST(ReactiveSocketTest, RequestStreamSendsOneRequest) {
-  auto clientConn = folly::make_unique<InlineConnection>();
-  auto serverConn = folly::make_unique<InlineConnection>();
+  auto clientConn = std::make_unique<InlineConnection>();
+  auto serverConn = std::make_unique<InlineConnection>();
 
   clientConn->connectTo(*serverConn);
 
@@ -439,7 +439,7 @@ TEST(ReactiveSocketTest, RequestStreamSendsOneRequest) {
   auto socket = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),
       std::move(clientConn),
-      folly::make_unique<DefaultRequestHandler>(),
+      std::make_unique<DefaultRequestHandler>(),
       ConnectionSetupPayload());
 
   const auto originalPayload = folly::IOBuf::copyBuffer("foo");
@@ -549,8 +549,8 @@ TEST(ReactiveSocketTest, RequestSubscriptionSurplusResponse) {
 }
 
 TEST(ReactiveSocketTest, RequestSubscriptionSendsOneRequest) {
-  auto clientConn = folly::make_unique<InlineConnection>();
-  auto serverConn = folly::make_unique<InlineConnection>();
+  auto clientConn = std::make_unique<InlineConnection>();
+  auto serverConn = std::make_unique<InlineConnection>();
 
   clientConn->connectTo(*serverConn);
 
@@ -570,7 +570,7 @@ TEST(ReactiveSocketTest, RequestSubscriptionSendsOneRequest) {
   auto socket = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),
       std::move(clientConn),
-      folly::make_unique<DefaultRequestHandler>(),
+      std::make_unique<DefaultRequestHandler>(),
       ConnectionSetupPayload());
 
   const auto originalPayload = folly::IOBuf::copyBuffer("foo");
@@ -682,8 +682,8 @@ TEST(ReactiveSocketTest, RequestResponse) {
 }
 
 TEST(ReactiveSocketTest, RequestResponseSendsOneRequest) {
-  auto clientConn = folly::make_unique<InlineConnection>();
-  auto serverConn = folly::make_unique<InlineConnection>();
+  auto clientConn = std::make_unique<InlineConnection>();
+  auto serverConn = std::make_unique<InlineConnection>();
 
   clientConn->connectTo(*serverConn);
 
@@ -703,7 +703,7 @@ TEST(ReactiveSocketTest, RequestResponseSendsOneRequest) {
   auto socket = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),
       std::move(clientConn),
-      folly::make_unique<DefaultRequestHandler>(),
+      std::make_unique<DefaultRequestHandler>(),
       ConnectionSetupPayload());
 
   const auto originalPayload = folly::IOBuf::copyBuffer("foo");
