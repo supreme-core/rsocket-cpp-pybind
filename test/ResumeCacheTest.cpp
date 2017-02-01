@@ -15,8 +15,7 @@ using namespace ::reactivesocket;
 
 class FrameTransportMock : public FrameTransport {
  public:
-  FrameTransportMock()
-      : FrameTransport(std::make_unique<InlineConnection>()) {}
+  FrameTransportMock() : FrameTransport(std::make_unique<InlineConnection>()) {}
 
   MOCK_METHOD1(outputFrameOrEnqueue_, void(std::unique_ptr<folly::IOBuf>&));
 
