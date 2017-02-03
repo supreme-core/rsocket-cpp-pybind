@@ -57,9 +57,7 @@ class FrameTransport :
 
   void drainOutputFramesQueue();
 
-  void terminateFrameProcessor(
-      folly::exception_wrapper,
-      StreamCompletionSignal);
+  void terminateFrameProcessor(folly::exception_wrapper);
 
   std::shared_ptr<FrameProcessor> frameProcessor_;
 

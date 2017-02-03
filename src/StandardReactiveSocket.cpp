@@ -359,7 +359,8 @@ void StandardReactiveSocket::serverConnect(
 void StandardReactiveSocket::close() {
   debugCheckCorrectExecutor();
   if (auto connectionCopy = std::move(connection_)) {
-    connectionCopy->close();
+    connectionCopy->close(
+        folly::exception_wrapper(), StreamCompletionSignal::SOCKET_CLOSED);
   }
 }
 

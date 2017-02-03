@@ -49,7 +49,7 @@ ConnectionAutomaton::~ConnectionAutomaton() {
   // terminal signals.
   DCHECK(!resumeCallback_);
   DCHECK(isDisconnectedOrClosed()); // the instance should be closed by via
-  // close() method
+  // close method
 }
 
 void ConnectionAutomaton::setResumable(bool resumable) {
@@ -117,13 +117,9 @@ void ConnectionAutomaton::disconnect(folly::exception_wrapper ex) {
     callback(ex);
   }
 
-  closeFrameTransport(std::move(ex));
+  closeFrameTransport(std::move(ex), StreamCompletionSignal::CONNECTION_END);
   pauseStreams();
   stats_.socketDisconnected();
-}
-
-void ConnectionAutomaton::close() {
-  close(folly::exception_wrapper(), StreamCompletionSignal::SOCKET_CLOSED);
 }
 
 void ConnectionAutomaton::close(
@@ -151,10 +147,12 @@ void ConnectionAutomaton::close(
   }
 
   closeStreams(signal);
-  closeFrameTransport(std::move(ex));
+  closeFrameTransport(std::move(ex), signal);
 }
 
-void ConnectionAutomaton::closeFrameTransport(folly::exception_wrapper ex) {
+void ConnectionAutomaton::closeFrameTransport(
+    folly::exception_wrapper ex,
+    StreamCompletionSignal signal) {
   if (isDisconnectedOrClosed()) {
     DCHECK(!resumeCallback_);
     return;
@@ -171,8 +169,26 @@ void ConnectionAutomaton::closeFrameTransport(folly::exception_wrapper ex) {
     resumeCallback_.reset();
   }
 
-  frameTransport_->close(std::move(ex));
+  // echo the exception to the frameTransport only if the frameTransport started
+  // closing with error
+  // otherwise we sent some error frame over the wire and we are closing
+  // transport cleanly
+  frameTransport_->close(
+      signal == StreamCompletionSignal::CONNECTION_ERROR
+          ? std::move(ex)
+          : folly::exception_wrapper());
   frameTransport_ = nullptr;
+}
+
+void ConnectionAutomaton::disconnectOrCloseWithError(Frame_ERROR&& errorFrame) {
+  debugCheckCorrectExecutor();
+  if (isResumable_) {
+    disconnect(std::runtime_error(errorFrame.payload_.data->cloneAsValue()
+                                      .moveToFbString()
+                                      .toStdString()));
+  } else {
+    closeWithError(std::move(errorFrame));
+  }
 }
 
 void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
@@ -191,10 +207,13 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
     case ErrorCode::REJECTED_SETUP:
       signal = StreamCompletionSignal::REJECTED_SETUP;
       break;
-    case ErrorCode::CONNECTION_ERROR:
-      signal = StreamCompletionSignal::CONNECTION_ERROR;
-      break;
 
+    case ErrorCode::
+        CONNECTION_ERROR:
+    // StreamCompletionSignal::CONNECTION_ERROR is reserved for
+    // frameTransport errors
+    // ErrorCode::CONNECTION_ERROR is a normal Frame_ERROR error code which has
+    // nothing to do with frameTransport
     case ErrorCode::APPLICATION_ERROR:
     case ErrorCode::REJECTED:
     case ErrorCode::RESERVED:
@@ -204,8 +223,10 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
       signal = StreamCompletionSignal::ERROR;
   }
 
+  auto exception = std::runtime_error(
+      error.payload_.data->cloneAsValue().moveToFbString().toStdString());
   outputFrameOrEnqueue(error.serializeOut());
-  close(folly::exception_wrapper(), signal);
+  close(std::move(exception), signal);
 }
 
 void ConnectionAutomaton::reconnect(
@@ -317,7 +338,7 @@ void ConnectionAutomaton::processFrameImpl(
   auto streamIdPtr = FrameHeader::peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
-    closeWithError(Frame_ERROR::connectionError("invalid frame"));
+    closeWithError(Frame_ERROR::invalidFrame());
     return;
   }
   auto streamId = *streamIdPtr;
@@ -332,7 +353,7 @@ void ConnectionAutomaton::processFrameImpl(
   // different state machine
   if (resumeCallback_) {
     LOG(ERROR) << "received stream frames during resumption";
-    closeWithError(Frame_ERROR::unexpectedFrame());
+    closeWithError(Frame_ERROR::invalidFrame());
     return;
   }
 
@@ -346,23 +367,21 @@ void ConnectionAutomaton::processFrameImpl(
   automaton->onNextFrame(std::move(frame));
 }
 
-void ConnectionAutomaton::onTerminal(
-    folly::exception_wrapper ex,
-    StreamCompletionSignal signal) {
+void ConnectionAutomaton::onTerminal(folly::exception_wrapper ex) {
   auto thisPtr = this->shared_from_this();
   auto movedEx = folly::makeMoveWrapper(ex);
-  runInExecutor([thisPtr, movedEx, signal]() mutable {
-    thisPtr->onTerminalImpl(movedEx.move(), signal);
+  runInExecutor([thisPtr, movedEx]() mutable {
+    thisPtr->onTerminalImpl(movedEx.move());
   });
 }
 
-void ConnectionAutomaton::onTerminalImpl(
-    folly::exception_wrapper ex,
-    StreamCompletionSignal signal) {
+void ConnectionAutomaton::onTerminalImpl(folly::exception_wrapper ex) {
   if (isResumable_) {
     disconnect(std::move(ex));
   } else {
-    close(std::move(ex), signal);
+    auto termSignal = ex ? StreamCompletionSignal::CONNECTION_ERROR
+                         : StreamCompletionSignal::CONNECTION_END;
+    close(std::move(ex), termSignal);
   }
 }
 
@@ -466,7 +485,7 @@ void ConnectionAutomaton::onConnectionFrame(
           closeWithError(Frame_ERROR::connectionError("can not resume"));
         }
       } else {
-        closeWithError(Frame_ERROR::unexpectedFrame());
+        closeWithError(Frame_ERROR::invalidFrame());
       }
       return;
     }

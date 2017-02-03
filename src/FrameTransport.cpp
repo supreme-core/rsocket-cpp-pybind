@@ -91,26 +91,22 @@ void FrameTransport::onNext(std::unique_ptr<folly::IOBuf> frame) noexcept {
   }
 }
 
-void FrameTransport::terminateFrameProcessor(
-    folly::exception_wrapper ex,
-    StreamCompletionSignal signal) {
+void FrameTransport::terminateFrameProcessor(folly::exception_wrapper ex) {
   // this method can be executed multiple times during terminating
   if (frameProcessor_) {
-    frameProcessor_->onTerminal(std::move(ex), signal);
+    frameProcessor_->onTerminal(std::move(ex));
     frameProcessor_ = nullptr;
   }
 }
 
 void FrameTransport::onComplete() noexcept {
   VLOG(6) << "onComplete";
-  terminateFrameProcessor(
-      folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
+  terminateFrameProcessor(folly::exception_wrapper());
 }
 
 void FrameTransport::onError(folly::exception_wrapper ex) noexcept {
   VLOG(6) << "onError" << ex.what();
-  terminateFrameProcessor(
-      std::move(ex), StreamCompletionSignal::CONNECTION_ERROR);
+  terminateFrameProcessor(std::move(ex));
 }
 
 void FrameTransport::request(size_t n) noexcept {
@@ -130,8 +126,7 @@ void FrameTransport::request(size_t n) noexcept {
 
 void FrameTransport::cancel() noexcept {
   VLOG(6) << "cancel";
-  terminateFrameProcessor(
-      folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
+  terminateFrameProcessor(folly::exception_wrapper());
 }
 
 void FrameTransport::outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame) {
