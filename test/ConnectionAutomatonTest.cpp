@@ -68,6 +68,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         ASSERT_EQ("invalid frame", error.payload_.moveDataToString());
       }));
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1);
+  EXPECT_CALL(*testOutputSubscriber, onError_(_)).Times(0);
 
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
@@ -89,7 +90,8 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
-  connectionAutomaton->close();
+  connectionAutomaton->close(
+      folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
 }
 
 static void terminateTest(
@@ -176,7 +178,8 @@ static void terminateTest(
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
-  connectionAutomaton->close();
+  connectionAutomaton->close(
+      folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
 }
 
 TEST(ConnectionAutomatonTest, CleanTerminateOnSubscribe) {
@@ -271,5 +274,6 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
-  connectionAutomaton->close();
+  connectionAutomaton->close(
+      folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
 }
