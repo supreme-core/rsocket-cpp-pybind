@@ -60,9 +60,14 @@ class FrameTransport :
 
   void terminateFrameProcessor(folly::exception_wrapper);
 
-  std::shared_ptr<FrameProcessor> getFrameProcessor() const;
+  // TODO(t15924567): Recursive locks are evil! This should instead use a
+  // synchronization abstraction which preserves FIFO ordering. However, this is
+  // incrementally better than the race conditions which existed here before.
+  //
+  // Further reading:
+  // https://groups.google.com/forum/?hl=en#!topic/comp.programming.threads/tcrTKnfP8HI%5B1-25%5D
+  mutable std::recursive_mutex mutex_;
 
-  mutable std::mutex frameProcessorLock_;
   std::shared_ptr<FrameProcessor> frameProcessor_;
 
   AllowanceSemaphore writeAllowance_;
