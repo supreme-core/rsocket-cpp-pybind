@@ -7,18 +7,19 @@
 #include <iostream>
 #include "src/AllowanceSemaphore.h"
 #include "src/Common.h"
+#include "src/ConnectionAutomaton.h"
 #include "src/NullRequestHandler.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/SmartPointers.h"
+#include "src/SubscriptionBase.h"
 #include "src/automata/StreamAutomatonBase.h"
 
 namespace reactivesocket {
 
 enum class StreamCompletionSignal;
 
-/// A mixin that represents a flow-control-aware consumer of data.
-template <typename Frame>
+/// A class that represents a flow-control-aware consumer of data.
 class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   using Base = StreamAutomatonBase;
 
@@ -43,50 +44,20 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   }
 
   /// @{
-  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
-    if (Base::isTerminated()) {
-      subscriber->onSubscribe(std::make_shared<NullSubscription>());
-      subscriber->onComplete();
-      return;
-    }
+  void subscribe(std::shared_ptr<Subscriber<Payload>> subscriber);
 
-    DCHECK(!consumingSubscriber_);
-    consumingSubscriber_.reset(std::move(subscriber));
-    consumingSubscriber_.onSubscribe(shared_from_this());
-  }
-
-  void generateRequest(size_t n) {
-    allowance_.release(n);
-    pendingAllowance_.release(n);
-    sendRequests();
-  }
+  void generateRequest(size_t n);
   /// @}
 
  protected:
   /// @{
-  void endStream(StreamCompletionSignal signal) override {
-    if (signal == StreamCompletionSignal::GRACEFUL) {
-      consumingSubscriber_.onComplete();
-    } else {
-      consumingSubscriber_.onError(
-          StreamInterruptedException(static_cast<int>(signal)));
-    }
-    Base::endStream(signal);
-  }
+  void endStream(StreamCompletionSignal signal) override;
 
-  void pauseStream(RequestHandler& requestHandler) override {
-    if (consumingSubscriber_) {
-      requestHandler.onSubscriberPaused(consumingSubscriber_);
-    }
-  }
+  void pauseStream(RequestHandler& requestHandler) override;
 
-  void resumeStream(RequestHandler& requestHandler) override {
-    if (consumingSubscriber_) {
-      requestHandler.onSubscriberResumed(consumingSubscriber_);
-    }
-  }
+  void resumeStream(RequestHandler& requestHandler) override;
 
-  void processPayload(Frame&&);
+  void processPayload(Payload&&);
 
   void onError(folly::exception_wrapper ex);
   /// @}
@@ -115,5 +86,3 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   AllowanceSemaphore pendingAllowance_;
 };
 }
-
-#include "src/mixins/ConsumerMixin-inl.h"
