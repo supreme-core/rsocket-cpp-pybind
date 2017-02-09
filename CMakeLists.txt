@@ -172,15 +172,13 @@ add_library(
   src/SubscriptionBase.h
   src/tcp/TcpDuplexConnection.cpp
   src/tcp/TcpDuplexConnection.h
-  src/ClientResumeStatusCallback.h
-  src/Executor.h
-  src/automata/StreamAutomatonBase.cpp
-  src/automata/StreamAutomatonBase.h
-        src/automata/SubscriptionResponder.cpp
-  src/FrameTransport.cpp
-  src/FrameTransport.h
-  src/FrameProcessor.h
-  src/ReactiveSocket.h src/StreamsFactory.cpp src/StreamsFactory.h)
+  src/FrameSerializer.cpp
+  src/FrameSerializer.h
+  src/versions/FrameSerializer_v0.cpp
+  src/versions/FrameSerializer_v0.h
+  src/versions/FrameSerializer_v0_1.h
+  src/versions/FrameSerializer_v1_0.cpp
+  src/versions/FrameSerializer_v1_0.h)
 
 target_link_libraries(
   ReactiveSocket
