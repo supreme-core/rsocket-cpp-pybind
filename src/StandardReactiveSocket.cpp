@@ -415,6 +415,10 @@ void StandardReactiveSocket::tryClientResume(
   frameTransport->outputFrameOrEnqueue(
       connection_->createResumeFrame(token).serializeOut());
 
+  // if the client was still connected we will disconnected the old connection
+  // with a clear error message
+  connection_->disconnect(
+      std::runtime_error("resuming client on a different connection"));
   connection_->setResumable(true);
   connection_->reconnect(std::move(frameTransport), std::move(resumeCallback));
 }
@@ -425,7 +429,11 @@ bool StandardReactiveSocket::tryResumeServer(
   // TODO: verify/assert that the new frameTransport is on the same event base
   debugCheckCorrectExecutor();
   checkNotClosed();
-  disconnect();
+
+  // if the server was still connected we will disconnected it with a clear
+  // error message
+  connection_->disconnect(
+      std::runtime_error("resuming server on a different connection"));
   // TODO: verify, we should not be receiving any frames, not a single one
   connection_->connect(std::move(frameTransport), /*sendPendingFrames=*/false);
   return connection_->resumeFromPositionOrClose(position);
