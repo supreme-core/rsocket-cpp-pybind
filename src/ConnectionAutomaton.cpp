@@ -240,7 +240,6 @@ void ConnectionAutomaton::reconnect(
   CHECK(isResumable_);
   CHECK(mode_ == ReactiveSocketMode::CLIENT);
 
-  disconnect(std::runtime_error("reconnecting to a different connection"));
   // TODO: output frame buffer should not be written to the new connection until
   // we receive resume ok
   resumeCallback_ = std::move(resumeCallback);
