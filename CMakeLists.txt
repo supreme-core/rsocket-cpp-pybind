@@ -118,6 +118,8 @@ add_library(
   src/automata/RequestResponseRequester.h
   src/automata/RequestResponseResponder.cpp
   src/automata/RequestResponseResponder.h
+  src/automata/StreamAutomatonBase.cpp
+  src/automata/StreamAutomatonBase.h
   src/automata/StreamRequester.cpp
   src/automata/StreamRequester.h
   src/automata/StreamResponder.h
@@ -127,12 +129,11 @@ add_library(
   src/automata/StreamSubscriptionResponderBase.h
   src/automata/SubscriptionRequester.cpp
   src/automata/SubscriptionRequester.h
+  src/automata/SubscriptionResponder.cpp
   src/automata/SubscriptionResponder.h
+  src/ClientResumeStatusCallback.h
   src/Common.cpp
   src/Common.h
-  src/concurrent/atomic64_gcc_x86_64.h
-  src/concurrent/atomic64.h
-  src/concurrent/OneToOneRingBuffer.h
   src/ConnectionAutomaton.cpp
   src/ConnectionAutomaton.h
   src/ConnectionSetupPayload.cpp
@@ -140,6 +141,7 @@ add_library(
   src/DuplexConnection.h
   src/EnableSharedFromThis.h
   src/Executor.cpp
+  src/Executor.h
   src/folly/FollyKeepaliveTimer.cpp
   src/folly/FollyKeepaliveTimer.h
   src/Frame.cpp
@@ -150,23 +152,31 @@ add_library(
   src/framed/FramedReader.h
   src/framed/FramedWriter.cpp
   src/framed/FramedWriter.h
-  src/mixins/ConsumerMixin-inl.h
+  src/FrameProcessor.h
+  src/FrameTransport.cpp
+  src/FrameTransport.h
+  src/mixins/ConsumerMixin.cpp
   src/mixins/ConsumerMixin.h
   src/mixins/PublisherMixin.h
   src/NullRequestHandler.cpp
   src/NullRequestHandler.h
   src/Payload.cpp
   src/Payload.h
-  src/StandardReactiveSocket.cpp
-  src/StandardReactiveSocket.h
+  src/ReactiveSocket.h
   src/ReactiveStreamsCompat.h
   src/RequestHandler.h
   src/ResumeCache.cpp
   src/ResumeCache.h
-  src/ResumeTracker.h
   src/ResumeTracker.cpp
+  src/ResumeTracker.h
+  src/ServerConnectionAcceptor.cpp
+  src/ServerConnectionAcceptor.h
+  src/StandardReactiveSocket.cpp
+  src/StandardReactiveSocket.h
   src/Stats.cpp
   src/Stats.h
+  src/StreamsFactory.cpp
+  src/StreamsFactory.h
   src/StreamState.h
   src/SubscriberBase.h
   src/SubscriptionBase.h
@@ -198,7 +208,6 @@ enable_testing()
 
 add_executable(
   tests
-  test/concurrent/OneToOneRingBufferTest.cpp
   test/ConnectionAutomatonTest.cpp
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
