@@ -179,9 +179,6 @@ void StandardReactiveSocket::createResponder(
     std::unique_ptr<folly::IOBuf> serializedFrame) {
   debugCheckCorrectExecutor();
 
-  //TODO: comparing string versions is odd because from version
-  // 10.0 the lexicographic comparison doesn't work
-  // we should change the version to struct
   if (streamId != 0 &&
       connection_->frameSerializer().protocolVersion() > "0.0" &&
       !streamsFactory_.registerNewPeerStreamId(streamId)) {
@@ -210,14 +207,10 @@ void StandardReactiveSocket::createResponder(
           FrameSerializer::createFrameSerializer(folly::to<std::string>(
               frame.versionMajor_, ".", frame.versionMinor_)));
 
-      auto streamState = handler->handleSetupPayload(
-          *this,
-          ConnectionSetupPayload(
-              std::move(frame.metadataMimeType_),
-              std::move(frame.dataMimeType_),
-              std::move(frame.payload_),
-              false, // TODO: resumable flag should be received in SETUP frame
-              frame.token_));
+      ConnectionSetupPayload setupPayload;
+      frame.moveToSetupPayload(setupPayload);
+      auto streamState =
+          handler->handleSetupPayload(*this, std::move(setupPayload));
 
       // TODO(lehecka): use again
       // connection.useStreamState(streamState);
