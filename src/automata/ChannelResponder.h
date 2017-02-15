@@ -13,12 +13,9 @@
 namespace reactivesocket {
 
 /// Implementation of stream automaton that represents a Channel responder.
-class ChannelResponder : public PublisherMixin<
-                             Frame_RESPONSE,
-                             ConsumerMixin<Frame_REQUEST_CHANNEL>>,
+class ChannelResponder : public PublisherMixin<ConsumerMixin>,
                          public SubscriberBase {
-  using Base =
-      PublisherMixin<Frame_RESPONSE, ConsumerMixin<Frame_REQUEST_CHANNEL>>;
+  using Base = PublisherMixin<ConsumerMixin>;
 
  public:
   explicit ChannelResponder(

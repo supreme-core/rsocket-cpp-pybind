@@ -40,9 +40,13 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
         Base::generateRequest(remainingN);
       }
     } break;
-    case State::REQUESTED:
-      Base::onNext(std::move(request));
+    case State::REQUESTED: {
+      debugCheckOnNextOnCompleteOnError();
+      Frame_REQUEST_CHANNEL frame(
+          streamId_, FrameFlags_EMPTY, std::move(request));
+      connection_->outputFrameOrEnqueue(frame.serializeOut());
       break;
+    }
     case State::CLOSED:
       break;
   }
@@ -147,7 +151,7 @@ void ChannelRequester::onNextFrame(Frame_RESPONSE&& frame) {
       break;
   }
 
-  processPayload(std::move(frame));
+  processPayload(std::move(frame.payload_));
 
   if (end) {
     connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);

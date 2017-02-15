@@ -14,7 +14,9 @@ void RequestResponseResponder::onNextImpl(Payload response) noexcept {
   switch (state_) {
     case State::RESPONDING: {
       state_ = State::CLOSED;
-      Base::onNext(std::move(response), FrameFlags_COMPLETE);
+      debugCheckOnNextOnCompleteOnError();
+      Frame_RESPONSE frame(streamId_, FrameFlags_COMPLETE, std::move(response));
+      connection_->outputFrameOrEnqueue(frame.serializeOut());
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
       break;
     }
