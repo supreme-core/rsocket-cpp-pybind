@@ -1,5 +1,5 @@
 {
-  "allowDirectMerges": true,
-  "allowBotCommands": true,
+  "allowDirectMerges": false,
+  "allowBotCommands": false,
   "internalRepository": "fbsource"
 }
