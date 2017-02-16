@@ -68,12 +68,16 @@ cpp_library(
     srcs = glob([
         'src/AbstractStreamAutomaton.cpp',
         'src/automata/*.cpp',
+        'src/mixins/*.cpp',
+        'src/versions/*.cpp',
         'src/Common.cpp',
         'src/ConnectionAutomaton.cpp',
         'src/ConnectionSetupPayload.cpp',
         'src/Frame.cpp',
+        'src/FrameSerializer.cpp',
         'src/FrameTransport.cpp',
         'src/NullRequestHandler.cpp',
+        'src/mixins/*.cpp', # temporarily
         'src/Payload.cpp',
         'src/RequestHandler.cpp',
         'src/ResumeCache.cpp',
@@ -148,7 +152,6 @@ cpp_unittest(
     ]),
     srcs = glob([
         'test/*.cpp',
-        'test/concurrent/*.cpp',
         'test/framed/*.cpp',
         'test/simple/*.cpp',
         ]),
