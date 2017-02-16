@@ -4,7 +4,6 @@
 #include <folly/Random.h>
 #include <folly/io/IOBuf.h>
 #include <random>
-#include "src/AbstractStreamAutomaton.h"
 
 namespace reactivesocket {
 

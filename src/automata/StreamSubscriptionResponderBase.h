@@ -4,7 +4,6 @@
 
 #include <iosfwd>
 
-#include "src/AbstractStreamAutomaton.h"
 #include "src/Frame.h"
 #include "src/SubscriberBase.h"
 #include "src/automata/StreamAutomatonBase.h"

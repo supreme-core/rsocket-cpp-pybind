@@ -108,8 +108,6 @@ include_directories(${GMOCK_SOURCE_DIR}/googletest/include)
 
 add_library(
   ReactiveSocket
-  src/AbstractStreamAutomaton.cpp
-  src/AbstractStreamAutomaton.h
   src/automata/ChannelRequester.cpp
   src/automata/ChannelRequester.h
   src/automata/ChannelResponder.cpp

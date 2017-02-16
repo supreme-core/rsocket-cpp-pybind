@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "src/AbstractStreamAutomaton.h"
 #include "src/AllowanceSemaphore.h"
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"

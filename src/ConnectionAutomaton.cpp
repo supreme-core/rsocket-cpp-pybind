@@ -7,12 +7,12 @@
 #include <folly/Optional.h>
 #include <folly/String.h>
 #include <folly/io/async/EventBase.h>
-#include "src/AbstractStreamAutomaton.h"
 #include "src/ClientResumeStatusCallback.h"
 #include "src/DuplexConnection.h"
 #include "src/FrameTransport.h"
 #include "src/Stats.h"
 #include "src/StreamState.h"
+#include "src/automata/StreamAutomatonBase.h"
 
 namespace reactivesocket {
 
@@ -248,7 +248,7 @@ void ConnectionAutomaton::reconnect(
 
 void ConnectionAutomaton::addStream(
     StreamId streamId,
-    std::shared_ptr<AbstractStreamAutomaton> automaton) {
+    std::shared_ptr<StreamAutomatonBase> automaton) {
   debugCheckCorrectExecutor();
   auto result = streamState_->streams_.emplace(streamId, std::move(automaton));
   (void)result;

@@ -16,7 +16,7 @@
 
 namespace reactivesocket {
 
-class AbstractStreamAutomaton;
+class StreamAutomatonBase;
 class ClientResumeStatusCallback;
 class ConnectionAutomaton;
 class DuplexConnection;
@@ -53,7 +53,7 @@ class FrameSink {
   /// on the connection.
   ///
   /// This may synchronously deliver terminal signals to all
-  /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
+  /// StreamAutomatonBase attached to this ConnectionAutomaton.
   virtual void disconnectOrCloseWithError(Frame_ERROR&& error) = 0;
 
   virtual void sendKeepalive() = 0;
@@ -98,7 +98,7 @@ class ConnectionAutomaton
   /// Terminates underlying connection.
   ///
   /// This may synchronously deliver terminal signals to all
-  /// AbstractStreamAutomaton attached to this ConnectionAutomaton.
+  /// StreamAutomatonBase attached to this ConnectionAutomaton.
   void close(folly::exception_wrapper, StreamCompletionSignal);
 
   std::shared_ptr<FrameTransport> detachFrameTransport();
@@ -111,7 +111,7 @@ class ConnectionAutomaton
   ~ConnectionAutomaton();
 
   /// @{
-  /// A contract exposed to AbstractStreamAutomaton, modelled after Subscriber
+  /// A contract exposed to StreamAutomatonBase, modelled after Subscriber
   /// and Subscription contracts, while omitting flow control related signals.
 
   /// Adds a stream automaton to the connection.
@@ -123,7 +123,7 @@ class ConnectionAutomaton
   /// ::writeFrame after calling this method.
   void addStream(
       StreamId streamId,
-      std::shared_ptr<AbstractStreamAutomaton> automaton);
+      std::shared_ptr<StreamAutomatonBase> automaton);
 
   /// Indicates that the stream should be removed from the connection.
   ///
