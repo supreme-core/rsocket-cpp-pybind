@@ -705,7 +705,9 @@ void ConnectionAutomaton::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
   ss << FrameHeader::peekType(*frame);
   stats_.frameWritten(ss.str());
 
-  streamState_->resumeCache_.trackSentFrame(*frame);
+  if (isResumable_) {
+    streamState_->resumeCache_.trackSentFrame(*frame);
+  }
   frameTransport_->outputFrameOrEnqueue(std::move(frame));
 }
 
