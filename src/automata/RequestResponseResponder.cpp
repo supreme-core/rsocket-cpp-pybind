@@ -16,7 +16,8 @@ void RequestResponseResponder::onNextImpl(Payload response) noexcept {
       state_ = State::CLOSED;
       debugCheckOnNextOnCompleteOnError();
       Frame_RESPONSE frame(streamId_, FrameFlags_COMPLETE, std::move(response));
-      connection_->outputFrameOrEnqueue(frame.serializeOut());
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
       break;
     }
@@ -30,8 +31,9 @@ void RequestResponseResponder::onCompleteImpl() noexcept {
   switch (state_) {
     case State::RESPONDING: {
       state_ = State::CLOSED;
+      auto frame = Frame_RESPONSE::complete(streamId_);
       connection_->outputFrameOrEnqueue(
-          Frame_RESPONSE::complete(streamId_).serializeOut());
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
     } break;
     case State::CLOSED:
@@ -46,8 +48,9 @@ void RequestResponseResponder::onErrorImpl(
     case State::RESPONDING: {
       state_ = State::CLOSED;
       auto msg = ex.what().toStdString();
+      auto frame = Frame_ERROR::applicationError(streamId_, msg);
       connection_->outputFrameOrEnqueue(
-          Frame_ERROR::applicationError(streamId_, msg).serializeOut());
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::ERROR);
     } break;
     case State::CLOSED:

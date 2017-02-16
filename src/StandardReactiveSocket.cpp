@@ -53,6 +53,10 @@ StandardReactiveSocket::StandardReactiveSocket(
           mode)),
       streamsFactory_(connection_, mode),
       executor_(executor) {
+  // TODO (lehecka): In case of server, FrameSerializer should be ideally set
+  // after inspecting the SETUP frame from the client
+  connection_->setFrameSerializer(
+      FrameSerializer::createFrameSerializer(kPROTOCOL_VERSION));
   debugCheckCorrectExecutor();
   stats.socketCreated();
 }
@@ -161,15 +165,16 @@ void StandardReactiveSocket::requestFireAndForget(Payload request) {
       streamsFactory_.getNextStreamId(),
       FrameFlags_EMPTY,
       std::move(std::move(request)));
-  connection_->outputFrameOrEnqueue(frame.serializeOut());
+  connection_->outputFrameOrEnqueue(
+      connection_->frameSerializer().serializeOut(std::move(frame)));
 }
 
 void StandardReactiveSocket::metadataPush(
     std::unique_ptr<folly::IOBuf> metadata) {
   debugCheckCorrectExecutor();
   checkNotClosed();
-  connection_->outputFrameOrEnqueue(
-      Frame_METADATA_PUSH(std::move(metadata)).serializeOut());
+  connection_->outputFrameOrEnqueue(connection_->frameSerializer().serializeOut(
+      Frame_METADATA_PUSH(std::move(metadata))));
 }
 
 void StandardReactiveSocket::createResponder(
@@ -179,6 +184,9 @@ void StandardReactiveSocket::createResponder(
     std::unique_ptr<folly::IOBuf> serializedFrame) {
   debugCheckCorrectExecutor();
 
+  // TODO (lehecka): comparing string versions is odd because from version 10.0
+  // the lexicographic comparison doesn't work we should change the version to
+  // struct
   if (streamId != 0 &&
       connection_->frameSerializer().protocolVersion() > "0.0" &&
       !streamsFactory_.registerNewPeerStreamId(streamId)) {
@@ -189,7 +197,7 @@ void StandardReactiveSocket::createResponder(
   switch (type) {
     case FrameType::SETUP: {
       Frame_SETUP frame;
-      if (!connection.deserializeFrameOrError(
+      if (!connection_->deserializeFrameOrError(
               frame, std::move(serializedFrame))) {
         return;
       }
@@ -352,7 +360,8 @@ void StandardReactiveSocket::clientConnect(
   // should retry without resumability
 
   // making sure we send setup frame first
-  frameTransport->outputFrameOrEnqueue(frame.serializeOut());
+  frameTransport->outputFrameOrEnqueue(
+      connection_->frameSerializer().serializeOut(std::move(frame)));
   // then the rest of the cached frames will be sent
   connection_->connect(std::move(frameTransport), true);
 }
@@ -411,9 +420,9 @@ void StandardReactiveSocket::tryClientResume(
   debugCheckCorrectExecutor();
   checkNotClosed();
   CHECK(frameTransport && !frameTransport->isClosed());
-
   frameTransport->outputFrameOrEnqueue(
-      connection_->createResumeFrame(token).serializeOut());
+      connection_->frameSerializer().serializeOut(
+          connection_->createResumeFrame(token)));
 
   // if the client was still connected we will disconnected the old connection
   // with a clear error message

@@ -14,6 +14,7 @@
 #include "MockStats.h"
 #include "src/StandardReactiveSocket.h"
 #include "src/framed/FramedDuplexConnection.h"
+#include "src/versions/FrameSerializer_v0_1.h"
 #include "test/InlineConnection.h"
 #include "test/MockRequestHandler.h"
 #include "test/ReactiveStreamsMocksCompat.h"
@@ -327,7 +328,7 @@ class ServerSideConcurrencyTest : public testing::Test {
                   }));
 
               // TODO(t15917213): Re-enable this assertion!
-              //EXPECT_CALL(*serverInput, onNext_(_)).Times(1);
+              // EXPECT_CALL(*serverInput, onNext_(_)).Times(1);
 
               // because we cancel the stream in onSubscribe
               EXPECT_CALL(*serverInput, onComplete_()).WillOnce(Invoke([&]() {
@@ -555,18 +556,19 @@ class InitialRequestNDeliveredTest : public testing::Test {
         Stats::noop(),
         false);
 
+    Frame_SETUP frameSetup(
+        FrameFlags_EMPTY,
+        0,
+        1,
+        0,
+        0,
+        ResumeIdentificationToken::generateNew(),
+        "",
+        "",
+        Payload());
+    FrameSerializerV0_1 frameSerializer;
     testConnection->getOutput()->onNext(
-        Frame_SETUP(
-            FrameFlags_EMPTY,
-            0,
-            1,
-            0,
-            0,
-            ResumeIdentificationToken::generateNew(),
-            "",
-            "",
-            Payload())
-            .serializeOut());
+        frameSerializer.serializeOut(std::move(frameSetup)));
   }
 
   void loopEventBaseUntilDone() {
@@ -589,25 +591,29 @@ class InitialRequestNDeliveredTest : public testing::Test {
   std::atomic<bool> done{false};
   size_t expectedRequestN{kRequestN};
   folly::EventBase eventBase_;
+  FrameSerializerV0_1 frameSerializer;
 };
 
 TEST_F(InitialRequestNDeliveredTest, RequestResponse) {
   expectedRequestN = 1;
   Frame_REQUEST_RESPONSE requestFrame(kStreamId, FrameFlags_EMPTY, Payload());
-  testConnection->getOutput()->onNext(requestFrame.serializeOut());
+  testConnection->getOutput()->onNext(
+      frameSerializer.serializeOut(std::move(requestFrame)));
   loopEventBaseUntilDone();
 }
 
 TEST_F(InitialRequestNDeliveredTest, RequestStream) {
   Frame_REQUEST_STREAM requestFrame(
       kStreamId, FrameFlags_EMPTY, kRequestN, Payload());
-  testConnection->getOutput()->onNext(requestFrame.serializeOut());
+  testConnection->getOutput()->onNext(
+      frameSerializer.serializeOut(std::move(requestFrame)));
   loopEventBaseUntilDone();
 }
 
 TEST_F(InitialRequestNDeliveredTest, RequestSubscription) {
   Frame_REQUEST_SUB requestFrame(
       kStreamId, FrameFlags_EMPTY, kRequestN, Payload());
-  testConnection->getOutput()->onNext(requestFrame.serializeOut());
+  testConnection->getOutput()->onNext(
+      frameSerializer.serializeOut(std::move(requestFrame)));
   loopEventBaseUntilDone();
 }

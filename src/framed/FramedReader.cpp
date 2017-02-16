@@ -54,8 +54,8 @@ void FramedReader::parseFrames() {
     // IOBufQueue::split(0) returns a null unique_ptr, so we create an empty
     // IOBuf object and pass a unique_ptr to it instead. This simplifies
     // clients' code because they can assume the pointer is non-null.
-    auto nextFrame = payloadSize != 0 ?
-      payloadQueue_.split(payloadSize) : folly::IOBuf::create(0);
+    auto nextFrame = payloadSize != 0 ? payloadQueue_.split(payloadSize)
+                                      : folly::IOBuf::create(0);
 
     CHECK(allowance_.tryAcquire(1));
     frames_.onNext(std::move(nextFrame));

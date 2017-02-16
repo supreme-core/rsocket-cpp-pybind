@@ -6,6 +6,7 @@
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
 #include <src/NullRequestHandler.h>
+#include <src/versions/FrameSerializer_v0_1.h>
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
 #include "src/StreamState.h"
@@ -87,6 +88,8 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
+  connectionAutomaton->setFrameSerializer(
+      std::make_unique<FrameSerializerV0_1>());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
@@ -175,6 +178,8 @@ static void terminateTest(
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
+  connectionAutomaton->setFrameSerializer(
+      std::make_unique<FrameSerializerV0_1>());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
@@ -236,11 +241,14 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(
             framedTestConnection->getOutput());
         CHECK(framedWriter);
-
+        FrameSerializerV0_1 frameSerializer;
         std::vector<std::unique_ptr<folly::IOBuf>> frames;
-        frames.push_back(Frame_REQUEST_N(streamId, 1).serializeOut());
-        frames.push_back(Frame_REQUEST_N(streamId + 1, 1).serializeOut());
-        frames.push_back(Frame_REQUEST_N(streamId + 2, 1).serializeOut());
+        frames.push_back(
+            frameSerializer.serializeOut(Frame_REQUEST_N(streamId, 1)));
+        frames.push_back(
+            frameSerializer.serializeOut(Frame_REQUEST_N(streamId + 1, 1)));
+        frames.push_back(
+            frameSerializer.serializeOut(Frame_REQUEST_N(streamId + 2, 1)));
 
         framedWriter->onNextMultiple(std::move(frames));
       }))
@@ -271,6 +279,8 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
+  connectionAutomaton->setFrameSerializer(
+      std::make_unique<FrameSerializerV0_1>());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);

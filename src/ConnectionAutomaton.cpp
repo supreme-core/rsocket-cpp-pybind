@@ -226,7 +226,7 @@ void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
 
   auto exception = std::runtime_error(
       error.payload_.data->cloneAsValue().moveToFbString().toStdString());
-  outputFrameOrEnqueue(error.serializeOut());
+  outputFrameOrEnqueue(frameSerializer().serializeOut(std::move(error)));
   close(std::move(exception), signal);
 }
 
@@ -402,7 +402,8 @@ void ConnectionAutomaton::onConnectionFrame(
       if (mode_ == ReactiveSocketMode::SERVER) {
         if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
           frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
-          outputFrameOrEnqueue(frame.serializeOut(remoteResumeable_));
+          outputFrameOrEnqueue(frameSerializer().serializeOut(
+              std::move(frame), remoteResumeable_));
         } else {
           closeWithError(
               Frame_ERROR::connectionError("keepalive without flag"));
@@ -457,7 +458,8 @@ void ConnectionAutomaton::onConnectionFrame(
         //
         //      if (canResume) {
         //        outputFrameOrEnqueue(
-        //            Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
+        //            Frame_RESUME_OK(
+        //            streamState_->resumeTracker_.impliedPosition())
         //                .serializeOut());
         //        for (auto it : streamState_->streams_) {
         //          const StreamId streamId = it.first;
@@ -545,7 +547,8 @@ void ConnectionAutomaton::sendKeepalive() {
       FrameFlags_KEEPALIVE_RESPOND,
       streamState_->resumeTracker_.impliedPosition(),
       folly::IOBuf::create(0));
-  outputFrameOrEnqueue(pingFrame.serializeOut(remoteResumeable_));
+  outputFrameOrEnqueue(
+      frameSerializer().serializeOut(std::move(pingFrame), remoteResumeable_));
 }
 
 Frame_RESUME ConnectionAutomaton::createResumeFrame(
@@ -570,9 +573,8 @@ bool ConnectionAutomaton::resumeFromPositionOrClose(ResumePosition position) {
   DCHECK(mode_ == ReactiveSocketMode::SERVER);
 
   if (streamState_->resumeCache_.isPositionAvailable(position)) {
-    frameTransport_->outputFrameOrEnqueue(
-        Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())
-            .serializeOut());
+    frameTransport_->outputFrameOrEnqueue(frameSerializer().serializeOut(
+        Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())));
     resumeFromPosition(position);
     return true;
   } else {

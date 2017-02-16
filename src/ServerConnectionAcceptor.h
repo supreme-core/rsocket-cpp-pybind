@@ -4,8 +4,10 @@
 
 #include <memory>
 #include <unordered_set>
+
 #include "src/Common.h"
 #include "src/ConnectionSetupPayload.h"
+#include "src/versions/FrameSerializer_v0_1.h"
 
 namespace folly {
 class EventBase;
@@ -58,6 +60,7 @@ class ServerConnectionAcceptor {
  private:
   std::unordered_set<std::shared_ptr<FrameTransport>> connections_;
   Stats& stats_;
+  FrameSerializerV0_1 frameSerializer_;
 };
 
 } // reactivesocket

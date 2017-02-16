@@ -150,12 +150,12 @@ class SubscriberBaseT : public Subscriber<T>,
   }
 
  private:
-   void bugTrap() {
-     // TODO(16080326): this is a temporary trap set to catch use-after-free bug
-     // will be removed
-     trap_ = ~trap_;
-     VLOG(6) << trap_;
-   }
+  void bugTrap() {
+    // TODO(16080326): this is a temporary trap set to catch use-after-free bug
+    // will be removed
+    trap_ = ~trap_;
+    VLOG(6) << trap_;
+  }
 
   // Once the subscription is cancelled we will no longer deliver any
   // other signals.
@@ -167,7 +167,7 @@ class SubscriberBaseT : public Subscriber<T>,
 
   std::shared_ptr<Subscription> originalSubscription_;
 
-  //TODO: remove once we catch the use-after-free bug
+  // TODO: remove once we catch the use-after-free bug
   uint64_t trap_{1};
 };
 

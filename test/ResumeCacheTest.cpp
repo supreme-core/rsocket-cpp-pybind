@@ -4,10 +4,12 @@
 #include <folly/io/IOBuf.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include "src/Frame.h"
 #include "src/FrameTransport.h"
 #include "src/ResumeCache.h"
 #include "src/Stats.h"
+#include "src/versions/FrameSerializer_v0_1.h"
 #include "test/InlineConnection.h"
 
 using namespace ::testing;
@@ -48,8 +50,9 @@ TEST(ResumeCacheTest, EmptyCache) {
 TEST(ResumeCacheTest, OneFrame) {
   ResumeCache cache(Stats::noop());
   FrameTransportMock transport;
+  FrameSerializerV0_1 frameSerializer;
 
-  auto frame1 = Frame_CANCEL(0).serializeOut();
+  auto frame1 = frameSerializer.serializeOut(Frame_CANCEL(0));
   const auto frame1Size = frame1->computeChainDataLength();
 
   cache.trackSentFrame(*frame1);
@@ -89,10 +92,12 @@ TEST(ResumeCacheTest, OneFrame) {
 TEST(ResumeCacheTest, TwoFrames) {
   ResumeCache cache(Stats::noop());
   FrameTransportMock transport;
+  FrameSerializerV0_1 frameSerializer;
 
-  auto frame1 = Frame_CANCEL(0).serializeOut();
+  auto frame1 = frameSerializer.serializeOut(Frame_CANCEL(0));
   const auto frame1Size = frame1->computeChainDataLength();
-  auto frame2 = Frame_REQUEST_N(0, 0).serializeOut();
+
+  auto frame2 = frameSerializer.serializeOut(Frame_REQUEST_N(0, 0));
   const auto frame2Size = frame2->computeChainDataLength();
 
   cache.trackSentFrame(*frame1);

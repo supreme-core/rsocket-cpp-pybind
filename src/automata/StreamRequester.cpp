@@ -10,6 +10,7 @@ void StreamRequester::sendRequestFrame(
     Payload&& request) {
   Frame_REQUEST_STREAM frame(
       streamId_, flags, static_cast<uint32_t>(initialN), std::move(request));
-  connection_->outputFrameOrEnqueue(frame.serializeOut());
+  connection_->outputFrameOrEnqueue(
+      connection_->frameSerializer().serializeOut(std::move(frame)));
 }
 }

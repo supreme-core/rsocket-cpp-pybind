@@ -26,7 +26,8 @@ void RequestResponseRequester::requestImpl(size_t n) noexcept {
     state_ = State::REQUESTED;
     Frame_REQUEST_RESPONSE frame(
         streamId_, FrameFlags_EMPTY, std::move(std::move(initialPayload_)));
-    connection_->outputFrameOrEnqueue(frame.serializeOut());
+    connection_->outputFrameOrEnqueue(
+        connection_->frameSerializer().serializeOut(std::move(frame)));
   }
 
   if (payload_) {
@@ -46,7 +47,9 @@ void RequestResponseRequester::cancelImpl() noexcept {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
-      connection_->outputFrameOrEnqueue(Frame_CANCEL(streamId_).serializeOut());
+      auto frame = Frame_CANCEL(streamId_);
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
     } break;
     case State::CLOSED:

@@ -6,6 +6,7 @@
 #include <gmock/gmock.h>
 
 #include "src/Frame.h"
+#include "src/versions/FrameSerializer_v0_1.h"
 
 using namespace ::testing;
 using namespace ::reactivesocket;
@@ -14,18 +15,23 @@ using namespace ::reactivesocket;
 
 template <typename Frame, typename... Args>
 Frame reserialize_resume(bool resumable, Args... args) {
-  Frame frame;
-  EXPECT_TRUE(frame.deserializeFrom(
-      resumable, Frame(std::forward<Args>(args)...).serializeOut(resumable)));
-  return frame;
+  Frame givenFrame, newFrame;
+  givenFrame = Frame(std::forward<Args>(args)...);
+  FrameSerializerV0_1 frameSerializer;
+  EXPECT_TRUE(newFrame.deserializeFrom(
+      resumable,
+      frameSerializer.serializeOut(std::move(givenFrame), resumable)));
+  return newFrame;
 }
 
 template <typename Frame, typename... Args>
 Frame reserialize(Args... args) {
-  Frame frame;
-  EXPECT_TRUE(
-      frame.deserializeFrom(Frame(std::forward<Args>(args)...).serializeOut()));
-  return frame;
+  Frame givenFrame, newFrame;
+  givenFrame = Frame(std::forward<Args>(args)...);
+  FrameSerializerV0_1 frameSerializer;
+  EXPECT_TRUE(newFrame.deserializeFrom(
+      frameSerializer.serializeOut(std::move(givenFrame))));
+  return newFrame;
 }
 
 template <typename Frame>

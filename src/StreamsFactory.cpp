@@ -22,8 +22,7 @@ StreamsFactory::StreamsFactory(
               ? 1 /*Streams initiated by a client MUST use
                     odd-numbered stream identifiers*/
               : 2 /*streams initiated by the server MUST use
-                    even-numbered stream identifiers*/) {
-}
+                    even-numbered stream identifiers*/) {}
 
 std::shared_ptr<Subscriber<Payload>> StreamsFactory::createChannelRequester(
     std::shared_ptr<Subscriber<Payload>> responseSink,

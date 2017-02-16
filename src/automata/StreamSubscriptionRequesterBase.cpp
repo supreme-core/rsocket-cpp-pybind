@@ -53,7 +53,9 @@ void StreamSubscriptionRequesterBase::cancelImpl() noexcept {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
-      connection_->outputFrameOrEnqueue(Frame_CANCEL(streamId_).serializeOut());
+      auto frame = Frame_CANCEL(streamId_);
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
     } break;
     case State::CLOSED:

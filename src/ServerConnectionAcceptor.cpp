@@ -26,7 +26,7 @@ void ServerConnectionAcceptor::processFrame(
       Frame_SETUP setupFrame;
       if (!setupFrame.deserializeFrom(std::move(frame))) {
         transport->outputFrameOrEnqueue(
-            Frame_ERROR::invalidFrame().serializeOut());
+            frameSerializer_.serializeOut(Frame_ERROR::invalidFrame()));
         transport->close(folly::exception_wrapper());
         break;
       }
@@ -43,7 +43,7 @@ void ServerConnectionAcceptor::processFrame(
       Frame_RESUME resumeFrame;
       if (!resumeFrame.deserializeFrom(std::move(frame))) {
         transport->outputFrameOrEnqueue(
-            Frame_ERROR::invalidFrame().serializeOut());
+            frameSerializer_.serializeOut(Frame_ERROR::invalidFrame()));
         transport->close(folly::exception_wrapper());
         break;
       }
@@ -69,11 +69,12 @@ void ServerConnectionAcceptor::processFrame(
     case FrameType::RESERVED:
     case FrameType::RESPONSE:
     case FrameType::RESUME_OK:
-    default:
+    default: {
       transport->outputFrameOrEnqueue(
-          Frame_ERROR::unexpectedFrame().serializeOut());
+          frameSerializer_.serializeOut(Frame_ERROR::unexpectedFrame()));
       transport->close(folly::exception_wrapper());
       break;
+    }
   }
 }
 

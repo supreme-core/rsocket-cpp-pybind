@@ -1,7 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/FrameSerializer.h"
-#include <glog/logging.h>
 #include "src/versions/FrameSerializer_v0.h"
 #include "src/versions/FrameSerializer_v0_1.h"
 #include "src/versions/FrameSerializer_v1_0.h"

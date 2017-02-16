@@ -74,15 +74,17 @@ void ConsumerMixin::sendRequests() {
   size_t toSync = Frame_REQUEST_N::kMaxRequestN;
   toSync = pendingAllowance_.drainWithLimit(toSync);
   if (toSync > 0) {
+    auto frame =
+        Frame_REQUEST_N(Base::streamId_, static_cast<uint32_t>(toSync));
     Base::connection_->outputFrameOrEnqueue(
-        Frame_REQUEST_N(Base::streamId_, static_cast<uint32_t>(toSync))
-            .serializeOut());
+        Base::connection_->frameSerializer().serializeOut(std::move(frame)));
   }
 }
 
 void ConsumerMixin::handleFlowControlError() {
   consumingSubscriber_.onError(std::runtime_error("surplus response"));
+  auto frame = Frame_CANCEL(Base::streamId_);
   Base::connection_->outputFrameOrEnqueue(
-      Frame_CANCEL(Base::streamId_).serializeOut());
+      Base::connection_->frameSerializer().serializeOut(std::move(frame)));
 }
 }

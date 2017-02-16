@@ -33,7 +33,8 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
       // We must inform ConsumerMixin about an implicit allowance we have
       // requested from the remote end.
       addImplicitAllowance(initialN);
-      connection_->outputFrameOrEnqueue(frame.serializeOut());
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       // Pump the remaining allowance into the ConsumerMixin _after_ sending the
       // initial request.
       if (remainingN) {
@@ -44,7 +45,8 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
       debugCheckOnNextOnCompleteOnError();
       Frame_REQUEST_CHANNEL frame(
           streamId_, FrameFlags_EMPTY, std::move(request));
-      connection_->outputFrameOrEnqueue(frame.serializeOut());
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       break;
     }
     case State::CLOSED:
@@ -61,9 +63,10 @@ void ChannelRequester::onCompleteImpl() noexcept {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
+      auto frame =
+          Frame_REQUEST_CHANNEL(streamId_, FrameFlags_COMPLETE, 0, Payload());
       connection_->outputFrameOrEnqueue(
-          Frame_REQUEST_CHANNEL(streamId_, FrameFlags_COMPLETE, 0, Payload())
-              .serializeOut());
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
     } break;
     case State::CLOSED:
@@ -79,7 +82,9 @@ void ChannelRequester::onErrorImpl(folly::exception_wrapper ex) noexcept {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
-      connection_->outputFrameOrEnqueue(Frame_CANCEL(streamId_).serializeOut());
+      auto frame = Frame_CANCEL(streamId_);
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::ERROR);
     } break;
     case State::CLOSED:
@@ -112,7 +117,8 @@ void ChannelRequester::cancelImpl() noexcept {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
-      connection_->outputFrameOrEnqueue(Frame_CANCEL(streamId_).serializeOut());
+      connection_->outputFrameOrEnqueue(
+          connection_->frameSerializer().serializeOut(Frame_CANCEL(streamId_)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
     } break;
     case State::CLOSED:
