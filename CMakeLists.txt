@@ -118,8 +118,6 @@ add_library(
   src/automata/RequestResponseRequester.h
   src/automata/RequestResponseResponder.cpp
   src/automata/RequestResponseResponder.h
-  src/automata/StreamAutomatonBase.cpp
-  src/automata/StreamAutomatonBase.h
   src/automata/StreamRequester.cpp
   src/automata/StreamRequester.h
   src/automata/StreamResponder.h
@@ -129,7 +127,6 @@ add_library(
   src/automata/StreamSubscriptionResponderBase.h
   src/automata/SubscriptionRequester.cpp
   src/automata/SubscriptionRequester.h
-  src/automata/SubscriptionResponder.cpp
   src/automata/SubscriptionResponder.h
   src/Common.cpp
   src/Common.h
@@ -147,12 +144,6 @@ add_library(
   src/folly/FollyKeepaliveTimer.h
   src/Frame.cpp
   src/Frame.h
-  src/FrameProcessor.h
-  src/FrameSerializer.h
-  src/FrameSerializer.cpp
-  src/FrameSerializer.h
-  src/FrameTransport.cpp
-  src/FrameTransport.h
   src/framed/FramedDuplexConnection.cpp
   src/framed/FramedDuplexConnection.h
   src/framed/FramedReader.cpp
@@ -177,8 +168,6 @@ add_library(
   src/Stats.cpp
   src/Stats.h
   src/StreamState.h
-  src/StreamsFactory.h
-  src/StreamsFactory.cpp
   src/SubscriberBase.h
   src/SubscriptionBase.h
   src/tcp/TcpDuplexConnection.cpp
