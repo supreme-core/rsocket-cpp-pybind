@@ -9,7 +9,6 @@
 #include "src/ReactiveSocket.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/Stats.h"
-#include "src/StreamsFactory.h"
 
 namespace folly {
 class Executor;
@@ -130,10 +129,8 @@ class StandardReactiveSocket : public ReactiveSocket {
       std::unique_ptr<KeepaliveTimer> keepaliveTimer,
       folly::Executor& executor);
 
-  void createResponder(
+  void onConnectionFrame(
       std::shared_ptr<RequestHandler> handler,
-      ConnectionAutomaton& connection,
-      StreamId streamId,
       std::unique_ptr<folly::IOBuf> frame);
 
   std::shared_ptr<StreamState> resumeListener(
@@ -145,7 +142,6 @@ class StandardReactiveSocket : public ReactiveSocket {
   std::shared_ptr<RequestHandler> handler_;
 
   std::shared_ptr<ConnectionAutomaton> connection_;
-  StreamsFactory streamsFactory_;
   folly::Executor& executor_;
 };
 }

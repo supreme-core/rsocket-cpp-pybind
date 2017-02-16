@@ -74,12 +74,11 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
-  auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+  std::shared_ptr<ConnectionAutomaton> connectionAutomaton;
+  connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       defaultExecutor(),
-      [](ConnectionAutomaton& connection,
-         StreamId,
-         std::unique_ptr<folly::IOBuf>) {
-        connection.closeWithError(
+      [&](std::unique_ptr<folly::IOBuf>) {
+        connectionAutomaton->closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(Stats::noop()),
@@ -164,12 +163,11 @@ static void terminateTest(
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
-  auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+  std::shared_ptr<ConnectionAutomaton> connectionAutomaton;
+  connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       defaultExecutor(),
-      [](ConnectionAutomaton& connection,
-         StreamId,
-         std::unique_ptr<folly::IOBuf>) {
-        connection.closeWithError(
+      [&](std::unique_ptr<folly::IOBuf>) {
+        connectionAutomaton->closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(Stats::noop()),
@@ -265,12 +263,11 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   framedTestConnection->setInput(testOutputSubscriber);
   framedTestConnection->getOutput()->onSubscribe(inputSubscription);
 
-  auto connectionAutomaton = std::make_shared<ConnectionAutomaton>(
+  std::shared_ptr<ConnectionAutomaton> connectionAutomaton;
+  connectionAutomaton = std::make_shared<ConnectionAutomaton>(
       defaultExecutor(),
-      [](ConnectionAutomaton& connection,
-         StreamId,
-         std::unique_ptr<folly::IOBuf>) {
-        connection.closeWithError(
+      [&](std::unique_ptr<folly::IOBuf>) {
+        connectionAutomaton->closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
       std::make_shared<StreamState>(Stats::noop()),

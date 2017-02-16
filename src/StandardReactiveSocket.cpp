@@ -10,7 +10,6 @@
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
 #include "src/RequestHandler.h"
-#include "src/automata/ChannelResponder.h"
 
 namespace reactivesocket {
 
@@ -35,12 +34,8 @@ StandardReactiveSocket::StandardReactiveSocket(
     : handler_(handler),
       connection_(std::make_shared<ConnectionAutomaton>(
           executor,
-          [this, handler](
-              ConnectionAutomaton& connection,
-              StreamId streamId,
-              std::unique_ptr<folly::IOBuf> serializedFrame) {
-            createResponder(
-                handler, connection, streamId, std::move(serializedFrame));
+          [this, handler](std::unique_ptr<folly::IOBuf> serializedFrame) {
+            onConnectionFrame(handler, std::move(serializedFrame));
           },
           std::make_shared<StreamState>(stats),
           handler,
@@ -51,7 +46,6 @@ StandardReactiveSocket::StandardReactiveSocket(
           stats,
           std::move(keepaliveTimer),
           mode)),
-      streamsFactory_(connection_, mode),
       executor_(executor) {
   // TODO (lehecka): In case of server, FrameSerializer should be ideally set
   // after inspecting the SETUP frame from the client
@@ -127,7 +121,7 @@ std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
   checkNotClosed();
-  return streamsFactory_.createChannelRequester(
+  return connection_->streamsFactory().createChannelRequester(
       std::move(responseSink), executor_);
 }
 
@@ -136,7 +130,7 @@ void StandardReactiveSocket::requestStream(
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
   checkNotClosed();
-  streamsFactory_.createStreamRequester(
+  connection_->streamsFactory().createStreamRequester(
       std::move(request), std::move(responseSink), executor_);
 }
 
@@ -145,7 +139,7 @@ void StandardReactiveSocket::requestSubscription(
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
   checkNotClosed();
-  streamsFactory_.createSubscriptionRequester(
+  connection_->streamsFactory().createSubscriptionRequester(
       std::move(request), std::move(responseSink), executor_);
 }
 
@@ -154,7 +148,7 @@ void StandardReactiveSocket::requestResponse(
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
   checkNotClosed();
-  streamsFactory_.createRequestResponseRequester(
+  connection_->streamsFactory().createRequestResponseRequester(
       std::move(payload), std::move(responseSink), executor_);
 }
 
@@ -162,7 +156,7 @@ void StandardReactiveSocket::requestFireAndForget(Payload request) {
   debugCheckCorrectExecutor();
   checkNotClosed();
   Frame_REQUEST_FNF frame(
-      streamsFactory_.getNextStreamId(),
+      connection_->streamsFactory().getNextStreamId(),
       FrameFlags_EMPTY,
       std::move(std::move(request)));
   connection_->outputFrameOrEnqueue(
@@ -177,22 +171,10 @@ void StandardReactiveSocket::metadataPush(
       Frame_METADATA_PUSH(std::move(metadata))));
 }
 
-void StandardReactiveSocket::createResponder(
+void StandardReactiveSocket::onConnectionFrame(
     std::shared_ptr<RequestHandler> handler,
-    ConnectionAutomaton& connection,
-    StreamId streamId,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
   debugCheckCorrectExecutor();
-
-  // TODO (lehecka): comparing string versions is odd because from version 10.0
-  // the lexicographic comparison doesn't work we should change the version to
-  // struct
-  if (streamId != 0 &&
-      connection_->frameSerializer().protocolVersion() > "0.0" &&
-      !streamsFactory_.registerNewPeerStreamId(streamId)) {
-    return;
-  }
-
   auto type = FrameHeader::peekType(*serializedFrame);
   switch (type) {
     case FrameType::SETUP: {
@@ -226,7 +208,7 @@ void StandardReactiveSocket::createResponder(
     }
     case FrameType::RESUME: {
       Frame_RESUME frame;
-      if (!connection.deserializeFrameOrError(
+      if (!connection_->deserializeFrameOrError(
               frame, std::move(serializedFrame))) {
         return;
       }
@@ -236,81 +218,26 @@ void StandardReactiveSocket::createResponder(
         // TODO(lehecka): the "connection" and "this" arguments needs to be
         // cleaned up. It is not intuitive what is their lifetime.
         auto connectionCopy = std::move(connection_);
-        connection.closeWithError(
+        connectionCopy->closeWithError(
             Frame_ERROR::connectionError("can not resume"));
       }
       break;
     }
-    case FrameType::REQUEST_CHANNEL: {
-      Frame_REQUEST_CHANNEL frame;
-      if (!connection.deserializeFrameOrError(
-              frame, std::move(serializedFrame))) {
-        return;
-      }
-      auto automaton = streamsFactory_.createChannelResponder(
-          frame.requestN_, streamId, executor_);
-      auto requestSink = handler->handleRequestChannel(
-          std::move(frame.payload_), streamId, automaton);
-      automaton->subscribe(requestSink);
-      break;
-    }
-    case FrameType::REQUEST_STREAM: {
-      Frame_REQUEST_STREAM frame;
-      if (!connection.deserializeFrameOrError(
-              frame, std::move(serializedFrame))) {
-        return;
-      }
-      auto automaton = streamsFactory_.createStreamResponder(
-          frame.requestN_, streamId, executor_);
-      handler->handleRequestStream(
-          std::move(frame.payload_), streamId, automaton);
-      break;
-    }
-    case FrameType::REQUEST_SUB: {
-      Frame_REQUEST_SUB frame;
-      if (!connection.deserializeFrameOrError(
-              frame, std::move(serializedFrame))) {
-        return;
-      }
-      auto automaton = streamsFactory_.createSubscriptionResponder(
-          frame.requestN_, streamId, executor_);
-      handler->handleRequestSubscription(
-          std::move(frame.payload_), streamId, automaton);
-      break;
-    }
-    case FrameType::REQUEST_RESPONSE: {
-      Frame_REQUEST_RESPONSE frame;
-      if (!connection.deserializeFrameOrError(
-              frame, std::move(serializedFrame))) {
-        return;
-      }
-      auto automaton =
-          streamsFactory_.createRequestResponseResponder(streamId, executor_);
-      handler->handleRequestResponse(
-          std::move(frame.payload_), streamId, automaton);
-      break;
-    }
-    case FrameType::REQUEST_FNF: {
-      Frame_REQUEST_FNF frame;
-      if (!connection.deserializeFrameOrError(
-              frame, std::move(serializedFrame))) {
-        return;
-      }
-      // no stream tracking is necessary
-      handler->handleFireAndForgetRequest(std::move(frame.payload_), streamId);
-      break;
-    }
     case FrameType::METADATA_PUSH: {
       Frame_METADATA_PUSH frame;
-      if (!connection.deserializeFrameOrError(
+      if (!connection_->deserializeFrameOrError(
               frame, std::move(serializedFrame))) {
         return;
       }
       handler->handleMetadataPush(std::move(frame.metadata_));
       break;
     }
-    // Other frames cannot start a stream.
 
+    case FrameType::REQUEST_CHANNEL:
+    case FrameType::REQUEST_STREAM:
+    case FrameType::REQUEST_SUB:
+    case FrameType::REQUEST_RESPONSE:
+    case FrameType::REQUEST_FNF:
     case FrameType::LEASE:
     case FrameType::KEEPALIVE:
     case FrameType::RESERVED:
@@ -320,10 +247,8 @@ void StandardReactiveSocket::createResponder(
     case FrameType::ERROR:
     case FrameType::RESUME_OK:
     default:
-      // TODO(lehecka): the "connection" and "this" arguments needs to be
-      // cleaned up. It is not intuitive what is their lifetime.
       auto connectionCopy = std::move(connection_);
-      connection.closeWithError(Frame_ERROR::unexpectedFrame());
+      connectionCopy->closeWithError(Frame_ERROR::unexpectedFrame());
   }
 }
 

@@ -14,9 +14,9 @@
 namespace reactivesocket {
 
 StreamsFactory::StreamsFactory(
-    std::shared_ptr<ConnectionAutomaton> connection,
+    ConnectionAutomaton& connection,
     ReactiveSocketMode mode)
-    : connection_(std::move(connection)),
+    : connection_(connection),
       nextStreamId_(
           mode == ReactiveSocketMode::CLIENT
               ? 1 /*Streams initiated by a client MUST use
@@ -27,10 +27,10 @@ StreamsFactory::StreamsFactory(
 std::shared_ptr<Subscriber<Payload>> StreamsFactory::createChannelRequester(
     std::shared_ptr<Subscriber<Payload>> responseSink,
     folly::Executor& executor) {
-  ChannelRequester::Parameters params = {{connection_, getNextStreamId()},
-                                         executor};
+  ChannelRequester::Parameters params = {
+      {connection_.shared_from_this(), getNextStreamId()}, executor};
   auto automaton = std::make_shared<ChannelRequester>(params);
-  connection_->addStream(params.streamId, automaton);
+  connection_.addStream(params.streamId, automaton);
   automaton->subscribe(std::move(responseSink));
   return automaton;
 }
@@ -39,11 +39,11 @@ void StreamsFactory::createStreamRequester(
     Payload request,
     std::shared_ptr<Subscriber<Payload>> responseSink,
     folly::Executor& executor) {
-  StreamRequester::Parameters params = {{connection_, getNextStreamId()},
-                                        executor};
+  StreamRequester::Parameters params = {
+      {connection_.shared_from_this(), getNextStreamId()}, executor};
   auto automaton =
       std::make_shared<StreamRequester>(params, std::move(request));
-  connection_->addStream(params.streamId, automaton);
+  connection_.addStream(params.streamId, automaton);
   automaton->subscribe(std::move(responseSink));
 }
 
@@ -51,11 +51,11 @@ void StreamsFactory::createSubscriptionRequester(
     Payload request,
     std::shared_ptr<Subscriber<Payload>> responseSink,
     folly::Executor& executor) {
-  SubscriptionRequester::Parameters params = {{connection_, getNextStreamId()},
-                                              executor};
+  SubscriptionRequester::Parameters params = {
+      {connection_.shared_from_this(), getNextStreamId()}, executor};
   auto automaton =
       std::make_shared<SubscriptionRequester>(params, std::move(request));
-  connection_->addStream(params.streamId, automaton);
+  connection_.addStream(params.streamId, automaton);
   automaton->subscribe(std::move(responseSink));
 }
 
@@ -64,10 +64,10 @@ void StreamsFactory::createRequestResponseRequester(
     std::shared_ptr<Subscriber<Payload>> responseSink,
     folly::Executor& executor) {
   RequestResponseRequester::Parameters params = {
-      {connection_, getNextStreamId()}, executor};
+      {connection_.shared_from_this(), getNextStreamId()}, executor};
   auto automaton =
       std::make_shared<RequestResponseRequester>(params, std::move(payload));
-  connection_->addStream(params.streamId, automaton);
+  connection_.addStream(params.streamId, automaton);
   automaton->subscribe(std::move(responseSink));
 }
 
@@ -98,9 +98,10 @@ std::shared_ptr<ChannelResponder> StreamsFactory::createChannelResponder(
     uint32_t initialRequestN,
     StreamId streamId,
     folly::Executor& executor) {
-  ChannelResponder::Parameters params = {{connection_, streamId}, executor};
+  ChannelResponder::Parameters params = {
+      {connection_.shared_from_this(), streamId}, executor};
   auto automaton = std::make_shared<ChannelResponder>(initialRequestN, params);
-  connection_->addStream(streamId, automaton);
+  connection_.addStream(streamId, automaton);
   return automaton;
 }
 
@@ -108,9 +109,10 @@ std::shared_ptr<Subscriber<Payload>> StreamsFactory::createStreamResponder(
     uint32_t initialRequestN,
     StreamId streamId,
     folly::Executor& executor) {
-  StreamResponder::Parameters params = {{connection_, streamId}, executor};
+  StreamResponder::Parameters params = {
+      {connection_.shared_from_this(), streamId}, executor};
   auto automaton = std::make_shared<StreamResponder>(initialRequestN, params);
-  connection_->addStream(streamId, automaton);
+  connection_.addStream(streamId, automaton);
   return automaton;
 }
 
@@ -119,11 +121,11 @@ StreamsFactory::createSubscriptionResponder(
     uint32_t initialRequestN,
     StreamId streamId,
     folly::Executor& executor) {
-  SubscriptionResponder::Parameters params = {{connection_, streamId},
-                                              executor};
+  SubscriptionResponder::Parameters params = {
+      {connection_.shared_from_this(), streamId}, executor};
   auto automaton =
       std::make_shared<SubscriptionResponder>(initialRequestN, params);
-  connection_->addStream(streamId, automaton);
+  connection_.addStream(streamId, automaton);
   return automaton;
 }
 
@@ -131,10 +133,10 @@ std::shared_ptr<Subscriber<Payload>>
 StreamsFactory::createRequestResponseResponder(
     StreamId streamId,
     folly::Executor& executor) {
-  RequestResponseResponder::Parameters params = {{connection_, streamId},
-                                                 executor};
+  RequestResponseResponder::Parameters params = {
+      {connection_.shared_from_this(), streamId}, executor};
   auto automaton = std::make_shared<RequestResponseResponder>(params);
-  connection_->addStream(streamId, automaton);
+  connection_.addStream(streamId, automaton);
   return automaton;
 }
 

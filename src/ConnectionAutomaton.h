@@ -13,6 +13,7 @@
 #include "src/FrameSerializer.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
+#include "src/StreamsFactory.h"
 
 namespace reactivesocket {
 
@@ -37,10 +38,8 @@ enum class FrameType : uint16_t;
 /// Returns true if the responder has been created successfully, false if the
 /// frame cannot start a new stream, in which case the frame (passed by a
 /// mutable referece) must not be modified.
-using StreamAutomatonFactory = std::function<void(
-    ConnectionAutomaton& connection,
-    StreamId,
-    std::unique_ptr<folly::IOBuf>)>;
+using ConnectionLevelFrameHandler =
+    std::function<void(std::unique_ptr<folly::IOBuf>)>;
 
 using ResumeListener = std::function<std::shared_ptr<StreamState>(
     const ResumeIdentificationToken& token)>;
@@ -66,7 +65,7 @@ class FrameSink {
 /// The reason why such a simple memory management story is possible lies in the
 /// fact that there is no request(n)-based flow control between stream
 /// automata and ConnectionAutomaton.
-class ConnectionAutomaton
+class ConnectionAutomaton final
     : public FrameSink,
       public FrameProcessor,
       public ExecutorBase,
@@ -74,7 +73,7 @@ class ConnectionAutomaton
  public:
   ConnectionAutomaton(
       folly::Executor& executor,
-      StreamAutomatonFactory factory,
+      ConnectionLevelFrameHandler connectionLevelFrameHandler,
       std::shared_ptr<StreamState> streamState,
       std::shared_ptr<RequestHandler> requestHandler,
       ResumeListener resumeListener,
@@ -195,6 +194,9 @@ class ConnectionAutomaton
   bool isClosed() const;
 
   DuplexConnection* duplexConnection() const;
+  StreamsFactory& streamsFactory() {
+    return streamsFactory_;
+  }
 
   FrameSerializer& frameSerializer() const;
   void setFrameSerializer(std::unique_ptr<FrameSerializer>);
@@ -237,7 +239,7 @@ class ConnectionAutomaton
   void pauseStreams();
   void resumeStreams();
 
-  StreamAutomatonFactory factory_;
+  ConnectionLevelFrameHandler connectionLevelFrameHandler_;
 
   std::shared_ptr<StreamState> streamState_;
   std::shared_ptr<RequestHandler> requestHandler_;
@@ -260,5 +262,7 @@ class ConnectionAutomaton
   std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
   // TODO: this is a temporary hack before stats_ is turned into shared_ptr
   bool isClosing_{false};
+
+  StreamsFactory streamsFactory_;
 };
 }

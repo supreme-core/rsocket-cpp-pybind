@@ -17,9 +17,7 @@ struct Payload;
 
 class StreamsFactory {
  public:
-  StreamsFactory(
-      std::shared_ptr<ConnectionAutomaton> connection,
-      ReactiveSocketMode mode);
+  StreamsFactory(ConnectionAutomaton& connection, ReactiveSocketMode mode);
 
   std::shared_ptr<Subscriber<Payload>> createChannelRequester(
       std::shared_ptr<Subscriber<Payload>> responseSink,
@@ -65,7 +63,7 @@ class StreamsFactory {
   StreamId getNextStreamId();
 
  private:
-  std::shared_ptr<ConnectionAutomaton> connection_;
+  ConnectionAutomaton& connection_;
   StreamId nextStreamId_;
   StreamId lastPeerStreamId_{0};
 };

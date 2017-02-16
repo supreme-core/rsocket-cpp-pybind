@@ -10,15 +10,17 @@
 #include "src/ClientResumeStatusCallback.h"
 #include "src/DuplexConnection.h"
 #include "src/FrameTransport.h"
+#include "src/RequestHandler.h"
 #include "src/Stats.h"
 #include "src/StreamState.h"
+#include "src/automata/ChannelResponder.h"
 #include "src/automata/StreamAutomatonBase.h"
 
 namespace reactivesocket {
 
 ConnectionAutomaton::ConnectionAutomaton(
     folly::Executor& executor,
-    StreamAutomatonFactory factory,
+    ConnectionLevelFrameHandler connectionLevelFrameHandler,
     std::shared_ptr<StreamState> streamState,
     std::shared_ptr<RequestHandler> requestHandler,
     ResumeListener resumeListener,
@@ -26,13 +28,14 @@ ConnectionAutomaton::ConnectionAutomaton(
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     ReactiveSocketMode mode)
     : ExecutorBase(executor),
-      factory_(std::move(factory)),
+      connectionLevelFrameHandler_(std::move(connectionLevelFrameHandler)),
       streamState_(std::move(streamState)),
       requestHandler_(std::move(requestHandler)),
       stats_(stats),
       mode_(mode),
       resumeListener_(resumeListener),
-      keepaliveTimer_(std::move(keepaliveTimer)) {
+      keepaliveTimer_(std::move(keepaliveTimer)),
+      streamsFactory_(*this, mode) {
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.
@@ -432,16 +435,16 @@ void ConnectionAutomaton::onConnectionFrame(
         remoteResumeable_ = false;
       }
       // TODO(blom, t15719366): Don't pass the full frame here
-      factory_(*this, 0, std::move(payload));
+      connectionLevelFrameHandler_(std::move(payload));
       return;
     }
     case FrameType::METADATA_PUSH: {
-      factory_(*this, 0, std::move(payload));
+      connectionLevelFrameHandler_(std::move(payload));
       return;
     }
     case FrameType::RESUME: {
       if (mode_ == ReactiveSocketMode::SERVER && isResumable_) {
-        factory_(*this, 0, std::move(payload));
+        connectionLevelFrameHandler_(std::move(payload));
         //      Frame_RESUME frame;
         //      if (!deserializeFrameOrError(frame, std::move(payload))) {
         //        return;
@@ -536,8 +539,88 @@ void ConnectionAutomaton::onConnectionFrame(
 
 void ConnectionAutomaton::handleUnknownStream(
     StreamId streamId,
-    std::unique_ptr<folly::IOBuf> payload) {
-  factory_(*this, streamId, std::move(payload));
+    std::unique_ptr<folly::IOBuf> serializedFrame) {
+  DCHECK(streamId != 0);
+  // TODO: comparing string versions is odd because from version
+  // 10.0 the lexicographic comparison doesn't work
+  // we should change the version to struct
+  if (frameSerializer().protocolVersion() > "0.0" &&
+      !streamsFactory_.registerNewPeerStreamId(streamId)) {
+    return;
+  }
+
+  auto type = FrameHeader::peekType(*serializedFrame);
+  switch (type) {
+    case FrameType::REQUEST_CHANNEL: {
+      Frame_REQUEST_CHANNEL frame;
+      if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
+        return;
+      }
+      auto automaton = streamsFactory_.createChannelResponder(
+          frame.requestN_, streamId, executor());
+      auto requestSink = requestHandler_->handleRequestChannel(
+          std::move(frame.payload_), streamId, automaton);
+      automaton->subscribe(requestSink);
+      break;
+    }
+    case FrameType::REQUEST_STREAM: {
+      Frame_REQUEST_STREAM frame;
+      if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
+        return;
+      }
+      auto automaton = streamsFactory_.createStreamResponder(
+          frame.requestN_, streamId, executor());
+      requestHandler_->handleRequestStream(
+          std::move(frame.payload_), streamId, automaton);
+      break;
+    }
+    case FrameType::REQUEST_SUB: {
+      Frame_REQUEST_SUB frame;
+      if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
+        return;
+      }
+      auto automaton = streamsFactory_.createSubscriptionResponder(
+          frame.requestN_, streamId, executor());
+      requestHandler_->handleRequestSubscription(
+          std::move(frame.payload_), streamId, automaton);
+      break;
+    }
+    case FrameType::REQUEST_RESPONSE: {
+      Frame_REQUEST_RESPONSE frame;
+      if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
+        return;
+      }
+      auto automaton =
+          streamsFactory_.createRequestResponseResponder(streamId, executor());
+      requestHandler_->handleRequestResponse(
+          std::move(frame.payload_), streamId, automaton);
+      break;
+    }
+    case FrameType::REQUEST_FNF: {
+      Frame_REQUEST_FNF frame;
+      if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
+        return;
+      }
+      // no stream tracking is necessary
+      requestHandler_->handleFireAndForgetRequest(
+          std::move(frame.payload_), streamId);
+      break;
+    }
+
+    case FrameType::RESUME:
+    case FrameType::SETUP:
+    case FrameType::METADATA_PUSH:
+    case FrameType::LEASE:
+    case FrameType::KEEPALIVE:
+    case FrameType::RESERVED:
+    case FrameType::REQUEST_N:
+    case FrameType::CANCEL:
+    case FrameType::RESPONSE:
+    case FrameType::ERROR:
+    case FrameType::RESUME_OK:
+    default:
+      closeWithError(Frame_ERROR::unexpectedFrame());
+  }
 }
 /// @}
 
