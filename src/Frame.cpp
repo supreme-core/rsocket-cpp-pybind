@@ -212,7 +212,7 @@ bool Frame_METADATA_PUSH::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
   } catch (...) {
     return false;
   }
-  return true;
+  return metadata_ != nullptr;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_METADATA_PUSH& frame) {

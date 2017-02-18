@@ -53,9 +53,13 @@ struct Payload {
   static void serializeMetadataInto(
       folly::io::QueueAppender& appender,
       std::unique_ptr<folly::IOBuf> metadata);
+
+  /// Deserializes metadata from cur returning a null pointer if the
+  /// FrameFlags_METADATA flag is not set in flags.
   static std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
       folly::io::Cursor& cur,
       FrameFlags flags);
+
   static std::unique_ptr<folly::IOBuf> deserializeDataFrom(
       folly::io::Cursor& cur);
 

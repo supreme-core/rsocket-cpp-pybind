@@ -18,6 +18,7 @@
 
 using namespace ::testing;
 using namespace ::reactivesocket;
+using namespace std::string_literals;
 
 MATCHER_P(
     Equals,
@@ -1013,40 +1014,6 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
 }
 
-using IOBufPtr = std::unique_ptr<folly::IOBuf>;
-
-class MockDuplexConnection : public DuplexConnection {
- public:
-  MOCK_METHOD1(setInput, void (std::shared_ptr<Subscriber<IOBufPtr>> ));
-  MOCK_METHOD0(getOutput, std::shared_ptr<Subscriber<IOBufPtr>> ());
-};
-
-auto makeTestServerSocket(std::shared_ptr<Subscriber<IOBufPtr>>& input) {
-  auto connectionPtr = std::make_unique<MockDuplexConnection>();
-  auto& connection = *connectionPtr;
-  EXPECT_CALL(connection, setInput(_)).WillOnce(SaveArg<0>(&input));
-  EXPECT_CALL(connection, getOutput()).WillOnce(Return(
-    std::make_shared<MockSubscriber<IOBufPtr>>()));
-
-  auto requestHandlerPtr = std::make_unique<StrictMock<MockRequestHandler>>();
-  auto& requestHandler = *requestHandlerPtr;
-
-  EXPECT_CALL(requestHandler, handleSetupPayload_(_, _))
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
-
-  return StandardReactiveSocket::fromServerConnection(
-      defaultExecutor(), std::move(connectionPtr),
-      std::move(requestHandlerPtr));
-}
-
-TEST(ReactiveSocketTest, HandleUnknownStream) {
-  auto input = std::shared_ptr<Subscriber<IOBufPtr>>();
-  auto serverSocket = makeTestServerSocket(input);
-  using namespace std::string_literals;
-  input->onNext(folly::IOBuf::copyBuffer(
-    "\x00\x00\x00\x00\xff\x00\x00\x00\x00\x00\x00\x00"s));
-}
-
 class ReactiveSocketIgnoreRequestTest : public testing::Test {
  public:
   ReactiveSocketIgnoreRequestTest() {
@@ -1274,4 +1241,53 @@ TEST_F(ReactiveSocketOnErrorOnShutdownTest, RequestChannel) {
   }));
 
   clientOutput->onSubscribe(clientOutputSub);
+}
+
+using IOBufPtr = std::unique_ptr<folly::IOBuf>;
+
+class MockDuplexConnection : public DuplexConnection {
+ public:
+  MOCK_METHOD1(setInput, void(std::shared_ptr<Subscriber<IOBufPtr>>));
+  MOCK_METHOD0(getOutput, std::shared_ptr<Subscriber<IOBufPtr>>());
+};
+
+class ReactiveSocketRegressionTest : public Test {
+ private:
+  std::unique_ptr<StrictMock<MockRequestHandler>> requestHandlerPtr_;
+
+ protected:
+  ReactiveSocketRegressionTest()
+      : requestHandlerPtr_(std::make_unique<StrictMock<MockRequestHandler>>()),
+        requestHandler_(*requestHandlerPtr_) {
+    auto connectionPtr = std::make_unique<MockDuplexConnection>();
+    auto& connection = *connectionPtr;
+    EXPECT_CALL(connection, setInput(_)).WillOnce(SaveArg<0>(&input_));
+    EXPECT_CALL(connection, getOutput())
+        .WillOnce(Return(std::make_shared<MockSubscriber<IOBufPtr>>()));
+
+    EXPECT_CALL(requestHandler_, handleSetupPayload_(_, _))
+        .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+
+    socket_ = StandardReactiveSocket::fromServerConnection(
+        defaultExecutor(),
+        std::move(connectionPtr),
+        std::move(requestHandlerPtr_));
+  }
+
+  MockRequestHandler& requestHandler_;
+  std::shared_ptr<Subscriber<IOBufPtr>> input_;
+  std::unique_ptr<StandardReactiveSocket> socket_;
+};
+
+TEST_F(ReactiveSocketRegressionTest, NoCrashOnUnknownStream) {
+  input_->onNext(folly::IOBuf::copyBuffer(
+      "\x00\x00\x00\x00\xff\x00\x00\x00\x00\x00\x00\x00"s));
+}
+
+TEST_F(ReactiveSocketRegressionTest, MetadataFrameWithoutMetadataFlag) {
+  // This is to make the expectation explicit. Techinally it is not necessary
+  // because requestHandler_ is a strict mock.
+  EXPECT_CALL(requestHandler_, handleMetadataPush_(_)).Times(0);
+  input_->onNext(folly::IOBuf::copyBuffer(
+      "\x00\x0d\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"s));
 }
