@@ -84,6 +84,10 @@ void FrameTransport::onSubscribe(
     std::shared_ptr<Subscription> subscription) noexcept {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
 
+  if (!connection_) {
+    return;
+  }
+
   CHECK(!connectionInputSub_);
   CHECK(frameProcessor_);
   connectionInputSub_.reset(std::move(subscription));
