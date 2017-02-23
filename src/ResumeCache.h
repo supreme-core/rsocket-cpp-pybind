@@ -18,6 +18,7 @@ class Stats;
 class ResumeCache {
  public:
   explicit ResumeCache(Stats& stats) : stats_(stats) {}
+  ~ResumeCache() { onClearFrames(); }
 
   void trackSentFrame(const folly::IOBuf& serializedFrame);
 
@@ -43,6 +44,9 @@ class ResumeCache {
 
  private:
   void addFrame(const folly::IOBuf&, size_t);
+
+  /// Called before clearing cached frames to update stats.
+  void onClearFrames();
 
   Stats& stats_;
   ResumePosition position_{0};

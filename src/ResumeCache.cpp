@@ -54,18 +54,13 @@ void ResumeCache::resetUpToPosition(ResumePosition position) {
         });
 
     if (end == frames_.end()) {
-      stats_.resumeBufferChanged(
-          -static_cast<int>(frames_.size()),
-          static_cast<int>(
-              static_cast<int64_t>(position_) -
-              static_cast<int64_t>(resetPosition_)));
+      onClearFrames();
       frames_.clear();
     } else {
+      DCHECK(end->first >= resetPosition_);
       stats_.resumeBufferChanged(
           -static_cast<int>(std::distance(frames_.begin(), end)),
-          static_cast<int>(
-              static_cast<int64_t>(end->first) -
-              static_cast<int64_t>(resetPosition_)));
+          -static_cast<int>(end->first - resetPosition_));
       frames_.erase(frames_.begin(), end);
     }
   }
@@ -107,6 +102,13 @@ void ResumeCache::addFrame(const folly::IOBuf& frame, size_t frameDataLength) {
   // TODO: implement bounds to the buffer
   frames_.emplace_back(position_, frame.clone());
   stats_.resumeBufferChanged(1, static_cast<int>(frameDataLength));
+}
+
+void ResumeCache::onClearFrames() {
+  DCHECK(position_ >= resetPosition_);
+  stats_.resumeBufferChanged(
+      -static_cast<int>(frames_.size()),
+      -static_cast<int>(position_ - resetPosition_));
 }
 
 void ResumeCache::sendFramesFromPosition(

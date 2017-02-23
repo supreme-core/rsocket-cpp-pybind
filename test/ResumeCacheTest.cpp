@@ -11,6 +11,7 @@
 #include "src/Stats.h"
 #include "src/versions/FrameSerializer_v0_1.h"
 #include "test/InlineConnection.h"
+#include "test/MockStats.h"
 
 using namespace ::testing;
 using namespace ::reactivesocket;
@@ -26,7 +27,12 @@ class FrameTransportMock : public FrameTransport {
   }
 };
 
-TEST(ResumeCacheTest, EmptyCache) {
+class ResumeCacheTest : public Test {
+ protected:
+  FrameSerializerV0_1 frameSerializer_;
+};
+
+TEST_F(ResumeCacheTest, EmptyCache) {
   ResumeCache cache(Stats::noop());
   FrameTransportMock transport;
 
@@ -47,12 +53,11 @@ TEST(ResumeCacheTest, EmptyCache) {
   cache.sendFramesFromPosition(0, transport);
 }
 
-TEST(ResumeCacheTest, OneFrame) {
+TEST_F(ResumeCacheTest, OneFrame) {
   ResumeCache cache(Stats::noop());
   FrameTransportMock transport;
-  FrameSerializerV0_1 frameSerializer;
 
-  auto frame1 = frameSerializer.serializeOut(Frame_CANCEL(0));
+  auto frame1 = frameSerializer_.serializeOut(Frame_CANCEL(0));
   const auto frame1Size = frame1->computeChainDataLength();
 
   cache.trackSentFrame(*frame1);
@@ -89,15 +94,14 @@ TEST(ResumeCacheTest, OneFrame) {
   cache.sendFramesFromPosition(frame1Size, transport);
 }
 
-TEST(ResumeCacheTest, TwoFrames) {
+TEST_F(ResumeCacheTest, TwoFrames) {
   ResumeCache cache(Stats::noop());
   FrameTransportMock transport;
-  FrameSerializerV0_1 frameSerializer;
 
-  auto frame1 = frameSerializer.serializeOut(Frame_CANCEL(0));
+  auto frame1 = frameSerializer_.serializeOut(Frame_CANCEL(0));
   const auto frame1Size = frame1->computeChainDataLength();
 
-  auto frame2 = frameSerializer.serializeOut(Frame_REQUEST_N(0, 0));
+  auto frame2 = frameSerializer_.serializeOut(Frame_REQUEST_N(0, 0));
   const auto frame2Size = frame2->computeChainDataLength();
 
   cache.trackSentFrame(*frame1);
@@ -133,4 +137,24 @@ TEST(ResumeCacheTest, TwoFrames) {
       }));
 
   cache.sendFramesFromPosition(frame1Size, transport);
+}
+
+TEST_F(ResumeCacheTest, Stats) {
+  StrictMock<MockStats> stats;
+  ResumeCache cache(stats);
+
+  auto frame1 = frameSerializer_.serializeOut(Frame_CANCEL(0));
+  auto frame1Size = frame1->computeChainDataLength();
+  EXPECT_CALL(stats, resumeBufferChanged(1, frame1Size));
+  cache.trackSentFrame(*frame1);
+
+  auto frame2 = frameSerializer_.serializeOut(Frame_REQUEST_N(0, 0));
+  auto frame2Size = frame2->computeChainDataLength();
+  EXPECT_CALL(stats, resumeBufferChanged(1, frame2Size)).Times(2);
+  cache.trackSentFrame(*frame2);
+  cache.trackSentFrame(*frame2);
+
+  EXPECT_CALL(stats, resumeBufferChanged(-1, -frame1Size));
+  cache.resetUpToPosition(frame1Size);
+  EXPECT_CALL(stats, resumeBufferChanged(-2, -2 * frame2Size));
 }
