@@ -162,7 +162,7 @@ class ConnectionAutomaton final
   bool deserializeFrameOrError(
       TFrame& frame,
       std::unique_ptr<folly::IOBuf> payload) {
-    if (frame.deserializeFrom(std::move(payload))) {
+    if (frameSerializer().deserializeFrom(frame, std::move(payload))) {
       return true;
     } else {
       closeWithError(Frame_ERROR::invalidFrame());
@@ -175,7 +175,8 @@ class ConnectionAutomaton final
       bool resumable,
       TFrame& frame,
       std::unique_ptr<folly::IOBuf> payload) {
-    if (frame.deserializeFrom(resumable, std::move(payload))) {
+    if (frameSerializer().deserializeFrom(
+            frame, std::move(payload), resumable)) {
       return true;
     } else {
       closeWithError(Frame_ERROR::invalidFrame());

@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "TestFileParser.h"
+#include "tck-test/TestFileParser.h"
 #include <folly/String.h>
 #include <glog/logging.h>
 

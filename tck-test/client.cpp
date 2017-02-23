@@ -5,13 +5,13 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
-#include "TestFileParser.h"
-#include "TestInterpreter.h"
-#include "TestSuite.h"
 #include "src/NullRequestHandler.h"
 #include "src/StandardReactiveSocket.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/tcp/TcpDuplexConnection.h"
+#include "tck-test/TestFileParser.h"
+#include "tck-test/TestInterpreter.h"
+#include "tck-test/TestSuite.h"
 
 DEFINE_string(host, "localhost", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");

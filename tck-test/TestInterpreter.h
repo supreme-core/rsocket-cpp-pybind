@@ -3,11 +3,11 @@
 #pragma once
 
 #include <map>
-#include "TestSubscriber.h"
-#include "TestSuite.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/StandardReactiveSocket.h"
+#include "tck-test/TestSubscriber.h"
+#include "tck-test/TestSuite.h"
 
 namespace folly {
 class EventBase;

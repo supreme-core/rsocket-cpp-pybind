@@ -462,7 +462,8 @@ TEST(ReactiveSocketTest, RequestStreamSendsOneRequest) {
         auto frameType = FrameHeader::peekType(*frame);
         Frame_REQUEST_STREAM request;
         ASSERT_EQ(FrameType::REQUEST_STREAM, frameType);
-        ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
+        ASSERT_TRUE(FrameSerializer::createCurrentVersion()->deserializeFrom(
+            request, std::move(frame)));
         ASSERT_EQ("foo", request.payload_.moveDataToString());
         ASSERT_EQ((uint32_t)7, request.requestN_);
       }));
@@ -594,7 +595,8 @@ TEST(ReactiveSocketTest, RequestSubscriptionSendsOneRequest) {
         auto frameType = FrameHeader::peekType(*frame);
         Frame_REQUEST_SUB request;
         ASSERT_EQ(FrameType::REQUEST_SUB, frameType);
-        ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
+        ASSERT_TRUE(FrameSerializer::createCurrentVersion()->deserializeFrom(
+            request, std::move(frame)));
         ASSERT_EQ("foo", request.payload_.moveDataToString());
         ASSERT_EQ((uint32_t)7, request.requestN_);
       }));
@@ -727,7 +729,8 @@ TEST(ReactiveSocketTest, RequestResponseSendsOneRequest) {
         auto frameType = FrameHeader::peekType(*frame);
         Frame_REQUEST_RESPONSE request;
         ASSERT_EQ(FrameType::REQUEST_RESPONSE, frameType);
-        ASSERT_TRUE(request.deserializeFrom(std::move(frame)));
+        ASSERT_TRUE(FrameSerializer::createCurrentVersion()->deserializeFrom(
+            request, std::move(frame)));
         ASSERT_EQ("foo", request.payload_.moveDataToString());
       }));
 
@@ -1285,7 +1288,7 @@ TEST_F(ReactiveSocketRegressionTest, NoCrashOnUnknownStream) {
 }
 
 TEST_F(ReactiveSocketRegressionTest, MetadataFrameWithoutMetadataFlag) {
-  // This is to make the expectation explicit. Techinally it is not necessary
+  // This is to make the expectation explicit. Technically it is not necessary
   // because requestHandler_ is a strict mock.
   EXPECT_CALL(requestHandler_, handleMetadataPush_(_)).Times(0);
   input_->onNext(folly::IOBuf::copyBuffer(

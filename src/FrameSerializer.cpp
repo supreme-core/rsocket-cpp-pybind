@@ -26,4 +26,8 @@ std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
   return std::make_unique<FrameSerializerV0_1>();
 }
 
+std::unique_ptr<FrameSerializer> FrameSerializer::createCurrentVersion() {
+  return createFrameSerializer(kCurrentProtocolVersion);
+}
+
 } // reactivesocket

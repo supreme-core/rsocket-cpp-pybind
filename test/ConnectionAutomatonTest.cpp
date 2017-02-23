@@ -65,7 +65,10 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         auto frameType = FrameHeader::peekType(*frame);
         Frame_ERROR error;
         ASSERT_EQ(FrameType::ERROR, frameType);
-        ASSERT_TRUE(error.deserializeFrom(std::move(frame)));
+        bool deserialized =
+            FrameSerializer::createCurrentVersion()->deserializeFrom(
+                error, std::move(frame));
+        ASSERT_TRUE(deserialized);
         ASSERT_EQ("invalid frame", error.payload_.moveDataToString());
       }));
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1);
@@ -88,7 +91,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->setFrameSerializer(
-      std::make_unique<FrameSerializerV0_1>());
+      FrameSerializer::createCurrentVersion());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);

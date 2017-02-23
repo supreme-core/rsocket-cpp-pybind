@@ -126,55 +126,13 @@ std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
 }
 /// @}
 
-/// @{
-
-bool Frame_REQUEST_Base::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    requestN_ = cur.readBE<uint32_t>();
-    payload_.deserializeFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
-
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_Base& frame) {
   return os << frame.header_ << "(" << frame.requestN_ << ", "
             << frame.payload_;
 }
-/// @}
-
-/// @{
-
-bool Frame_REQUEST_N::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    requestN_ = cur.readBE<uint32_t>();
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_N& frame) {
   return os << frame.header_ << "(" << frame.requestN_ << ")";
-}
-/// @}
-
-/// @{
-
-bool Frame_REQUEST_RESPONSE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    payload_.deserializeFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
 }
 
 std::ostream& operator<<(
@@ -182,37 +140,9 @@ std::ostream& operator<<(
     const Frame_REQUEST_RESPONSE& frame) {
   return os << frame.header_ << ", " << frame.payload_;
 }
-/// @}
-
-/// @{
-
-bool Frame_REQUEST_FNF::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    payload_.deserializeFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_FNF& frame) {
   return os << frame.header_ << ", " << frame.payload_;
-}
-/// @}
-
-/// @{
-
-bool Frame_METADATA_PUSH::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    metadata_ = Payload::deserializeMetadataFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return metadata_ != nullptr;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_METADATA_PUSH& frame) {
@@ -220,39 +150,11 @@ std::ostream& operator<<(std::ostream& os, const Frame_METADATA_PUSH& frame) {
             << (frame.metadata_ ? frame.metadata_->computeChainDataLength()
                                 : 0);
 }
-/// @}
-
-/// @{
-
-bool Frame_CANCEL::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    metadata_ = Payload::deserializeMetadataFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
 
 std::ostream& operator<<(std::ostream& os, const Frame_CANCEL& frame) {
   return os << frame.header_ << ", "
             << (frame.metadata_ ? frame.metadata_->computeChainDataLength()
                                 : 0);
-}
-/// @}
-
-/// @{
-
-bool Frame_RESPONSE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    payload_.deserializeFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
 }
 
 Frame_RESPONSE Frame_RESPONSE::complete(StreamId streamId) {
@@ -262,9 +164,6 @@ Frame_RESPONSE Frame_RESPONSE::complete(StreamId streamId) {
 std::ostream& operator<<(std::ostream& os, const Frame_RESPONSE& frame) {
   return os << frame.header_ << ", (" << frame.payload_;
 }
-/// @}
-
-/// @{
 
 Frame_ERROR Frame_ERROR::unexpectedFrame() {
   return Frame_ERROR(
@@ -297,88 +196,15 @@ Frame_ERROR Frame_ERROR::applicationError(
   return Frame_ERROR(streamId, ErrorCode::APPLICATION_ERROR, Payload(message));
 }
 
-bool Frame_ERROR::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    errorCode_ = static_cast<ErrorCode>(cur.readBE<uint32_t>());
-    payload_.deserializeFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
-
 std::ostream& operator<<(std::ostream& os, const Frame_ERROR& frame) {
   return os << frame.header_ << ", " << frame.errorCode_ << ", "
             << frame.payload_;
-}
-/// @}
-
-/// @{
-
-bool Frame_KEEPALIVE::deserializeFrom(
-    bool resumeable,
-    std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    if (header_.flags_ & FrameFlags_METADATA) {
-      return false;
-    }
-
-    // TODO: Remove hack:
-    // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
-    if (resumeable) {
-      position_ = cur.readBE<ResumePosition>();
-    } else {
-      position_ = 0;
-    }
-    data_ = Payload::deserializeDataFrom(cur);
-  } catch (...) {
-    return false;
-  }
-  return true;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_KEEPALIVE& frame) {
   return os << frame.header_ << "(<"
             << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
             << ">)";
-}
-/// @}
-
-/// @{
-
-bool Frame_SETUP::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    versionMajor_ = cur.readBE<uint16_t>();
-    versionMinor_ = cur.readBE<uint16_t>();
-    keepaliveTime_ = cur.readBE<uint32_t>();
-    maxLifetime_ = cur.readBE<uint32_t>();
-
-    // TODO: Remove hack:
-    // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
-    if (header_.flags_ & FrameFlags_RESUME_ENABLE) {
-      ResumeIdentificationToken::Data data;
-      cur.pull(data.data(), data.size());
-      token_.set(std::move(data));
-    } else {
-      token_ = ResumeIdentificationToken();
-    }
-
-    auto mdmtLen = cur.readBE<uint8_t>();
-    metadataMimeType_ = cur.readFixedString(mdmtLen);
-
-    auto dmtLen = cur.readBE<uint8_t>();
-    dataMimeType_ = cur.readFixedString(dmtLen);
-    payload_.deserializeFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_SETUP& frame) {
@@ -393,44 +219,10 @@ void Frame_SETUP::moveToSetupPayload(ConnectionSetupPayload& setupPayload) {
   setupPayload.resumable = header_.flags_ & FrameFlags_RESUME_ENABLE;
 }
 
-/// @}
-
-/// @{
-
-bool Frame_LEASE::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    ttl_ = cur.readBE<uint32_t>();
-    numberOfRequests_ = cur.readBE<uint32_t>();
-    metadata_ = Payload::deserializeMetadataFrom(cur, header_.flags_);
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
-
 std::ostream& operator<<(std::ostream& os, const Frame_LEASE& frame) {
   return os << frame.header_ << ", ("
             << (frame.metadata_ ? frame.metadata_->computeChainDataLength() : 0)
             << ")";
-}
-/// @}
-
-/// @{
-
-bool Frame_RESUME::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    ResumeIdentificationToken::Data data;
-    cur.pull(data.data(), data.size());
-    token_.set(std::move(data));
-    position_ = cur.readBE<ResumePosition>();
-  } catch (...) {
-    return false;
-  }
-  return true;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_RESUME& frame) {
@@ -438,23 +230,8 @@ std::ostream& operator<<(std::ostream& os, const Frame_RESUME& frame) {
             << "token"
             << ", @" << frame.position_ << ")";
 }
-/// @}
-
-/// @{
-
-bool Frame_RESUME_OK::deserializeFrom(std::unique_ptr<folly::IOBuf> in) {
-  folly::io::Cursor cur(in.get());
-  try {
-    header_.deserializeFrom(cur);
-    position_ = cur.readBE<ResumePosition>();
-  } catch (...) {
-    return false;
-  }
-  return true;
-}
 
 std::ostream& operator<<(std::ostream& os, const Frame_RESUME_OK& frame) {
   return os << frame.header_ << ", (@" << frame.position_ << ")";
 }
-/// @}
-}
+} // reactivesocket

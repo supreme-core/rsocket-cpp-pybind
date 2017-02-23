@@ -3,7 +3,7 @@
 #pragma once
 
 #include <fstream>
-#include "TestSuite.h"
+#include "tck-test/TestSuite.h"
 
 namespace reactivesocket {
 namespace tck {

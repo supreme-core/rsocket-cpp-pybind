@@ -19,8 +19,8 @@ std::string FrameSerializerV0::protocolVersion() {
   return "0.0";
 }
 
-std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
-    Frame_REQUEST_STREAM&& frame) {
+std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOutInternal(
+    Frame_REQUEST_Base&& frame) {
   auto queue = createBufferQueue(
       FrameHeader::kSize + sizeof(uint32_t) + frame.payload_.framingSize());
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
@@ -28,28 +28,21 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
   appender.writeBE<uint32_t>(frame.requestN_);
   frame.payload_.serializeInto(appender);
   return queue.move();
+}
+
+std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
+    Frame_REQUEST_STREAM&& frame) {
+  return serializeOutInternal(std::move(frame));
 }
 
 std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
     Frame_REQUEST_SUB&& frame) {
-  auto queue = createBufferQueue(
-      FrameHeader::kSize + sizeof(uint32_t) + frame.payload_.framingSize());
-  folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
-  frame.header_.serializeInto(appender);
-  appender.writeBE<uint32_t>(frame.requestN_);
-  frame.payload_.serializeInto(appender);
-  return queue.move();
+  return serializeOutInternal(std::move(frame));
 }
 
 std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
     Frame_REQUEST_CHANNEL&& frame) {
-  auto queue = createBufferQueue(
-      FrameHeader::kSize + sizeof(uint32_t) + frame.payload_.framingSize());
-  folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
-  frame.header_.serializeInto(appender);
-  appender.writeBE<uint32_t>(frame.requestN_);
-  frame.payload_.serializeInto(appender);
-  return queue.move();
+  return serializeOutInternal(std::move(frame));
 }
 
 std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
@@ -209,81 +202,233 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
   return queue.move();
 }
 
-bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_STREAM&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+bool FrameSerializerV0::deserializeFromInternal(
+    Frame_REQUEST_Base& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.requestN_ = cur.readBE<uint32_t>();
+    frame.payload_.deserializeFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_SUB&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_REQUEST_STREAM& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  return deserializeFromInternal(frame, std::move(in));
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_CHANNEL&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_REQUEST_SUB& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  return deserializeFromInternal(frame, std::move(in));
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_RESPONSE&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_REQUEST_CHANNEL& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  return deserializeFromInternal(frame, std::move(in));
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_FNF&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_REQUEST_RESPONSE& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.payload_.deserializeFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_N&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_REQUEST_FNF& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.payload_.deserializeFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_METADATA_PUSH&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_REQUEST_N& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.requestN_ = cur.readBE<uint32_t>();
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_CANCEL&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
-  ;
+    Frame_METADATA_PUSH& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.metadata_ =
+        Payload::deserializeMetadataFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return frame.metadata_ != nullptr;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_RESPONSE&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_CANCEL& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.metadata_ =
+        Payload::deserializeMetadataFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_ERROR&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_RESPONSE& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.payload_.deserializeFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_KEEPALIVE&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_ERROR& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.errorCode_ = static_cast<ErrorCode>(cur.readBE<uint32_t>());
+    frame.payload_.deserializeFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
+bool FrameSerializerV0::deserializeFrom(
+    Frame_KEEPALIVE& frame,
+    std::unique_ptr<folly::IOBuf> in,
+    bool resumable) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    if (frame.header_.flags_ & FrameFlags_METADATA) {
+      return false;
+    }
+
+    // TODO: Remove hack:
+    // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+    if (resumable) {
+      frame.position_ = cur.readBE<ResumePosition>();
+    } else {
+      frame.position_ = 0;
+    }
+    frame.data_ = Payload::deserializeDataFrom(cur);
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
+
 bool FrameSerializerV0::deserializeFrom(
     Frame_SETUP& frame,
     std::unique_ptr<folly::IOBuf> in) {
-  throw std::runtime_error("v0 serialization not implemented");
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.versionMajor_ = cur.readBE<uint16_t>();
+    frame.versionMinor_ = cur.readBE<uint16_t>();
+    frame.keepaliveTime_ = cur.readBE<uint32_t>();
+    frame.maxLifetime_ = cur.readBE<uint32_t>();
+
+    // TODO: Remove hack:
+    // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
+    if (frame.header_.flags_ & FrameFlags_RESUME_ENABLE) {
+      ResumeIdentificationToken::Data data;
+      cur.pull(data.data(), data.size());
+      frame.token_.set(std::move(data));
+    } else {
+      frame.token_ = ResumeIdentificationToken();
+    }
+
+    auto mdmtLen = cur.readBE<uint8_t>();
+    frame.metadataMimeType_ = cur.readFixedString(mdmtLen);
+
+    auto dmtLen = cur.readBE<uint8_t>();
+    frame.dataMimeType_ = cur.readFixedString(dmtLen);
+    frame.payload_.deserializeFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_LEASE&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_LEASE& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.ttl_ = cur.readBE<uint32_t>();
+    frame.numberOfRequests_ = cur.readBE<uint32_t>();
+    frame.metadata_ =
+        Payload::deserializeMetadataFrom(cur, frame.header_.flags_);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_RESUME&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_RESUME& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    ResumeIdentificationToken::Data data;
+    cur.pull(data.data(), data.size());
+    frame.token_.set(std::move(data));
+    frame.position_ = cur.readBE<ResumePosition>();
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
+
 bool FrameSerializerV0::deserializeFrom(
-    Frame_RESUME_OK&,
-    std::unique_ptr<folly::IOBuf>) {
-  throw std::runtime_error("v0 serialization not implemented");
+    Frame_RESUME_OK& frame,
+    std::unique_ptr<folly::IOBuf> in) {
+  folly::io::Cursor cur(in.get());
+  try {
+    frame.header_.deserializeFrom(cur);
+    frame.position_ = cur.readBE<ResumePosition>();
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
 
 } // reactivesocket

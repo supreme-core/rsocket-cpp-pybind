@@ -24,7 +24,7 @@ void ServerConnectionAcceptor::processFrame(
   switch (FrameHeader::peekType(*frame)) {
     case FrameType::SETUP: {
       Frame_SETUP setupFrame;
-      if (!setupFrame.deserializeFrom(std::move(frame))) {
+      if (!frameSerializer_.deserializeFrom(setupFrame, std::move(frame))) {
         transport->outputFrameOrEnqueue(
             frameSerializer_.serializeOut(Frame_ERROR::invalidFrame()));
         transport->close(folly::exception_wrapper());
@@ -41,7 +41,7 @@ void ServerConnectionAcceptor::processFrame(
 
     case FrameType::RESUME: {
       Frame_RESUME resumeFrame;
-      if (!resumeFrame.deserializeFrom(std::move(frame))) {
+      if (!frameSerializer_.deserializeFrom(resumeFrame, std::move(frame))) {
         transport->outputFrameOrEnqueue(
             frameSerializer_.serializeOut(Frame_ERROR::invalidFrame()));
         transport->close(folly::exception_wrapper());

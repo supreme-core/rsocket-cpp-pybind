@@ -26,6 +26,12 @@ class FrameSerializerV0 : public FrameSerializer {
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESUME&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESUME_OK&&) override;
 
+  std::unique_ptr<folly::IOBuf> serializeOutInternal(Frame_REQUEST_Base&&);
+
+  bool deserializeFromInternal(
+      Frame_REQUEST_Base&,
+      std::unique_ptr<folly::IOBuf>);
+
   bool deserializeFrom(Frame_REQUEST_STREAM&, std::unique_ptr<folly::IOBuf>)
       override;
   bool deserializeFrom(Frame_REQUEST_SUB&, std::unique_ptr<folly::IOBuf>)
@@ -43,7 +49,7 @@ class FrameSerializerV0 : public FrameSerializer {
   bool deserializeFrom(Frame_CANCEL&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_RESPONSE&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_ERROR&, std::unique_ptr<folly::IOBuf>) override;
-  bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>)
+  bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>, bool)
       override;
   bool deserializeFrom(Frame_SETUP&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_LEASE&, std::unique_ptr<folly::IOBuf>) override;

@@ -18,6 +18,11 @@ class FrameSerializer {
 
   static std::unique_ptr<FrameSerializer> createFrameSerializer(
       std::string protocolVersion);
+  static std::unique_ptr<FrameSerializer> createCurrentVersion();
+
+  constexpr static const char* kCurrentProtocolVersion = "0.1";
+  constexpr static const uint16_t kCurrentProtocolVersionMajor = 0;
+  constexpr static const uint16_t kCurrentProtocolVersionMinor = 1;
 
   virtual std::unique_ptr<folly::IOBuf> serializeOut(
       Frame_REQUEST_STREAM&&) = 0;
@@ -70,7 +75,8 @@ class FrameSerializer {
   virtual bool deserializeFrom(Frame_ERROR&, std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(
       Frame_KEEPALIVE&,
-      std::unique_ptr<folly::IOBuf>) = 0;
+      std::unique_ptr<folly::IOBuf>,
+      bool supportsResumability) = 0;
   virtual bool deserializeFrom(Frame_SETUP&, std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(Frame_LEASE&, std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(

@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "TestSubscriber.h"
+#include "tck-test/TestSubscriber.h"
 
 #include <folly/io/IOBuf.h>
 #include <glog/logging.h>
@@ -14,12 +14,14 @@ TestSubscriber::TestSubscriber(int initialRequestN)
     : initialRequestN_(initialRequestN) {}
 
 void TestSubscriber::request(int n) {
-  subscription_.request(n);
+  subscription_->request(n);
 }
 
 void TestSubscriber::cancel() {
   canceled_ = true;
-  subscription_.cancel();
+  if (auto subscription = std::move(subscription_)) {
+    subscription->cancel();
+  }
 }
 
 void TestSubscriber::awaitTerminalEvent() {
@@ -122,7 +124,7 @@ void TestSubscriber::assertTerminated() {
 
 void TestSubscriber::onSubscribe(
     std::shared_ptr<Subscription> subscription) noexcept {
-  subscription_.reset(std::move(subscription));
+  subscription_ = std::move(subscription);
 
   //  actual.onSubscribe(s);
 
@@ -131,7 +133,7 @@ void TestSubscriber::onSubscribe(
   //  }
 
   if (initialRequestN_ > 0) {
-    subscription_.request(initialRequestN_);
+    subscription_->request(initialRequestN_);
   }
 
   //  long mr = missedRequested.getAndSet(0L);

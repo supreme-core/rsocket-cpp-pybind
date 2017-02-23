@@ -1,10 +1,9 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "TestInterpreter.h"
-
+#include "tck-test/TestInterpreter.h"
 #include <glog/logging.h>
 #include <src/StandardReactiveSocket.h>
-#include "TypedCommands.h"
+#include "tck-test/TypedCommands.h"
 
 using namespace folly;
 

@@ -53,7 +53,8 @@ template <class Frame>
 void StreamAutomatonBase::deserializeAndDispatch(
     std::unique_ptr<folly::IOBuf> payload) {
   Frame frame;
-  if (frame.deserializeFrom(std::move(payload))) {
+  if (connection_->frameSerializer().deserializeFrom(
+          frame, std::move(payload))) {
     onNextFrame(std::move(frame));
   } else {
     onBadFrame();
@@ -102,6 +103,8 @@ void StreamAutomatonBase::onNextFrame(Frame_ERROR&& f) {
 }
 
 void StreamAutomatonBase::onBadFrame() {
+  // TODO: a bad frame for a stream should not bring down the whole socket
+  // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/311
   connection_->closeWithError(Frame_ERROR::invalid(streamId_, "bad frame"));
 }
 

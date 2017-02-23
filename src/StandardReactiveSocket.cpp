@@ -13,10 +13,6 @@
 
 namespace reactivesocket {
 
-constexpr static const char* kPROTOCOL_VERSION = "0.1";
-constexpr static const uint16_t kPROTOCOL_VERSION_MAJOR = 0;
-constexpr static const uint16_t kPROTOCOL_VERSION_MINOR = 1;
-
 StandardReactiveSocket::~StandardReactiveSocket() {
   debugCheckCorrectExecutor();
 
@@ -47,10 +43,9 @@ StandardReactiveSocket::StandardReactiveSocket(
           std::move(keepaliveTimer),
           mode)),
       executor_(executor) {
-  // TODO (lehecka): In case of server, FrameSerializer should be ideally set
-  // after inspecting the SETUP frame from the client
-  connection_->setFrameSerializer(
-      FrameSerializer::createFrameSerializer(kPROTOCOL_VERSION));
+  // TODO: In case of server, FrameSerializer should be ideally set after
+  // inspecting the SETUP frame from the client
+  connection_->setFrameSerializer(FrameSerializer::createCurrentVersion());
   debugCheckCorrectExecutor();
   stats.socketCreated();
 }
@@ -84,7 +79,7 @@ StandardReactiveSocket::disconnectedClient(
       std::move(keepaliveTimer),
       executor));
   socket->connection_->setFrameSerializer(
-      FrameSerializer::createFrameSerializer(kPROTOCOL_VERSION));
+      FrameSerializer::createCurrentVersion());
   return socket;
 }
 
@@ -272,8 +267,8 @@ void StandardReactiveSocket::clientConnect(
   // TODO set correct version
   Frame_SETUP frame(
       setupPayload.resumable ? FrameFlags_RESUME_ENABLE : FrameFlags_EMPTY,
-      kPROTOCOL_VERSION_MAJOR,
-      kPROTOCOL_VERSION_MINOR,
+      FrameSerializer::kCurrentProtocolVersionMajor,
+      FrameSerializer::kCurrentProtocolVersionMinor,
       connection_->getKeepaliveTime(),
       std::numeric_limits<uint32_t>::max(),
       setupPayload.token,

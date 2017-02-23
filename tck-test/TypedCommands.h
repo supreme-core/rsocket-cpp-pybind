@@ -4,7 +4,7 @@
 
 #include <folly/Conv.h>
 #include <folly/String.h>
-#include "TestSuite.h"
+#include "tck-test/TestSuite.h"
 
 namespace reactivesocket {
 namespace tck {

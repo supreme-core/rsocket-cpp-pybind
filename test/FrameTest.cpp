@@ -17,10 +17,11 @@ template <typename Frame, typename... Args>
 Frame reserialize_resume(bool resumable, Args... args) {
   Frame givenFrame, newFrame;
   givenFrame = Frame(std::forward<Args>(args)...);
-  FrameSerializerV0_1 frameSerializer;
-  EXPECT_TRUE(newFrame.deserializeFrom(
-      resumable,
-      frameSerializer.serializeOut(std::move(givenFrame), resumable)));
+  auto frameSerializer = FrameSerializer::createCurrentVersion();
+  EXPECT_TRUE(frameSerializer->deserializeFrom(
+      newFrame,
+      frameSerializer->serializeOut(std::move(givenFrame), resumable),
+      resumable));
   return newFrame;
 }
 
@@ -28,9 +29,9 @@ template <typename Frame, typename... Args>
 Frame reserialize(Args... args) {
   Frame givenFrame, newFrame;
   givenFrame = Frame(std::forward<Args>(args)...);
-  FrameSerializerV0_1 frameSerializer;
-  EXPECT_TRUE(newFrame.deserializeFrom(
-      frameSerializer.serializeOut(std::move(givenFrame))));
+  auto frameSerializer = FrameSerializer::createCurrentVersion();
+  EXPECT_TRUE(frameSerializer->deserializeFrom(
+      newFrame, frameSerializer->serializeOut(std::move(givenFrame))));
   return newFrame;
 }
 

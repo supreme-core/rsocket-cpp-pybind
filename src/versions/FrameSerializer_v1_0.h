@@ -119,7 +119,7 @@ class FrameSerializerV1_0 : public FrameSerializer {
     throw std::runtime_error("v1 serialization not implemented");
   }
 
-  bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>)
+  bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>, bool)
       override {
     throw std::runtime_error("v1 serialization not implemented");
   }

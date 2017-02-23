@@ -158,8 +158,6 @@ class Frame_REQUEST_Base {
       Payload payload)
       : Frame_REQUEST_Base(frameType, streamId, flags, 0, std::move(payload)) {}
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   FrameHeader header_;
   uint32_t requestN_;
   Payload payload_;
@@ -239,8 +237,6 @@ class Frame_REQUEST_RESPONSE {
     // METADATA and provided none
   }
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   FrameHeader header_;
   Payload payload_;
 };
@@ -255,8 +251,6 @@ class Frame_REQUEST_FNF {
     payload_.checkFlags(header_.flags_); // to verify the client didn't set
     // METADATA and provided none
   }
-
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
 
   FrameHeader header_;
   Payload payload_;
@@ -278,8 +272,6 @@ class Frame_REQUEST_N {
       : header_(FrameType::REQUEST_N, FrameFlags_EMPTY, streamId),
         requestN_(requestN) {}
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   FrameHeader header_;
   uint32_t requestN_;
 };
@@ -293,8 +285,6 @@ class Frame_METADATA_PUSH {
         metadata_(std::move(metadata)) {
     CHECK(metadata_);
   }
-
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
 
   FrameHeader header_;
   std::unique_ptr<folly::IOBuf> metadata_;
@@ -313,8 +303,6 @@ class Frame_CANCEL {
             streamId),
         metadata_(std::move(metadata)) {}
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   FrameHeader header_;
   std::unique_ptr<folly::IOBuf> metadata_;
 };
@@ -330,8 +318,6 @@ class Frame_RESPONSE {
     // METADATA and provided none
   }
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   static Frame_RESPONSE complete(StreamId streamId);
 
   FrameHeader header_;
@@ -346,8 +332,6 @@ class Frame_ERROR {
       : header_(FrameType::ERROR, payload.getFlags(), streamId),
         errorCode_(errorCode),
         payload_(std::move(payload)) {}
-
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
 
   static Frame_ERROR unexpectedFrame();
   static Frame_ERROR invalidFrame();
@@ -376,8 +360,6 @@ class Frame_KEEPALIVE {
         data_(std::move(data)) {
     assert(!(flags & FrameFlags_METADATA));
   }
-
-  bool deserializeFrom(bool resumable, std::unique_ptr<folly::IOBuf> in);
 
   FrameHeader header_;
   ResumePosition position_;
@@ -413,7 +395,6 @@ class Frame_SETUP {
     // METADATA and provided none
   }
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
   void moveToSetupPayload(ConnectionSetupPayload& setupPayload);
 
   FrameHeader header_;
@@ -441,8 +422,6 @@ class Frame_LEASE {
         numberOfRequests_(numberOfRequests),
         metadata_(std::move(metadata)) {}
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   FrameHeader header_;
   uint32_t ttl_;
   uint32_t numberOfRequests_;
@@ -457,8 +436,6 @@ class Frame_RESUME {
   Frame_RESUME(const ResumeIdentificationToken& token, ResumePosition position)
       : header_(FrameType::RESUME, 0, 0), token_(token), position_(position) {}
 
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
-
   FrameHeader header_;
   ResumeIdentificationToken token_;
   ResumePosition position_;
@@ -471,8 +448,6 @@ class Frame_RESUME_OK {
   Frame_RESUME_OK() = default;
   explicit Frame_RESUME_OK(ResumePosition position)
       : header_(FrameType::RESUME_OK, 0, 0), position_(position) {}
-
-  bool deserializeFrom(std::unique_ptr<folly::IOBuf> in);
 
   FrameHeader header_;
   ResumePosition position_;

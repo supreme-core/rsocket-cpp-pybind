@@ -8,7 +8,6 @@
 #include <vector>
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 namespace tck {
@@ -43,7 +42,7 @@ class TestSubscriber : public reactivesocket::Subscriber<Payload> {
  private:
   void assertTerminated();
 
-  SubscriptionPtr<Subscription> subscription_;
+  std::shared_ptr<Subscription> subscription_;
   int initialRequestN_{0};
 
   std::atomic<bool> canceled_{false};
