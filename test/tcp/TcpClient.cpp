@@ -5,7 +5,6 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gmock/gmock.h>
 #include "src/NullRequestHandler.h"
-#include "src/SmartPointers.h"
 #include "src/StandardReactiveSocket.h"
 #include "src/SubscriptionBase.h"
 #include "src/folly/FollyKeepaliveTimer.h"
@@ -46,15 +45,17 @@ class ClientSubscription : public SubscriptionBase {
   // Subscription methods
   void requestImpl(size_t n) noexcept override {
     for (size_t i = 0; i < numElems_; i++) {
-      response_.onNext(Payload("from server " + std::to_string(i)));
+      response_->onNext(Payload("from server " + std::to_string(i)));
     }
     // response_.onComplete();
-    response_.onError(std::runtime_error("XXX"));
+    if (auto response = std::move(response_)) {
+      response->onError(std::runtime_error("XXX"));
+    }
   }
 
   void cancelImpl() noexcept override {}
 
-  SubscriberPtr<Subscriber<Payload>> response_;
+  std::shared_ptr<Subscriber<Payload>> response_;
   size_t numElems_;
 };
 }

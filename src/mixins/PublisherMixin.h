@@ -12,7 +12,6 @@
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/RequestHandler.h"
-#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 
@@ -27,15 +26,15 @@ class PublisherMixin {
   /// @{
   void publisherSubscribe(std::shared_ptr<Subscription> subscription) {
     debugCheckOnSubscribe();
-    producingSubscription_.reset(std::move(subscription));
+    producingSubscription_ = std::move(subscription);
     if (initialRequestN_) {
-      producingSubscription_.request(initialRequestN_.drain());
+      producingSubscription_->request(initialRequestN_.drain());
     }
   }
 
   /// @}
 
-  std::shared_ptr<Subscription> subscription() {
+  std::shared_ptr<Subscription> subscription() const {
     return producingSubscription_;
   }
 
@@ -47,7 +46,7 @@ class PublisherMixin {
     // we might not have the subscription set yet as there can be REQUEST_N
     // frames scheduled on the executor before onSubscribe method
     if (producingSubscription_) {
-      producingSubscription_.request(requestN);
+      producingSubscription_->request(requestN);
     } else {
       initialRequestN_.release(requestN);
     }
@@ -64,7 +63,9 @@ class PublisherMixin {
 
   /// @{
   void terminatePublisher(StreamCompletionSignal signal) {
-    producingSubscription_.cancel();
+    if (auto subscription = std::move(producingSubscription_)) {
+      subscription->cancel();
+    }
   }
 
   void pausePublisherStream(RequestHandler& requestHandler) {
@@ -83,7 +84,7 @@ class PublisherMixin {
   /// A Subscription that constrols production of payloads.
   /// This mixin is responsible for delivering a terminal signal to the
   /// Subscription once the stream ends.
-  reactivestreams::SubscriptionPtr<Subscription> producingSubscription_;
+  std::shared_ptr<Subscription> producingSubscription_;
   AllowanceSemaphore initialRequestN_;
 };
 }

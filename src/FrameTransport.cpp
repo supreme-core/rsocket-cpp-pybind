@@ -26,8 +26,8 @@ void FrameTransport::connect() {
     return;
   }
 
-  connectionOutput_.reset(connection_->getOutput());
-  connectionOutput_.onSubscribe(shared_from_this());
+  connectionOutput_ = connection_->getOutput();
+  connectionOutput_->onSubscribe(shared_from_this());
 
   // the onSubscribe call on the previous line may have called the terminating
   // signal which would call disconnect/close
@@ -72,12 +72,16 @@ void FrameTransport::close(folly::exception_wrapper ex) {
   // Send terminal signals to the DuplexConnection's input and output before
   // tearing it down. We must do this per DuplexConnection specification (see
   // interface definition).
-  if (ex) {
-    connectionOutput_.onError(std::move(ex));
-  } else {
-    connectionOutput_.onComplete();
+  if (auto subscriber = std::move(connectionOutput_)) {
+    if (ex) {
+      subscriber->onError(std::move(ex));
+    } else {
+      subscriber->onComplete();
+    }
   }
-  connectionInputSub_.cancel();
+  if (auto subscription = std::move(connectionInputSub_)) {
+    subscription->cancel();
+  }
 }
 
 void FrameTransport::onSubscribe(
@@ -90,8 +94,8 @@ void FrameTransport::onSubscribe(
 
   CHECK(!connectionInputSub_);
   CHECK(frameProcessor_);
-  connectionInputSub_.reset(std::move(subscription));
-  connectionInputSub_.request(std::numeric_limits<size_t>::max());
+  connectionInputSub_ = std::move(subscription);
+  connectionInputSub_->request(std::numeric_limits<size_t>::max());
 }
 
 void FrameTransport::onNext(std::unique_ptr<folly::IOBuf> frame) noexcept {
@@ -161,7 +165,7 @@ void FrameTransport::outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame) {
     drainOutputFramesQueue();
     if (pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
       VLOG(3) << this << " writing frame " << FrameHeader::peekType(*frame);
-      connectionOutput_.onNext(std::move(frame));
+      connectionOutput_->onNext(std::move(frame));
       return;
     }
   }
@@ -181,7 +185,7 @@ void FrameTransport::drainOutputFramesQueue() {
       auto frame = std::move(pendingWrites_.front());
       VLOG(3) << this << " flushing frame " << FrameHeader::peekType(*frame);
       pendingWrites_.pop_front();
-      connectionOutput_.onNext(std::move(frame));
+      connectionOutput_->onNext(std::move(frame));
     }
   }
 }

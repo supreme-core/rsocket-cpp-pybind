@@ -8,8 +8,8 @@ namespace reactivesocket {
 void FramedWriter::onSubscribeImpl(
     std::shared_ptr<Subscription> subscription) noexcept {
   CHECK(!writerSubscription_);
-  writerSubscription_.reset(std::move(subscription));
-  stream_.onSubscribe(shared_from_this());
+  writerSubscription_ = std::move(subscription);
+  stream_->onSubscribe(shared_from_this());
 }
 
 static std::unique_ptr<folly::IOBuf> appendSize(
@@ -44,7 +44,7 @@ void FramedWriter::onNextImpl(std::unique_ptr<folly::IOBuf> payload) noexcept {
     cancel();
     return;
   }
-  stream_.onNext(std::move(sizedPayload));
+  stream_->onNext(std::move(sizedPayload));
 }
 
 void FramedWriter::onNextMultiple(
@@ -60,30 +60,42 @@ void FramedWriter::onNextMultiple(
     }
     payloadQueue.append(std::move(sizedPayload));
   }
-  stream_.onNext(payloadQueue.move());
+  stream_->onNext(payloadQueue.move());
 }
 
 void FramedWriter::onCompleteImpl() noexcept {
-  stream_.onComplete();
-  writerSubscription_.cancel();
+  if (auto subscriber = std::move(stream_)) {
+    subscriber->onComplete();
+  }
+  if (auto subscription = std::move(writerSubscription_)) {
+    subscription->cancel();
+  }
 }
 
 void FramedWriter::onErrorImpl(folly::exception_wrapper ex) noexcept {
-  stream_.onError(std::move(ex));
-  writerSubscription_.cancel();
+  if (auto subscriber = std::move(stream_)) {
+    subscriber->onError(std::move(ex));
+  }
+  if (auto subscription = std::move(writerSubscription_)) {
+    subscription->cancel();
+  }
 }
 
 void FramedWriter::requestImpl(size_t n) noexcept {
   // it is possible to receive requestImpl after on{Complete,Error}
   // because it is a different interface and can be hooked up somewhere else
   if (writerSubscription_) {
-    writerSubscription_.request(n);
+    writerSubscription_->request(n);
   }
 }
 
 void FramedWriter::cancelImpl() noexcept {
-  writerSubscription_.cancel();
-  stream_.onComplete();
+  if (auto subscription = std::move(writerSubscription_)) {
+    subscription->cancel();
+  }
+  if (auto subscriber = std::move(stream_)) {
+    subscriber->onComplete();
+  }
 }
 
 } // reactivesocket

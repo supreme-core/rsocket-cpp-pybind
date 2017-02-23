@@ -5,7 +5,6 @@
 #include <folly/ExceptionWrapper.h>
 #include "src/DuplexConnection.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 

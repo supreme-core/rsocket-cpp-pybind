@@ -223,7 +223,6 @@ add_executable(
   test/Test.cpp
   test/folly/FollyKeepaliveTimerTest.cpp
   test/ReactiveSocketResumabilityTest.cpp
-  test/SmartPointersTest.cpp
   test/AllowanceSemaphoreTest.cpp
   test/ResumeIdentificationTokenTest.cpp
   test/PayloadTest.cpp test/ResumeCacheTest.cpp)

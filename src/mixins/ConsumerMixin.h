@@ -11,7 +11,6 @@
 #include "src/NullRequestHandler.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 #include "src/SubscriptionBase.h"
 #include "src/automata/StreamAutomatonBase.h"
 
@@ -77,7 +76,7 @@ class ConsumerMixin : public StreamAutomatonBase, public SubscriptionBase {
   /// A Subscriber that will consume payloads.
   /// This mixin is responsible for delivering a terminal signal to the
   /// Subscriber once the stream ends.
-  reactivestreams::SubscriberPtr<Subscriber<Payload>> consumingSubscriber_;
+  std::shared_ptr<Subscriber<Payload>> consumingSubscriber_;
 
   /// A total, net allowance (requested less delivered) by this consumer.
   AllowanceSemaphore allowance_;

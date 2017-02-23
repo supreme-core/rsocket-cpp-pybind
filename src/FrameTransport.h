@@ -10,7 +10,6 @@
 #include "src/FrameProcessor.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 
 namespace reactivesocket {
 
@@ -73,10 +72,9 @@ class FrameTransport :
   AllowanceSemaphore writeAllowance_;
   std::shared_ptr<DuplexConnection> connection_;
 
-  reactivestreams::SubscriberPtr<
-      reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+  std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       connectionOutput_;
-  reactivestreams::SubscriptionPtr<Subscription> connectionInputSub_;
+  std::shared_ptr<Subscription> connectionInputSub_;
 
   std::deque<std::unique_ptr<folly::IOBuf>> pendingWrites_;
 };

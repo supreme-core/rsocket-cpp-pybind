@@ -8,8 +8,8 @@ namespace reactivesocket {
 void FramedReader::onSubscribeImpl(
     std::shared_ptr<Subscription> subscription) noexcept {
   CHECK(!streamSubscription_);
-  streamSubscription_.reset(std::move(subscription));
-  frames_.onSubscribe(shared_from_this());
+  streamSubscription_ = std::move(subscription);
+  frames_->onSubscribe(shared_from_this());
 }
 
 void FramedReader::onNextImpl(std::unique_ptr<folly::IOBuf> payload) noexcept {
@@ -58,21 +58,29 @@ void FramedReader::parseFrames() {
                                       : folly::IOBuf::create(0);
 
     CHECK(allowance_.tryAcquire(1));
-    frames_.onNext(std::move(nextFrame));
+    frames_->onNext(std::move(nextFrame));
   }
   dispatchingFrames_ = false;
 }
 
 void FramedReader::onCompleteImpl() noexcept {
   payloadQueue_.move(); // equivalent to clear(), releases the buffers
-  frames_.onComplete();
-  streamSubscription_.cancel();
+  if (auto subscriber = std::move(frames_)) {
+    subscriber->onComplete();
+  }
+  if (auto subscription = std::move(streamSubscription_)) {
+    subscription->cancel();
+  }
 }
 
 void FramedReader::onErrorImpl(folly::exception_wrapper ex) noexcept {
   payloadQueue_.move(); // equivalent to clear(), releases the buffers
-  frames_.onError(std::move(ex));
-  streamSubscription_.cancel();
+  if (auto subscriber = std::move(frames_)) {
+    subscriber->onError(std::move(ex));
+  }
+  if (auto subscription = std::move(streamSubscription_)) {
+    subscription->cancel();
+  }
 }
 
 void FramedReader::requestImpl(size_t n) noexcept {
@@ -84,14 +92,18 @@ void FramedReader::requestImpl(size_t n) noexcept {
 void FramedReader::requestStream() {
   if (streamSubscription_ && allowance_.canAcquire()) {
     streamRequested_ = true;
-    streamSubscription_.request(1);
+    streamSubscription_->request(1);
   }
 }
 
 void FramedReader::cancelImpl() noexcept {
   payloadQueue_.move(); // equivalent to clear(), releases the buffers
-  streamSubscription_.cancel();
-  frames_.onComplete();
+  if (auto subscription = std::move(streamSubscription_)) {
+    subscription->cancel();
+  }
+  if (auto subscriber = std::move(frames_)) {
+    subscriber->onComplete();
+  }
 }
 
 } // reactivesocket

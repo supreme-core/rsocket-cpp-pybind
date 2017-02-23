@@ -5,7 +5,6 @@
 #include <folly/ExceptionWrapper.h>
 #include <vector>
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 
@@ -41,9 +40,9 @@ class FramedWriter : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
 
   using EnableSharedFromThisBase<FramedWriter>::shared_from_this;
 
-  SubscriberPtr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+  std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       stream_;
-  SubscriptionPtr<::reactivestreams::Subscription> writerSubscription_;
+  std::shared_ptr<::reactivestreams::Subscription> writerSubscription_;
 };
 
 } // reactivesocket

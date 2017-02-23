@@ -3,8 +3,6 @@
 #pragma once
 
 #include <iosfwd>
-#include "src/SmartPointers.h"
-
 #include "src/Frame.h"
 #include "src/SubscriptionBase.h"
 #include "src/automata/StreamAutomatonBase.h"
@@ -60,7 +58,7 @@ class RequestResponseRequester : public StreamAutomatonBase,
   /// A Subscriber that will consume payloads.
   /// This mixin is responsible for delivering a terminal signal to the
   /// Subscriber once the stream ends.
-  reactivestreams::SubscriberPtr<Subscriber<Payload>> consumingSubscriber_;
+  std::shared_ptr<Subscriber<Payload>> consumingSubscriber_;
 
   /// Initial payload which has to be sent with 1st request.
   Payload initialPayload_;

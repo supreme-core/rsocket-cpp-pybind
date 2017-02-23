@@ -6,7 +6,6 @@
 #include "src/FrameTransport.h"
 #include "src/NullRequestHandler.h"
 #include "src/ServerConnectionAcceptor.h"
-#include "src/SmartPointers.h"
 #include "src/StandardReactiveSocket.h"
 #include "src/SubscriptionBase.h"
 #include "src/framed/FramedDuplexConnection.h"
@@ -38,10 +37,12 @@ class ServerSubscription : public SubscriptionBase {
   // Subscription methods
   void requestImpl(size_t n) noexcept override {
     LOG(INFO) << "request " << this;
-    response_.onNext(Payload("from server"));
-    response_.onNext(Payload("from server2"));
+    response_->onNext(Payload("from server"));
+    response_->onNext(Payload("from server2"));
     LOG(INFO) << "calling onComplete";
-    response_.onComplete();
+    if (auto response = std::move(response_)) {
+      response->onComplete();
+    }
     //    response_.onError(std::runtime_error("XXX"));
   }
 
@@ -50,7 +51,7 @@ class ServerSubscription : public SubscriptionBase {
   }
 
  private:
-  SubscriberPtr<Subscriber<Payload>> response_;
+  std::shared_ptr<Subscriber<Payload>> response_;
 };
 
 class ServerRequestHandler : public DefaultRequestHandler {

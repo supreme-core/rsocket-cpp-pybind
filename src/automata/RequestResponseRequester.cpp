@@ -13,8 +13,8 @@ void RequestResponseRequester::subscribe(
     std::shared_ptr<Subscriber<Payload>> subscriber) {
   DCHECK(!isTerminated());
   DCHECK(!consumingSubscriber_);
-  consumingSubscriber_.reset(std::move(subscriber));
-  consumingSubscriber_.onSubscribe(SubscriptionBase::shared_from_this());
+  consumingSubscriber_ = std::move(subscriber);
+  consumingSubscriber_->onSubscribe(SubscriptionBase::shared_from_this());
 }
 
 void RequestResponseRequester::requestImpl(size_t n) noexcept {
@@ -31,7 +31,7 @@ void RequestResponseRequester::requestImpl(size_t n) noexcept {
   }
 
   if (payload_) {
-    consumingSubscriber_.onNext(std::move(payload_));
+    consumingSubscriber_->onNext(std::move(payload_));
     DCHECK(!payload_);
     connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
   } else {
@@ -72,11 +72,12 @@ void RequestResponseRequester::endStream(StreamCompletionSignal signal) {
     case State::CLOSED:
       break;
   }
-  if (signal == StreamCompletionSignal::GRACEFUL) {
-    consumingSubscriber_.onComplete();
-  } else {
-    consumingSubscriber_.onError(
-        StreamInterruptedException(static_cast<int>(signal)));
+  if (auto subscriber = std::move(consumingSubscriber_)) {
+    if (signal == StreamCompletionSignal::GRACEFUL) {
+      subscriber->onComplete();
+    } else {
+      subscriber->onError(StreamInterruptedException(static_cast<int>(signal)));
+    }
   }
 }
 
@@ -88,8 +89,10 @@ void RequestResponseRequester::onNextFrame(Frame_ERROR&& frame) {
       break;
     case State::REQUESTED:
       state_ = State::CLOSED;
-      consumingSubscriber_.onError(
-          std::runtime_error(frame.payload_.moveDataToString()));
+      if (auto subscriber = std::move(consumingSubscriber_)) {
+        subscriber->onError(
+            std::runtime_error(frame.payload_.moveDataToString()));
+      }
       connection_->endStream(streamId_, StreamCompletionSignal::ERROR);
       break;
     case State::CLOSED:
@@ -121,7 +124,7 @@ void RequestResponseRequester::onNextFrame(Frame_RESPONSE&& frame) {
   }
 
   if (waitingForPayload_) {
-    consumingSubscriber_.onNext(std::move(frame.payload_));
+    consumingSubscriber_->onNext(std::move(frame.payload_));
     connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
   } else {
     payload_ = std::move(frame.payload_);

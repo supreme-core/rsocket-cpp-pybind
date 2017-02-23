@@ -2,7 +2,6 @@
 
 #include "TcpDuplexConnection.h"
 #include <folly/ExceptionWrapper.h>
-#include "src/SmartPointers.h"
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 
@@ -28,8 +27,8 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
           inputSubscriber) {
     CHECK(!inputSubscriber_);
-    inputSubscriber_.reset(std::move(inputSubscriber));
-    inputSubscriber_.onSubscribe(SubscriptionBase::shared_from_this());
+    inputSubscriber_ = std::move(inputSubscriber);
+    inputSubscriber_->onSubscribe(SubscriptionBase::shared_from_this());
 
     socket_->setReadCB(this);
   }
@@ -78,8 +77,8 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   void writeErr(
       size_t bytesWritten,
       const ::folly::AsyncSocketException& ex) noexcept override {
-    if (inputSubscriber_) {
-      inputSubscriber_.onError(ex);
+    if (auto subscriber = std::move(inputSubscriber_)) {
+      subscriber->onError(ex);
     }
   }
 
@@ -98,11 +97,15 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   }
 
   void readEOF() noexcept override {
-    inputSubscriber_.onComplete();
+    if (auto subscriber = std::move(inputSubscriber_)) {
+      subscriber->onComplete();
+    }
   }
 
   void readErr(const folly::AsyncSocketException& ex) noexcept override {
-    inputSubscriber_.onError(ex);
+    if (auto subscriber = std::move(inputSubscriber_)) {
+      subscriber->onError(ex);
+    }
   }
 
   bool isBufferMovable() noexcept override {
@@ -111,14 +114,14 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
 
   void readBufferAvailable(
       std::unique_ptr<folly::IOBuf> readBuf) noexcept override {
-    inputSubscriber_.onNext(std::move(readBuf));
+    inputSubscriber_->onNext(std::move(readBuf));
   }
 
   folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
   folly::AsyncSocket::UniquePtr socket_;
   Stats& stats_;
 
-  SubscriberPtr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+  std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       inputSubscriber_;
 };
 

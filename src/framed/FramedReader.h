@@ -6,7 +6,6 @@
 #include <folly/io/IOBufQueue.h>
 #include "src/AllowanceSemaphore.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/SmartPointers.h"
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 
@@ -41,9 +40,9 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
 
   using EnableSharedFromThisBase<FramedReader>::shared_from_this;
 
-  SubscriberPtr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+  std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       frames_;
-  SubscriptionPtr<Subscription> streamSubscription_;
+  std::shared_ptr<Subscription> streamSubscription_;
 
   AllowanceSemaphore allowance_{0};
 

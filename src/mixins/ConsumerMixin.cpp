@@ -18,8 +18,8 @@ void ConsumerMixin::subscribe(std::shared_ptr<Subscriber<Payload>> subscriber) {
   }
 
   DCHECK(!consumingSubscriber_);
-  consumingSubscriber_.reset(std::move(subscriber));
-  consumingSubscriber_.onSubscribe(shared_from_this());
+  consumingSubscriber_ = std::move(subscriber);
+  consumingSubscriber_->onSubscribe(shared_from_this());
 }
 
 void ConsumerMixin::generateRequest(size_t n) {
@@ -29,11 +29,12 @@ void ConsumerMixin::generateRequest(size_t n) {
 }
 
 void ConsumerMixin::endStream(StreamCompletionSignal signal) {
-  if (signal == StreamCompletionSignal::GRACEFUL) {
-    consumingSubscriber_.onComplete();
-  } else {
-    consumingSubscriber_.onError(
-        StreamInterruptedException(static_cast<int>(signal)));
+  if (auto subscriber = std::move(consumingSubscriber_)) {
+    if (signal == StreamCompletionSignal::GRACEFUL) {
+      subscriber->onComplete();
+    } else {
+      subscriber->onError(StreamInterruptedException(static_cast<int>(signal)));
+    }
   }
   Base::endStream(signal);
 }
@@ -56,7 +57,7 @@ void ConsumerMixin::processPayload(Payload&& payload) {
     // figuring out flow control allowance.
     if (allowance_.tryAcquire()) {
       sendRequests();
-      consumingSubscriber_.onNext(std::move(payload));
+      consumingSubscriber_->onNext(std::move(payload));
     } else {
       handleFlowControlError();
       return;
@@ -65,7 +66,9 @@ void ConsumerMixin::processPayload(Payload&& payload) {
 }
 
 void ConsumerMixin::onError(folly::exception_wrapper ex) {
-  consumingSubscriber_.onError(std::move(ex));
+  if (auto subscriber = std::move(consumingSubscriber_)) {
+    subscriber->onError(std::move(ex));
+  }
 }
 
 void ConsumerMixin::sendRequests() {
@@ -82,7 +85,9 @@ void ConsumerMixin::sendRequests() {
 }
 
 void ConsumerMixin::handleFlowControlError() {
-  consumingSubscriber_.onError(std::runtime_error("surplus response"));
+  if (auto subscriber = std::move(consumingSubscriber_)) {
+    subscriber->onError(std::runtime_error("surplus response"));
+  }
   auto frame = Frame_CANCEL(Base::streamId_);
   Base::connection_->outputFrameOrEnqueue(
       Base::connection_->frameSerializer().serializeOut(std::move(frame)));
