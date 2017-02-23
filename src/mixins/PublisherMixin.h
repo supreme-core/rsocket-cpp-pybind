@@ -18,30 +18,14 @@ namespace reactivesocket {
 
 enum class StreamCompletionSignal;
 
-/// A mixin that represents a flow-control-aware producer of data.
-template <typename Base>
-class PublisherMixin : public Base {
+/// A class that represents a flow-control-aware producer of data.
+class PublisherMixin {
  public:
-  explicit PublisherMixin(
-      uint32_t initialRequestN,
-      const typename Base::Parameters& params)
-      : ExecutorBase(params.executor),
-        Base(params),
-        initialRequestN_(initialRequestN) {}
-
-  explicit PublisherMixin(
-      uint32_t initialRequestN,
-      const typename Base::Parameters& params,
-      std::nullptr_t)
-      : Base(params), initialRequestN_(initialRequestN) {}
+  explicit PublisherMixin(uint32_t initialRequestN)
+      : initialRequestN_(initialRequestN) {}
 
   /// @{
-  void onSubscribe(std::shared_ptr<Subscription> subscription) {
-    if (Base::isTerminated()) {
-      subscription->cancel();
-      return;
-    }
-
+  void publisherSubscribe(std::shared_ptr<Subscription> subscription) {
     debugCheckOnSubscribe();
     producingSubscription_.reset(std::move(subscription));
     if (initialRequestN_) {
@@ -55,41 +39,6 @@ class PublisherMixin : public Base {
     return producingSubscription_;
   }
 
- protected:
-  void debugCheckOnSubscribe() {
-    DCHECK(!producingSubscription_);
-  }
-
-  void debugCheckOnNextOnCompleteOnError() {
-    DCHECK(producingSubscription_);
-    // the previous DCHECK should also cover !Base::isTerminated()
-    // but we will make sure that invariant is not broken as well
-    DCHECK(!Base::isTerminated());
-  }
-
-  /// @{
-  void endStream(StreamCompletionSignal signal) override {
-    producingSubscription_.cancel();
-    Base::endStream(signal);
-  }
-
-  void pauseStream(RequestHandler& requestHandler) override {
-    if (producingSubscription_) {
-      requestHandler.onSubscriptionPaused(producingSubscription_);
-    }
-  }
-
-  void resumeStream(RequestHandler& requestHandler) override {
-    if (producingSubscription_) {
-      requestHandler.onSubscriptionResumed(producingSubscription_);
-    }
-  }
-
-  using Base::onNextFrame;
-  void onNextFrame(Frame_REQUEST_N&& frame) override {
-    processRequestN(frame.requestN_);
-  }
-
   void processRequestN(uint32_t requestN) {
     if (!requestN) {
       return;
@@ -101,6 +50,32 @@ class PublisherMixin : public Base {
       producingSubscription_.request(requestN);
     } else {
       initialRequestN_.release(requestN);
+    }
+  }
+
+ protected:
+  void debugCheckOnSubscribe() {
+    DCHECK(!producingSubscription_);
+  }
+
+  void debugCheckOnNextOnCompleteOnError() {
+    DCHECK(producingSubscription_);
+  }
+
+  /// @{
+  void terminatePublisher(StreamCompletionSignal signal) {
+    producingSubscription_.cancel();
+  }
+
+  void pausePublisherStream(RequestHandler& requestHandler) {
+    if (producingSubscription_) {
+      requestHandler.onSubscriptionPaused(producingSubscription_);
+    }
+  }
+
+  void resumePublisherStream(RequestHandler& requestHandler) {
+    if (producingSubscription_) {
+      requestHandler.onSubscriptionResumed(producingSubscription_);
     }
   }
 
