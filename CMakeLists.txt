@@ -343,4 +343,6 @@ target_link_libraries(
 
 add_dependencies(tcpresumeserver gmock)
 
+#add_subdirectory(experimental/yarpl)
+
 # EOF
