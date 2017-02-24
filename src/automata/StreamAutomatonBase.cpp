@@ -10,7 +10,7 @@ namespace reactivesocket {
 void StreamAutomatonBase::onNextFrame(std::unique_ptr<folly::IOBuf> payload) {
   DCHECK(payload);
 
-  auto type = FrameHeader::peekType(*payload);
+  auto type = connection_->frameSerializer().peekFrameType(*payload);
   switch (type) {
     case FrameType::REQUEST_SUB:
       deserializeAndDispatch<Frame_REQUEST_SUB>(std::move(payload));

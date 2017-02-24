@@ -107,7 +107,7 @@ class ClientRequestHandler : public DefaultRequestHandler {
       ReactiveSocket&,
       ConnectionSetupPayload request) noexcept override {
     LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
-    return std::make_shared<StreamState>(Stats::noop());
+    return nullptr;
   }
 };
 

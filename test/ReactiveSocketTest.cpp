@@ -62,7 +62,7 @@ TEST(ReactiveSocketTest, RequestChannel) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -181,7 +181,7 @@ TEST(ReactiveSocketTest, RequestStreamComplete) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -270,7 +270,7 @@ TEST(ReactiveSocketTest, RequestStreamCancel) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -356,7 +356,7 @@ TEST(ReactiveSocketTest, RequestSubscription) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -459,11 +459,12 @@ TEST(ReactiveSocketTest, RequestStreamSendsOneRequest) {
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .Times(1)
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-        auto frameType = FrameHeader::peekType(*frame);
+        auto frameSerializer = FrameSerializer::createCurrentVersion();
+        auto frameType = frameSerializer->peekFrameType(*frame);
         Frame_REQUEST_STREAM request;
         ASSERT_EQ(FrameType::REQUEST_STREAM, frameType);
-        ASSERT_TRUE(FrameSerializer::createCurrentVersion()->deserializeFrom(
-            request, std::move(frame)));
+        ASSERT_TRUE(
+            frameSerializer->deserializeFrom(request, std::move(frame)));
         ASSERT_EQ("foo", request.payload_.moveDataToString());
         ASSERT_EQ((uint32_t)7, request.requestN_);
       }));
@@ -501,7 +502,7 @@ TEST(ReactiveSocketTest, RequestSubscriptionSurplusResponse) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -592,7 +593,8 @@ TEST(ReactiveSocketTest, RequestSubscriptionSendsOneRequest) {
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .Times(1)
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-        auto frameType = FrameHeader::peekType(*frame);
+        auto frameSerializer = FrameSerializer::createCurrentVersion();
+        auto frameType = frameSerializer->peekFrameType(*frame);
         Frame_REQUEST_SUB request;
         ASSERT_EQ(FrameType::REQUEST_SUB, frameType);
         ASSERT_TRUE(FrameSerializer::createCurrentVersion()->deserializeFrom(
@@ -633,7 +635,7 @@ TEST(ReactiveSocketTest, RequestResponse) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -726,11 +728,12 @@ TEST(ReactiveSocketTest, RequestResponseSendsOneRequest) {
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .Times(1)
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-        auto frameType = FrameHeader::peekType(*frame);
+        auto frameSerializer = FrameSerializer::createCurrentVersion();
+        auto frameType = frameSerializer->peekFrameType(*frame);
         Frame_REQUEST_RESPONSE request;
         ASSERT_EQ(FrameType::REQUEST_RESPONSE, frameType);
-        ASSERT_TRUE(FrameSerializer::createCurrentVersion()->deserializeFrom(
-            request, std::move(frame)));
+        ASSERT_TRUE(
+            frameSerializer->deserializeFrom(request, std::move(frame)));
         ASSERT_EQ("foo", request.payload_.moveDataToString());
       }));
 
@@ -764,7 +767,7 @@ TEST(ReactiveSocketTest, RequestFireAndForget) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -803,7 +806,7 @@ TEST(ReactiveSocketTest, RequestMetadataPush) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -841,7 +844,7 @@ TEST(ReactiveSocketTest, SetupData) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -868,7 +871,7 @@ TEST(ReactiveSocketTest, SetupWithKeepaliveAndStats) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   EXPECT_CALL(*clientKeepalive, stop()).InSequence(s);
 
@@ -929,7 +932,7 @@ TEST(ReactiveSocketTest, Destructor) {
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
       .InSequence(s)
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(),
@@ -1011,7 +1014,7 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
   auto& serverHandlerRef = *serverHandler;
 
   EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
-      .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+      .WillRepeatedly(Return(nullptr));
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -1117,7 +1120,7 @@ class ReactiveSocketOnErrorOnShutdownTest : public testing::Test {
     auto& serverHandlerRef = *serverHandler;
 
     EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
-        .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+        .WillRepeatedly(Return(nullptr));
 
     serverSock = StandardReactiveSocket::fromServerConnection(
         defaultExecutor(), std::move(serverConn), std::move(serverHandler));
@@ -1269,7 +1272,7 @@ class ReactiveSocketRegressionTest : public Test {
         .WillOnce(Return(std::make_shared<MockSubscriber<IOBufPtr>>()));
 
     EXPECT_CALL(requestHandler_, handleSetupPayload_(_, _))
-        .WillRepeatedly(Return(std::make_shared<StreamState>(Stats::noop())));
+        .WillRepeatedly(Return(nullptr));
 
     socket_ = StandardReactiveSocket::fromServerConnection(
         defaultExecutor(),

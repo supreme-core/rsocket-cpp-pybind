@@ -87,39 +87,6 @@ std::ostream& operator<<(std::ostream& os, ErrorCode errorCode) {
   return os << "ErrorCode(" << static_cast<uint32_t>(errorCode) << ")";
 }
 
-/// @{
-FrameType FrameHeader::peekType(const folly::IOBuf& in) {
-  folly::io::Cursor cur(&in);
-  try {
-    return static_cast<FrameType>(cur.readBE<uint16_t>());
-  } catch (...) {
-    return FrameType::RESERVED;
-  }
-}
-
-folly::Optional<StreamId> FrameHeader::peekStreamId(const folly::IOBuf& in) {
-  folly::io::Cursor cur(&in);
-  try {
-    cur.skip(sizeof(uint16_t)); // type
-    cur.skip(sizeof(uint16_t)); // flags
-    return folly::make_optional(cur.readBE<uint32_t>());
-  } catch (...) {
-    return folly::none;
-  }
-}
-
-void FrameHeader::serializeInto(folly::io::QueueAppender& appender) {
-  appender.writeBE<uint16_t>(static_cast<uint16_t>(type_));
-  appender.writeBE<uint16_t>(flags_);
-  appender.writeBE<uint32_t>(streamId_);
-}
-
-void FrameHeader::deserializeFrom(folly::io::Cursor& cur) {
-  type_ = static_cast<FrameType>(cur.readBE<uint16_t>());
-  flags_ = cur.readBE<uint16_t>();
-  streamId_ = cur.readBE<uint32_t>();
-}
-
 std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
   std::bitset<16> flags(header.flags_);
   return os << header.type_ << "[" << flags << ", " << header.streamId_ << "]";

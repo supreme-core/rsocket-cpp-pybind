@@ -12,13 +12,14 @@ class IOBuf;
 
 namespace reactivesocket {
 
+class ConnectionAutomaton;
 class FrameTransport;
-class Stats;
 
 class ResumeCache {
  public:
-  explicit ResumeCache(Stats& stats) : stats_(stats) {}
-  ~ResumeCache() { onClearFrames(); }
+  explicit ResumeCache(ConnectionAutomaton& connection)
+      : connection_(connection) {}
+  ~ResumeCache();
 
   void trackSentFrame(const folly::IOBuf& serializedFrame);
 
@@ -48,7 +49,8 @@ class ResumeCache {
   /// Called before clearing cached frames to update stats.
   void onClearFrames();
 
-  Stats& stats_;
+  ConnectionAutomaton& connection_;
+
   ResumePosition position_{0};
   ResumePosition resetPosition_{0};
   std::unordered_map<StreamId, ResumePosition> streamMap_;

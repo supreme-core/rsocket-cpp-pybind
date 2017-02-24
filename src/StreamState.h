@@ -16,17 +16,14 @@ class IOBuf;
 
 namespace reactivesocket {
 
+class ConnectionAutomaton;
 class StreamAutomatonBase;
-class Stats;
 using StreamId = uint32_t;
 
 class StreamState {
  public:
-  explicit StreamState(Stats& stats) : resumeCache_(stats) {}
-
-  std::unordered_map<StreamId, std::shared_ptr<StreamAutomatonBase>> streams_;
-  ResumeTracker resumeTracker_;
-  ResumeCache resumeCache_;
+  explicit StreamState(ConnectionAutomaton& connection)
+      : resumeTracker_(connection), resumeCache_(connection) {}
 
   void enqueueOutputPendingFrame(std::unique_ptr<folly::IOBuf> frame) {
     outputFrames_.push_back(std::move(frame));
@@ -35,6 +32,10 @@ class StreamState {
   std::deque<std::unique_ptr<folly::IOBuf>> moveOutputPendingFrames() {
     return std::move(outputFrames_);
   }
+
+  std::unordered_map<StreamId, std::shared_ptr<StreamAutomatonBase>> streams_;
+  ResumeTracker resumeTracker_;
+  ResumeCache resumeCache_;
 
  private:
   std::deque<std::unique_ptr<folly::IOBuf>> outputFrames_;

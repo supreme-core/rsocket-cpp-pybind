@@ -21,7 +21,7 @@ void ServerConnectionAcceptor::processFrame(
     std::unique_ptr<folly::IOBuf> frame) {
   removeConnection(transport);
 
-  switch (FrameHeader::peekType(*frame)) {
+  switch (frameSerializer_.peekFrameType(*frame)) {
     case FrameType::SETUP: {
       Frame_SETUP setupFrame;
       if (!frameSerializer_.deserializeFrom(setupFrame, std::move(frame))) {

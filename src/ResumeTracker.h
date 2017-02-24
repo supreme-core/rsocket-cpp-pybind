@@ -10,16 +10,25 @@ class IOBuf;
 
 namespace reactivesocket {
 
+class ConnectionAutomaton;
+class FrameSerializer;
+
 class ResumeTracker {
  public:
+  explicit ResumeTracker(ConnectionAutomaton& connection)
+      : connection_(connection) {}
+
   void trackReceivedFrame(const folly::IOBuf& serializedFrame);
-  static bool shouldTrackFrame(const folly::IOBuf& serializedFrame);
+  static bool shouldTrackFrame(
+      const folly::IOBuf& serializedFrame,
+      FrameSerializer& frameSerializer);
 
   ResumePosition impliedPosition() {
     return impliedPosition_;
   }
 
  private:
+  ConnectionAutomaton& connection_;
   ResumePosition impliedPosition_{0};
 };
 }

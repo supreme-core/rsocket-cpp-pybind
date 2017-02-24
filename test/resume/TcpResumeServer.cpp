@@ -209,8 +209,7 @@ class MyServerConnectionAcceptor : public ServerConnectionAcceptor {
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
   Callback(EventBase& eventBase, Stats& stats)
-      : streamState_(std::make_shared<StreamState>(Stats::noop())),
-        eventBase_(eventBase),
+      : eventBase_(eventBase),
         stats_(stats),
         connectionAcceptor_(eventBase, stats) {}
 

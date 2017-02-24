@@ -10,6 +10,14 @@ class FrameSerializerV1_0 : public FrameSerializer {
  public:
   std::string protocolVersion() override;
 
+  FrameType peekFrameType(const folly::IOBuf& in) override {
+    throw std::runtime_error("v1 serialization not implemented");
+  }
+
+  folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) override {
+    throw std::runtime_error("v1 serialization not implemented");
+  }
+
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_STREAM&&) override {
     throw std::runtime_error("v1 serialization not implemented");
   }

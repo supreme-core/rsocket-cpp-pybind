@@ -96,9 +96,6 @@ class FrameHeader {
  public:
   static constexpr size_t kSize = 8;
 
-  static FrameType peekType(const folly::IOBuf& p);
-  static folly::Optional<StreamId> peekStreamId(const folly::IOBuf& p);
-
   FrameHeader() {
 #ifndef NDEBUG
     type_ = FrameType::RESERVED;
@@ -106,9 +103,6 @@ class FrameHeader {
   }
   FrameHeader(FrameType type, FrameFlags flags, StreamId streamId)
       : type_(type), flags_(flags), streamId_(streamId) {}
-
-  void serializeInto(folly::io::QueueAppender& appender);
-  void deserializeFrom(folly::io::Cursor& cur);
 
   FrameType type_;
   FrameFlags flags_;

@@ -74,7 +74,6 @@ class ConnectionAutomaton final
   ConnectionAutomaton(
       folly::Executor& executor,
       ConnectionLevelFrameHandler connectionLevelFrameHandler,
-      std::shared_ptr<StreamState> streamState,
       std::shared_ptr<RequestHandler> requestHandler,
       ResumeListener resumeListener,
       Stats& stats,
@@ -201,6 +200,10 @@ class ConnectionAutomaton final
 
   FrameSerializer& frameSerializer() const;
   void setFrameSerializer(std::unique_ptr<FrameSerializer>);
+
+  Stats& stats() {
+    return stats_;
+  }
 
  private:
   /// Performs the same actions as ::endStream without propagating closure

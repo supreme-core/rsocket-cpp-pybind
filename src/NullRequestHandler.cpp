@@ -1,7 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/NullRequestHandler.h"
-#include "src/Stats.h"
 
 namespace reactivesocket {
 
@@ -57,7 +56,7 @@ void NullRequestHandler::handleMetadataPush(
 std::shared_ptr<StreamState> NullRequestHandler::handleSetupPayload(
     ReactiveSocket& socket,
     ConnectionSetupPayload /*request*/) noexcept {
-  return std::make_shared<StreamState>(Stats::noop());
+  return nullptr;
 }
 
 bool NullRequestHandler::handleResume(

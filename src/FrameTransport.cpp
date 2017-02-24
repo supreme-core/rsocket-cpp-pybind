@@ -164,12 +164,20 @@ void FrameTransport::outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf> frame) {
   if (connection_ && frameProcessor_) {
     drainOutputFramesQueue();
     if (pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
-      VLOG(3) << this << " writing frame " << FrameHeader::peekType(*frame);
+      // TODO: temporary disabling VLOG as we don't know the correct
+      // frame serializer here. There is refactoring of this class planned
+      // which will allow enabling it again.
+      // VLOG(3) << this << " writing frame " << FrameHeader::peekType(*frame);
+
       connectionOutput_->onNext(std::move(frame));
       return;
     }
   }
-  VLOG(3) << this << " queuing frame " << FrameHeader::peekType(*frame);
+  // TODO: temporary disabling VLOG as we don't know the correct
+  // frame serializer here. There is refactoring of this class planned
+  // which will allow enabling it again.
+  // VLOG(3) << this << " queuing frame " << FrameHeader::peekType(*frame);
+
   // We either have no allowance to perform the operation, or the queue has
   // not been drained (e.g. we're looping in ::request).
   // or we are disconnected
@@ -183,7 +191,10 @@ void FrameTransport::drainOutputFramesQueue() {
     // Drain the queue or the allowance.
     while (!pendingWrites_.empty() && writeAllowance_.tryAcquire()) {
       auto frame = std::move(pendingWrites_.front());
-      VLOG(3) << this << " flushing frame " << FrameHeader::peekType(*frame);
+      // TODO: temporary disabling VLOG as we don't know the correct
+      // frame serializer here. There is refactoring of this class planned
+      // which will allow enabling it again.
+      // VLOG(3) << this << " flushing frame " << FrameHeader::peekType(*frame);
       pendingWrites_.pop_front();
       connectionOutput_->onNext(std::move(frame));
     }

@@ -21,7 +21,6 @@ namespace reactivesocket {
 ConnectionAutomaton::ConnectionAutomaton(
     folly::Executor& executor,
     ConnectionLevelFrameHandler connectionLevelFrameHandler,
-    std::shared_ptr<StreamState> streamState,
     std::shared_ptr<RequestHandler> requestHandler,
     ResumeListener resumeListener,
     Stats& stats,
@@ -29,7 +28,7 @@ ConnectionAutomaton::ConnectionAutomaton(
     ReactiveSocketMode mode)
     : ExecutorBase(executor),
       connectionLevelFrameHandler_(std::move(connectionLevelFrameHandler)),
-      streamState_(std::move(streamState)),
+      streamState_(std::make_shared<StreamState>(*this)),
       requestHandler_(std::move(requestHandler)),
       stats_(stats),
       mode_(mode),
@@ -330,7 +329,7 @@ void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
 
 void ConnectionAutomaton::processFrameImpl(
     std::unique_ptr<folly::IOBuf> frame) {
-  auto frameType = FrameHeader::peekType(*frame);
+  auto frameType = frameSerializer().peekFrameType(*frame);
 
   std::stringstream ss;
   ss << frameType;
@@ -342,7 +341,7 @@ void ConnectionAutomaton::processFrameImpl(
   // each side in sync, even if a frame is invalid.
   streamState_->resumeTracker_.trackReceivedFrame(*frame);
 
-  auto streamIdPtr = FrameHeader::peekStreamId(*frame);
+  auto streamIdPtr = frameSerializer().peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
     closeWithError(Frame_ERROR::invalidFrame());
@@ -394,7 +393,7 @@ void ConnectionAutomaton::onTerminalImpl(folly::exception_wrapper ex) {
 
 void ConnectionAutomaton::onConnectionFrame(
     std::unique_ptr<folly::IOBuf> payload) {
-  auto type = FrameHeader::peekType(*payload);
+  auto type = frameSerializer().peekFrameType(*payload);
   switch (type) {
     case FrameType::KEEPALIVE: {
       Frame_KEEPALIVE frame;
@@ -549,7 +548,7 @@ void ConnectionAutomaton::handleUnknownStream(
     return;
   }
 
-  auto type = FrameHeader::peekType(*serializedFrame);
+  auto type = frameSerializer().peekFrameType(*serializedFrame);
   switch (type) {
     case FrameType::REQUEST_CHANNEL: {
       Frame_REQUEST_CHANNEL frame;
@@ -702,7 +701,7 @@ void ConnectionAutomaton::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
   DCHECK(!isDisconnectedOrClosed());
 
   std::stringstream ss;
-  ss << FrameHeader::peekType(*frame);
+  ss << frameSerializer().peekFrameType(*frame);
   stats_.frameWritten(ss.str());
 
   if (isResumable_) {

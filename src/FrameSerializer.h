@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <folly/Optional.h>
 #include <memory>
 #include <string>
-
-#include "Frame.h"
+#include "src/Frame.h"
 
 namespace reactivesocket {
 
@@ -19,6 +19,9 @@ class FrameSerializer {
   static std::unique_ptr<FrameSerializer> createFrameSerializer(
       std::string protocolVersion);
   static std::unique_ptr<FrameSerializer> createCurrentVersion();
+
+  virtual FrameType peekFrameType(const folly::IOBuf& in) = 0;
+  virtual folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) = 0;
 
   constexpr static const char* kCurrentProtocolVersion = "0.1";
   constexpr static const uint16_t kCurrentProtocolVersionMajor = 0;

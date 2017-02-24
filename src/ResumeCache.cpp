@@ -3,14 +3,22 @@
 #include "src/ResumeCache.h"
 #include <folly/Optional.h>
 #include <algorithm>
+#include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
 #include "src/ResumeTracker.h"
 #include "src/Stats.h"
 
 namespace reactivesocket {
 
+ResumeCache::~ResumeCache() {
+  if (!frames_.empty()) {
+    onClearFrames();
+  }
+}
+
 void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
-  if (ResumeTracker::shouldTrackFrame(serializedFrame)) {
+  if (ResumeTracker::shouldTrackFrame(
+          serializedFrame, connection_.frameSerializer())) {
     // TODO(tmont): this could be expensive, find a better way to determine
     auto frameDataLength = serializedFrame.computeChainDataLength();
     addFrame(serializedFrame, frameDataLength);
@@ -18,7 +26,8 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
     position_ += frameDataLength;
 
     // TODO(tmont): this is not ideal, but memory usage is more important
-    auto streamIdPtr = FrameHeader::peekStreamId(serializedFrame);
+    auto streamIdPtr =
+        connection_.frameSerializer().peekStreamId(serializedFrame);
     if (streamIdPtr) {
       const StreamId streamId = *streamIdPtr;
 
@@ -58,7 +67,7 @@ void ResumeCache::resetUpToPosition(ResumePosition position) {
       frames_.clear();
     } else {
       DCHECK(end->first >= resetPosition_);
-      stats_.resumeBufferChanged(
+      connection_.stats().resumeBufferChanged(
           -static_cast<int>(std::distance(frames_.begin(), end)),
           -static_cast<int>(end->first - resetPosition_));
       frames_.erase(frames_.begin(), end);
@@ -101,12 +110,13 @@ bool ResumeCache::isPositionAvailable(
 void ResumeCache::addFrame(const folly::IOBuf& frame, size_t frameDataLength) {
   // TODO: implement bounds to the buffer
   frames_.emplace_back(position_, frame.clone());
-  stats_.resumeBufferChanged(1, static_cast<int>(frameDataLength));
+  connection_.stats().resumeBufferChanged(1, static_cast<int>(frameDataLength));
 }
 
 void ResumeCache::onClearFrames() {
   DCHECK(position_ >= resetPosition_);
-  stats_.resumeBufferChanged(
+  DCHECK(!frames_.empty());
+  connection_.stats().resumeBufferChanged(
       -static_cast<int>(frames_.size()),
       -static_cast<int>(position_ - resetPosition_));
 }

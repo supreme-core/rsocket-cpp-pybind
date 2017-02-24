@@ -5,8 +5,8 @@
 #include <folly/Memory.h>
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
+#include <src/FrameSerializer.h>
 #include <src/NullRequestHandler.h>
-#include <src/versions/FrameSerializer_v0_1.h>
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
 #include "src/StreamState.h"
@@ -62,12 +62,12 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       }));
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-        auto frameType = FrameHeader::peekType(*frame);
+        auto frameSerializer = FrameSerializer::createCurrentVersion();
+        auto frameType = frameSerializer->peekFrameType(*frame);
         Frame_ERROR error;
         ASSERT_EQ(FrameType::ERROR, frameType);
         bool deserialized =
-            FrameSerializer::createCurrentVersion()->deserializeFrom(
-                error, std::move(frame));
+            frameSerializer->deserializeFrom(error, std::move(frame));
         ASSERT_TRUE(deserialized);
         ASSERT_EQ("invalid frame", error.payload_.moveDataToString());
       }));
@@ -84,7 +84,6 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
         connectionAutomaton->closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
-      std::make_shared<StreamState>(Stats::noop()),
       std::make_shared<NullRequestHandler>(),
       nullptr,
       Stats::noop(),
@@ -173,14 +172,13 @@ static void terminateTest(
         connectionAutomaton->closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
-      std::make_shared<StreamState>(Stats::noop()),
       std::make_shared<NullRequestHandler>(),
       nullptr,
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->setFrameSerializer(
-      std::make_unique<FrameSerializerV0_1>());
+      FrameSerializer::createCurrentVersion());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);
@@ -242,14 +240,14 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(
             framedTestConnection->getOutput());
         CHECK(framedWriter);
-        FrameSerializerV0_1 frameSerializer;
+        auto frameSerializer = FrameSerializer::createCurrentVersion();
         std::vector<std::unique_ptr<folly::IOBuf>> frames;
         frames.push_back(
-            frameSerializer.serializeOut(Frame_REQUEST_N(streamId, 1)));
+            frameSerializer->serializeOut(Frame_REQUEST_N(streamId, 1)));
         frames.push_back(
-            frameSerializer.serializeOut(Frame_REQUEST_N(streamId + 1, 1)));
+            frameSerializer->serializeOut(Frame_REQUEST_N(streamId + 1, 1)));
         frames.push_back(
-            frameSerializer.serializeOut(Frame_REQUEST_N(streamId + 2, 1)));
+            frameSerializer->serializeOut(Frame_REQUEST_N(streamId + 2, 1)));
 
         framedWriter->onNextMultiple(std::move(frames));
       }))
@@ -258,7 +256,8 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   EXPECT_CALL(*testOutputSubscriber, onNext_(_))
       .InSequence(s)
       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
-        auto frameType = FrameHeader::peekType(*frame);
+        auto frameType =
+            FrameSerializer::createCurrentVersion()->peekFrameType(*frame);
         ASSERT_EQ(FrameType::ERROR, frameType);
       }));
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1).InSequence(s);
@@ -273,14 +272,13 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
         connectionAutomaton->closeWithError(
             Frame_ERROR::connectionError("invalid frame"));
       },
-      std::make_shared<StreamState>(Stats::noop()),
       std::make_shared<NullRequestHandler>(),
       nullptr,
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->setFrameSerializer(
-      std::make_unique<FrameSerializerV0_1>());
+      FrameSerializer::createCurrentVersion());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
       true);

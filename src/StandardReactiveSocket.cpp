@@ -33,7 +33,6 @@ StandardReactiveSocket::StandardReactiveSocket(
           [this, handler](std::unique_ptr<folly::IOBuf> serializedFrame) {
             onConnectionFrame(handler, std::move(serializedFrame));
           },
-          std::make_shared<StreamState>(stats),
           handler,
           std::bind(
               &StandardReactiveSocket::resumeListener,
@@ -170,7 +169,7 @@ void StandardReactiveSocket::onConnectionFrame(
     std::shared_ptr<RequestHandler> handler,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
   debugCheckCorrectExecutor();
-  auto type = FrameHeader::peekType(*serializedFrame);
+  auto type = connection_->frameSerializer().peekFrameType(*serializedFrame);
   switch (type) {
     case FrameType::SETUP: {
       Frame_SETUP frame;

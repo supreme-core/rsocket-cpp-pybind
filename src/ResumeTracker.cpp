@@ -2,21 +2,25 @@
 
 #include "src/ResumeTracker.h"
 #include <folly/Optional.h>
+#include "src/ConnectionAutomaton.h"
 #include "src/Frame.h"
 
 namespace reactivesocket {
 
 void ResumeTracker::trackReceivedFrame(const folly::IOBuf& serializedFrame) {
-  if (shouldTrackFrame(serializedFrame)) {
+  if (shouldTrackFrame(serializedFrame, connection_.frameSerializer())) {
     // TODO(tmont): this could be expensive, find a better way to determine
     // frame length
-    VLOG(6) << "received frame " << FrameHeader::peekType(serializedFrame);
+    VLOG(6) << "received frame "
+            << connection_.frameSerializer().peekFrameType(serializedFrame);
     impliedPosition_ += serializedFrame.computeChainDataLength();
   }
 }
 
-bool ResumeTracker::shouldTrackFrame(const folly::IOBuf& serializedFrame) {
-  auto frameType = FrameHeader::peekType(serializedFrame);
+bool ResumeTracker::shouldTrackFrame(
+    const folly::IOBuf& serializedFrame,
+    FrameSerializer& frameSerializer) {
+  auto frameType = frameSerializer.peekFrameType(serializedFrame);
 
   switch (frameType) {
     case FrameType::REQUEST_CHANNEL:

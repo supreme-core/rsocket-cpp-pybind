@@ -5,6 +5,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "src/ConnectionAutomaton.h"
 #include "src/Frame.h"
 #include "src/FrameTransport.h"
 #include "src/ResumeCache.h"
@@ -29,11 +30,21 @@ class FrameTransportMock : public FrameTransport {
 
 class ResumeCacheTest : public Test {
  protected:
-  FrameSerializerV0_1 frameSerializer_;
+  std::unique_ptr<FrameSerializer> frameSerializer_{
+      FrameSerializer::createCurrentVersion()};
 };
 
 TEST_F(ResumeCacheTest, EmptyCache) {
-  ResumeCache cache(Stats::noop());
+  ConnectionAutomaton automaton(
+      inlineExecutor(),
+      nullptr,
+      nullptr,
+      nullptr,
+      Stats::noop(),
+      nullptr,
+      ReactiveSocketMode::CLIENT);
+  automaton.setFrameSerializer(FrameSerializer::createCurrentVersion());
+  ResumeCache cache(automaton);
   FrameTransportMock transport;
 
   EXPECT_CALL(transport, outputFrameOrEnqueue_(_)).Times(0);
@@ -54,10 +65,20 @@ TEST_F(ResumeCacheTest, EmptyCache) {
 }
 
 TEST_F(ResumeCacheTest, OneFrame) {
-  ResumeCache cache(Stats::noop());
+  ConnectionAutomaton automaton(
+      inlineExecutor(),
+      nullptr,
+      nullptr,
+      nullptr,
+      Stats::noop(),
+      nullptr,
+      ReactiveSocketMode::CLIENT);
+  automaton.setFrameSerializer(FrameSerializer::createCurrentVersion());
+  ResumeCache cache(automaton);
+
   FrameTransportMock transport;
 
-  auto frame1 = frameSerializer_.serializeOut(Frame_CANCEL(0));
+  auto frame1 = frameSerializer_->serializeOut(Frame_CANCEL(0));
   const auto frame1Size = frame1->computeChainDataLength();
 
   cache.trackSentFrame(*frame1);
@@ -95,13 +116,23 @@ TEST_F(ResumeCacheTest, OneFrame) {
 }
 
 TEST_F(ResumeCacheTest, TwoFrames) {
-  ResumeCache cache(Stats::noop());
+  ConnectionAutomaton automaton(
+      inlineExecutor(),
+      nullptr,
+      nullptr,
+      nullptr,
+      Stats::noop(),
+      nullptr,
+      ReactiveSocketMode::CLIENT);
+  automaton.setFrameSerializer(FrameSerializer::createCurrentVersion());
+  ResumeCache cache(automaton);
+
   FrameTransportMock transport;
 
-  auto frame1 = frameSerializer_.serializeOut(Frame_CANCEL(0));
+  auto frame1 = frameSerializer_->serializeOut(Frame_CANCEL(0));
   const auto frame1Size = frame1->computeChainDataLength();
 
-  auto frame2 = frameSerializer_.serializeOut(Frame_REQUEST_N(0, 0));
+  auto frame2 = frameSerializer_->serializeOut(Frame_REQUEST_N(0, 0));
   const auto frame2Size = frame2->computeChainDataLength();
 
   cache.trackSentFrame(*frame1);
@@ -141,14 +172,23 @@ TEST_F(ResumeCacheTest, TwoFrames) {
 
 TEST_F(ResumeCacheTest, Stats) {
   StrictMock<MockStats> stats;
-  ResumeCache cache(stats);
+  ConnectionAutomaton automaton(
+      inlineExecutor(),
+      nullptr,
+      nullptr,
+      nullptr,
+      stats,
+      nullptr,
+      ReactiveSocketMode::CLIENT);
+  automaton.setFrameSerializer(FrameSerializer::createCurrentVersion());
+  ResumeCache cache(automaton);
 
-  auto frame1 = frameSerializer_.serializeOut(Frame_CANCEL(0));
+  auto frame1 = frameSerializer_->serializeOut(Frame_CANCEL(0));
   auto frame1Size = frame1->computeChainDataLength();
   EXPECT_CALL(stats, resumeBufferChanged(1, frame1Size));
   cache.trackSentFrame(*frame1);
 
-  auto frame2 = frameSerializer_.serializeOut(Frame_REQUEST_N(0, 0));
+  auto frame2 = frameSerializer_->serializeOut(Frame_REQUEST_N(0, 0));
   auto frame2Size = frame2->computeChainDataLength();
   EXPECT_CALL(stats, resumeBufferChanged(1, frame2Size)).Times(2);
   cache.trackSentFrame(*frame2);
