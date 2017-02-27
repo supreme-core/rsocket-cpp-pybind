@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 #pragma once
 
 #include <functional>
@@ -7,7 +9,7 @@ namespace yarpl {
 namespace flowable {
 
 class Subscription {
-public:
+ public:
   virtual ~Subscription(){};
   virtual void cancel() = 0;
   virtual void request(uint64_t n) = 0;

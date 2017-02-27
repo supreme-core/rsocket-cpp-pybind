@@ -1,15 +1,17 @@
-#include "yarpl/Observable_Subscription.h"
+// Copyright 2004-present Facebook. All Rights Reserved.
+
+#include "../include/yarpl/Observable_Subscription.h"
 
 namespace yarpl {
 namespace observable {
 
-std::unique_ptr<Subscription>
-Subscription::create(std::function<void()> onCancel) {
+std::unique_ptr<Subscription> Subscription::create(
+    std::function<void()> onCancel) {
   return std::unique_ptr<Subscription>(new Subscription(onCancel));
 }
-std::unique_ptr<Subscription>
-Subscription::create(std::atomic_bool &cancelled) {
-    return create([&cancelled]() { cancelled = true; });
+std::unique_ptr<Subscription> Subscription::create(
+    std::atomic_bool& cancelled) {
+  return create([&cancelled]() { cancelled = true; });
 }
 
 std::unique_ptr<Subscription> Subscription::create() {
@@ -24,6 +26,8 @@ void Subscription::cancel() {
   }
 }
 
-bool Subscription::isCanceled() { return cancelled; }
+bool Subscription::isCanceled() {
+  return cancelled;
+}
 }
 }

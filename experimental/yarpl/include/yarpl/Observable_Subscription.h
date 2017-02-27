@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 #pragma once
 
 #include <atomic>
@@ -11,12 +13,12 @@ class Subscription {
   std::atomic_bool cancelled{false};
   std::function<void()> onCancel;
 
-private:
-  Subscription(std::function<void()> onCancel) : onCancel(onCancel){};
+ private:
+  explicit Subscription(std::function<void()> onCancel) : onCancel(onCancel){};
 
-public:
+ public:
   static std::unique_ptr<Subscription> create(std::function<void()> onCancel);
-  static std::unique_ptr<Subscription> create(std::atomic_bool &cancelled);
+  static std::unique_ptr<Subscription> create(std::atomic_bool& cancelled);
   static std::unique_ptr<Subscription> create();
   void cancel();
   bool isCanceled();
