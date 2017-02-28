@@ -1,8 +1,5 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include <benchmark/benchmark.h>
 #include <iostream>
-#include <memory>
 
 /*
  * Seeking to understand cost of different method signatures
@@ -22,15 +19,11 @@ struct Tuple {
   void doSomething() {}
 };
 
-void functionByCopyAgain(Tuple a) {
-  a.doSomething();
-};
+void functionByCopyAgain(Tuple a) { a.doSomething(); };
 
-void functionByCopy(Tuple a) {
-  functionByCopyAgain(a);
-};
+void functionByCopy(Tuple a) { functionByCopyAgain(a); };
 
-static void function_nested_copy(benchmark::State& state) {
+static void function_nested_copy(benchmark::State &state) {
   while (state.KeepRunning()) {
     Tuple a(1, 2);
     functionByCopy(a);
@@ -38,15 +31,11 @@ static void function_nested_copy(benchmark::State& state) {
 }
 BENCHMARK(function_nested_copy);
 
-void functionByMoveAgain(Tuple a) {
-  a.doSomething();
-};
+void functionByMoveAgain(Tuple a) { a.doSomething(); };
 
-void functionByMove(Tuple a) {
-  functionByMoveAgain(std::move(a));
-};
+void functionByMove(Tuple a) { functionByMoveAgain(std::move(a)); };
 
-static void function_nested_move(benchmark::State& state) {
+static void function_nested_move(benchmark::State &state) {
   while (state.KeepRunning()) {
     Tuple a(1, 2);
     functionByCopy(std::move(a));
@@ -54,15 +43,11 @@ static void function_nested_move(benchmark::State& state) {
 }
 BENCHMARK(function_nested_move);
 
-void functionByRefAgain(Tuple& a) {
-  a.doSomething();
-};
+void functionByRefAgain(Tuple &a) { a.doSomething(); };
 
-void functionByRef(Tuple& a) {
-  functionByRefAgain(a);
-};
+void functionByRef(Tuple &a) { functionByRefAgain(a); };
 
-static void function_nested_ref(benchmark::State& state) {
+static void function_nested_ref(benchmark::State &state) {
   while (state.KeepRunning()) {
     Tuple a(1, 2);
     functionByCopy(a);
@@ -70,15 +55,13 @@ static void function_nested_ref(benchmark::State& state) {
 }
 BENCHMARK(function_nested_ref);
 
-void functionByUniquePtrAgain(std::unique_ptr<Tuple> a) {
-  a->doSomething();
-}
+void functionByUniquePtrAgain(std::unique_ptr<Tuple> a) { a->doSomething(); };
 
 void functionByUniquePtr(std::unique_ptr<Tuple> a) {
   functionByUniquePtrAgain(std::move(a));
 };
 
-static void function_nested_unique_ptr(benchmark::State& state) {
+static void function_nested_unique_ptr(benchmark::State &state) {
   while (state.KeepRunning()) {
     functionByUniquePtr(std::make_unique<Tuple>(1, 2));
   }

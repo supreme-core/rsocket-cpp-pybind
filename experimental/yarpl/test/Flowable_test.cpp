@@ -1,9 +1,7 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include <chrono>
 #include <gtest/gtest.h>
 #include <thread>
-#include "../include/yarpl/Flowable.h"
+#include <yarpl/Flowable.h>
 
 using namespace yarpl::flowable;
 
@@ -70,7 +68,7 @@ TEST(Flowable, SubscribeRequestAndCancel) {
          * One remaining concern though is that this following line is basically
          * the only
          * way to code it, as the std:move could not be done on a line
-         * preceding onSubscribe.
+         * preceeding onSubscribe.
          *
          * Another option is to make the Subscription and move Subscriber into
          * it, then

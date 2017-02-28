@@ -1,23 +1,19 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include <functional>
 #include <memory>
-#include "Observable_Observer.h"
+#include <yarpl/Observable_Observer.h>
 
 namespace yarpl {
 namespace observable {
 
-template <typename T>
-class Observable {
+template <typename T> class Observable {
   std::function<void(std::unique_ptr<Observer<T>>)> onSubscribe;
 
- public:
-  explicit Observable(
-      std::function<void(std::unique_ptr<Observer<T>>)> onSubscribe);
-  static std::unique_ptr<Observable<T>> create(
-      std::function<void(std::unique_ptr<Observer<T>>)> onSubscribe);
+public:
+  Observable(std::function<void(std::unique_ptr<Observer<T>>)> onSubscribe);
+  static std::unique_ptr<Observable<T>>
+  create(std::function<void(std::unique_ptr<Observer<T>>)> onSubscribe);
   void subscribe(std::unique_ptr<Observer<T>>);
 };
 

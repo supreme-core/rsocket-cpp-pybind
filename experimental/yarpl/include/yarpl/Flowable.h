@@ -1,23 +1,19 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include <functional>
 #include <memory>
-#include "Flowable_Subscriber.h"
+#include <yarpl/Flowable_Subscriber.h>
 
 namespace yarpl {
 namespace flowable {
 
-template <typename T>
-class Flowable {
+template <typename T> class Flowable {
   std::function<void(std::unique_ptr<Subscriber<T>>)> onSubscribe;
 
- public:
-  explicit Flowable(
-      std::function<void(std::unique_ptr<Subscriber<T>>)> onSubscribe);
-  static std::unique_ptr<Flowable<T>> create(
-      std::function<void(std::unique_ptr<Subscriber<T>>)> onSubscribe);
+public:
+  Flowable(std::function<void(std::unique_ptr<Subscriber<T>>)> onSubscribe);
+  static std::unique_ptr<Flowable<T>>
+  create(std::function<void(std::unique_ptr<Subscriber<T>>)> onSubscribe);
   void subscribe(std::unique_ptr<Subscriber<T>>);
 };
 

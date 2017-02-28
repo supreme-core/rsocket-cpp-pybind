@@ -1,8 +1,6 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
-#include "Flowable_Subscription.h"
+#include <yarpl/Flowable_Subscription.h>
 
 namespace yarpl {
 namespace flowable {
@@ -10,25 +8,24 @@ namespace flowable {
 /**
  *
  */
-template <typename T>
-class Subscriber {
- public:
+template <typename T> class Subscriber {
+public:
   virtual ~Subscriber(){};
 
-  static std::unique_ptr<Subscriber<T>> create(
-      std::function<void(const T&)> onNext);
+  static std::unique_ptr<Subscriber<T>>
+  create(std::function<void(const T &)> onNext);
 
-  static std::unique_ptr<Subscriber<T>> create(
-      std::function<void(const T&)> onNext,
-      std::function<void(const std::exception&)> onError);
+  static std::unique_ptr<Subscriber<T>>
+  create(std::function<void(const T &)> onNext,
+         std::function<void(const std::exception &)> onError);
 
-  static std::unique_ptr<Subscriber<T>> create(
-      std::function<void(const T&)> onNext,
-      std::function<void(const std::exception&)> onError,
-      std::function<void()> onComplete);
+  static std::unique_ptr<Subscriber<T>>
+  create(std::function<void(const T &)> onNext,
+         std::function<void(const std::exception &)> onError,
+         std::function<void()> onComplete);
 
-  virtual void onNext(const T& value) = 0;
-  virtual void onError(const std::exception& e) = 0;
+  virtual void onNext(const T &value) = 0;
+  virtual void onError(const std::exception &e) = 0;
   virtual void onComplete() = 0;
   virtual void onSubscribe(std::unique_ptr<Subscription>) = 0;
 };
@@ -38,40 +35,31 @@ class Subscriber {
 /* https://isocpp.org/wiki/faq/templates#templates-defn-vs-decl */
 /* ****************************************** */
 
-const std::function<void(const std::exception&)> DEFAULT_ERROR =
-    [](const std::exception&) {};
-const std::function<void()> DEFAULT_COMPLETE = []() {};
+static const std::function<void(const std::exception &)> DEFAULT_ERROR =
+    [](const std::exception &) {};
+static const std::function<void()> DEFAULT_COMPLETE = []() {};
 
-template <typename T>
-class ObserverImpl : public Subscriber<T> {
-  std::function<void(const T&)> next;
-  std::function<void(const std::exception&)> error;
+template <typename T> class ObserverImpl : public Subscriber<T> {
+  std::function<void(const T &)> next;
+  std::function<void(const std::exception &)> error;
   std::function<void()> complete;
 
- public:
-  explicit ObserverImpl(std::function<void(const T&)> n)
+public:
+  ObserverImpl(std::function<void(const T &)> n)
       : next(n), error(DEFAULT_ERROR), complete(DEFAULT_COMPLETE){};
-  ObserverImpl(
-      std::function<void(const T&)> n,
-      std::function<void(const std::exception&)> e)
+  ObserverImpl(std::function<void(const T &)> n,
+               std::function<void(const std::exception &)> e)
       : next(n), error(e), complete(DEFAULT_COMPLETE){};
-  ObserverImpl(
-      std::function<void(const T&)> n,
-      std::function<void(const std::exception&)> e,
-      std::function<void()> c)
+  ObserverImpl(std::function<void(const T &)> n,
+               std::function<void(const std::exception &)> e,
+               std::function<void()> c)
       : next(n), error(e), complete(c){};
 
-  void onNext(const T& value) {
-    next.operator()(value);
-  }
+  void onNext(const T &value) { next.operator()(value); }
 
-  void onError(const std::exception& e) {
-    error.operator()(e);
-  }
+  void onError(const std::exception &e) { error.operator()(e); }
 
-  void onComplete() {
-    complete.operator()();
-  }
+  void onComplete() { complete.operator()(); }
 
   void onSubscribe(std::unique_ptr<Subscription> s) {
     // default to requesting max() (infinite)
@@ -81,23 +69,23 @@ class ObserverImpl : public Subscriber<T> {
 };
 
 template <typename T>
-std::unique_ptr<Subscriber<T>> Subscriber<T>::create(
-    std::function<void(const T&)> onNext) {
+std::unique_ptr<Subscriber<T>>
+Subscriber<T>::create(std::function<void(const T &)> onNext) {
   return std::unique_ptr<Subscriber<T>>(new ObserverImpl<T>(onNext));
 }
 
 template <typename T>
-std::unique_ptr<Subscriber<T>> Subscriber<T>::create(
-    std::function<void(const T&)> onNext,
-    std::function<void(const std::exception&)> onError) {
+std::unique_ptr<Subscriber<T>>
+Subscriber<T>::create(std::function<void(const T &)> onNext,
+                      std::function<void(const std::exception &)> onError) {
   return std::unique_ptr<Subscriber<T>>(new ObserverImpl<T>(onNext, onError));
 }
 
 template <typename T>
-std::unique_ptr<Subscriber<T>> Subscriber<T>::create(
-    std::function<void(const T&)> onNext,
-    std::function<void(const std::exception&)> onError,
-    std::function<void()> onComplete) {
+std::unique_ptr<Subscriber<T>>
+Subscriber<T>::create(std::function<void(const T &)> onNext,
+                      std::function<void(const std::exception &)> onError,
+                      std::function<void()> onComplete) {
   return std::unique_ptr<Subscriber<T>>(
       new ObserverImpl<T>(onNext, onError, onComplete));
 }
