@@ -112,8 +112,13 @@ class MockRequestHandler : public RequestHandler {
   void handleDirtyResume(
       std::shared_ptr<Subscription> response) noexcept override {}
 
+  MOCK_METHOD1(
+      onSubscriptionPaused_,
+      void(const std::shared_ptr<Subscription>&));
   void onSubscriptionPaused(
-      const std::shared_ptr<Subscription>& subscription) noexcept override {}
+      const std::shared_ptr<Subscription>& subscription) noexcept override {
+    onSubscriptionPaused_(std::move(subscription));
+  }
   void onSubscriptionResumed(
       const std::shared_ptr<Subscription>& subscription) noexcept override {}
   void onSubscriberPaused(const std::shared_ptr<Subscriber<Payload>>&

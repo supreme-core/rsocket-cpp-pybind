@@ -209,6 +209,7 @@ add_executable(
   test/ConnectionAutomatonTest.cpp
   test/framed/FramedReaderTest.cpp
   test/framed/FramedWriterTest.cpp
+  test/mixins/PublisherMixinTest.cpp
   test/FrameTest.cpp
   test/InlineConnection.cpp
   test/InlineConnection.h

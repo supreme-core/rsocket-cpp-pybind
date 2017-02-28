@@ -12,6 +12,7 @@
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/RequestHandler.h"
+#include "src/SubscriberBase.h"
 
 namespace reactivesocket {
 
@@ -69,18 +70,28 @@ class PublisherMixin {
   }
 
   void pausePublisherStream(RequestHandler& requestHandler) {
-    if (producingSubscription_) {
-      requestHandler.onSubscriptionPaused(producingSubscription_);
+    if (auto subscription = maybeUnwrap(producingSubscription_)) {
+      requestHandler.onSubscriptionPaused(subscription);
     }
   }
 
   void resumePublisherStream(RequestHandler& requestHandler) {
-    if (producingSubscription_) {
-      requestHandler.onSubscriptionResumed(producingSubscription_);
+    if (auto subscription = maybeUnwrap(producingSubscription_)) {
+      requestHandler.onSubscriptionResumed(subscription);
     }
   }
 
  private:
+  // TODO(t16368600) // Remove this hack as we improve the API
+  std::shared_ptr<Subscription> maybeUnwrap(
+      const std::shared_ptr<Subscription>& subscription) {
+    if (auto shim = std::dynamic_pointer_cast<SubscriptionShim>(subscription)) {
+      return shim->getParentSubscription();
+    } else {
+      return subscription;
+    }
+  }
+
   /// A Subscription that constrols production of payloads.
   /// This mixin is responsible for delivering a terminal signal to the
   /// Subscription once the stream ends.

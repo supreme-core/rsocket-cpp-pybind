@@ -12,6 +12,12 @@
 
 namespace reactivesocket {
 
+class SubscriptionShim {
+public:
+  virtual ~SubscriptionShim() = default;
+  virtual std::shared_ptr<Subscription> getParentSubscription() = 0;
+};
+
 //
 // SubscriberBase is designed to be a general purpose base class for
 // implementors of Subscriber<T> interface. It provides 2 key features:
@@ -38,9 +44,9 @@ class SubscriberBaseT : public Subscriber<T>,
   // deliver any other signals after that
   // also to break the reference cycle involving storing subscription pointer
   // for the users of the SubscriberBase
-  class SubscriptionShim : public Subscription {
+  class SubscriptionShimImpl : public Subscription, public SubscriptionShim {
    public:
-    explicit SubscriptionShim(
+    explicit SubscriptionShimImpl(
         std::shared_ptr<SubscriberBaseT<T>> parentSubscriber)
         : parentSubscriber_(std::move(parentSubscriber)) {}
 
@@ -65,6 +71,14 @@ class SubscriberBaseT : public Subscriber<T>,
       }
     }
 
+    std::shared_ptr<Subscription> getParentSubscription() override {
+      if (auto parent = parentSubscriber_.lock()) {
+        return parent->originalSubscription_;
+      } else {
+        return nullptr;
+      }
+    }
+
    private:
     // we don't want to create cycle with parent subscriber. If we do, we would
     // have to make sure the class deriving from SubscriberBase would have to
@@ -73,7 +87,7 @@ class SubscriberBaseT : public Subscriber<T>,
     std::weak_ptr<SubscriberBaseT<T>> parentSubscriber_;
   };
 
-  friend class SubscriptionShim;
+  friend class SubscriptionShimImpl;
 
  public:
   // initialization of the ExecutorBase will be ignored for any of the
@@ -93,7 +107,7 @@ class SubscriberBaseT : public Subscriber<T>,
       // subscribe. Instead we will let the instance die when released.
       if (!thisPtr->cancelled_) {
         thisPtr->onSubscribeImpl(
-            std::make_shared<SubscriptionShim>(thisPtr->shared_from_this()));
+            std::make_shared<SubscriptionShimImpl>(thisPtr->shared_from_this()));
       }
     });
   }
