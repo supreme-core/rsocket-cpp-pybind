@@ -4,13 +4,13 @@
 
 #include <memory>
 #include <unordered_set>
-
 #include "src/Common.h"
 #include "src/ConnectionSetupPayload.h"
 #include "src/versions/FrameSerializer_v0_1.h"
 
 namespace folly {
 class EventBase;
+class Executor;
 class exception_wrapper;
 class IOBuf;
 }
@@ -34,7 +34,8 @@ class ServerConnectionAcceptor {
   /// connection fails)
   virtual void setupNewSocket(
       std::shared_ptr<FrameTransport> frameTransport,
-      ConnectionSetupPayload setupPayload) = 0;
+      ConnectionSetupPayload setupPayload,
+      folly::Executor&) = 0;
 
   /// Called when we've received a resume frame on the connection and are ready
   /// to resume an existing ReactiveSocket.
@@ -44,13 +45,15 @@ class ServerConnectionAcceptor {
   virtual void resumeSocket(
       std::shared_ptr<FrameTransport>,
       ResumeIdentificationToken,
-      ResumePosition) = 0;
+      ResumePosition,
+      folly::Executor&) = 0;
 
-  void acceptConnection(std::unique_ptr<DuplexConnection>);
+  void acceptConnection(std::unique_ptr<DuplexConnection>, folly::Executor&);
   void removeConnection(const std::shared_ptr<FrameTransport>& transport);
   void processFrame(
       std::shared_ptr<FrameTransport> transport,
-      std::unique_ptr<folly::IOBuf> frame);
+      std::unique_ptr<folly::IOBuf> frame,
+      folly::Executor&);
 
  private:
   std::unordered_set<std::shared_ptr<FrameTransport>> connections_;

@@ -18,7 +18,8 @@ ServerConnectionAcceptor::~ServerConnectionAcceptor() {
 
 void ServerConnectionAcceptor::processFrame(
     std::shared_ptr<FrameTransport> transport,
-    std::unique_ptr<folly::IOBuf> frame) {
+    std::unique_ptr<folly::IOBuf> frame,
+    folly::Executor& executor) {
   removeConnection(transport);
 
   switch (frameSerializer_.peekFrameType(*frame)) {
@@ -35,7 +36,7 @@ void ServerConnectionAcceptor::processFrame(
       setupFrame.moveToSetupPayload(setupPayload);
 
       transport->setFrameProcessor(nullptr);
-      setupNewSocket(std::move(transport), std::move(setupPayload));
+      setupNewSocket(std::move(transport), std::move(setupPayload), executor);
       break;
     }
 
@@ -52,7 +53,8 @@ void ServerConnectionAcceptor::processFrame(
       resumeSocket(
           std::move(transport),
           std::move(resumeFrame.token_),
-          resumeFrame.position_);
+          resumeFrame.position_,
+          executor);
     } break;
 
     case FrameType::CANCEL:
@@ -89,13 +91,16 @@ class OneFrameProcessor
  public:
   OneFrameProcessor(
       ServerConnectionAcceptor& acceptor,
-      std::shared_ptr<FrameTransport> transport)
-      : acceptor_(acceptor), transport_(std::move(transport)) {
+      std::shared_ptr<FrameTransport> transport,
+      folly::Executor& executor)
+      : acceptor_(acceptor),
+        transport_(std::move(transport)),
+        executor_(executor) {
     DCHECK(transport_);
   }
 
   void processFrame(std::unique_ptr<folly::IOBuf> buf) override {
-    acceptor_.processFrame(transport_, std::move(buf));
+    acceptor_.processFrame(transport_, std::move(buf), executor_);
     // no more code here as the instance might be gone by now
   }
 
@@ -108,15 +113,18 @@ class OneFrameProcessor
  private:
   ServerConnectionAcceptor& acceptor_;
   std::shared_ptr<FrameTransport> transport_;
+  folly::Executor& executor_;
 };
 
 void ServerConnectionAcceptor::acceptConnection(
-    std::unique_ptr<DuplexConnection> connection) {
+    std::unique_ptr<DuplexConnection> connection,
+    folly::Executor& executor) {
   auto transport = std::make_shared<FrameTransport>(std::move(connection));
-  auto processor = std::make_shared<OneFrameProcessor>(*this, transport);
+  auto processor =
+      std::make_shared<OneFrameProcessor>(*this, transport, executor);
   connections_.insert(transport);
   // transport can receive frames right away
-  transport->setFrameProcessor(processor);
+  transport->setFrameProcessor(std::move(processor));
 }
 
 } // reactivesocket
