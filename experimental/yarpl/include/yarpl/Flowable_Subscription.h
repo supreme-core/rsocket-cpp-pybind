@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 #pragma once
 
 #include <functional>
@@ -8,9 +10,10 @@ namespace flowable {
 
 class Subscription {
 public:
-  virtual ~Subscription(){};
-  virtual void cancel() = 0;
-  virtual void request(uint64_t n) = 0;
+ virtual ~Subscription() = default;
+
+ virtual void cancel() = 0;
+ virtual void request(uint64_t n) = 0;
 };
 
 } // observable namespace
