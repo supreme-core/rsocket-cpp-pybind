@@ -1,11 +1,13 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/StandardReactiveSocket.h"
+
 #include <folly/Conv.h>
 #include <folly/ExceptionWrapper.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
 #include <folly/io/async/EventBase.h>
+
 #include "src/ClientResumeStatusCallback.h"
 #include "src/ConnectionAutomaton.h"
 #include "src/FrameTransport.h"
@@ -285,9 +287,9 @@ void StandardReactiveSocket::serverConnect(
 
 void StandardReactiveSocket::close() {
   debugCheckCorrectExecutor();
-  if (auto connectionCopy = std::move(connection_)) {
-    connectionCopy->close(
-        folly::exception_wrapper(), StreamCompletionSignal::SOCKET_CLOSED);
+  auto constexpr signal = StreamCompletionSignal::SOCKET_CLOSED;
+  if (auto copy = std::move(connection_)) {
+    copy->close(folly::exception_wrapper(), signal);
   }
 }
 
@@ -295,6 +297,14 @@ void StandardReactiveSocket::disconnect() {
   debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->disconnect(folly::exception_wrapper());
+}
+
+void StandardReactiveSocket::closeConnectionError(const std::string& reason) {
+  debugCheckCorrectExecutor();
+  if (auto copy = std::move(connection_)) {
+    auto err = Frame_ERROR::connectionError(reason);
+    copy->closeWithError(std::move(err));
+  }
 }
 
 std::shared_ptr<FrameTransport> StandardReactiveSocket::detachFrameTransport() {

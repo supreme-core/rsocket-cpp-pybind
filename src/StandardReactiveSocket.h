@@ -95,6 +95,9 @@ class StandardReactiveSocket : public ReactiveSocket {
 
   void close() override;
   void disconnect() override;
+
+  void closeConnectionError(const std::string& reason) override;
+
   std::shared_ptr<FrameTransport> detachFrameTransport() override;
 
   void onConnected(std::function<void()> listener) override;

@@ -17,6 +17,7 @@ class Executor;
 }
 
 namespace reactivesocket {
+
 class ClientResumeStatusCallback;
 class ConnectionAutomaton;
 class DuplexConnection;
@@ -51,6 +52,9 @@ class ReactiveSocket {
 
   virtual void close() = 0;
   virtual void disconnect() = 0;
+
+  virtual void closeConnectionError(const std::string& reason) = 0;
+
   virtual std::shared_ptr<FrameTransport> detachFrameTransport() = 0;
 
   virtual void onConnected(std::function<void()> listener) = 0;

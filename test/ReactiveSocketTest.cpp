@@ -9,6 +9,7 @@
 #include <gmock/gmock.h>
 
 #include "MockStats.h"
+#include "src/FrameTransport.h"
 #include "src/NullRequestHandler.h"
 #include "src/StandardReactiveSocket.h"
 #include "test/InlineConnection.h"
@@ -959,6 +960,42 @@ TEST(ReactiveSocketTest, ReactiveSocketOverInlineConnection) {
 
   auto serverSock = StandardReactiveSocket::fromServerConnection(
       defaultExecutor(), std::move(serverConn), std::move(serverHandler));
+}
+
+TEST(ReactiveSocketTest, CloseWithError) {
+  auto clientConn = std::make_unique<InlineConnection>();
+  auto serverConn = std::make_unique<InlineConnection>();
+  clientConn->connectTo(*serverConn);
+
+  auto clientSock = StandardReactiveSocket::fromClientConnection(
+      defaultExecutor(),
+      std::move(clientConn),
+      // No interactions on this mock, the client will not accept any requests.
+      std::make_unique<StrictMock<MockRequestHandler>>(),
+      ConnectionSetupPayload("", "", Payload()));
+
+  // We don't expect any call other than setup payload.
+  auto serverHandler = std::make_unique<StrictMock<MockRequestHandler>>();
+  auto& serverHandlerRef = *serverHandler;
+
+  const folly::StringPiece errString{"Hahaha"};
+
+  EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
+      .WillRepeatedly(Invoke([&](auto& socket, auto&) {
+        socket.closeConnectionError(errString.str());
+        return nullptr;
+      }));
+
+  auto serverSock = StandardReactiveSocket::disconnectedServer(
+      defaultExecutor(), std::move(serverHandler));
+
+  serverSock->onClosed([&](auto const& exn) {
+    EXPECT_TRUE(
+        folly::StringPiece{exn.what().toStdString()}.contains(errString));
+  });
+
+  serverSock->serverConnect(
+      std::make_shared<FrameTransport>(std::move(serverConn)), false);
 }
 
 class ReactiveSocketIgnoreRequestTest : public testing::Test {

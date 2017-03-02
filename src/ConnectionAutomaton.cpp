@@ -76,11 +76,15 @@ void ConnectionAutomaton::connect(
   }
 
   // We need to create a hard reference to frameTransport_ to make sure the
-  // instance survives until the setFrameProcessor returns. There can be
+  // instance survives until the setFrameProcessor returns.  There can be
   // terminating signals processed in that call which will nullify
-  // frameTransport_
+  // frameTransport_.
   auto frameTransportCopy = frameTransport_;
-  frameTransport_->setFrameProcessor(shared_from_this());
+
+  // Keep a reference to this, as processing frames might close the
+  // ReactiveSocket instance.
+  auto copyThis = shared_from_this();
+  frameTransport_->setFrameProcessor(copyThis);
 
   if (sendingPendingFrames) {
     DCHECK(!resumeCallback_);
