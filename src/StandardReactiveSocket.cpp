@@ -128,15 +128,6 @@ void StandardReactiveSocket::requestStream(
       std::move(request), std::move(responseSink), executor_);
 }
 
-void StandardReactiveSocket::requestSubscription(
-    Payload request,
-    std::shared_ptr<Subscriber<Payload>> responseSink) {
-  debugCheckCorrectExecutor();
-  checkNotClosed();
-  connection_->streamsFactory().createSubscriptionRequester(
-      std::move(request), std::move(responseSink), executor_);
-}
-
 void StandardReactiveSocket::requestResponse(
     Payload payload,
     std::shared_ptr<Subscriber<Payload>> responseSink) {
@@ -229,7 +220,6 @@ void StandardReactiveSocket::onConnectionFrame(
 
     case FrameType::REQUEST_CHANNEL:
     case FrameType::REQUEST_STREAM:
-    case FrameType::REQUEST_SUB:
     case FrameType::REQUEST_RESPONSE:
     case FrameType::REQUEST_FNF:
     case FrameType::LEASE:

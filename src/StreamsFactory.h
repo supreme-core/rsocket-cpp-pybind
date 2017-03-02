@@ -28,11 +28,6 @@ class StreamsFactory {
       std::shared_ptr<Subscriber<Payload>> responseSink,
       folly::Executor& executor);
 
-  void createSubscriptionRequester(
-      Payload request,
-      std::shared_ptr<Subscriber<Payload>> responseSink,
-      folly::Executor& executor);
-
   void createRequestResponseRequester(
       Payload payload,
       std::shared_ptr<Subscriber<Payload>> responseSink,
@@ -46,11 +41,6 @@ class StreamsFactory {
       folly::Executor& executor);
 
   std::shared_ptr<Subscriber<Payload>> createStreamResponder(
-      uint32_t initialRequestN,
-      StreamId streamId,
-      folly::Executor& executor);
-
-  std::shared_ptr<Subscriber<Payload>> createSubscriptionResponder(
       uint32_t initialRequestN,
       StreamId streamId,
       folly::Executor& executor);

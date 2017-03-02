@@ -29,15 +29,6 @@ void NullRequestHandler::handleRequestStream(
   response->onError(std::runtime_error("NullRequestHandler"));
 }
 
-void NullRequestHandler::handleRequestSubscription(
-    Payload /*request*/,
-    StreamId /*streamId*/,
-    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
-  // TODO(lehecka): get rid of onSubscribe call
-  response->onSubscribe(std::make_shared<NullSubscription>());
-  response->onError(std::runtime_error("NullRequestHandler"));
-}
-
 void NullRequestHandler::handleRequestResponse(
     Payload /*request*/,
     StreamId /*streamId*/,

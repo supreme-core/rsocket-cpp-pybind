@@ -45,11 +45,6 @@ class NullRequestHandler : public RequestHandler {
       StreamId streamId,
       const std::shared_ptr<Subscriber<Payload>>& response) noexcept override;
 
-  void handleRequestSubscription(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override;
-
   void handleRequestResponse(
       Payload request,
       StreamId streamId,

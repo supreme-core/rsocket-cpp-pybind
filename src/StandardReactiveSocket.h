@@ -77,10 +77,6 @@ class StandardReactiveSocket : public ReactiveSocket {
       Payload payload,
       std::shared_ptr<Subscriber<Payload>> responseSink) override;
 
-  void requestSubscription(
-      Payload payload,
-      std::shared_ptr<Subscriber<Payload>> responseSink) override;
-
   void requestResponse(
       Payload payload,
       std::shared_ptr<Subscriber<Payload>> responseSink) override;

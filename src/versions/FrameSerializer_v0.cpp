@@ -17,11 +17,23 @@ std::string FrameSerializerV0::protocolVersion() {
   return "0.0";
 }
 
-/// @{
+static FrameType deserializeFrameType(uint16_t frameType) {
+  if (frameType > static_cast<uint16_t>(FrameType::RESUME_OK)) {
+    return FrameType::RESERVED;
+  }
+
+  constexpr static const auto REQUEST_SUB = 0x0007;
+  if (frameType == REQUEST_SUB) {
+    return FrameType::REQUEST_STREAM;
+  }
+
+  return static_cast<FrameType>(frameType);
+}
+
 FrameType FrameSerializerV0::peekFrameType(const folly::IOBuf& in) {
   folly::io::Cursor cur(&in);
   try {
-    return static_cast<FrameType>(cur.readBE<uint16_t>());
+    return deserializeFrameType(cur.readBE<uint16_t>());
   } catch (...) {
     return FrameType::RESERVED;
   }
@@ -50,7 +62,7 @@ void FrameSerializerV0::serializeHeaderInto(
 void FrameSerializerV0::deserializeHeaderFrom(
     folly::io::Cursor& cur,
     FrameHeader& header) {
-  header.type_ = static_cast<FrameType>(cur.readBE<uint16_t>());
+  header.type_ = deserializeFrameType(cur.readBE<uint16_t>());
   header.flags_ = cur.readBE<uint16_t>();
   header.streamId_ = cur.readBE<uint32_t>();
 }
@@ -68,11 +80,6 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOutInternal(
 
 std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
     Frame_REQUEST_STREAM&& frame) {
-  return serializeOutInternal(std::move(frame));
-}
-
-std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
-    Frame_REQUEST_SUB&& frame) {
   return serializeOutInternal(std::move(frame));
 }
 
@@ -254,12 +261,6 @@ bool FrameSerializerV0::deserializeFromInternal(
 
 bool FrameSerializerV0::deserializeFrom(
     Frame_REQUEST_STREAM& frame,
-    std::unique_ptr<folly::IOBuf> in) {
-  return deserializeFromInternal(frame, std::move(in));
-}
-
-bool FrameSerializerV0::deserializeFrom(
-    Frame_REQUEST_SUB& frame,
     std::unique_ptr<folly::IOBuf> in) {
   return deserializeFromInternal(frame, std::move(in));
 }

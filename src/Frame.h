@@ -36,7 +36,8 @@ enum class FrameType : uint16_t {
   REQUEST_RESPONSE = 0x0004,
   REQUEST_FNF = 0x0005,
   REQUEST_STREAM = 0x0006,
-  REQUEST_SUB = 0x0007,
+  // will be handled in protocol 1.0 compatibility section
+  // removed REQUEST_SUB = 0x0007,
   REQUEST_CHANNEL = 0x0008,
   REQUEST_N = 0x0009,
   CANCEL = 0x000A,
@@ -176,26 +177,6 @@ class Frame_REQUEST_STREAM : public Frame_REQUEST_Base {
   /// For compatibility with other data-carrying frames.
   Frame_REQUEST_STREAM(StreamId streamId, FrameFlags flags, Payload payload)
       : Frame_REQUEST_STREAM(streamId, flags, 0, std::move(payload)) {}
-};
-
-class Frame_REQUEST_SUB : public Frame_REQUEST_Base {
- public:
-  Frame_REQUEST_SUB() = default;
-  Frame_REQUEST_SUB(
-      StreamId streamId,
-      FrameFlags flags,
-      uint32_t requestN,
-      Payload payload)
-      : Frame_REQUEST_Base(
-            FrameType::REQUEST_SUB,
-            streamId,
-            flags,
-            requestN,
-            std::move(payload)) {}
-
-  /// For compatibility with other data-carrying frames.
-  Frame_REQUEST_SUB(StreamId streamId, FrameFlags flags, Payload payload)
-      : Frame_REQUEST_SUB(streamId, flags, 0, std::move(payload)) {}
 };
 
 class Frame_REQUEST_CHANNEL : public Frame_REQUEST_Base {

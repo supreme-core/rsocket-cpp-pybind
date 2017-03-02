@@ -26,12 +26,6 @@ class MockRequestHandler : public RequestHandler {
           StreamId streamId,
           const std::shared_ptr<Subscriber<Payload>>&));
   MOCK_METHOD3(
-      handleRequestSubscription_,
-      void(
-          Payload& request,
-          StreamId streamId,
-          const std::shared_ptr<Subscriber<Payload>>&));
-  MOCK_METHOD3(
       handleRequestResponse_,
       void(
           Payload& request,
@@ -67,13 +61,6 @@ class MockRequestHandler : public RequestHandler {
       StreamId streamId,
       const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
     handleRequestStream_(request, streamId, response);
-  }
-
-  void handleRequestSubscription(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
-    handleRequestSubscription_(request, streamId, response);
   }
 
   void handleRequestResponse(

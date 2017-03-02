@@ -78,15 +78,6 @@ class ClientSideConcurrencyTest : public testing::Test {
               serverOutput = response;
               serverOutput->onSubscribe(serverOutputSub);
             }));
-    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _, _))
-        .Times(AtMost(1))
-        .WillOnce(Invoke(
-            [&](Payload& request,
-                StreamId streamId,
-                std::shared_ptr<Subscriber<Payload>> response) {
-              serverOutput = response;
-              serverOutput->onSubscribe(serverOutputSub);
-            }));
     EXPECT_CALL(serverHandlerRef, handleRequestChannel_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke(
@@ -211,13 +202,6 @@ TEST_F(ClientSideConcurrencyTest, RequestStreamTest) {
   wainUntilDone();
 }
 
-TEST_F(ClientSideConcurrencyTest, RequestSubscriptionTest) {
-  thread2.getEventBase()->runInEventBaseThread([&] {
-    clientSock->requestSubscription(Payload(originalPayload()), clientInput);
-  });
-  wainUntilDone();
-}
-
 TEST_F(ClientSideConcurrencyTest, RequestChannelTest) {
   clientTerminatesInteraction_ = false;
 
@@ -295,15 +279,6 @@ class ServerSideConcurrencyTest : public testing::Test {
               serverOutput->onSubscribe(serverOutputSub);
             }));
     EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _, _))
-        .Times(AtMost(1))
-        .WillOnce(Invoke(
-            [&](Payload& request,
-                StreamId streamId,
-                const std::shared_ptr<Subscriber<Payload>>& response) {
-              serverOutput = response;
-              serverOutput->onSubscribe(serverOutputSub);
-            }));
-    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke(
             [&](Payload& request,
@@ -438,11 +413,6 @@ TEST_F(ServerSideConcurrencyTest, RequestStreamTest) {
   wainUntilDone();
 }
 
-TEST_F(ServerSideConcurrencyTest, RequestSubscriptionTest) {
-  clientSock->requestSubscription(Payload(originalPayload()), clientInput);
-  wainUntilDone();
-}
-
 TEST_F(ServerSideConcurrencyTest, RequestChannelTest) {
   auto clientOutput = clientSock->requestChannel(clientInput);
 
@@ -511,18 +481,6 @@ class InitialRequestNDeliveredTest : public testing::Test {
     EXPECT_CALL(serverHandlerRef, handleSetupPayload_(_, _))
         .WillRepeatedly(Return(nullptr));
 
-    EXPECT_CALL(serverHandlerRef, handleRequestSubscription_(_, _, _))
-        .Times(AtMost(1))
-        .WillOnce(Invoke(
-            [&](Payload& request,
-                StreamId streamId,
-                const std::shared_ptr<Subscriber<Payload>>& response) {
-              thread2.getEventBase()->runInEventBaseThread([response, this] {
-                /* sleep override */ std::this_thread::sleep_for(
-                    std::chrono::milliseconds(5));
-                response->onSubscribe(validatingSubscription);
-              });
-            }));
     EXPECT_CALL(serverHandlerRef, handleRequestStream_(_, _, _))
         .Times(AtMost(1))
         .WillOnce(Invoke(
@@ -604,14 +562,6 @@ TEST_F(InitialRequestNDeliveredTest, RequestResponse) {
 
 TEST_F(InitialRequestNDeliveredTest, RequestStream) {
   Frame_REQUEST_STREAM requestFrame(
-      kStreamId, FrameFlags_EMPTY, kRequestN, Payload());
-  testConnection->getOutput()->onNext(
-      frameSerializer.serializeOut(std::move(requestFrame)));
-  loopEventBaseUntilDone();
-}
-
-TEST_F(InitialRequestNDeliveredTest, RequestSubscription) {
-  Frame_REQUEST_SUB requestFrame(
       kStreamId, FrameFlags_EMPTY, kRequestN, Payload());
   testConnection->getOutput()->onNext(
       frameSerializer.serializeOut(std::move(requestFrame)));

@@ -525,7 +525,6 @@ void ConnectionAutomaton::onConnectionFrame(
     case FrameType::REQUEST_RESPONSE:
     case FrameType::REQUEST_FNF:
     case FrameType::REQUEST_STREAM:
-    case FrameType::REQUEST_SUB:
     case FrameType::REQUEST_CHANNEL:
     case FrameType::REQUEST_N:
     case FrameType::CANCEL:
@@ -570,17 +569,6 @@ void ConnectionAutomaton::handleUnknownStream(
       auto automaton = streamsFactory_.createStreamResponder(
           frame.requestN_, streamId, executor());
       requestHandler_->handleRequestStream(
-          std::move(frame.payload_), streamId, automaton);
-      break;
-    }
-    case FrameType::REQUEST_SUB: {
-      Frame_REQUEST_SUB frame;
-      if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
-        return;
-      }
-      auto automaton = streamsFactory_.createSubscriptionResponder(
-          frame.requestN_, streamId, executor());
-      requestHandler_->handleRequestSubscription(
           std::move(frame.payload_), streamId, automaton);
       break;
     }

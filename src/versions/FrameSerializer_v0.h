@@ -14,7 +14,6 @@ class FrameSerializerV0 : public FrameSerializer {
   folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) override;
 
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_STREAM&&) override;
-  std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_SUB&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_CHANNEL&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_RESPONSE&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_FNF&&) override;
@@ -30,8 +29,6 @@ class FrameSerializerV0 : public FrameSerializer {
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESUME_OK&&) override;
 
   bool deserializeFrom(Frame_REQUEST_STREAM&, std::unique_ptr<folly::IOBuf>)
-      override;
-  bool deserializeFrom(Frame_REQUEST_SUB&, std::unique_ptr<folly::IOBuf>)
       override;
   bool deserializeFrom(Frame_REQUEST_CHANNEL&, std::unique_ptr<folly::IOBuf>)
       override;

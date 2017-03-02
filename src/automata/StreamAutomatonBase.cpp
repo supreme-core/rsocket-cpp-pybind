@@ -12,9 +12,6 @@ void StreamAutomatonBase::onNextFrame(std::unique_ptr<folly::IOBuf> payload) {
 
   auto type = connection_->frameSerializer().peekFrameType(*payload);
   switch (type) {
-    case FrameType::REQUEST_SUB:
-      deserializeAndDispatch<Frame_REQUEST_SUB>(std::move(payload));
-      return;
     case FrameType::REQUEST_CHANNEL:
       deserializeAndDispatch<Frame_REQUEST_CHANNEL>(std::move(payload));
       return;
@@ -33,8 +30,8 @@ void StreamAutomatonBase::onNextFrame(std::unique_ptr<folly::IOBuf> payload) {
     case FrameType::ERROR:
       deserializeAndDispatch<Frame_ERROR>(std::move(payload));
       return;
-    case FrameType::RESERVED:
 
+    case FrameType::RESERVED:
     case FrameType::SETUP:
     case FrameType::LEASE:
     case FrameType::KEEPALIVE:
@@ -71,10 +68,6 @@ void StreamAutomatonBase::endStream(StreamCompletionSignal) {
 }
 
 void StreamAutomatonBase::onNextFrame(Frame_REQUEST_STREAM&& f) {
-  onUnexpectedFrame(f);
-}
-
-void StreamAutomatonBase::onNextFrame(Frame_REQUEST_SUB&& f) {
   onUnexpectedFrame(f);
 }
 

@@ -33,10 +33,6 @@ class ReactiveSocket {
       Payload payload,
       const std::shared_ptr<Subscriber<Payload>> responseSink) = 0;
 
-  virtual void requestSubscription(
-      Payload payload,
-      const std::shared_ptr<Subscriber<Payload>> responseSink) = 0;
-
   virtual void requestResponse(
       Payload payload,
       const std::shared_ptr<Subscriber<Payload>> responseSink) = 0;

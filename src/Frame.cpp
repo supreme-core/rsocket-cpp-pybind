@@ -29,8 +29,6 @@ std::ostream& operator<<(std::ostream& os, FrameType type) {
   switch (type) {
     case FrameType::REQUEST_STREAM:
       return os << "REQUEST_STREAM";
-    case FrameType::REQUEST_SUB:
-      return os << "REQUEST_SUB";
     case FrameType::REQUEST_CHANNEL:
       return os << "REQUEST_CHANNEL";
     case FrameType::REQUEST_N:

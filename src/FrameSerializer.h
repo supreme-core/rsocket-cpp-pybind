@@ -29,7 +29,6 @@ class FrameSerializer {
 
   virtual std::unique_ptr<folly::IOBuf> serializeOut(
       Frame_REQUEST_STREAM&&) = 0;
-  virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_SUB&&) = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(
       Frame_REQUEST_CHANNEL&&) = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(
@@ -50,9 +49,6 @@ class FrameSerializer {
 
   virtual bool deserializeFrom(
       Frame_REQUEST_STREAM&,
-      std::unique_ptr<folly::IOBuf>) = 0;
-  virtual bool deserializeFrom(
-      Frame_REQUEST_SUB&,
       std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(
       Frame_REQUEST_CHANNEL&,

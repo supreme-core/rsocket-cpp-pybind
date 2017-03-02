@@ -28,12 +28,6 @@ class RequestHandler {
       StreamId streamId,
       const std::shared_ptr<Subscriber<Payload>>& response) noexcept = 0;
 
-  /// Handles a new inbound Subscription requested by the other end.
-  virtual void handleRequestSubscription(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) noexcept = 0;
-
   /// Handles a new inbound RequestResponse requested by the other end.
   virtual void handleRequestResponse(
       Payload request,

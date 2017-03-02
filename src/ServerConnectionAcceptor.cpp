@@ -67,7 +67,6 @@ void ServerConnectionAcceptor::processFrame(
     case FrameType::REQUEST_N:
     case FrameType::REQUEST_RESPONSE:
     case FrameType::REQUEST_STREAM:
-    case FrameType::REQUEST_SUB:
     case FrameType::RESERVED:
     case FrameType::RESPONSE:
     case FrameType::RESUME_OK:

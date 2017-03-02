@@ -22,10 +22,6 @@ class FrameSerializerV1_0 : public FrameSerializer {
     throw std::runtime_error("v1 serialization not implemented");
   }
 
-  std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_SUB&&) override {
-    throw std::runtime_error("v1 serialization not implemented");
-  }
-
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_CHANNEL&&) override {
     throw std::runtime_error("v1 serialization not implemented");
   }
@@ -80,11 +76,6 @@ class FrameSerializerV1_0 : public FrameSerializer {
   }
 
   bool deserializeFrom(Frame_REQUEST_STREAM&, std::unique_ptr<folly::IOBuf>)
-      override {
-    throw std::runtime_error("v1 serialization not implemented");
-  }
-
-  bool deserializeFrom(Frame_REQUEST_SUB&, std::unique_ptr<folly::IOBuf>)
       override {
     throw std::runtime_error("v1 serialization not implemented");
   }
