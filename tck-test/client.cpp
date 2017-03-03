@@ -3,19 +3,19 @@
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
-#include <gflags/gflags.h>
-#include <glog/logging.h>
+
 #include "src/NullRequestHandler.h"
 #include "src/StandardReactiveSocket.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/tcp/TcpDuplexConnection.h"
+
 #include "tck-test/TestFileParser.h"
 #include "tck-test/TestInterpreter.h"
-#include "tck-test/TestSuite.h"
 
-DEFINE_string(host, "localhost", "host to connect to");
+
+DEFINE_string(host, "::1", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");
-DEFINE_string(test_file, "", "host to connect to");
+DEFINE_string(test_file, "../tck-test/clienttest.txt", "host to connect to");
 
 using namespace reactivesocket;
 using namespace reactivesocket::tck;
@@ -25,7 +25,7 @@ namespace {
 class SocketConnectCallback : public folly::AsyncSocket::ConnectCallback {
  public:
   void connectSuccess() noexcept override {
-    LOG(INFO) << "tcp connection successful";
+    LOG(INFO) << "TCP connection successful";
     {
       std::unique_lock<std::mutex> lock(connectionMutex_);
       connected_ = true;
@@ -57,11 +57,12 @@ int main(int argc, char* argv[]) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
+  FLAGS_logtostderr = true;
 
   CHECK(!FLAGS_test_file.empty())
       << "please provide test file (txt) via test_file parameter";
 
-  LOG(INFO) << "Parsing test file " << FLAGS_test_file << " ...";
+  LOG(INFO) << "Parsing test file " << FLAGS_test_file;
 
   TestFileParser testFileParser(FLAGS_test_file);
   TestSuite testSuite = testFileParser.parse();
@@ -77,7 +78,7 @@ int main(int argc, char* argv[]) {
     callback = std::make_unique<SocketConnectCallback>();
     folly::SocketAddress addr(FLAGS_host, FLAGS_port, true);
 
-    LOG(INFO) << "attempting connection to " << addr.describe();
+    LOG(INFO) << "Attempting connection to " << addr.describe();
     socket->connect(callback.get(), addr);
   });
 
@@ -94,17 +95,18 @@ int main(int argc, char* argv[]) {
         std::make_unique<DefaultRequestHandler>();
 
     reactiveSocket = StandardReactiveSocket::fromClientConnection(
-        *evbt.getEventBase(),
+        inlineExecutor(),
         std::move(framedConnection),
         std::move(requestHandler));
   });
 
-  LOG(INFO) << "Test file parsed. Starting executing tests...";
+  LOG(INFO) << "Test file parsed. Executing " << testSuite.tests().size()
+            << " tests.";
 
   int passed = 0;
   for (const auto& test : testSuite.tests()) {
     TestInterpreter interpreter(test, *reactiveSocket);
-    bool passing = interpreter.run();
+    bool passing = interpreter.run(evbt.getEventBase());
     if (passing) {
       ++passed;
     }

@@ -1,8 +1,10 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "tck-test/TestInterpreter.h"
-#include <glog/logging.h>
-#include <src/StandardReactiveSocket.h>
+
+#include <folly/String.h>
+#include <folly/io/async/EventBase.h>
+
 #include "tck-test/TypedCommands.h"
 
 using namespace folly;
@@ -17,20 +19,24 @@ TestInterpreter::TestInterpreter(
   DCHECK(!test.empty());
 }
 
-bool TestInterpreter::run() {
-  LOG(INFO) << "executing test " << test_.name() << " ("
-            << test_.commands().size() << " commands) ...";
+bool TestInterpreter::run(folly::EventBase* evb) {
+  LOG(INFO) << "Executing test: " << test_.name() << " ("
+            << test_.commands().size() << " commands)";
 
   int i = 0;
   try {
     for (const auto& command : test_.commands()) {
+      VLOG(2) << "Executing command: " << command.name() << " "
+              << folly::join(",", command.params());
       ++i;
       if (command.name() == "subscribe") {
         auto subscribe = command.as<SubscribeCommand>();
-        handleSubscribe(subscribe);
+        evb->runInEventBaseThreadAndWait(
+            [this, &subscribe]() { handleSubscribe(subscribe); });
       } else if (command.name() == "request") {
         auto request = command.as<RequestCommand>();
-        handleRequest(request);
+        evb->runInEventBaseThreadAndWait(
+            [this, &request]() { handleRequest(request); });
       } else if (command.name() == "await") {
         auto await = command.as<AwaitCommand>();
         handleAwait(await);
@@ -65,8 +71,10 @@ bool TestInterpreter::run() {
 void TestInterpreter::handleSubscribe(const SubscribeCommand& command) {
   interactionIdToType_[command.id()] = command.type();
   if (command.isRequestResponseType()) {
-    // TODO
-    LOG(ERROR) << "request response not implemented";
+    auto testSubscriber = createTestSubscriber(command.id());
+    reactiveSocket_->requestResponse(
+        Payload(command.payloadData(), command.payloadMetadata()),
+        std::move(testSubscriber));
   } else if (command.isRequestStreamType()) {
     auto testSubscriber = createTestSubscriber(command.id());
     reactiveSocket_->requestStream(

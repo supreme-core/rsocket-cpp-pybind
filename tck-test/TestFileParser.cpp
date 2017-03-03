@@ -1,14 +1,18 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "tck-test/TestFileParser.h"
+
 #include <folly/String.h>
 #include <glog/logging.h>
 
 namespace reactivesocket {
 namespace tck {
 
-TestFileParser::TestFileParser(const std::string& fileName)
-    : input_(fileName) {}
+TestFileParser::TestFileParser(const std::string& fileName) : input_(fileName) {
+  if (!input_.good()) {
+    LOG(FATAL) << "Could not read from file " << fileName;
+  }
+}
 
 TestSuite TestFileParser::parse() {
   currentLine_ = 0;
@@ -29,7 +33,7 @@ void TestFileParser::parseCommand(const std::string& command) {
   }
 
   // test delimiter
-  if (command == "!") {
+  if (command == "!" || command == "EOF") {
     addCurrentTest();
     return;
   }

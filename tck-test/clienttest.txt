@@ -1,0 +1,8 @@
+!
+name%%requestresponsePass
+pass
+subscribe%%rr%%0156b516-69ea-4273-b46a-6b1e71f9e82e%%a%%b
+request%%1%%0156b516-69ea-4273-b46a-6b1e71f9e82e
+await%%terminal%%0156b516-69ea-4273-b46a-6b1e71f9e82e
+assert%%completed%%0156b516-69ea-4273-b46a-6b1e71f9e82e
+EOF

@@ -298,7 +298,18 @@ target_link_libraries(
         ${GLOG_LIBRARY}
         ${CMAKE_THREAD_LIBS_INIT})
 
-add_dependencies(tckclient gmock)
+add_executable(
+        tckserver
+        tck-test/server.cpp
+        test/simple/StatsPrinter.cpp
+        test/simple/StatsPrinter.h)
+
+target_link_libraries(
+        tckserver
+        ReactiveSocket
+        ${FOLLY_LIBRARIES}
+        ${GFLAGS_LIBRARY}
+        ${GLOG_LIBRARY})
 
 add_executable(
         tcpresumeclient

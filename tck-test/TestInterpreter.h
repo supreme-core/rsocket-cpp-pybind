@@ -6,6 +6,7 @@
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 #include "src/StandardReactiveSocket.h"
+
 #include "tck-test/TestSubscriber.h"
 #include "tck-test/TestSuite.h"
 
@@ -29,7 +30,7 @@ class TestInterpreter {
  public:
   TestInterpreter(const Test& test, StandardReactiveSocket& reactiveSocket);
 
-  bool run();
+  bool run(folly::EventBase* evb);
 
  private:
   void handleSubscribe(const SubscribeCommand& command);

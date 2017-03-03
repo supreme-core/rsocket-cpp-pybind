@@ -2,9 +2,6 @@
 
 #include "tck-test/TestSubscriber.h"
 
-#include <folly/io/IOBuf.h>
-#include <glog/logging.h>
-
 using namespace folly;
 
 namespace reactivesocket {
@@ -14,6 +11,7 @@ TestSubscriber::TestSubscriber(int initialRequestN)
     : initialRequestN_(initialRequestN) {}
 
 void TestSubscriber::request(int n) {
+  VLOG(4) << "TestSubscriber::request " << n;
   subscription_->request(n);
 }
 
@@ -124,7 +122,8 @@ void TestSubscriber::assertTerminated() {
 
 void TestSubscriber::onSubscribe(
     std::shared_ptr<Subscription> subscription) noexcept {
-  subscription_ = std::move(subscription);
+  VLOG(4) << "OnSubscribe in TestSubscriber";
+  subscription_ = subscription;
 
   //  actual.onSubscribe(s);
 
