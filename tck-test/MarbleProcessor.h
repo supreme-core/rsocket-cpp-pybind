@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
 
@@ -23,9 +25,11 @@ class MarbleProcessor {
  private:
   std::string marble_;
 
-  // TODO(manikandan): RequestHandler callbacks take Subscriber wrapped inside
-  // a const reference, which prevents copying of Subscriber.  Store raw pointer
-  // now to get things working now.
+  // Stores a mapping from marble character to Payload (data, metadata)
+  std::map<std::string, std::pair<std::string, std::string>> argMap_;
+
+  // RequestHandler callbacks take Subscriber wrapped inside
+  // a const reference, which prevents copying of Subscriber.
   Subscriber<Payload>* subscriber_;
 
   // Keeps an account of how many messages can be sent.  This could be done

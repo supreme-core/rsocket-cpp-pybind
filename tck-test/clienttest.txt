@@ -13,4 +13,14 @@ request%%1%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
 await%%terminal%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
 assert%%error%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
 assert%%no_completed%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
+!
+name%%requestresponseFail
+fail
+subscribe%%rr%%6b42627e-4646-4f80-b0df-badb92429d6c%%c%%d
+request%%1%%6b42627e-4646-4f80-b0df-badb92429d6c
+await%%terminal%%6b42627e-4646-4f80-b0df-badb92429d6c
+assert%%received%%6b42627e-4646-4f80-b0df-badb92429d6c%%ding,dong
+assert%%completed%%6b42627e-4646-4f80-b0df-badb92429d6c
+assert%%no_completed%%6b42627e-4646-4f80-b0df-badb92429d6c
+assert%%no_error%%6b42627e-4646-4f80-b0df-badb92429d6c
 EOF
