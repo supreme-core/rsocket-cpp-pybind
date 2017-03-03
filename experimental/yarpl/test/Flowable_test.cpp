@@ -1,7 +1,9 @@
-#include <chrono>
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 #include <gtest/gtest.h>
+#include <chrono>
 #include <thread>
-#include <yarpl/Flowable.h>
+#include "yarpl/Flowable.h"
 
 using namespace yarpl::flowable;
 
@@ -13,17 +15,18 @@ using namespace yarpl::flowable;
  * Subscription.
  */
 TEST(Flowable, SubscribeRequestAndCancel) {
-
   // Subscription that emits integers forever as long as requested
   class InfiniteIntegersSource : public Subscription {
     std::unique_ptr<Subscriber<int>> subscriber;
     std::atomic_bool isCancelled{false};
 
-  public:
+   public:
     InfiniteIntegersSource(std::unique_ptr<Subscriber<int>> subscriber)
         : subscriber(std::move(subscriber)) {}
 
-    void cancel() override { isCancelled = true; }
+    void cancel() override {
+      isCancelled = true;
+    }
     void request(uint64_t n) override {
       for (u_long i = 0; i < n; i++) {
         if (isCancelled) {
@@ -38,14 +41,14 @@ TEST(Flowable, SubscribeRequestAndCancel) {
   class MySubscriber : public Subscriber<int> {
     std::unique_ptr<Subscription> subscription;
 
-  public:
-    void onNext(const int &value) override {
+   public:
+    void onNext(const int& value) override {
       std::cout << "received " << value << std::endl;
       if (value == 6) {
         subscription->cancel();
       }
     }
-    void onError(const std::exception &e) override {}
+    void onError(const std::exception& e) override {}
     void onComplete() override {}
     void onSubscribe(std::unique_ptr<Subscription> s) override {
       subscription = std::move(s);
@@ -68,7 +71,7 @@ TEST(Flowable, SubscribeRequestAndCancel) {
          * One remaining concern though is that this following line is basically
          * the only
          * way to code it, as the std:move could not be done on a line
-         * preceeding onSubscribe.
+         * preceding onSubscribe.
          *
          * Another option is to make the Subscription and move Subscriber into
          * it, then
@@ -97,21 +100,22 @@ TEST(Flowable, SubscribeRequestAndCancel) {
 }
 
 TEST(Flowable, OnError) {
-
   // Subscription that fails
   class Source : public Subscription {
     std::unique_ptr<Subscriber<int>> subscriber;
     std::atomic_bool isCancelled{false};
 
-  public:
+   public:
     Source(std::unique_ptr<Subscriber<int>> subscriber)
         : subscriber(std::move(subscriber)) {}
 
-    void cancel() override { isCancelled = true; }
+    void cancel() override {
+      isCancelled = true;
+    }
     void request(uint64_t n) override {
       try {
         throw std::runtime_error("something broke!");
-      } catch (const std::exception &e) {
+      } catch (const std::exception& e) {
         subscriber->onError(e);
       }
     }
@@ -124,11 +128,11 @@ TEST(Flowable, OnError) {
   });
 
   std::string errorMessage("DEFAULT->No Error Message");
-  a->subscribe(
-      Subscriber<int>::create([](int value) { /* do nothing */ },
-                              [&errorMessage](const std::exception &e) {
-                                errorMessage = std::string(e.what());
-                              }));
+  a->subscribe(Subscriber<int>::create(
+      [](int value) { /* do nothing */ },
+      [&errorMessage](const std::exception& e) {
+        errorMessage = std::string(e.what());
+      }));
 
   EXPECT_EQ("something broke!", errorMessage);
   std::cout << "-----------------------------" << std::endl;
@@ -138,7 +142,6 @@ TEST(Flowable, OnError) {
  * Assert that all items passed through the Flowable get destroyed
  */
 TEST(Flowable, ItemsCollectedSynchronously) {
-
   static std::atomic<int> instanceCount;
 
   struct Tuple {
@@ -149,7 +152,7 @@ TEST(Flowable, ItemsCollectedSynchronously) {
       std::cout << "Tuple created!!" << std::endl;
       instanceCount++;
     }
-    Tuple(const Tuple &t) : a(t.a), b(t.b) {
+    Tuple(const Tuple& t) : a(t.a), b(t.b) {
       std::cout << "Tuple copy constructed!!" << std::endl;
       instanceCount++;
     }
@@ -163,11 +166,13 @@ TEST(Flowable, ItemsCollectedSynchronously) {
     std::unique_ptr<Subscriber<Tuple>> subscriber;
     std::atomic_bool isCancelled{false};
 
-  public:
+   public:
     Source(std::unique_ptr<Subscriber<Tuple>> subscriber)
         : subscriber(std::move(subscriber)) {}
 
-    void cancel() override { isCancelled = true; }
+    void cancel() override {
+      isCancelled = true;
+    }
     void request(uint64_t n) override {
       // ignoring n for tests ... DO NOT DO THIS FOR REAL
       subscriber->onNext(Tuple{1, 2});
@@ -183,7 +188,7 @@ TEST(Flowable, ItemsCollectedSynchronously) {
     subscriber->onSubscribe(std::make_unique<Source>(std::move(subscriber)));
   });
 
-  a->subscribe(Subscriber<Tuple>::create([](const Tuple &value) {
+  a->subscribe(Subscriber<Tuple>::create([](const Tuple& value) {
     std::cout << "received value " << value.a << std::endl;
   }));
 
@@ -202,7 +207,6 @@ TEST(Flowable, ItemsCollectedSynchronously) {
  * in a Vector which could then be consumed on another thread.
  */
 TEST(Flowable, ItemsCollectedAsynchronously) {
-
   static std::atomic<int> createdCount;
   static std::atomic<int> destroyedCount;
 
@@ -214,7 +218,7 @@ TEST(Flowable, ItemsCollectedAsynchronously) {
       std::cout << "Tuple " << a << " created!!" << std::endl;
       createdCount++;
     }
-    Tuple(const Tuple &t) : a(t.a), b(t.b) {
+    Tuple(const Tuple& t) : a(t.a), b(t.b) {
       std::cout << "Tuple " << a << " copy constructed!!" << std::endl;
       createdCount++;
     }
@@ -226,17 +230,18 @@ TEST(Flowable, ItemsCollectedAsynchronously) {
 
   // scope this so we can check destruction of Vector after this block
   {
-
     // Subscription that fails
     class Source : public Subscription {
       std::unique_ptr<Subscriber<Tuple>> subscriber;
       std::atomic_bool isCancelled{false};
 
-    public:
+     public:
       Source(std::unique_ptr<Subscriber<Tuple>> subscriber)
           : subscriber(std::move(subscriber)) {}
 
-      void cancel() override { isCancelled = true; }
+      void cancel() override {
+        isCancelled = true;
+      }
       void request(uint64_t n) override {
         // ignoring n for tests ... DO NOT DO THIS FOR REAL
         std::cout << "-----------------------------" << std::endl;
@@ -258,7 +263,7 @@ TEST(Flowable, ItemsCollectedAsynchronously) {
 
     std::vector<Tuple> v;
     v.reserve(10); // otherwise it resizes and copies on each push_back
-    a->subscribe(Subscriber<Tuple>::create([&v](const Tuple &value) {
+    a->subscribe(Subscriber<Tuple>::create([&v](const Tuple& value) {
       std::cout << "received value " << value.a << std::endl;
       // copy into vector
       v.push_back(value);
@@ -284,7 +289,6 @@ TEST(Flowable, ItemsCollectedAsynchronously) {
  * is subscribed to multiple times.
  */
 TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
-
   static std::atomic<int> tupleInstanceCount;
   static std::atomic<int> subscriptionInstanceCount;
   static std::atomic<int> subscriberInstanceCount;
@@ -297,7 +301,7 @@ TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
       std::cout << "   Tuple created!!" << std::endl;
       tupleInstanceCount++;
     }
-    Tuple(const Tuple &t) : a(t.a), b(t.b) {
+    Tuple(const Tuple& t) : a(t.a), b(t.b) {
       std::cout << "   Tuple copy constructed!!" << std::endl;
       tupleInstanceCount++;
     }
@@ -310,7 +314,7 @@ TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
   class MySubscriber : public Subscriber<Tuple> {
     std::unique_ptr<Subscription> subscription;
 
-  public:
+   public:
     MySubscriber() {
       std::cout << "   Subscriber created!!" << std::endl;
       subscriberInstanceCount++;
@@ -320,11 +324,11 @@ TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
       subscriberInstanceCount--;
     }
 
-    void onNext(const Tuple &value) override {
+    void onNext(const Tuple& value) override {
       std::cout << "   Subscriber received value " << value.a << " on thread "
                 << std::this_thread::get_id() << std::endl;
     }
-    void onError(const std::exception &e) override {}
+    void onError(const std::exception& e) override {}
     void onComplete() override {}
     void onSubscribe(std::unique_ptr<Subscription> s) override {
       subscription = std::move(s);
@@ -336,7 +340,7 @@ TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
     std::weak_ptr<Subscriber<Tuple>> subscriber;
     std::atomic_bool isCancelled{false};
 
-  public:
+   public:
     Source(std::weak_ptr<Subscriber<Tuple>> subscriber)
         : subscriber(std::move(subscriber)) {
       std::cout << "   Subscription created!!" << std::endl;
@@ -347,7 +351,9 @@ TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
       subscriptionInstanceCount--;
     }
 
-    void cancel() override { isCancelled = true; }
+    void cancel() override {
+      isCancelled = true;
+    }
     void request(uint64_t n) override {
       // ignoring n for tests ... DO NOT DO THIS FOR REAL
       auto ss = subscriber.lock();
@@ -383,14 +389,14 @@ TEST(Flowable, TestRetainOnStaticAsyncFlowableWithMultipleSubscribers) {
             sharedSubscriber->onSubscribe(
                 std::make_unique<Source>(std::move(wp)));
             counter--; // assuming pipeline is synchronous, which it is in this
-                       // test
+            // test
             std::cout << "Done thread" << std::endl;
-          } catch (std::exception &e) {
+          } catch (std::exception& e) {
             std::cout << e.what() << std::endl;
           }
         }).detach();
 
-      } catch (std::exception &e) {
+      } catch (std::exception& e) {
         std::cout << e.what() << std::endl;
       }
     });

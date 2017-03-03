@@ -5,13 +5,14 @@
 namespace yarpl {
 namespace observable {
 
-std::unique_ptr<Subscription>
-Subscription::create(std::function<void()> onCancel) {
+std::unique_ptr<Subscription> Subscription::create(
+    std::function<void()> onCancel) {
   return std::make_unique<Subscription>(std::move(onCancel));
 }
-std::unique_ptr<Subscription>
-Subscription::create(std::atomic_bool &cancelled) {
-    return create([&cancelled]() { cancelled = true; });
+
+std::unique_ptr<Subscription> Subscription::create(
+    std::atomic_bool& cancelled) {
+  return create([&cancelled]() { cancelled = true; });
 }
 
 std::unique_ptr<Subscription> Subscription::create() {
@@ -21,13 +22,13 @@ std::unique_ptr<Subscription> Subscription::create() {
 void Subscription::cancel() {
   bool expected = false;
   // mark cancelled 'true' and only if successful invoke 'onCancel()'
-  if (cancelled.compare_exchange_strong(expected, true)) {
+  if (cancelled_.compare_exchange_strong(expected, true)) {
     onCancel_();
   }
 }
 
 bool Subscription::isCanceled() const {
-  return cancelled;
+  return cancelled_;
 }
 }
 }

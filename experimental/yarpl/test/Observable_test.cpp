@@ -1,5 +1,7 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 #include <gtest/gtest.h>
-#include <yarpl/Observable.h>
+#include "yarpl/Observable.h"
 
 using namespace yarpl::observable;
 
@@ -38,15 +40,16 @@ TEST(Observable, OnError) {
   auto a = Observable<int>::create([](std::unique_ptr<Observer<int>> obs) {
     try {
       throw std::runtime_error("something broke!");
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       obs->onError(e);
     }
   });
 
-  a->subscribe(Observer<int>::create([](int value) { /* do nothing */ },
-                                     [&errorMessage](const std::exception &e) {
-                                       errorMessage = std::string(e.what());
-                                     }));
+  a->subscribe(Observer<int>::create(
+      [](int value) { /* do nothing */ },
+      [&errorMessage](const std::exception& e) {
+        errorMessage = std::string(e.what());
+      }));
 
   EXPECT_EQ("something broke!", errorMessage);
 }
@@ -55,7 +58,6 @@ TEST(Observable, OnError) {
  * Assert that all items passed through the Observable get destroyed
  */
 TEST(Observable, ItemsCollectedSynchronously) {
-
   static std::atomic<int> instanceCount;
 
   struct Tuple {
@@ -66,7 +68,7 @@ TEST(Observable, ItemsCollectedSynchronously) {
       std::cout << "Tuple created!!" << std::endl;
       instanceCount++;
     }
-    Tuple(const Tuple &t) : a(t.a), b(t.b) {
+    Tuple(const Tuple& t) : a(t.a), b(t.b) {
       std::cout << "Tuple copy constructed!!" << std::endl;
       instanceCount++;
     }
@@ -87,7 +89,7 @@ TEST(Observable, ItemsCollectedSynchronously) {
   // TODO how can it be made so 'auto' correctly works without doing copying?
   // a->subscribe(Observer<Tuple>::create(
   //    [](auto value) { std::cout << "received value " << value.a << "\n"; }));
-  a->subscribe(Observer<Tuple>::create([](const Tuple &value) {
+  a->subscribe(Observer<Tuple>::create([](const Tuple& value) {
     std::cout << "received value " << value.a << std::endl;
   }));
 
@@ -106,7 +108,6 @@ TEST(Observable, ItemsCollectedSynchronously) {
  * in a Vector which could then be consumed on another thread.
  */
 TEST(Observable, ItemsCollectedAsynchronously) {
-
   static std::atomic<int> createdCount;
   static std::atomic<int> destroyedCount;
 
@@ -118,7 +119,7 @@ TEST(Observable, ItemsCollectedAsynchronously) {
       std::cout << "Tuple " << a << " created!!" << std::endl;
       createdCount++;
     }
-    Tuple(const Tuple &t) : a(t.a), b(t.b) {
+    Tuple(const Tuple& t) : a(t.a), b(t.b) {
       std::cout << "Tuple " << a << " copy constructed!!" << std::endl;
       createdCount++;
     }
@@ -145,7 +146,7 @@ TEST(Observable, ItemsCollectedAsynchronously) {
 
     std::vector<Tuple> v;
     v.reserve(10); // otherwise it resizes and copies on each push_back
-    a->subscribe(Observer<Tuple>::create([&v](const Tuple &value) {
+    a->subscribe(Observer<Tuple>::create([&v](const Tuple& value) {
       std::cout << "received value " << value.a << std::endl;
       // copy into vector
       v.push_back(value);
@@ -167,22 +168,21 @@ TEST(Observable, ItemsCollectedAsynchronously) {
 }
 
 class TakeObserver : public Observer<int> {
-
-private:
+ private:
   const int limit;
   int count = 0;
   std::unique_ptr<Subscription> subscription;
-  std::vector<int> &v;
+  std::vector<int>& v;
 
-public:
-  TakeObserver(int limit, std::vector<int> &v) : limit(limit), v(v) {
+ public:
+  TakeObserver(int limit, std::vector<int>& v) : limit(limit), v(v) {
     v.reserve(5);
   }
 
   void onSubscribe(std::unique_ptr<Subscription> s) override {
     subscription = std::move(s);
   }
-  void onNext(const int &value) override {
+  void onNext(const int& value) override {
     v.push_back(value);
     if (++count >= limit) {
       //      std::cout << "Cancelling subscription after receiving " << count
@@ -190,7 +190,7 @@ public:
       subscription->cancel();
     }
   }
-  void onError(const std::exception &e) override {}
+  void onError(const std::exception& e) override {}
   void onComplete() override {}
 };
 

@@ -49,6 +49,11 @@ target_link_libraries(
         yarpl-playground
         yarpl)
 
+target_include_directories(
+        yarpl-playground
+        PUBLIC "${PROJECT_SOURCE_DIR}/include" # allow include paths such as "yarpl/observable.h" can be used
+)
+
 # unit tests
 add_executable(
         yarpl-tests
@@ -64,6 +69,11 @@ target_link_libraries(
         ${GMOCK_LIBS} # inherited from reactivesocket-cpp CMake
 )
 
+target_include_directories(
+        yarpl-tests
+        PUBLIC "${PROJECT_SOURCE_DIR}/include" # allow include paths such as "yarpl/observable.h" can be used
+)
+
 ## perf tests
 #add_executable(
 #        yarpl-perf
@@ -76,4 +86,9 @@ target_link_libraries(
 #        yarpl-perf
 #        yarpl
 #        benchmark
+#)
+
+#target_include_directories(
+#        yarpl-perf
+#        PUBLIC "${PROJECT_SOURCE_DIR}/include" # allow include paths such as "yarpl/observable.h" can be used
 #)
