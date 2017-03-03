@@ -274,8 +274,7 @@ int main(int argc, char* argv[]) {
         serverSocket->addAcceptCallback(&callback, evbt.getEventBase());
         serverSocket->listen(10);
         serverSocket->startAccepting();
-        LOG(INFO) << "Server listening on "
-                  << serverSocket->getAddress().describe();
+        LOG(INFO) << "Server listening on " << addr.describe();
       });
 
   while (true)
