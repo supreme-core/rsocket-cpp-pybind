@@ -5,4 +5,12 @@ subscribe%%rr%%0156b516-69ea-4273-b46a-6b1e71f9e82e%%a%%b
 request%%1%%0156b516-69ea-4273-b46a-6b1e71f9e82e
 await%%terminal%%0156b516-69ea-4273-b46a-6b1e71f9e82e
 assert%%completed%%0156b516-69ea-4273-b46a-6b1e71f9e82e
+!
+name%%requestresponsePass2
+pass
+subscribe%%rr%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33%%e%%f
+request%%1%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
+await%%terminal%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
+assert%%error%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
+assert%%no_completed%%3ae2dbb1-e6ab-4326-8da0-6fd1c9754d33
 EOF

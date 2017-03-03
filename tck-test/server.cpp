@@ -15,6 +15,8 @@
 
 #include "test/simple/StatsPrinter.h"
 
+#include "tck-test/MarbleProcessor.h"
+
 using namespace ::testing;
 using namespace ::reactivesocket;
 using namespace ::folly;
@@ -27,23 +29,26 @@ class ServerSubscription : public SubscriptionBase {
  public:
   explicit ServerSubscription(
       std::shared_ptr<Subscriber<Payload>> response,
+      std::shared_ptr<tck::MarbleProcessor> marbleProcessor,
       size_t numElems = 2)
       : ExecutorBase(defaultExecutor()),
         response_(std::move(response)),
-        numElems_(numElems) {}
+        numElems_(numElems),
+        marbleProcessor_(std::move(marbleProcessor)) {}
 
  private:
   void requestImpl(size_t n) noexcept override {
-    for (size_t i = 0; i < numElems_; i++) {
-      response_->onNext(Payload("from server " + std::to_string(i)));
-    }
-    response_->onComplete();
+    LOG(INFO) << "Received request " << n;
+    marbleProcessor_->request(n);
   }
 
-  void cancelImpl() noexcept override {}
+  void cancelImpl() noexcept override {
+    marbleProcessor_->cancel();
+  }
 
   std::shared_ptr<Subscriber<Payload>> response_;
   size_t numElems_;
+  std::shared_ptr<tck::MarbleProcessor> marbleProcessor_;
 };
 
 class Callback : public AsyncServerSocket::AcceptCallback {
@@ -119,7 +124,6 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         const std::shared_ptr<Subscriber<Payload>>&
             response) noexcept override {
       LOG(INFO) << "handleRequestStream " << request;
-      response->onSubscribe(std::make_shared<ServerSubscription>(response));
     }
 
     void handleRequestResponse(
@@ -130,13 +134,18 @@ class Callback : public AsyncServerSocket::AcceptCallback {
       LOG(INFO) << "handleRequestResponse " << request;
       std::string data = request.data->moveToFbString().toStdString();
       std::string metadata = request.metadata->moveToFbString().toStdString();
-      response->onSubscribe(std::make_shared<ServerSubscription>(response, 1));
       auto it = callback_->reqRespMarbles_.find(std::make_pair(data, metadata));
       if (it == callback_->reqRespMarbles_.end()) {
         LOG(ERROR) << "No Handler found for the [data: " << data
                    << ", metadata:" << metadata << "]";
       } else {
-        LOG(INFO) << "Handler " << it->second;
+        auto marbleProcessor =
+            std::make_shared<tck::MarbleProcessor>(it->second, response);
+        auto subscription =
+            std::make_shared<ServerSubscription>(response, marbleProcessor, 1);
+        response->onSubscribe(subscription);
+        std::thread mpThread([marbleProcessor] { marbleProcessor->run(); });
+        mpThread.detach();
       }
     }
 

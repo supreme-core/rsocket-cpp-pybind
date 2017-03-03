@@ -301,6 +301,8 @@ target_link_libraries(
 add_executable(
         tckserver
         tck-test/server.cpp
+        tck-test/MarbleProcessor.cpp
+        tck-test/MarbleProcessor.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 
