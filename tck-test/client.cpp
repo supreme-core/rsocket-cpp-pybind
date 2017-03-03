@@ -12,10 +12,9 @@
 #include "tck-test/TestFileParser.h"
 #include "tck-test/TestInterpreter.h"
 
-
 DEFINE_string(host, "::1", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");
-DEFINE_string(test_file, "../tck-test/clienttest.txt", "host to connect to");
+DEFINE_string(test_file, "../tck-test/clienttest.txt", "test file to run");
 
 using namespace reactivesocket;
 using namespace reactivesocket::tck;

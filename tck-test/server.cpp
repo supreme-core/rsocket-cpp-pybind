@@ -1,5 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include <fstream>
+
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
@@ -18,6 +20,7 @@ using namespace ::reactivesocket;
 using namespace ::folly;
 
 DEFINE_string(address, "9898", "port to listen to");
+DEFINE_string(test_file, "../tck-test/servertest.txt", "test file to run");
 
 namespace {
 class ServerSubscription : public SubscriptionBase {
@@ -43,62 +46,15 @@ class ServerSubscription : public SubscriptionBase {
   size_t numElems_;
 };
 
-class ServerRequestHandler : public DefaultRequestHandler {
- public:
-  /// Handles a new inbound Subscription requested by the other end.
-  void handleRequestSubscription(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
-    LOG(INFO) << "ServerRequestHandler.handleRequestSubscription " << request;
-
-    response->onSubscribe(std::make_shared<ServerSubscription>(response));
-  }
-
-  /// Handles a new inbound Stream requested by the other end.
-  void handleRequestStream(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
-    LOG(INFO) << "ServerRequestHandler.handleRequestStream " << request;
-
-    response->onSubscribe(std::make_shared<ServerSubscription>(response));
-  }
-
-  void handleRequestResponse(
-      Payload request,
-      StreamId streamId,
-      const std::shared_ptr<Subscriber<Payload>>& response) noexcept override {
-    LOG(INFO) << "ServerRequestHandler.handleRequestResponse " << request;
-
-    response->onSubscribe(std::make_shared<ServerSubscription>(response, 1));
-  }
-
-  void handleFireAndForgetRequest(
-      Payload request,
-      StreamId streamId) noexcept override {
-    LOG(INFO) << "ServerRequestHandler.handleFireAndForgetRequest " << request;
-  }
-
-  void handleMetadataPush(
-      std::unique_ptr<folly::IOBuf> request) noexcept override {
-    LOG(INFO) << "ServerRequestHandler.handleMetadataPush "
-              << request->moveToFbString();
-  }
-
-  std::shared_ptr<StreamState> handleSetupPayload(
-      ReactiveSocket&,
-      ConnectionSetupPayload request) noexcept override {
-    LOG(INFO) << "ServerRequestHandler.handleSetupPayload " << request;
-    return nullptr;
-  }
-
-};
-
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  Callback(EventBase& eventBase, Stats& stats)
-      : eventBase_(eventBase), stats_(stats){};
+  Callback(
+      EventBase& eventBase,
+      Stats& stats,
+      std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles)
+      : eventBase_(eventBase),
+        stats_(stats),
+        reqRespMarbles_(std::move(reqRespMarbles)){};
 
   virtual ~Callback() = default;
 
@@ -117,7 +73,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         std::make_unique<FramedDuplexConnection>(
             std::move(connection), inlineExecutor());
     std::unique_ptr<RequestHandler> requestHandler =
-        std::make_unique<ServerRequestHandler>();
+        std::make_unique<ServerRequestHandler>(*this);
 
     auto rs = StandardReactiveSocket::fromServerConnection(
         eventBase_,
@@ -133,7 +89,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   }
 
   void removeSocket(ReactiveSocket& socket) {
-    if (!shuttingDown) {
+    if (!shuttingDown_) {
       reactiveSockets_.erase(std::remove_if(
           reactiveSockets_.begin(),
           reactiveSockets_.end(),
@@ -148,21 +104,119 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   }
 
   void shutdown() {
-    shuttingDown = true;
+    shuttingDown_ = true;
     reactiveSockets_.clear();
   }
 
  private:
+  class ServerRequestHandler : public DefaultRequestHandler {
+   public:
+    explicit ServerRequestHandler(Callback& callback) : callback_(&callback) {}
+
+    void handleRequestStream(
+        Payload request,
+        StreamId streamId,
+        const std::shared_ptr<Subscriber<Payload>>&
+            response) noexcept override {
+      LOG(INFO) << "handleRequestStream " << request;
+      response->onSubscribe(std::make_shared<ServerSubscription>(response));
+    }
+
+    void handleRequestResponse(
+        Payload request,
+        StreamId streamId,
+        const std::shared_ptr<Subscriber<Payload>>&
+            response) noexcept override {
+      LOG(INFO) << "handleRequestResponse " << request;
+      std::string data = request.data->moveToFbString().toStdString();
+      std::string metadata = request.metadata->moveToFbString().toStdString();
+      response->onSubscribe(std::make_shared<ServerSubscription>(response, 1));
+      auto it = callback_->reqRespMarbles_.find(std::make_pair(data, metadata));
+      if (it == callback_->reqRespMarbles_.end()) {
+        LOG(ERROR) << "No Handler found for the [data: " << data
+                   << ", metadata:" << metadata << "]";
+      } else {
+        LOG(INFO) << "Handler " << it->second;
+      }
+    }
+
+    void handleFireAndForgetRequest(
+        Payload request,
+        StreamId streamId) noexcept override {
+      LOG(INFO) << "handleFireAndForgetRequest " << request;
+    }
+
+    void handleMetadataPush(
+        std::unique_ptr<folly::IOBuf> request) noexcept override {
+      LOG(INFO) << "handleMetadataPush " << request->moveToFbString();
+    }
+
+    std::shared_ptr<StreamState> handleSetupPayload(
+        ReactiveSocket&,
+        ConnectionSetupPayload request) noexcept override {
+      LOG(INFO) << "handleSetupPayload " << request;
+      return nullptr;
+    }
+
+   private:
+    Callback* callback_;
+  };
+
   std::vector<std::unique_ptr<StandardReactiveSocket>> reactiveSockets_;
   EventBase& eventBase_;
   Stats& stats_;
-  bool shuttingDown{false};
+  bool shuttingDown_{false};
+  std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles_;
 };
 }
 
 void signal_handler(int signal) {
   LOG(INFO) << "Terminating program after receiving signal " << signal;
   exit(signal);
+}
+
+std::tuple<
+    std::map<
+        std::pair<std::string, std::string> /*payload*/,
+        std::string /*marble*/> /* ReqResp */,
+    std::map<
+        std::pair<std::string, std::string> /*payload*/,
+        std::string /*marble*/> /* Stream */,
+    std::map<
+        std::pair<std::string, std::string> /*payload*/,
+        std::string /*marble*/> /* Channel */>
+parseMarbles(const std::string& fileName) {
+  std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles;
+  std::map<std::pair<std::string, std::string>, std::string> streamMarbles;
+  std::map<std::pair<std::string, std::string>, std::string> channelMarbles;
+
+  std::ifstream input(fileName);
+  if (!input.good()) {
+    LOG(FATAL) << "Could not read from file '" << fileName << "'";
+  }
+
+  std::string line;
+  while (std::getline(input, line)) {
+    std::vector<folly::StringPiece> args;
+    folly::split("%%", line, args);
+    CHECK(args.size() == 4);
+    if (args[0] == "rr") {
+      reqRespMarbles.emplace(
+          std::make_pair(args[1].toString(), args[2].toString()),
+          args[3].toString());
+    } else if (args[0] == "rs") {
+      streamMarbles.emplace(
+          std::make_pair(args[1].toString(), args[2].toString()),
+          args[3].toString());
+    } else if (args[0] == "channel") {
+      channelMarbles.emplace(
+          std::make_pair(args[1].toString(), args[2].toString()),
+          args[3].toString());
+    } else {
+      LOG(FATAL) << "Unrecognized token " << args[0];
+    }
+  }
+  return std::tie(reqRespMarbles, streamMarbles, channelMarbles);
 }
 
 int main(int argc, char* argv[]) {
@@ -177,7 +231,9 @@ int main(int argc, char* argv[]) {
 
   folly::ScopedEventBaseThread evbt;
   reactivesocket::StatsPrinter statsPrinter;
-  Callback callback(*evbt.getEventBase(), statsPrinter);
+
+  auto marbles = parseMarbles(FLAGS_test_file);
+  Callback callback(*evbt.getEventBase(), statsPrinter, std::get<0>(marbles));
 
   auto serverSocket = AsyncServerSocket::newSocket(evbt.getEventBase());
 
@@ -193,8 +249,6 @@ int main(int argc, char* argv[]) {
         LOG(INFO) << "Server listening on "
                   << serverSocket->getAddress().describe();
       });
-
-
 
   while (true)
     ;
