@@ -76,11 +76,13 @@ void MarbleProcessor::run() {
 }
 
 void MarbleProcessor::request(size_t n) {
+  LOG(INFO) << "Received request " << n;
   canTerminate_ = true;
   canSend_ += n;
 }
 
 void MarbleProcessor::cancel() {
+  LOG(INFO) << "Received cancel";
   terminated_ = true;
 }
 
