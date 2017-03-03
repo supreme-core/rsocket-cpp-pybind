@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <string>
 #include "src/Common.h"
 #include "src/DuplexConnection.h"
@@ -30,5 +31,7 @@ class Stats {
   virtual void frameWritten(const std::string& frameType) = 0;
   virtual void frameRead(const std::string& frameType) = 0;
   virtual void resumeBufferChanged(int framesCountDelta, int dataSizeDelta) = 0;
+  virtual void streamBufferChanged(
+    int64_t framesCountDelta, int64_t dataSizeDelta) = 0;
 };
 }

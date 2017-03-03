@@ -245,16 +245,16 @@ class ConnectionAutomaton final
 
   ConnectionLevelFrameHandler connectionLevelFrameHandler_;
 
-  std::shared_ptr<StreamState> streamState_;
-  std::shared_ptr<RequestHandler> requestHandler_;
-  std::shared_ptr<FrameTransport> frameTransport_;
-  std::unique_ptr<FrameSerializer> frameSerializer_;
-
   Stats& stats_;
   ReactiveSocketMode mode_;
   bool isResumable_{false};
   bool remoteResumeable_{false};
   bool isClosed_{false};
+
+  std::shared_ptr<StreamState> streamState_;
+  std::shared_ptr<RequestHandler> requestHandler_;
+  std::shared_ptr<FrameTransport> frameTransport_;
+  std::unique_ptr<FrameSerializer> frameSerializer_;
 
   std::list<std::function<void()>> onConnectListeners_;
   std::list<ErrorCallback> onDisconnectListeners_;

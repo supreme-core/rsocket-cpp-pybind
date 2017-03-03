@@ -28,10 +28,10 @@ ConnectionAutomaton::ConnectionAutomaton(
     ReactiveSocketMode mode)
     : ExecutorBase(executor),
       connectionLevelFrameHandler_(std::move(connectionLevelFrameHandler)),
-      streamState_(std::make_shared<StreamState>(*this)),
-      requestHandler_(std::move(requestHandler)),
       stats_(stats),
       mode_(mode),
+      streamState_(std::make_shared<StreamState>(*this)),
+      requestHandler_(std::move(requestHandler)),
       resumeListener_(resumeListener),
       keepaliveTimer_(std::move(keepaliveTimer)),
       streamsFactory_(*this, mode) {

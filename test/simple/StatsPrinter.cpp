@@ -49,4 +49,11 @@ void StatsPrinter::resumeBufferChanged(
   LOG(INFO) << "resumeBufferChanged framesCountDelta=" << framesCountDelta
             << " dataSizeDelta=" << dataSizeDelta;
 }
+
+void StatsPrinter::streamBufferChanged(
+    int64_t framesCountDelta,
+    int64_t dataSizeDelta) {
+  LOG(INFO) << "streamBufferChanged framesCountDelta=" << framesCountDelta
+            << " dataSizeDelta=" << dataSizeDelta;
+}
 }

@@ -24,5 +24,7 @@ class StatsPrinter : public Stats {
   void frameWritten(const std::string& frameType) override;
   void frameRead(const std::string& frameType) override;
   void resumeBufferChanged(int framesCountDelta, int dataSizeDelta) override;
+  void streamBufferChanged(
+    int64_t framesCountDelta, int64_t dataSizeDelta) override;
 };
 }

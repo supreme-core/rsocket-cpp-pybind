@@ -171,6 +171,7 @@ add_library(
   src/Stats.h
   src/StreamsFactory.cpp
   src/StreamsFactory.h
+  src/StreamState.cpp
   src/StreamState.h
   src/SubscriberBase.h
   src/SubscriptionBase.h
@@ -222,7 +223,9 @@ add_executable(
   test/ReactiveSocketResumabilityTest.cpp
   test/AllowanceSemaphoreTest.cpp
   test/ResumeIdentificationTokenTest.cpp
-  test/PayloadTest.cpp test/ResumeCacheTest.cpp)
+  test/PayloadTest.cpp
+  test/ResumeCacheTest.cpp
+  test/StreamStateTest.cpp)
 
 target_link_libraries(
   tests

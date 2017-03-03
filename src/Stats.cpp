@@ -23,7 +23,8 @@ class NoopStats : public Stats {
   void frameWritten(const std::string& frameType) override {}
   void frameRead(const std::string& frameType) override {}
 
-  void resumeBufferChanged(int framesCount, int dataSize) override {}
+  void resumeBufferChanged(int, int) override {}
+  void streamBufferChanged(int64_t, int64_t) override {}
 
   static NoopStats& instance(void) {
     static NoopStats singleton;

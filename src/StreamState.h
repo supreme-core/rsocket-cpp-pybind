@@ -2,42 +2,44 @@
 
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <deque>
 #include <memory>
 #include <unordered_map>
+#include <folly/io/IOBuf.h>
 
 #include "src/ResumeCache.h"
 #include "src/ResumeTracker.h"
 
-namespace folly {
-class IOBuf;
-}
-
 namespace reactivesocket {
 
 class ConnectionAutomaton;
+class Stats;
 class StreamAutomatonBase;
 using StreamId = uint32_t;
 
 class StreamState {
  public:
-  explicit StreamState(ConnectionAutomaton& connection)
-      : resumeTracker_(connection), resumeCache_(connection) {}
+  explicit StreamState(ConnectionAutomaton& connection);
+  ~StreamState();
 
-  void enqueueOutputPendingFrame(std::unique_ptr<folly::IOBuf> frame) {
-    outputFrames_.push_back(std::move(frame));
-  }
+  void enqueueOutputPendingFrame(std::unique_ptr<folly::IOBuf> frame);
 
-  std::deque<std::unique_ptr<folly::IOBuf>> moveOutputPendingFrames() {
-    return std::move(outputFrames_);
-  }
+  std::deque<std::unique_ptr<folly::IOBuf>> moveOutputPendingFrames();
 
   std::unordered_map<StreamId, std::shared_ptr<StreamAutomatonBase>> streams_;
   ResumeTracker resumeTracker_;
   ResumeCache resumeCache_;
 
  private:
+  /// Called to update stats when outputFrames_ is about to be cleared.
+  void onClearFrames();
+
+  Stats& stats_;
+
+  /// Total data length of all IOBufs in outputFrames_.
+  uint64_t dataLength_{0};
+
   std::deque<std::unique_ptr<folly::IOBuf>> outputFrames_;
 };
 }
