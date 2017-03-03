@@ -2,6 +2,8 @@
 
 #include "tck-test/TestSubscriber.h"
 
+#include <folly/Format.h>
+
 using namespace folly;
 
 namespace reactivesocket {
@@ -41,8 +43,10 @@ void TestSubscriber::awaitAtLeast(int numItems) {
     throw std::runtime_error("timed out while waiting for items");
   }
 
-  LOG(INFO) << "received " << onNextItemsCount_.load()
-            << " items; was waiting for " << numItems;
+  LOG(INFO) << folly::sformat(
+      "Received {} values. Was waiting for at least {}",
+      onNextItemsCount_.load(),
+      numItems);
   onNextItemsCount_ = 0;
 }
 
@@ -69,24 +73,42 @@ void TestSubscriber::assertError() {
 
 void TestSubscriber::assertValues(
     const std::vector<std::pair<std::string, std::string>>& values) {
-  // TODO
-  throw std::runtime_error("not implemented");
+  assertValueCount(values.size());
+  std::unique_lock<std::mutex> lock(mutex_);
+  for (size_t i = 0; i < values.size(); i++) {
+    if (onNextValues_[i] != values[i]) {
+      throw std::runtime_error(folly::sformat(
+          "Unexpected element {}:{}.  Expected element {}:{}",
+          onNextValues_[i].first,
+          onNextValues_[i].second,
+          values[i].first,
+          values[i].second));
+    }
+  }
 }
 
 void TestSubscriber::assertValueCount(size_t valueCount) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (onNextValues_.size() == valueCount) {
-    LOG(INFO) << "received expected " << valueCount << " values.";
+    LOG(INFO) << "Received expected number of values (" << valueCount << ")";
   } else {
-    LOG(INFO) << "didn't receive expected number of values! expected="
-              << valueCount << " actual=" << onNextValues_.size();
-    throw std::runtime_error("didn't receive expected number of values!");
+    throw std::runtime_error(folly::sformat(
+        "Did not receive expected number of values! Expected={} Actual={}",
+        valueCount,
+        onNextValues_.size()));
   }
 }
 
-void TestSubscriber::assertReceivedAtLeast(int valueCount) {
-  // TODO
-  throw std::runtime_error("not implemented");
+void TestSubscriber::assertReceivedAtLeast(size_t valueCount) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  if (onNextValues_.size() >= valueCount) {
+    LOG(INFO) << "Received expected number of values (" << valueCount << ")";
+  } else {
+    throw std::runtime_error(folly::sformat(
+        "Did not receive the minimum number of values! Expected={} Actual={}",
+        valueCount,
+        onNextValues_.size()));
+  }
 }
 
 void TestSubscriber::assertCompleted() {
@@ -116,7 +138,8 @@ void TestSubscriber::assertCanceled() {
 void TestSubscriber::assertTerminated() {
   if (!completed_ && !errored_) {
     throw std::runtime_error(
-        "subscription is not terminated yet. This is most likely a bug in the test.");
+        "Subscription is not terminated yet. "
+        "This is most likely a bug in the test.");
   }
 }
 
@@ -159,7 +182,12 @@ void TestSubscriber::onNext(Payload element) noexcept {
 
   {
     std::unique_lock<std::mutex> lock(mutex_);
-    onNextValues_.push_back(std::move(element));
+    std::string data =
+        element.data ? element.data->moveToFbString().toStdString() : "";
+    std::string metadata = element.metadata
+        ? element.metadata->moveToFbString().toStdString()
+        : "";
+    onNextValues_.push_back(std::make_pair(data, metadata));
     ++onNextItemsCount_;
   }
   onNextValuesCV_.notify_one();
