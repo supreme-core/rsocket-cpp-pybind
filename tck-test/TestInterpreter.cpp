@@ -42,8 +42,7 @@ bool TestInterpreter::run(folly::EventBase* evb) {
         handleAwait(await);
       } else if (command.name() == "cancel") {
         auto cancel = command.as<CancelCommand>();
-        evb->runInEventBaseThreadAndWait(
-            [this, &cancel]() { handleCancel(cancel); });
+        handleCancel(cancel);
       } else if (command.name() == "assert") {
         auto assert = command.as<AssertCommand>();
         handleAssert(assert);

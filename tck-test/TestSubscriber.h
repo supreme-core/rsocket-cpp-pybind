@@ -29,7 +29,7 @@ class TestSubscriber : public reactivesocket::Subscriber<Payload> {
   void assertValues(
       const std::vector<std::pair<std::string, std::string>>& values);
   void assertValueCount(size_t valueCount);
-  void assertReceivedAtLeast(size_t valueCount);
+  void assertReceivedAtLeast(int valueCount);
   void assertCompleted();
   void assertNotCompleted();
   void assertCanceled();
@@ -52,7 +52,7 @@ class TestSubscriber : public reactivesocket::Subscriber<Payload> {
   ////////////////////////////////////////////////////////////////////////////
   std::mutex mutex_; // all variables below has to be protected with the mutex
 
-  std::vector<std::pair<std::string, std::string>> onNextValues_;
+  std::vector<Payload> onNextValues_;
   std::condition_variable onNextValuesCV_;
   std::atomic<int> onNextItemsCount_{0};
 

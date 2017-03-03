@@ -30,13 +30,15 @@ class ServerSubscription : public SubscriptionBase {
   explicit ServerSubscription(
       std::shared_ptr<Subscriber<Payload>> response,
       std::shared_ptr<tck::MarbleProcessor> marbleProcessor,
-      size_t /* numElems = 2 */)
+      size_t numElems = 2)
       : ExecutorBase(defaultExecutor()),
         response_(std::move(response)),
+        numElems_(numElems),
         marbleProcessor_(std::move(marbleProcessor)) {}
 
  private:
   void requestImpl(size_t n) noexcept override {
+    LOG(INFO) << "Received request " << n;
     marbleProcessor_->request(n);
   }
 
@@ -45,6 +47,7 @@ class ServerSubscription : public SubscriptionBase {
   }
 
   std::shared_ptr<Subscriber<Payload>> response_;
+  size_t numElems_;
   std::shared_ptr<tck::MarbleProcessor> marbleProcessor_;
 };
 
@@ -53,12 +56,10 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   Callback(
       EventBase& eventBase,
       Stats& stats,
-      std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles,
-      std::map<std::pair<std::string, std::string>, std::string> streamMarbles)
+      std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles)
       : eventBase_(eventBase),
         stats_(stats),
-        reqRespMarbles_(std::move(reqRespMarbles)),
-        streamMarbles_(std::move(streamMarbles)){};
+        reqRespMarbles_(std::move(reqRespMarbles)){};
 
   virtual ~Callback() = default;
 
@@ -123,21 +124,6 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         const std::shared_ptr<Subscriber<Payload>>&
             response) noexcept override {
       LOG(INFO) << "handleRequestStream " << request;
-      std::string data = request.data->moveToFbString().toStdString();
-      std::string metadata = request.metadata->moveToFbString().toStdString();
-      auto it = callback_->streamMarbles_.find(std::make_pair(data, metadata));
-      if (it == callback_->streamMarbles_.end()) {
-        LOG(ERROR) << "No Handler found for the [data: " << data
-                   << ", metadata:" << metadata << "]";
-      } else {
-        auto marbleProcessor =
-            std::make_shared<tck::MarbleProcessor>(it->second, response);
-        auto subscription =
-            std::make_shared<ServerSubscription>(response, marbleProcessor, 0);
-        response->onSubscribe(subscription);
-        std::thread mpThread([marbleProcessor] { marbleProcessor->run(); });
-        mpThread.detach();
-      }
     }
 
     void handleRequestResponse(
@@ -156,7 +142,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
         auto marbleProcessor =
             std::make_shared<tck::MarbleProcessor>(it->second, response);
         auto subscription =
-            std::make_shared<ServerSubscription>(response, marbleProcessor, 0);
+            std::make_shared<ServerSubscription>(response, marbleProcessor, 1);
         response->onSubscribe(subscription);
         std::thread mpThread([marbleProcessor] { marbleProcessor->run(); });
         mpThread.detach();
@@ -166,7 +152,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     void handleFireAndForgetRequest(
         Payload request,
         StreamId streamId) noexcept override {
-      LOG(INFO) << "handleFireAndForgetRequest " << request.moveDataToString();
+      LOG(INFO) << "handleFireAndForgetRequest " << request;
     }
 
     void handleMetadataPush(
@@ -190,7 +176,6 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   Stats& stats_;
   bool shuttingDown_{false};
   std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles_;
-  std::map<std::pair<std::string, std::string>, std::string> streamMarbles_;
 };
 }
 
@@ -257,11 +242,7 @@ int main(int argc, char* argv[]) {
   reactivesocket::StatsPrinter statsPrinter;
 
   auto marbles = parseMarbles(FLAGS_test_file);
-  Callback callback(
-      *evbt.getEventBase(),
-      statsPrinter,
-      std::get<0>(marbles), /* reqRespMarbles */
-      std::get<1>(marbles)); /* streamMarbles */
+  Callback callback(*evbt.getEventBase(), statsPrinter, std::get<0>(marbles));
 
   auto serverSocket = AsyncServerSocket::newSocket(evbt.getEventBase());
 
