@@ -80,6 +80,8 @@ elseif(CMAKE_COMPILER_IS_GNUCXX)
   set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Werror -pedantic -pedantic-errors)
 endif()
 
+find_library(DOUBLE-CONVERSION double-conversion)
+
 find_package(Folly REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
@@ -314,7 +316,10 @@ target_link_libraries(
         ReactiveSocket
         ${FOLLY_LIBRARIES}
         ${GFLAGS_LIBRARY}
-        ${GLOG_LIBRARY})
+        ${GMOCK_LIBS}
+        ${GLOG_LIBRARY}
+        ${DOUBLE-CONVERSION}
+        ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(
         tcpresumeclient
