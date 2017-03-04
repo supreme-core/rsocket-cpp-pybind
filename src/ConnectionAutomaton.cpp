@@ -407,9 +407,7 @@ void ConnectionAutomaton::onConnectionFrame(
       }
       if (mode_ == ReactiveSocketMode::SERVER) {
         if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
-          frame.header_.flags_ &= ~(FrameFlags_KEEPALIVE_RESPOND);
-          outputFrameOrEnqueue(frameSerializer().serializeOut(
-              std::move(frame), remoteResumeable_));
+          sendKeepalive(FrameFlags_EMPTY, std::move(frame.data_));
         } else {
           closeWithError(
               Frame_ERROR::connectionError("keepalive without flag"));
@@ -616,11 +614,17 @@ void ConnectionAutomaton::handleUnknownStream(
 /// @}
 
 void ConnectionAutomaton::sendKeepalive() {
+  sendKeepalive(FrameFlags_KEEPALIVE_RESPOND, folly::IOBuf::create(0));
+}
+
+void ConnectionAutomaton::sendKeepalive(
+    FrameFlags flags,
+    std::unique_ptr<folly::IOBuf> data) {
   debugCheckCorrectExecutor();
   Frame_KEEPALIVE pingFrame(
-      FrameFlags_KEEPALIVE_RESPOND,
+      flags,
       streamState_->resumeTracker_.impliedPosition(),
-      folly::IOBuf::create(0));
+      std::move(data));
   outputFrameOrEnqueue(
       frameSerializer().serializeOut(std::move(pingFrame), remoteResumeable_));
 }

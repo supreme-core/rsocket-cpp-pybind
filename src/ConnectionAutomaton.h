@@ -235,6 +235,8 @@ class ConnectionAutomaton final
       folly::exception_wrapper,
       StreamCompletionSignal signal);
 
+  void sendKeepalive(FrameFlags flags, std::unique_ptr<folly::IOBuf> data);
+
   void resumeFromPosition(ResumePosition position);
   void outputFrame(std::unique_ptr<folly::IOBuf>);
 
