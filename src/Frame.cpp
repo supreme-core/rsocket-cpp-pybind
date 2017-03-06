@@ -25,40 +25,45 @@ std::unique_ptr<folly::IOBuf> FrameBufferAllocator::allocateBuffer(
   return folly::IOBuf::createCombined(size);
 }
 
-std::ostream& operator<<(std::ostream& os, FrameType type) {
+std::string to_string(FrameType type) {
   switch (type) {
     case FrameType::REQUEST_STREAM:
-      return os << "REQUEST_STREAM";
+      return "REQUEST_STREAM";
     case FrameType::REQUEST_CHANNEL:
-      return os << "REQUEST_CHANNEL";
+      return "REQUEST_CHANNEL";
     case FrameType::REQUEST_N:
-      return os << "REQUEST_N";
+      return "REQUEST_N";
     case FrameType::REQUEST_RESPONSE:
-      return os << "REQUEST_RESPONSE";
+      return "REQUEST_RESPONSE";
     case FrameType::REQUEST_FNF:
-      return os << "REQUEST_FNF";
+      return "REQUEST_FNF";
     case FrameType::CANCEL:
-      return os << "CANCEL";
+      return "CANCEL";
     case FrameType::RESPONSE:
-      return os << "RESPONSE";
+      return "RESPONSE";
     case FrameType::ERROR:
-      return os << "ERROR";
+      return "ERROR";
     case FrameType::RESERVED:
-      return os << "RESERVED";
+      return "RESERVED";
     case FrameType::KEEPALIVE:
-      return os << "KEEPALIVE";
+      return "KEEPALIVE";
     case FrameType::SETUP:
-      return os << "SETUP";
+      return "SETUP";
     case FrameType::LEASE:
-      return os << "LEASE";
+      return "LEASE";
     case FrameType::METADATA_PUSH:
-      return os << "METADATA_PUSH";
+      return "METADATA_PUSH";
     case FrameType::RESUME:
-      return os << "RESUME";
+      return "RESUME";
     case FrameType::RESUME_OK:
-      return os << "RESUME_OK";
+      return "RESUME_OK";
   }
-  return os << "FrameType(" << static_cast<uint16_t>(type) << ")";
+  // this should be never hit because the switch is over all cases
+  LOG(FATAL) << "unknown FrameType=" << static_cast<int>(type);
+}
+
+std::ostream& operator<<(std::ostream& os, FrameType type) {
+  return os << to_string(type);
 }
 
 std::ostream& operator<<(std::ostream& os, ErrorCode errorCode) {

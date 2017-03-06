@@ -48,6 +48,7 @@ enum class FrameType : uint16_t {
   RESUME_OK = 0x000F
   // EXT = 0xFFFF,
 };
+std::string to_string(FrameType);
 std::ostream& operator<<(std::ostream&, FrameType);
 
 enum class ErrorCode : uint32_t {
