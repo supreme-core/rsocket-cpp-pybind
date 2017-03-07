@@ -6,6 +6,8 @@
 
 namespace reactivesocket {
 
+constexpr const ProtocolVersion FrameSerializerV0::Version;
+
 static folly::IOBufQueue createBufferQueue(size_t bufferSize) {
   auto buf = reactivesocket::FrameBufferAllocator::allocate(bufferSize);
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
@@ -13,8 +15,8 @@ static folly::IOBufQueue createBufferQueue(size_t bufferSize) {
   return queue;
 }
 
-std::string FrameSerializerV0::protocolVersion() {
-  return "0.0";
+ProtocolVersion FrameSerializerV0::protocolVersion() {
+  return Version;
 }
 
 static FrameType deserializeFrameType(uint16_t frameType) {

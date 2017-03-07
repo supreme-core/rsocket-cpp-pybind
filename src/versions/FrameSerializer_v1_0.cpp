@@ -4,8 +4,10 @@
 
 namespace reactivesocket {
 
-std::string FrameSerializerV1_0::protocolVersion() {
-  return "1.0";
+constexpr const ProtocolVersion FrameSerializerV1_0::Version;
+
+ProtocolVersion FrameSerializerV1_0::protocolVersion() {
+  return Version;
 }
 
 } // reactivesocket

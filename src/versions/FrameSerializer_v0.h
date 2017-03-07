@@ -8,7 +8,8 @@ namespace reactivesocket {
 
 class FrameSerializerV0 : public FrameSerializer {
  public:
-  std::string protocolVersion() override;
+  constexpr static const ProtocolVersion Version = ProtocolVersion(0, 0);
+  ProtocolVersion protocolVersion() override;
 
   FrameType peekFrameType(const folly::IOBuf& in) override;
   folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) override;

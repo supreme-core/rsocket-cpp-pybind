@@ -540,7 +540,7 @@ void ConnectionAutomaton::handleUnknownStream(
   // TODO: comparing string versions is odd because from version
   // 10.0 the lexicographic comparison doesn't work
   // we should change the version to struct
-  if (frameSerializer().protocolVersion() > "0.0" &&
+  if (frameSerializer().protocolVersion() > ProtocolVersion{0, 0} &&
       !streamsFactory_.registerNewPeerStreamId(streamId)) {
     return;
   }

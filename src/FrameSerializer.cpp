@@ -7,13 +7,15 @@
 
 namespace reactivesocket {
 
+constexpr const ProtocolVersion FrameSerializer::kCurrentProtocolVersion;
+
 std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
-    std::string protocolVersion) {
-  if (protocolVersion == "0.0") {
+    const ProtocolVersion& protocolVersion) {
+  if (protocolVersion == FrameSerializerV0::Version) {
     return std::make_unique<FrameSerializerV0>();
-  } else if (protocolVersion == "0.1") {
+  } else if (protocolVersion == FrameSerializerV0_1::Version) {
     return std::make_unique<FrameSerializerV0_1>();
-  } else if (protocolVersion == "1.0") {
+  } else if (protocolVersion == FrameSerializerV1_0::Version) {
     return std::make_unique<FrameSerializerV1_0>();
   }
 
@@ -28,6 +30,10 @@ std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
 
 std::unique_ptr<FrameSerializer> FrameSerializer::createCurrentVersion() {
   return createFrameSerializer(kCurrentProtocolVersion);
+}
+
+std::ostream& operator<<(std::ostream& os, const ProtocolVersion& version) {
+  return os << version.major << "." << version.minor;
 }
 
 } // reactivesocket

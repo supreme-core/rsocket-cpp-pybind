@@ -180,9 +180,8 @@ void StandardReactiveSocket::onConnectionFrame(
         //          disconnect();
       }
 
-      connection_->setFrameSerializer(
-          FrameSerializer::createFrameSerializer(folly::to<std::string>(
-              frame.versionMajor_, ".", frame.versionMinor_)));
+      connection_->setFrameSerializer(FrameSerializer::createFrameSerializer(
+          ProtocolVersion{frame.versionMajor_, frame.versionMinor_}));
 
       ConnectionSetupPayload setupPayload;
       frame.moveToSetupPayload(setupPayload);
@@ -258,8 +257,8 @@ void StandardReactiveSocket::clientConnect(
   // TODO set correct version
   Frame_SETUP frame(
       setupPayload.resumable ? FrameFlags_RESUME_ENABLE : FrameFlags_EMPTY,
-      FrameSerializer::kCurrentProtocolVersionMajor,
-      FrameSerializer::kCurrentProtocolVersionMinor,
+      FrameSerializer::kCurrentProtocolVersion.major,
+      FrameSerializer::kCurrentProtocolVersion.minor,
       connection_->getKeepaliveTime(),
       std::numeric_limits<uint32_t>::max(),
       setupPayload.token,

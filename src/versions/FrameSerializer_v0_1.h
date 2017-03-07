@@ -8,8 +8,8 @@ namespace reactivesocket {
 
 class FrameSerializerV0_1 : public FrameSerializerV0 {
  public:
-  std::string protocolVersion() override {
-    return "0.1";
-  }
+  constexpr static const ProtocolVersion Version = ProtocolVersion(0, 1);
+
+  ProtocolVersion protocolVersion() override;
 };
 } // reactivesocket
