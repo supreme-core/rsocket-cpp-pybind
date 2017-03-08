@@ -31,7 +31,7 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
   testConnection->setInput(testOutputSubscriber);
   testConnection->getOutput()->onSubscribe(testInputSubscription);
 
-  MockStats stats;
+  auto stats = std::make_shared<MockStats>();
 
   auto socket = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),
@@ -55,19 +55,19 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
   EXPECT_CALL(*testOutputSubscriber, onComplete_()).Times(1);
   EXPECT_CALL(*testOutputSubscriber, onError_(_)).Times(0);
   EXPECT_CALL(*testInputSubscription, cancel_()).Times(1);
-  EXPECT_CALL(stats, socketDisconnected()).Times(1);
-  EXPECT_CALL(stats, socketClosed(_)).Times(0);
+  EXPECT_CALL(*stats, socketDisconnected()).Times(1);
+  EXPECT_CALL(*stats, socketClosed(_)).Times(0);
 
   socket->disconnect();
 
   Mock::VerifyAndClearExpectations(responseSubscriber.get());
   Mock::VerifyAndClearExpectations(testOutputSubscriber.get());
   Mock::VerifyAndClearExpectations(testInputSubscription.get());
-  Mock::VerifyAndClearExpectations(&stats);
+  Mock::VerifyAndClearExpectations(stats.get());
 
   EXPECT_CALL(*responseSubscriber, onError_(_)).Times(1);
-  EXPECT_CALL(stats, socketDisconnected()).Times(0);
-  EXPECT_CALL(stats, socketClosed(_)).Times(1);
+  EXPECT_CALL(*stats, socketDisconnected()).Times(0);
+  EXPECT_CALL(*stats, socketClosed(_)).Times(1);
 
   socket->close();
   socket.reset();

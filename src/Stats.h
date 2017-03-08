@@ -13,7 +13,7 @@ class Stats {
  public:
   virtual ~Stats() = default;
 
-  static Stats& noop();
+  static std::shared_ptr<Stats> noop();
 
   virtual void socketCreated() = 0;
   virtual void socketDisconnected() = 0;

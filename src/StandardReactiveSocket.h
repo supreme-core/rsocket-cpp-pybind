@@ -47,14 +47,14 @@ class StandardReactiveSocket : public ReactiveSocket {
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
       ConnectionSetupPayload setupPayload = ConnectionSetupPayload(),
-      Stats& stats = Stats::noop(),
+      std::shared_ptr<Stats> stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
 
   static std::unique_ptr<StandardReactiveSocket> disconnectedClient(
       folly::Executor& executor,
       std::unique_ptr<RequestHandler> handler,
-      Stats& stats = Stats::noop(),
+      std::shared_ptr<Stats> stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
 
@@ -62,13 +62,13 @@ class StandardReactiveSocket : public ReactiveSocket {
       folly::Executor& executor,
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
-      Stats& stats = Stats::noop(),
+      std::shared_ptr<Stats> stats = Stats::noop(),
       bool isResumable = false);
 
   static std::unique_ptr<StandardReactiveSocket> disconnectedServer(
       folly::Executor& executor,
       std::shared_ptr<RequestHandler> handler,
-      Stats& stats = Stats::noop());
+      std::shared_ptr<Stats> stats = Stats::noop());
 
   std::shared_ptr<Subscriber<Payload>> requestChannel(
       std::shared_ptr<Subscriber<Payload>> responseSink) override;
@@ -124,7 +124,7 @@ class StandardReactiveSocket : public ReactiveSocket {
   StandardReactiveSocket(
       ReactiveSocketMode mode,
       std::shared_ptr<RequestHandler> handler,
-      Stats& stats,
+      std::shared_ptr<Stats> stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer,
       folly::Executor& executor);
 

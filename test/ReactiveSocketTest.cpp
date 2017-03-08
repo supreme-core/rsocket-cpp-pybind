@@ -802,7 +802,7 @@ TEST(ReactiveSocketTest, SetupWithKeepaliveAndStats) {
   clientConn->connectTo(*serverConn);
 
   StrictMock<MockSubscriber<Payload>> clientInput;
-  NiceMock<MockStats> clientStats;
+  auto clientStats = std::make_shared<NiceMock<MockStats>>();;
   std::unique_ptr<MockKeepaliveTimer> clientKeepalive =
       std::make_unique<MockKeepaliveTimer>();
 
@@ -842,8 +842,8 @@ TEST(ReactiveSocketTest, Destructor) {
 
   // TODO: since we don't assert anything, should we just use the StatsPrinter
   // instead?
-  NiceMock<MockStats> clientStats;
-  NiceMock<MockStats> serverStats;
+  auto clientStats = std::make_shared<NiceMock<MockStats>>();
+  auto serverStats = std::make_shared<NiceMock<MockStats>>();
   std::array<std::shared_ptr<StrictMock<MockSubscriber<Payload>>>, 2>
       clientInputs;
   clientInputs[0] = std::make_shared<StrictMock<MockSubscriber<Payload>>>();
@@ -856,10 +856,10 @@ TEST(ReactiveSocketTest, Destructor) {
   std::array<std::shared_ptr<Subscription>, 2> clientInputSubs;
   std::array<std::shared_ptr<Subscriber<Payload>>, 2> serverOutputs;
 
-  EXPECT_CALL(clientStats, socketCreated()).Times(1);
-  EXPECT_CALL(serverStats, socketCreated()).Times(1);
-  EXPECT_CALL(clientStats, socketClosed(_)).Times(1);
-  EXPECT_CALL(serverStats, socketClosed(_)).Times(1);
+  EXPECT_CALL(*clientStats, socketCreated()).Times(1);
+  EXPECT_CALL(*serverStats, socketCreated()).Times(1);
+  EXPECT_CALL(*clientStats, socketClosed(_)).Times(1);
+  EXPECT_CALL(*serverStats, socketClosed(_)).Times(1);
 
   auto clientSock = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),

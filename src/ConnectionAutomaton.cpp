@@ -23,12 +23,12 @@ ConnectionAutomaton::ConnectionAutomaton(
     ConnectionLevelFrameHandler connectionLevelFrameHandler,
     std::shared_ptr<RequestHandler> requestHandler,
     ResumeListener resumeListener,
-    Stats& stats,
+    std::shared_ptr<Stats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     ReactiveSocketMode mode)
     : ExecutorBase(executor),
       connectionLevelFrameHandler_(std::move(connectionLevelFrameHandler)),
-      stats_(stats),
+      stats_(std::move(stats)),
       mode_(mode),
       streamState_(std::make_shared<StreamState>(*this)),
       requestHandler_(std::move(requestHandler)),
@@ -125,7 +125,7 @@ void ConnectionAutomaton::disconnect(folly::exception_wrapper ex) {
 
   closeFrameTransport(std::move(ex), StreamCompletionSignal::CONNECTION_END);
   pauseStreams();
-  stats_.socketDisconnected();
+  stats_->socketDisconnected();
 }
 
 void ConnectionAutomaton::close(
@@ -142,7 +142,7 @@ void ConnectionAutomaton::close(
 
   if (!isClosed_) {
     isClosed_ = true;
-    stats_.socketClosed(signal);
+    stats_->socketClosed(signal);
   }
 
   onConnectListeners_.clear();
@@ -199,8 +199,6 @@ void ConnectionAutomaton::disconnectOrCloseWithError(Frame_ERROR&& errorFrame) {
 
 void ConnectionAutomaton::closeWithError(Frame_ERROR&& error) {
   debugCheckCorrectExecutor();
-  // TODO: this is a temporary hack before stats_ is turned into shared_ptr
-  isClosing_ = true;
   VLOG(3) << "closeWithError "
           << error.payload_.data->cloneAsValue().moveToFbString();
 
@@ -321,20 +319,15 @@ void ConnectionAutomaton::resumeStreams() {
 
 void ConnectionAutomaton::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   auto thisPtr = this->shared_from_this();
-  auto movedFrame = folly::makeMoveWrapper(frame);
-  runInExecutor([thisPtr, movedFrame]() mutable {
-    // TODO: this is a temporary hack before stats_ is turned into shared_ptr
-    if (thisPtr->isClosing_) {
-      return;
-    }
-    thisPtr->processFrameImpl(movedFrame.move());
+  runInExecutor([thisPtr, frame = std::move(frame)]() mutable {
+    thisPtr->processFrameImpl(std::move(frame));
   });
 }
 
 void ConnectionAutomaton::processFrameImpl(
     std::unique_ptr<folly::IOBuf> frame) {
   auto frameType = frameSerializer().peekFrameType(*frame);
-  stats_.frameRead(frameType);
+  stats_->frameRead(frameType);
 
   // TODO(tmont): If a frame is invalid, it will still be tracked. However, we
   // actually want that. We want to keep
@@ -693,7 +686,7 @@ void ConnectionAutomaton::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
   DCHECK(!isDisconnectedOrClosed());
 
   auto frameType = frameSerializer().peekFrameType(*frame);
-  stats_.frameWritten(frameType);
+  stats_->frameWritten(frameType);
 
   if (isResumable_) {
     streamState_->resumeCache_.trackSentFrame(*frame);

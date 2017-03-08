@@ -88,8 +88,8 @@ class ServerRequestHandler : public DefaultRequestHandler {
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  Callback(EventBase& eventBase, Stats& stats)
-      : eventBase_(eventBase), stats_(stats){};
+  Callback(EventBase& eventBase, std::shared_ptr<Stats> stats)
+      : eventBase_(eventBase), stats_(std::move(stats)) {}
 
   virtual ~Callback() = default;
 
@@ -146,7 +146,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
  private:
   std::vector<std::unique_ptr<StandardReactiveSocket>> reactiveSockets_;
   EventBase& eventBase_;
-  Stats& stats_;
+  std::shared_ptr<Stats> stats_;
   bool shuttingDown{false};
 };
 }
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
-  reactivesocket::StatsPrinter statsPrinter;
+  auto statsPrinter = std::make_shared<reactivesocket::StatsPrinter>();
 
   EventBase eventBase;
   auto thread = std::thread([&eventBase]() { eventBase.loopForever(); });

@@ -26,7 +26,7 @@ StandardReactiveSocket::~StandardReactiveSocket() {
 StandardReactiveSocket::StandardReactiveSocket(
     ReactiveSocketMode mode,
     std::shared_ptr<RequestHandler> handler,
-    Stats& stats,
+    std::shared_ptr<Stats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     folly::Executor& executor)
     : handler_(handler),
@@ -40,7 +40,7 @@ StandardReactiveSocket::StandardReactiveSocket(
               &StandardReactiveSocket::resumeListener,
               this,
               std::placeholders::_1),
-          stats,
+          std::move(stats),
           std::move(keepaliveTimer),
           mode)),
       executor_(executor) {
@@ -48,7 +48,7 @@ StandardReactiveSocket::StandardReactiveSocket(
   // inspecting the SETUP frame from the client
   connection_->setFrameSerializer(FrameSerializer::createCurrentVersion());
   debugCheckCorrectExecutor();
-  stats.socketCreated();
+  connection_->stats().socketCreated();
 }
 
 std::unique_ptr<StandardReactiveSocket>
@@ -57,10 +57,13 @@ StandardReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
     ConnectionSetupPayload setupPayload,
-    Stats& stats,
+    std::shared_ptr<Stats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   auto socket = disconnectedClient(
-      executor, std::move(handler), stats, std::move(keepaliveTimer));
+      executor,
+      std::move(handler),
+      std::move(stats),
+      std::move(keepaliveTimer));
   socket->clientConnect(
       std::make_shared<FrameTransport>(std::move(connection)),
       std::move(setupPayload));
@@ -71,12 +74,12 @@ std::unique_ptr<StandardReactiveSocket>
 StandardReactiveSocket::disconnectedClient(
     folly::Executor& executor,
     std::unique_ptr<RequestHandler> handler,
-    Stats& stats,
+    std::shared_ptr<Stats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
       ReactiveSocketMode::CLIENT,
       std::move(handler),
-      stats,
+      std::move(stats),
       std::move(keepaliveTimer),
       executor));
   socket->connection_->setFrameSerializer(
@@ -89,11 +92,12 @@ StandardReactiveSocket::fromServerConnection(
     folly::Executor& executor,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
-    Stats& stats,
+    std::shared_ptr<Stats> stats,
     bool isResumable) {
   // TODO: isResumable should come as a flag on Setup frame and it should be
   // exposed to the application code. We should then remove this parameter
-  auto socket = disconnectedServer(executor, std::move(handler), stats);
+  auto socket = disconnectedServer(
+    executor, std::move(handler), std::move(stats));
   socket->serverConnect(
       std::make_shared<FrameTransport>(std::move(connection)), isResumable);
   return socket;
@@ -103,11 +107,11 @@ std::unique_ptr<StandardReactiveSocket>
 StandardReactiveSocket::disconnectedServer(
     folly::Executor& executor,
     std::shared_ptr<RequestHandler> handler,
-    Stats& stats) {
+    std::shared_ptr<Stats> stats) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
       ReactiveSocketMode::SERVER,
       std::move(handler),
-      stats,
+      std::move(stats),
       nullptr,
       executor));
   return socket;

@@ -118,10 +118,10 @@ int main(int argc, char* argv[]) {
 
   std::unique_ptr<StandardReactiveSocket> reactiveSocket;
   Callback callback;
-  StatsPrinter stats;
+  auto stats = std::make_shared<StatsPrinter>();
 
   eventBaseThread.getEventBase()->runInEventBaseThreadAndWait(
-      [&callback, &reactiveSocket, &eventBaseThread, &stats]() {
+      [&callback, &reactiveSocket, &eventBaseThread, stats]() {
         folly::AsyncSocket::UniquePtr socket(
             new folly::AsyncSocket(eventBaseThread.getEventBase()));
 

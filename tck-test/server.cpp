@@ -52,11 +52,11 @@ class Callback : public AsyncServerSocket::AcceptCallback {
  public:
   Callback(
       EventBase& eventBase,
-      Stats& stats,
+      std::shared_ptr<Stats> stats,
       std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles,
       std::map<std::pair<std::string, std::string>, std::string> streamMarbles)
       : eventBase_(eventBase),
-        stats_(stats),
+        stats_(std::move(stats)),
         reqRespMarbles_(std::move(reqRespMarbles)),
         streamMarbles_(std::move(streamMarbles)){};
 
@@ -187,7 +187,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
 
   std::vector<std::unique_ptr<StandardReactiveSocket>> reactiveSockets_;
   EventBase& eventBase_;
-  Stats& stats_;
+  std::shared_ptr<Stats> stats_;
   bool shuttingDown_{false};
   std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles_;
   std::map<std::pair<std::string, std::string>, std::string> streamMarbles_;
@@ -254,12 +254,11 @@ int main(int argc, char* argv[]) {
   signal(SIGTERM, signal_handler);
 
   folly::ScopedEventBaseThread evbt;
-  reactivesocket::StatsPrinter statsPrinter;
 
   auto marbles = parseMarbles(FLAGS_test_file);
   Callback callback(
       *evbt.getEventBase(),
-      statsPrinter,
+      std::make_shared<reactivesocket::StatsPrinter>(),
       std::get<0>(marbles), /* reqRespMarbles */
       std::get<1>(marbles)); /* streamMarbles */
 

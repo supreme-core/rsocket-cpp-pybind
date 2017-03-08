@@ -16,7 +16,7 @@ class TcpDuplexConnection : public DuplexConnection {
   explicit TcpDuplexConnection(
       folly::AsyncSocket::UniquePtr&& socket,
       folly::Executor& executor,
-      Stats& stats = Stats::noop());
+      std::shared_ptr<Stats> stats = Stats::noop());
   ~TcpDuplexConnection();
 
   std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> getOutput()
@@ -27,6 +27,5 @@ class TcpDuplexConnection : public DuplexConnection {
 
  private:
   std::shared_ptr<TcpReaderWriter> tcpReaderWriter_;
-  Stats& stats_;
 };
 } // reactivesocket

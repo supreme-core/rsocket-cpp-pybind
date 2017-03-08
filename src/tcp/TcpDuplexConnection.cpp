@@ -16,8 +16,10 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   explicit TcpReaderWriter(
       folly::AsyncSocket::UniquePtr&& socket,
       folly::Executor& executor,
-      Stats& stats = Stats::noop())
-      : ExecutorBase(executor), socket_(std::move(socket)), stats_(stats) {}
+      std::shared_ptr<Stats> stats)
+      : ExecutorBase(executor),
+        stats_(std::move(stats)),
+        socket_(std::move(socket)) {}
 
   ~TcpReaderWriter() {
     socket_->close();
@@ -32,6 +34,8 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
 
     socket_->setReadCB(this);
   }
+
+  const std::shared_ptr<Stats> stats_;
 
  private:
   void onSubscribeImpl(
@@ -61,7 +65,7 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   }
 
   void send(std::unique_ptr<folly::IOBuf> element) {
-    stats_.bytesWritten(element->computeChainDataLength());
+    stats_->bytesWritten(element->computeChainDataLength());
     socket_->writeChain(this, std::move(element));
   }
 
@@ -89,7 +93,7 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   void readDataAvailable(size_t len) noexcept override {
     readBuffer_.postallocate(len);
 
-    stats_.bytesRead(len);
+    stats_->bytesRead(len);
 
     if (inputSubscriber_) {
       readBufferAvailable(readBuffer_.split(len));
@@ -119,7 +123,6 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
 
   folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
   folly::AsyncSocket::UniquePtr socket_;
-  Stats& stats_;
 
   std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       inputSubscriber_;
@@ -128,17 +131,16 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
 TcpDuplexConnection::TcpDuplexConnection(
     folly::AsyncSocket::UniquePtr&& socket,
     folly::Executor& executor,
-    Stats& stats)
+    std::shared_ptr<Stats> stats)
     : tcpReaderWriter_(std::make_shared<TcpReaderWriter>(
           std::move(socket),
           executor,
-          stats)),
-      stats_(stats) {
-  stats_.duplexConnectionCreated("tcp", this);
+          std::move(stats))) {
+  tcpReaderWriter_->stats_->duplexConnectionCreated("tcp", this);
 }
 
 TcpDuplexConnection::~TcpDuplexConnection() {
-  stats_.duplexConnectionClosed("tcp", this);
+  tcpReaderWriter_->stats_->duplexConnectionClosed("tcp", this);
 }
 
 std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>

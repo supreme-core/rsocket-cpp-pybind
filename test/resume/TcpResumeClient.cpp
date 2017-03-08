@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
 
   std::unique_ptr<StandardReactiveSocket> reactiveSocket;
   Callback callback;
-  StatsPrinter stats;
+  auto stats = std::make_shared<StatsPrinter>();
 
   auto token = ResumeIdentificationToken::generateNew();
 

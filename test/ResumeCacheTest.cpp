@@ -171,7 +171,7 @@ TEST_F(ResumeCacheTest, TwoFrames) {
 }
 
 TEST_F(ResumeCacheTest, Stats) {
-  StrictMock<MockStats> stats;
+  auto stats = std::make_shared<StrictMock<MockStats>>();
   ConnectionAutomaton automaton(
       inlineExecutor(),
       nullptr,
@@ -185,16 +185,16 @@ TEST_F(ResumeCacheTest, Stats) {
 
   auto frame1 = frameSerializer_->serializeOut(Frame_CANCEL(0));
   auto frame1Size = frame1->computeChainDataLength();
-  EXPECT_CALL(stats, resumeBufferChanged(1, frame1Size));
+  EXPECT_CALL(*stats, resumeBufferChanged(1, frame1Size));
   cache.trackSentFrame(*frame1);
 
   auto frame2 = frameSerializer_->serializeOut(Frame_REQUEST_N(0, 0));
   auto frame2Size = frame2->computeChainDataLength();
-  EXPECT_CALL(stats, resumeBufferChanged(1, frame2Size)).Times(2);
+  EXPECT_CALL(*stats, resumeBufferChanged(1, frame2Size)).Times(2);
   cache.trackSentFrame(*frame2);
   cache.trackSentFrame(*frame2);
 
-  EXPECT_CALL(stats, resumeBufferChanged(-1, -frame1Size));
+  EXPECT_CALL(*stats, resumeBufferChanged(-1, -frame1Size));
   cache.resetUpToPosition(frame1Size);
-  EXPECT_CALL(stats, resumeBufferChanged(-2, -2 * frame2Size));
+  EXPECT_CALL(*stats, resumeBufferChanged(-2, -2 * frame2Size));
 }

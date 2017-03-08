@@ -76,7 +76,7 @@ class ConnectionAutomaton final
       ConnectionLevelFrameHandler connectionLevelFrameHandler,
       std::shared_ptr<RequestHandler> requestHandler,
       ResumeListener resumeListener,
-      Stats& stats,
+      std::shared_ptr<Stats> stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
       ReactiveSocketMode mode);
 
@@ -202,7 +202,7 @@ class ConnectionAutomaton final
   void setFrameSerializer(std::unique_ptr<FrameSerializer>);
 
   Stats& stats() {
-    return stats_;
+    return *stats_;
   }
 
  private:
@@ -247,7 +247,7 @@ class ConnectionAutomaton final
 
   ConnectionLevelFrameHandler connectionLevelFrameHandler_;
 
-  Stats& stats_;
+  const std::shared_ptr<Stats> stats_;
   ReactiveSocketMode mode_;
   bool isResumable_{false};
   bool remoteResumeable_{false};
@@ -266,8 +266,6 @@ class ConnectionAutomaton final
   const std::unique_ptr<KeepaliveTimer> keepaliveTimer_;
 
   std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
-  // TODO: this is a temporary hack before stats_ is turned into shared_ptr
-  bool isClosing_{false};
 
   StreamsFactory streamsFactory_;
 };
