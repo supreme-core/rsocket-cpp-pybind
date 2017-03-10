@@ -16,7 +16,7 @@ namespace tck {
 MarbleProcessor::MarbleProcessor(
     const std::string marble,
     const std::shared_ptr<Subscriber<Payload>>& subscriber)
-    : marble_(std::move(marble)), subscriber_(subscriber.get()) {
+    : marble_(std::move(marble)), subscriber_(std::move(subscriber)) {
   // Remove '-' which is of no consequence for the tests
   marble_.erase(
       std::remove(marble_.begin(), marble_.end(), '-'), marble_.end());

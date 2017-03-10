@@ -271,6 +271,7 @@ int main(int argc, char* argv[]) {
 
   evbt.getEventBase()->runInEventBaseThreadAndWait(
       [&evbt, &serverSocket, &callback]() {
+        evbt.getEventBase()->setName("RsSockEvb");
         folly::SocketAddress addr;
         addr.setFromLocalIpPort(FLAGS_address);
         serverSocket->setReusePortEnabled(true);

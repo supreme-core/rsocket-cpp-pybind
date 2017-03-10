@@ -28,9 +28,10 @@ class MarbleProcessor {
   // Stores a mapping from marble character to Payload (data, metadata)
   std::map<std::string, std::pair<std::string, std::string>> argMap_;
 
-  // RequestHandler callbacks take Subscriber wrapped inside
-  // a const reference, which prevents copying of Subscriber.
-  Subscriber<Payload>* subscriber_;
+  // Keep a shared_ptr of the Subscriber.  This is necessary in situations
+  // where we try to call onNext() after receiving a cancel().  If we dont hold
+  // a copy, the Subscriber object would be deleted.
+  std::shared_ptr<Subscriber<Payload>> subscriber_;
 
   // Keeps an account of how many messages can be sent.  This could be done
   // with Semaphores (AllowanceSemaphore)
