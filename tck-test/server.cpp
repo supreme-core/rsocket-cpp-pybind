@@ -244,11 +244,16 @@ parseMarbles(const std::string& fileName) {
 }
 
 int main(int argc, char* argv[]) {
-  FLAGS_logtostderr = true;
 
+#ifdef OSS
   google::ParseCommandLineFlags(&argc, &argv, true);
+#else
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+#endif
+
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
+  FLAGS_logtostderr = true;
 
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);

@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <folly/Memory.h>
+#include <folly/String.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 
@@ -15,6 +16,10 @@
 DEFINE_string(host, "::1", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");
 DEFINE_string(test_file, "../tck-test/clienttest.txt", "test file to run");
+DEFINE_string(
+    tests,
+    "all",
+    "Comma separated names of tests to run. By default run all tests");
 
 using namespace reactivesocket;
 using namespace reactivesocket::tck;
@@ -53,7 +58,13 @@ class SocketConnectCallback : public folly::AsyncSocket::ConnectCallback {
 } // namespace
 
 int main(int argc, char* argv[]) {
+
+#ifdef OSS
+  google::ParseCommandLineFlags(&argc, &argv, true);
+#else
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+#endif
+
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   FLAGS_logtostderr = true;
@@ -102,17 +113,24 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Test file parsed. Executing " << testSuite.tests().size()
             << " tests.";
 
-  int passed = 0;
+  int ran = 0, passed = 0;
+  std::vector<std::string> testsToRun;
+  folly::split(",", FLAGS_tests, testsToRun);
   for (const auto& test : testSuite.tests()) {
-    TestInterpreter interpreter(test, *reactiveSocket);
-    bool passing = interpreter.run(evbt.getEventBase());
-    if (passing) {
-      ++passed;
+    if (FLAGS_tests == "all" ||
+        std::find(testsToRun.begin(), testsToRun.end(), test.name()) !=
+            testsToRun.end()) {
+      ++ran;
+      TestInterpreter interpreter(test, *reactiveSocket);
+      bool passing = interpreter.run(evbt.getEventBase());
+      if (passing) {
+        ++passed;
+      }
     }
   }
 
-  LOG(INFO) << "Tests execution DONE. " << passed << " out of "
-            << testSuite.tests().size() << " tests passed.";
+  LOG(INFO) << "Tests execution DONE. " << passed << " out of " << ran
+            << " tests passed.";
 
   evbt.getEventBase()->runInEventBaseThreadAndWait([&]() {
     reactiveSocket.reset();
