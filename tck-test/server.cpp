@@ -23,8 +23,48 @@ using namespace ::folly;
 
 DEFINE_string(address, "9898", "port to listen to");
 DEFINE_string(test_file, "../tck-test/servertest.txt", "test file to run");
+DEFINE_bool(enable_stats_printer, false, "enable StatsPrinter");
 
 namespace {
+
+struct MarbleStore {
+  std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles;
+  std::map<std::pair<std::string, std::string>, std::string> streamMarbles;
+  std::map<std::pair<std::string, std::string>, std::string> channelMarbles;
+};
+
+MarbleStore parseMarbles(const std::string& fileName) {
+  MarbleStore ms;
+
+  std::ifstream input(fileName);
+  if (!input.good()) {
+    LOG(FATAL) << "Could not read from file '" << fileName << "'";
+  }
+
+  std::string line;
+  while (std::getline(input, line)) {
+    std::vector<folly::StringPiece> args;
+    folly::split("%%", line, args);
+    CHECK(args.size() == 4);
+    if (args[0] == "rr") {
+      ms.reqRespMarbles.emplace(
+          std::make_pair(args[1].toString(), args[2].toString()),
+          args[3].toString());
+    } else if (args[0] == "rs") {
+      ms.streamMarbles.emplace(
+          std::make_pair(args[1].toString(), args[2].toString()),
+          args[3].toString());
+    } else if (args[0] == "channel") {
+      ms.channelMarbles.emplace(
+          std::make_pair(args[1].toString(), args[2].toString()),
+          args[3].toString());
+    } else {
+      LOG(FATAL) << "Unrecognized token " << args[0];
+    }
+  }
+  return ms;
+}
+
 class ServerSubscription : public SubscriptionBase {
  public:
   explicit ServerSubscription(
@@ -50,15 +90,7 @@ class ServerSubscription : public SubscriptionBase {
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  Callback(
-      EventBase& eventBase,
-      std::shared_ptr<Stats> stats,
-      std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles,
-      std::map<std::pair<std::string, std::string>, std::string> streamMarbles)
-      : eventBase_(eventBase),
-        stats_(std::move(stats)),
-        reqRespMarbles_(std::move(reqRespMarbles)),
-        streamMarbles_(std::move(streamMarbles)){};
+  explicit Callback(EventBase& eventBase) : eventBase_(eventBase){};
 
   virtual ~Callback() = default;
 
@@ -70,20 +102,28 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     auto socket =
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
 
+    std::shared_ptr<Stats> stats;
+
+    if (FLAGS_enable_stats_printer) {
+      stats.reset(new reactivesocket::StatsPrinter());
+    } else {
+      stats = Stats::noop();
+    }
+
     std::unique_ptr<DuplexConnection> connection =
         std::make_unique<TcpDuplexConnection>(
-            std::move(socket), inlineExecutor(), stats_);
+            std::move(socket), inlineExecutor(), stats);
     std::unique_ptr<DuplexConnection> framedConnection =
         std::make_unique<FramedDuplexConnection>(
             std::move(connection), inlineExecutor());
     std::unique_ptr<RequestHandler> requestHandler =
-        std::make_unique<ServerRequestHandler>(*this);
+        std::make_unique<ServerRequestHandler>();
 
     auto rs = StandardReactiveSocket::fromServerConnection(
         eventBase_,
         std::move(framedConnection),
         std::move(requestHandler),
-        stats_);
+        stats);
 
     rs->onClosed([ this, rs = rs.get() ](const folly::exception_wrapper& ex) {
       removeSocket(*rs);
@@ -115,7 +155,9 @@ class Callback : public AsyncServerSocket::AcceptCallback {
  private:
   class ServerRequestHandler : public DefaultRequestHandler {
    public:
-    explicit ServerRequestHandler(Callback& callback) : callback_(&callback) {}
+    ServerRequestHandler() {
+      marbles_ = parseMarbles(FLAGS_test_file);
+    }
 
     void handleRequestStream(
         Payload request,
@@ -125,8 +167,8 @@ class Callback : public AsyncServerSocket::AcceptCallback {
       LOG(INFO) << "handleRequestStream " << request;
       std::string data = request.data->moveToFbString().toStdString();
       std::string metadata = request.metadata->moveToFbString().toStdString();
-      auto it = callback_->streamMarbles_.find(std::make_pair(data, metadata));
-      if (it == callback_->streamMarbles_.end()) {
+      auto it = marbles_.streamMarbles.find(std::make_pair(data, metadata));
+      if (it == marbles_.streamMarbles.end()) {
         LOG(ERROR) << "No Handler found for the [data: " << data
                    << ", metadata:" << metadata << "]";
       } else {
@@ -148,8 +190,8 @@ class Callback : public AsyncServerSocket::AcceptCallback {
       LOG(INFO) << "handleRequestResponse " << request;
       std::string data = request.data->moveToFbString().toStdString();
       std::string metadata = request.metadata->moveToFbString().toStdString();
-      auto it = callback_->reqRespMarbles_.find(std::make_pair(data, metadata));
-      if (it == callback_->reqRespMarbles_.end()) {
+      auto it = marbles_.reqRespMarbles.find(std::make_pair(data, metadata));
+      if (it == marbles_.reqRespMarbles.end()) {
         LOG(ERROR) << "No Handler found for the [data: " << data
                    << ", metadata:" << metadata << "]";
       } else {
@@ -182,15 +224,12 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     }
 
    private:
-    Callback* callback_;
+    MarbleStore marbles_;
   };
 
   std::vector<std::unique_ptr<StandardReactiveSocket>> reactiveSockets_;
   EventBase& eventBase_;
-  std::shared_ptr<Stats> stats_;
   bool shuttingDown_{false};
-  std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles_;
-  std::map<std::pair<std::string, std::string>, std::string> streamMarbles_;
 };
 }
 
@@ -199,52 +238,7 @@ void signal_handler(int signal) {
   exit(signal);
 }
 
-std::tuple<
-    std::map<
-        std::pair<std::string, std::string> /*payload*/,
-        std::string /*marble*/> /* ReqResp */,
-    std::map<
-        std::pair<std::string, std::string> /*payload*/,
-        std::string /*marble*/> /* Stream */,
-    std::map<
-        std::pair<std::string, std::string> /*payload*/,
-        std::string /*marble*/> /* Channel */>
-parseMarbles(const std::string& fileName) {
-  std::map<std::pair<std::string, std::string>, std::string> reqRespMarbles;
-  std::map<std::pair<std::string, std::string>, std::string> streamMarbles;
-  std::map<std::pair<std::string, std::string>, std::string> channelMarbles;
-
-  std::ifstream input(fileName);
-  if (!input.good()) {
-    LOG(FATAL) << "Could not read from file '" << fileName << "'";
-  }
-
-  std::string line;
-  while (std::getline(input, line)) {
-    std::vector<folly::StringPiece> args;
-    folly::split("%%", line, args);
-    CHECK(args.size() == 4);
-    if (args[0] == "rr") {
-      reqRespMarbles.emplace(
-          std::make_pair(args[1].toString(), args[2].toString()),
-          args[3].toString());
-    } else if (args[0] == "rs") {
-      streamMarbles.emplace(
-          std::make_pair(args[1].toString(), args[2].toString()),
-          args[3].toString());
-    } else if (args[0] == "channel") {
-      channelMarbles.emplace(
-          std::make_pair(args[1].toString(), args[2].toString()),
-          args[3].toString());
-    } else {
-      LOG(FATAL) << "Unrecognized token " << args[0];
-    }
-  }
-  return std::tie(reqRespMarbles, streamMarbles, channelMarbles);
-}
-
 int main(int argc, char* argv[]) {
-
 #ifdef OSS
   google::ParseCommandLineFlags(&argc, &argv, true);
 #else
@@ -260,12 +254,7 @@ int main(int argc, char* argv[]) {
 
   folly::ScopedEventBaseThread evbt;
 
-  auto marbles = parseMarbles(FLAGS_test_file);
-  Callback callback(
-      *evbt.getEventBase(),
-      std::make_shared<reactivesocket::StatsPrinter>(),
-      std::get<0>(marbles), /* reqRespMarbles */
-      std::get<1>(marbles)); /* streamMarbles */
+  Callback callback(*evbt.getEventBase());
 
   auto serverSocket = AsyncServerSocket::newSocket(evbt.getEventBase());
 

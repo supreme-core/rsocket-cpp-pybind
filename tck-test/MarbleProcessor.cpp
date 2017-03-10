@@ -21,13 +21,14 @@ MarbleProcessor::MarbleProcessor(
   marble_.erase(
       std::remove(marble_.begin(), marble_.end(), '-'), marble_.end());
 
+  LOG(INFO) << "Using marble: " << marble_;
+
   // Populate argMap_
   if (marble_.find("&&") != std::string::npos) {
     std::vector<folly::StringPiece> parts;
     folly::split("&&", marble_, parts);
     assert(parts.size() == 2);
     marble_ = parts[0].toString();
-    LOG(INFO) << "Trying to parse json `" << parts[1] << "`";
     folly::dynamic parsedJson = folly::parseJson(parts[1].toString());
     for (const auto& item : parsedJson.items()) {
       argMap_[item.first.asString()] = std::make_pair(
@@ -62,11 +63,15 @@ void MarbleProcessor::run() {
         auto it = argMap_.find(folly::to<std::string>(c));
         LOG(INFO) << "Sending data " << c;
         if (it != argMap_.end()) {
-          LOG(INFO) << "Using mapping " << it->second.first << ":"
-                    << it->second.second;
+          LOG(INFO) << folly::sformat(
+              "Using mapping {}->{}:{}",
+              c,
+              it->second.first,
+              it->second.second);
           payload = Payload(it->second.first, it->second.second);
         } else {
-          payload = Payload(folly::to<std::string>(c));
+          payload =
+              Payload(folly::to<std::string>(c), folly::to<std::string>(c));
         }
         subscriber_->onNext(std::move(payload));
         canSend_--;
@@ -76,7 +81,7 @@ void MarbleProcessor::run() {
 }
 
 void MarbleProcessor::request(size_t n) {
-  LOG(INFO) << "Received request " << n;
+  LOG(INFO) << "Received request (" << n << ")";
   canTerminate_ = true;
   canSend_ += n;
 }

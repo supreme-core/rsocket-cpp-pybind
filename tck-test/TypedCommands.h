@@ -32,9 +32,6 @@ class SubscribeCommand : public TypedTestCommand {
   bool isRequestStreamType() const {
     return type() == "rs";
   }
-  bool isRequestSubscriptionType() const {
-    return type() == "sub";
-  }
   bool isFireAndForgetType() const {
     return type() == "fnf";
   }
@@ -92,6 +89,9 @@ class AwaitCommand : public TypedTestCommand {
     return command_.params().at(2);
   }
   int numElements() const {
+    return folly::to<int>(command_.params().at(3));
+  }
+  int waitTime() const {
     return folly::to<int>(command_.params().at(3));
   }
 };

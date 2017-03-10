@@ -20,6 +20,7 @@ DEFINE_string(
     tests,
     "all",
     "Comma separated names of tests to run. By default run all tests");
+DEFINE_int32(timeout, 5, "timeout (in secs) for connecting to the server");
 
 using namespace reactivesocket;
 using namespace reactivesocket::tck;
@@ -38,14 +39,15 @@ class SocketConnectCallback : public folly::AsyncSocket::ConnectCallback {
   }
 
   void connectErr(const folly::AsyncSocketException& ex) noexcept override {
-    LOG(FATAL) << "unable to connect to TCP server: " << ex.what();
+    LOG(FATAL) << "Unable to connect to TCP server: " << ex.what();
   }
 
   void waitToConnect() {
     std::unique_lock<std::mutex> lock(connectionMutex_);
-    if (!connectedCV_.wait_for(
-            lock, std::chrono::seconds(5), [&] { return connected_.load(); })) {
-      throw std::runtime_error("unable to connect to tcp server");
+    if (!connectedCV_.wait_for(lock, std::chrono::seconds(FLAGS_timeout), [&] {
+          return connected_.load();
+        })) {
+      throw std::runtime_error("Unable to connect to tcp server");
     }
   }
 
@@ -58,7 +60,6 @@ class SocketConnectCallback : public folly::AsyncSocket::ConnectCallback {
 } // namespace
 
 int main(int argc, char* argv[]) {
-
 #ifdef OSS
   google::ParseCommandLineFlags(&argc, &argv, true);
 #else
@@ -95,6 +96,7 @@ int main(int argc, char* argv[]) {
   callback->waitToConnect();
 
   evbt.getEventBase()->runInEventBaseThreadAndWait([&]() {
+    evbt.getEventBase()->setName("RsSockEvb");
     std::unique_ptr<DuplexConnection> connection =
         std::make_unique<TcpDuplexConnection>(
             std::move(socket), inlineExecutor());

@@ -2,6 +2,7 @@
 
 #include "tck-test/TestInterpreter.h"
 
+#include <folly/Format.h>
 #include <folly/String.h>
 #include <folly/io/async/EventBase.h>
 
@@ -21,13 +22,13 @@ TestInterpreter::TestInterpreter(
 
 bool TestInterpreter::run(folly::EventBase* evb) {
   LOG(INFO) << "Executing test: " << test_.name() << " ("
-            << test_.commands().size() << " commands)";
+            << test_.commands().size() - 1 << " commands)";
 
   int i = 0;
   try {
     for (const auto& command : test_.commands()) {
-      VLOG(2) << "Executing command: " << command.name() << " "
-              << folly::join(",", command.params());
+      VLOG(1) << folly::sformat(
+          "Executing command: [{}] {}", i, command.name());
       ++i;
       if (command.name() == "subscribe") {
         auto subscribe = command.as<SubscribeCommand>();
@@ -54,18 +55,19 @@ bool TestInterpreter::run(folly::EventBase* evb) {
     }
 
     if (!test_.shouldSucceed()) {
-      LOG(INFO) << "test " << test_.name() << " failed executing command #"
-                << i;
+      LOG(INFO) << "Test " << test_.name() << " failed executing command #"
+                << i - 1;
       return false;
     }
   } catch (const std::exception& ex) {
+    LOG(INFO) << "... exception raised: " << ex.what();
     if (test_.shouldSucceed()) {
-      LOG(ERROR) << "test " << test_.name() << " failed executing command #"
-                 << i << ": " << ex.what();
+      LOG(ERROR) << "Test " << test_.name() << " failed executing command "
+                 << test_.commands()[i - 1].name();
       return false;
     }
   }
-  LOG(INFO) << "test " << test_.name() << " succeeded";
+  LOG(INFO) << "Test " << test_.name() << " succeeded";
   return true;
 }
 
@@ -96,11 +98,14 @@ void TestInterpreter::handleCancel(const CancelCommand& command) {
 
 void TestInterpreter::handleAwait(const AwaitCommand& command) {
   if (command.isTerminalType()) {
+    LOG(INFO) << "... await: terminal event";
     getSubscriber(command.id())->awaitTerminalEvent();
   } else if (command.isAtLeastType()) {
+    LOG(INFO) << "... await: terminal at least " << command.numElements();
     getSubscriber(command.id())->awaitAtLeast(command.numElements());
   } else if (command.isNoEventsType()) {
-    getSubscriber(command.id())->awaitNoEvents(command.numElements());
+    LOG(INFO) << "... await: no events for " << command.waitTime() << "ms";
+    getSubscriber(command.id())->awaitNoEvents(command.waitTime());
   } else {
     throw std::runtime_error("unsupported await type");
   }
@@ -108,21 +113,28 @@ void TestInterpreter::handleAwait(const AwaitCommand& command) {
 
 void TestInterpreter::handleAssert(const AssertCommand& command) {
   if (command.isNoErrorAssert()) {
-  } else if (command.isNoErrorAssert()) {
+    LOG(INFO) << "... assert: no error";
     getSubscriber(command.id())->assertNoErrors();
   } else if (command.isErrorAssert()) {
+    LOG(INFO) << "... assert: error";
     getSubscriber(command.id())->assertError();
   } else if (command.isReceivedAssert()) {
+    LOG(INFO) << "... assert: values";
     getSubscriber(command.id())->assertValues(command.values());
   } else if (command.isReceivedNAssert()) {
+    LOG(INFO) << "... assert: value count " << command.valueCount();
     getSubscriber(command.id())->assertValueCount(command.valueCount());
   } else if (command.isReceivedAtLeastAssert()) {
+    LOG(INFO) << "... assert: received at least " << command.valueCount();
     getSubscriber(command.id())->assertReceivedAtLeast(command.valueCount());
   } else if (command.isCompletedAssert()) {
+    LOG(INFO) << "... assert: completed";
     getSubscriber(command.id())->assertCompleted();
   } else if (command.isNotCompletedAssert()) {
+    LOG(INFO) << "... assert: not completed";
     getSubscriber(command.id())->assertNotCompleted();
   } else if (command.isCanceledAssert()) {
+    LOG(INFO) << "... assert: canceled";
     getSubscriber(command.id())->assertCanceled();
   } else {
     throw std::runtime_error("unsupported assert type");

@@ -23,7 +23,7 @@ class TestSubscriber : public reactivesocket::Subscriber<Payload> {
 
   void awaitTerminalEvent();
   void awaitAtLeast(int numItems);
-  void awaitNoEvents(int numelements);
+  void awaitNoEvents(int waitTime);
   void assertNoErrors();
   void assertError();
   void assertValues(
@@ -52,9 +52,9 @@ class TestSubscriber : public reactivesocket::Subscriber<Payload> {
   ////////////////////////////////////////////////////////////////////////////
   std::mutex mutex_; // all variables below has to be protected with the mutex
 
-  std::vector<std::pair<std::string, std::string>> onNextValues_;
-  std::condition_variable onNextValuesCV_;
-  std::atomic<int> onNextItemsCount_{0};
+  std::vector<std::pair<std::string, std::string>> values_;
+  std::condition_variable valuesCV_;
+  std::atomic<int> valuesCount_{0};
 
   std::vector<folly::exception_wrapper> errors_;
 
