@@ -602,8 +602,8 @@ void ConnectionAutomaton::handleUnknownStream(
 }
 /// @}
 
-void ConnectionAutomaton::sendKeepalive() {
-  sendKeepalive(FrameFlags_KEEPALIVE_RESPOND, folly::IOBuf::create(0));
+void ConnectionAutomaton::sendKeepalive(std::unique_ptr<folly::IOBuf> data) {
+  sendKeepalive(FrameFlags_KEEPALIVE_RESPOND, std::move(data));
 }
 
 void ConnectionAutomaton::sendKeepalive(

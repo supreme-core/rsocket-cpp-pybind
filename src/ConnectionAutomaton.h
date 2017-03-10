@@ -55,7 +55,8 @@ class FrameSink {
   /// StreamAutomatonBase attached to this ConnectionAutomaton.
   virtual void disconnectOrCloseWithError(Frame_ERROR&& error) = 0;
 
-  virtual void sendKeepalive() = 0;
+  virtual void sendKeepalive(
+    std::unique_ptr<folly::IOBuf> data = folly::IOBuf::create(0)) = 0;
 };
 
 /// Handles connection-level frames and (de)multiplexes streams.
@@ -147,7 +148,7 @@ class ConnectionAutomaton final
   void useStreamState(std::shared_ptr<StreamState> streamState);
   /// @}
 
-  void sendKeepalive() override;
+  void sendKeepalive(std::unique_ptr<folly::IOBuf> data) override;
 
   void setResumable(bool resumable);
   Frame_RESUME createResumeFrame(const ResumeIdentificationToken& token) const;
