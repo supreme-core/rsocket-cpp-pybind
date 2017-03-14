@@ -198,3 +198,61 @@ TEST_F(ResumeCacheTest, Stats) {
   cache.resetUpToPosition(frame1Size);
   EXPECT_CALL(*stats, resumeBufferChanged(-2, -2 * frame2Size));
 }
+
+TEST_F(ResumeCacheTest, EvictFIFO) {
+  ConnectionAutomaton automaton(
+      inlineExecutor(),
+      nullptr,
+      nullptr,
+      nullptr,
+      Stats::noop(),
+      nullptr,
+      ReactiveSocketMode::CLIENT);
+  automaton.setFrameSerializer(FrameSerializer::createCurrentVersion());
+
+  auto frame = frameSerializer_->serializeOut(Frame_CANCEL(0));
+  const auto frameSize = frame->computeChainDataLength();
+
+  // construct cache with capacity of 2 frameSize
+  ResumeCache cache(automaton, frameSize * 2);
+
+  cache.trackSentFrame(*frame);
+  cache.trackSentFrame(*frame);
+
+  // first 2 frames should be presented in the cache
+  EXPECT_TRUE(cache.isPositionAvailable(0));
+  EXPECT_TRUE(cache.isPositionAvailable(frameSize));
+  EXPECT_TRUE(cache.isPositionAvailable(frameSize * 2));
+
+  // add third frame, and this frame should evict first frame
+  cache.trackSentFrame(*frame);
+  EXPECT_FALSE(cache.isPositionAvailable(0));
+
+  // cache size should also be adjusted by resetUpToPosition
+  cache.resetUpToPosition(frameSize * 2);
+  EXPECT_FALSE(cache.isPositionAvailable(frameSize));
+  cache.trackSentFrame(*frame);
+  EXPECT_TRUE(cache.isPositionAvailable(frameSize * 2));
+  EXPECT_TRUE(cache.isPositionAvailable(frameSize * 3));
+  EXPECT_TRUE(cache.isPositionAvailable(frameSize * 4));
+
+
+  // create a huge frame and try to cache it
+  auto hugeFrame =
+      folly::IOBuf::createChain(frameSize * 3, frameSize * 3);
+  for (int i = 0; i < 3; i++) {
+    hugeFrame->appendChain(frame->clone());
+  }
+  EXPECT_EQ(hugeFrame->computeChainDataLength(), frameSize * 3);
+  cache.trackSentFrame(*hugeFrame);
+  // cache should be cleared
+  EXPECT_FALSE(cache.isPositionAvailable(frameSize * 2));
+  EXPECT_FALSE(cache.isPositionAvailable(frameSize * 3));
+  EXPECT_FALSE(cache.isPositionAvailable(frameSize * 4 + 1));
+
+  // caching small frames shouldn't be affected
+  cache.trackSentFrame(*frame);
+  EXPECT_FALSE(cache.isPositionAvailable(frameSize * 4 + 1));
+  cache.trackSentFrame(*frame);
+  EXPECT_FALSE(cache.isPositionAvailable(frameSize * 5 + 1));
+}

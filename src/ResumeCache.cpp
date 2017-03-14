@@ -1,5 +1,4 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "src/ResumeCache.h"
 #include <folly/Optional.h>
 #include <algorithm>
@@ -11,9 +10,7 @@
 namespace reactivesocket {
 
 ResumeCache::~ResumeCache() {
-  if (!frames_.empty()) {
-    onClearFrames();
-  }
+  clearFrames(position_);
 }
 
 void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
@@ -21,6 +18,14 @@ void ResumeCache::trackSentFrame(const folly::IOBuf& serializedFrame) {
           serializedFrame, connection_.frameSerializer())) {
     // TODO(tmont): this could be expensive, find a better way to determine
     auto frameDataLength = serializedFrame.computeChainDataLength();
+
+    // if the frame is too huge, we don't cache it
+    if (frameDataLength > capacity_) {
+      resetUpToPosition(position_);
+      DCHECK(size_ == 0);
+      return;
+    }
+
     addFrame(serializedFrame, frameDataLength);
 
     position_ += frameDataLength;
@@ -53,26 +58,8 @@ void ResumeCache::resetUpToPosition(ResumePosition position) {
     }
   }
 
-  if (!frames_.empty()) {
-    auto end = std::lower_bound(
-        frames_.begin(),
-        frames_.end(),
-        position,
-        [](decltype(frames_.back())& pair, ResumePosition pos) {
-          return pair.first < pos;
-        });
+  clearFrames(position);
 
-    if (end == frames_.end()) {
-      onClearFrames();
-      frames_.clear();
-    } else {
-      DCHECK(end->first >= resetPosition_);
-      connection_.stats().resumeBufferChanged(
-          -static_cast<int>(std::distance(frames_.begin(), end)),
-          -static_cast<int>(end->first - resetPosition_));
-      frames_.erase(frames_.begin(), end);
-    }
-  }
 
   resetPosition_ = position;
   DCHECK(frames_.empty() || frames_.front().first == resetPosition_);
@@ -84,8 +71,8 @@ bool ResumeCache::isPositionAvailable(ResumePosition position) const {
              frames_.begin(),
              frames_.end(),
              std::make_pair(position, std::unique_ptr<folly::IOBuf>()),
-             [](decltype(frames_.back())& pairA,
-                decltype(frames_.back())& pairB) {
+             [](decltype(frames_.back()) pairA,
+                decltype(frames_.back()) pairB) {
                return pairA.first < pairB.first;
              });
 }
@@ -108,17 +95,44 @@ bool ResumeCache::isPositionAvailable(
 }
 
 void ResumeCache::addFrame(const folly::IOBuf& frame, size_t frameDataLength) {
-  // TODO: implement bounds to the buffer
+  size_ += frameDataLength;
+  while (size_ > capacity_) {
+    evictFrame();
+  }
   frames_.emplace_back(position_, frame.clone());
   connection_.stats().resumeBufferChanged(1, static_cast<int>(frameDataLength));
 }
 
-void ResumeCache::onClearFrames() {
-  DCHECK(position_ >= resetPosition_);
+void ResumeCache::evictFrame() {
   DCHECK(!frames_.empty());
+  frames_.pop_front();
+
+  auto position = frames_.empty() ? position_ : frames_.front().first;
+  resetUpToPosition(position);
+}
+
+void ResumeCache::clearFrames(ResumePosition position) {
+  if (frames_.empty()) {
+    return;
+  }
+  DCHECK(position <= position_);
+  DCHECK(position >= resetPosition_);
+
+  auto end = std::lower_bound(
+      frames_.begin(),
+      frames_.end(),
+      position,
+      [](decltype(frames_.back()) pair, ResumePosition pos) {
+        return pair.first < pos;
+      });
+  DCHECK(end == frames_.end() || end->first >= resetPosition_);
+  auto pos = end == frames_.end() ? position : end->first;
   connection_.stats().resumeBufferChanged(
-      -static_cast<int>(frames_.size()),
-      -static_cast<int>(position_ - resetPosition_));
+      -static_cast<int>(std::distance(frames_.begin(), end)),
+      -static_cast<int>(pos - resetPosition_));
+
+  frames_.erase(frames_.begin(), end);
+  size_ -= (pos - resetPosition_);
 }
 
 void ResumeCache::sendFramesFromPosition(
@@ -135,7 +149,7 @@ void ResumeCache::sendFramesFromPosition(
       frames_.begin(),
       frames_.end(),
       position,
-      [](decltype(frames_.back())& pair, ResumePosition pos) {
+      [](decltype(frames_.back()) pair, ResumePosition pos) {
         return pair.first < pos;
       });
 

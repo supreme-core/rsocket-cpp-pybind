@@ -17,8 +17,9 @@ class FrameTransport;
 
 class ResumeCache {
  public:
-  explicit ResumeCache(ConnectionAutomaton& connection)
-      : connection_(connection) {}
+  explicit ResumeCache(ConnectionAutomaton& connection,
+        size_t capacity = DEFAULT_CAPACITY)
+      : connection_(connection), capacity_(capacity) {}
   ~ResumeCache();
 
   void trackSentFrame(const folly::IOBuf& serializedFrame);
@@ -45,9 +46,9 @@ class ResumeCache {
 
  private:
   void addFrame(const folly::IOBuf&, size_t);
-
+  void evictFrame();
   /// Called before clearing cached frames to update stats.
-  void onClearFrames();
+  void clearFrames(ResumePosition position);
 
   ConnectionAutomaton& connection_;
 
@@ -56,5 +57,10 @@ class ResumeCache {
   std::unordered_map<StreamId, ResumePosition> streamMap_;
 
   std::deque<std::pair<ResumePosition, std::unique_ptr<folly::IOBuf>>> frames_;
+
+  // default capacity: 1MB
+  constexpr static size_t DEFAULT_CAPACITY = 1024 * 1024;
+  const size_t capacity_ = DEFAULT_CAPACITY;
+  size_t size_{0};
 };
 }
