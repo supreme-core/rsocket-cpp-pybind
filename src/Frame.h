@@ -140,9 +140,9 @@ class FrameHeader {
   FrameHeader(FrameType type, FrameFlags flags, StreamId streamId)
       : type_(type), flags_(flags), streamId_(streamId) {}
 
-  FrameType type_;
-  FrameFlags flags_;
-  StreamId streamId_;
+  FrameType type_{};
+  FrameFlags flags_{};
+  StreamId streamId_{};
 };
 
 std::ostream& operator<<(std::ostream&, const FrameHeader&);
@@ -190,7 +190,7 @@ class Frame_REQUEST_Base {
       : Frame_REQUEST_Base(frameType, streamId, flags, 0, std::move(payload)) {}
 
   FrameHeader header_;
-  uint32_t requestN_;
+  uint32_t requestN_{};
   Payload payload_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_REQUEST_Base&);
@@ -307,7 +307,7 @@ class Frame_REQUEST_N {
         requestN_(requestN) {}
 
   FrameHeader header_;
-  uint32_t requestN_;
+  uint32_t requestN_{};
 };
 std::ostream& operator<<(std::ostream&, const Frame_REQUEST_N&);
 
@@ -327,20 +327,11 @@ std::ostream& operator<<(std::ostream&, const Frame_METADATA_PUSH&);
 
 class Frame_CANCEL {
  public:
-  constexpr static const FrameFlags AllowedFlags = FrameFlags::METADATA;
-
   Frame_CANCEL() = default;
-  explicit Frame_CANCEL(
-      StreamId streamId,
-      std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
-      : header_(
-            FrameType::CANCEL,
-            metadata ? FrameFlags::METADATA : FrameFlags::EMPTY,
-            streamId),
-        metadata_(std::move(metadata)) {}
+  explicit Frame_CANCEL(StreamId streamId)
+      : header_(FrameType::CANCEL, FrameFlags::EMPTY, streamId) {}
 
   FrameHeader header_;
-  std::unique_ptr<folly::IOBuf> metadata_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_CANCEL&);
 
@@ -387,7 +378,7 @@ class Frame_ERROR {
       const std::string& message);
 
   FrameHeader header_;
-  ErrorCode errorCode_;
+  ErrorCode errorCode_{};
   Payload payload_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_ERROR&);
@@ -407,7 +398,7 @@ class Frame_KEEPALIVE {
         data_(std::move(data)) {}
 
   FrameHeader header_;
-  ResumePosition position_;
+  ResumePosition position_{};
   std::unique_ptr<folly::IOBuf> data_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_KEEPALIVE&);
@@ -449,10 +440,10 @@ class Frame_SETUP {
   void moveToSetupPayload(ConnectionSetupPayload& setupPayload);
 
   FrameHeader header_;
-  uint16_t versionMajor_;
-  uint16_t versionMinor_;
-  uint32_t keepaliveTime_;
-  uint32_t maxLifetime_;
+  uint16_t versionMajor_{};
+  uint16_t versionMinor_{};
+  uint32_t keepaliveTime_{};
+  uint32_t maxLifetime_{};
   ResumeIdentificationToken token_;
   std::string metadataMimeType_;
   std::string dataMimeType_;
@@ -479,8 +470,8 @@ class Frame_LEASE {
         metadata_(std::move(metadata)) {}
 
   FrameHeader header_;
-  uint32_t ttl_;
-  uint32_t numberOfRequests_;
+  uint32_t ttl_{};
+  uint32_t numberOfRequests_{};
   std::unique_ptr<folly::IOBuf> metadata_;
 };
 std::ostream& operator<<(std::ostream&, const Frame_LEASE&);
@@ -489,14 +480,21 @@ std::ostream& operator<<(std::ostream&, const Frame_LEASE&);
 class Frame_RESUME {
  public:
   Frame_RESUME() = default;
-  Frame_RESUME(const ResumeIdentificationToken& token, ResumePosition position)
+  Frame_RESUME(
+      const ResumeIdentificationToken& token,
+      ResumePosition lastReceivedServerPosition,
+      ResumePosition clientPosition)
       : header_(FrameType::RESUME, FrameFlags::EMPTY, 0),
         token_(token),
-        position_(position) {}
+        lastReceivedServerPosition_(lastReceivedServerPosition),
+        clientPosition_(clientPosition) {}
 
   FrameHeader header_;
+  uint16_t versionMajor_{};
+  uint16_t versionMinor_{};
   ResumeIdentificationToken token_;
-  ResumePosition position_;
+  ResumePosition lastReceivedServerPosition_{};
+  ResumePosition clientPosition_{};
 };
 std::ostream& operator<<(std::ostream&, const Frame_RESUME&);
 /// @}
@@ -509,7 +507,7 @@ class Frame_RESUME_OK {
         position_(position) {}
 
   FrameHeader header_;
-  ResumePosition position_;
+  ResumePosition position_{};
 };
 std::ostream& operator<<(std::ostream&, const Frame_RESUME_OK&);
 /// @}

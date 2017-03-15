@@ -620,7 +620,10 @@ void ConnectionAutomaton::sendKeepalive(
 
 Frame_RESUME ConnectionAutomaton::createResumeFrame(
     const ResumeIdentificationToken& token) const {
-  return Frame_RESUME(token, streamState_->resumeTracker_.impliedPosition());
+  return Frame_RESUME(
+      token,
+      streamState_->resumeTracker_.impliedPosition(),
+      streamState_->resumeCache_.lastResetPosition());
 }
 
 bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
@@ -633,21 +636,29 @@ bool ConnectionAutomaton::isPositionAvailable(ResumePosition position) {
 //  return streamState_->resumeCache_.position() - position;
 //}
 
-bool ConnectionAutomaton::resumeFromPositionOrClose(ResumePosition position) {
+bool ConnectionAutomaton::resumeFromPositionOrClose(
+    ResumePosition serverPosition,
+    ResumePosition clientPosition) {
   debugCheckCorrectExecutor();
   DCHECK(!resumeCallback_);
   DCHECK(!isDisconnectedOrClosed());
   DCHECK(mode_ == ReactiveSocketMode::SERVER);
 
-  if (streamState_->resumeCache_.isPositionAvailable(position)) {
+  bool clientPositionExist = (clientPosition == kUnspecifiedResumePosition) ||
+      streamState_->resumeTracker_.canResumeFrom(clientPosition);
+
+  if (clientPositionExist &&
+      streamState_->resumeCache_.isPositionAvailable(serverPosition)) {
     frameTransport_->outputFrameOrEnqueue(frameSerializer().serializeOut(
         Frame_RESUME_OK(streamState_->resumeTracker_.impliedPosition())));
-    resumeFromPosition(position);
+    resumeFromPosition(serverPosition);
     return true;
   } else {
     closeWithError(Frame_ERROR::connectionError(folly::to<std::string>(
-        "Cannot resume server, client position ",
-        position,
+        "Cannot resume server, client lastServerPosition=",
+        serverPosition,
+        " firstClientPosition=",
+        clientPosition,
         " is not available. Last reset position is ",
         streamState_->resumeCache_.lastResetPosition())));
     return false;

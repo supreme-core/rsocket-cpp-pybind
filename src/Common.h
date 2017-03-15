@@ -28,8 +28,11 @@ std::ostream& operator<<(std::ostream&, FrameType);
 
 using ErrorCallback =
     std::function<void(const folly::exception_wrapper&) noexcept>;
+
 using StreamId = uint32_t;
+
 using ResumePosition = int64_t;
+constexpr const ResumePosition kUnspecifiedResumePosition = -1;
 
 /// Indicates the reason why the stream automaton received a terminal signal
 /// from the connection.

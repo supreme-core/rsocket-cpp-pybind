@@ -202,8 +202,11 @@ void StandardReactiveSocket::onConnectionFrame(
               frame, std::move(serializedFrame))) {
         return;
       }
-      auto resumed =
-          handler->handleResume(*this, frame.token_, frame.position_);
+      auto resumed = handler->handleResume(
+          *this,
+          frame.token_,
+          frame.lastReceivedServerPosition_,
+          frame.clientPosition_);
       if (!resumed) {
         // TODO(lehecka): the "connection" and "this" arguments needs to be
         // cleaned up. It is not intuitive what is their lifetime.
@@ -356,7 +359,8 @@ void StandardReactiveSocket::tryClientResume(
 
 bool StandardReactiveSocket::tryResumeServer(
     std::shared_ptr<FrameTransport> frameTransport,
-    ResumePosition position) {
+    ResumePosition serverPosition,
+    ResumePosition clientPosition) {
   // TODO: verify/assert that the new frameTransport is on the same event base
   debugCheckCorrectExecutor();
   checkNotClosed();
@@ -367,7 +371,7 @@ bool StandardReactiveSocket::tryResumeServer(
       std::runtime_error("resuming server on a different connection"));
   // TODO: verify, we should not be receiving any frames, not a single one
   connection_->connect(std::move(frameTransport), /*sendPendingFrames=*/false);
-  return connection_->resumeFromPositionOrClose(position);
+  return connection_->resumeFromPositionOrClose(serverPosition, clientPosition);
 }
 
 void StandardReactiveSocket::checkNotClosed() const {

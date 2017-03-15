@@ -33,6 +33,7 @@ void FollyKeepaliveTimer::schedule() {
 
 void FollyKeepaliveTimer::sendKeepalive() {
   if (pending_) {
+    // TODO: we need to use max lifetime from the setup frame for this
     connection_->disconnectOrCloseWithError(
         Frame_ERROR::connectionError("no response to keepalive"));
     stop();

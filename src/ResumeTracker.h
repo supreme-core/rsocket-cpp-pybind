@@ -27,6 +27,10 @@ class ResumeTracker {
     return impliedPosition_;
   }
 
+  bool canResumeFrom(ResumePosition clientPosition) const {
+    return clientPosition <= impliedPosition_;
+  }
+
  private:
   ConnectionAutomaton& connection_;
   ResumePosition impliedPosition_{0};

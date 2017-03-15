@@ -126,9 +126,7 @@ std::ostream& operator<<(std::ostream& os, const Frame_METADATA_PUSH& frame) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_CANCEL& frame) {
-  return os << frame.header_ << ", "
-            << (frame.metadata_ ? frame.metadata_->computeChainDataLength()
-                                : 0);
+  return os << frame.header_;
 }
 
 Frame_PAYLOAD Frame_PAYLOAD::complete(StreamId streamId) {
@@ -202,7 +200,8 @@ std::ostream& operator<<(std::ostream& os, const Frame_LEASE& frame) {
 std::ostream& operator<<(std::ostream& os, const Frame_RESUME& frame) {
   return os << frame.header_ << ", ("
             << "token"
-            << ", @" << frame.position_ << ")";
+            << ", @server " << frame.lastReceivedServerPosition_ << ", @client "
+            << frame.clientPosition_ << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_RESUME_OK& frame) {

@@ -111,7 +111,8 @@ class StandardReactiveSocket : public ReactiveSocket {
 
   bool tryResumeServer(
       std::shared_ptr<FrameTransport> frameTransport,
-      ResumePosition position) override;
+      ResumePosition serverPosition,
+      ResumePosition clientPosition) override;
 
   folly::Executor& executor() override {
     return executor_;

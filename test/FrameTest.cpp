@@ -88,12 +88,8 @@ TEST(FrameTest, Frame_REQUEST_N) {
 
 TEST(FrameTest, Frame_CANCEL) {
   uint32_t streamId = 42;
-  FrameFlags flags = FrameFlags::METADATA;
-  auto metadata = folly::IOBuf::copyBuffer("i'm so meta even this acronym");
-  auto frame = reserialize<Frame_CANCEL>(streamId, metadata->clone());
-
-  expectHeader(FrameType::CANCEL, flags, streamId, frame);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.metadata_));
+  auto frame = reserialize<Frame_CANCEL>(streamId);
+  expectHeader(FrameType::CANCEL, FrameFlags::EMPTY, streamId, frame);
 }
 
 TEST(FrameTest, Frame_PAYLOAD) {

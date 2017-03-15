@@ -54,7 +54,8 @@ class RequestHandler {
   virtual bool handleResume(
       ReactiveSocket& socket,
       const ResumeIdentificationToken& token,
-      ResumePosition position) noexcept = 0;
+      ResumePosition serverPosition,
+      ResumePosition clientPosition) noexcept = 0;
 
   // Handle a stream that can resume in a "clean" state. Client and Server are
   // up-to-date.

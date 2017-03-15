@@ -182,7 +182,9 @@ class ConnectionAutomaton final
     }
   }
 
-  bool resumeFromPositionOrClose(ResumePosition position);
+  bool resumeFromPositionOrClose(
+      ResumePosition serverPosition,
+      ResumePosition clientPosition);
 
   void addConnectedListener(std::function<void()> listener);
   void addDisconnectedListener(ErrorCallback listener);

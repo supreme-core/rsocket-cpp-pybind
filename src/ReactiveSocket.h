@@ -68,7 +68,8 @@ class ReactiveSocket {
 
   virtual bool tryResumeServer(
       std::shared_ptr<FrameTransport> frameTransport,
-      ResumePosition position) = 0;
+      ResumePosition serverPosition,
+      ResumePosition clientPosition) = 0;
 
   virtual folly::Executor& executor() = 0;
 

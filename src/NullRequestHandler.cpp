@@ -53,7 +53,8 @@ std::shared_ptr<StreamState> NullRequestHandler::handleSetupPayload(
 bool NullRequestHandler::handleResume(
     ReactiveSocket& socket,
     const ResumeIdentificationToken& /*token*/,
-    ResumePosition /*position*/) noexcept {
+    ResumePosition,
+    ResumePosition) noexcept {
   return false;
 }
 

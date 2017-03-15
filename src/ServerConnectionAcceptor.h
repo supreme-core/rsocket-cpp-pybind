@@ -46,6 +46,7 @@ class ServerConnectionAcceptor {
       std::shared_ptr<FrameTransport>,
       ResumeIdentificationToken,
       ResumePosition,
+      ResumePosition,
       folly::Executor&) = 0;
 
   void acceptConnection(std::unique_ptr<DuplexConnection>, folly::Executor&);
