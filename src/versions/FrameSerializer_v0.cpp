@@ -7,8 +7,7 @@ namespace reactivesocket {
 
 constexpr const ProtocolVersion FrameSerializerV0::Version;
 constexpr static const auto kFrameHeaderSize = 8;
-constexpr static const auto kMaxMetadataLength =
-    std::numeric_limits<int32_t>::max();
+constexpr static const auto kMaxMetadataLength = 0xFFFFFF; // 24bit max value
 
 namespace {
 enum class FrameType_V0 : uint16_t {
@@ -427,7 +426,7 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
     extraFlags |= FrameFlags_V0::KEEPALIVE_RESPOND;
   }
 
-  auto queue = createBufferQueue(kFrameHeaderSize + sizeof(ResumePosition));
+  auto queue = createBufferQueue(kFrameHeaderSize + sizeof(int64_t));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   serializeHeaderInto(appender, frame.header_, extraFlags);
   // TODO: Remove hack:
@@ -505,10 +504,11 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
 std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
     Frame_RESUME&& frame) {
   auto queue = createBufferQueue(
-      kFrameHeaderSize + sizeof(ResumeIdentificationToken) +
-      sizeof(ResumePosition));
+      kFrameHeaderSize + 16 +
+      sizeof(int64_t));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   serializeHeaderInto(appender, frame.header_, /*extraFlags=*/0);
+  CHECK(frame.token_.data().size() <= 16);
   appender.push(frame.token_.data().data(), frame.token_.data().size());
   appender.writeBE(frame.position_);
   return queue.move();
@@ -516,7 +516,7 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
 
 std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
     Frame_RESUME_OK&& frame) {
-  auto queue = createBufferQueue(kFrameHeaderSize + sizeof(ResumePosition));
+  auto queue = createBufferQueue(kFrameHeaderSize + sizeof(int64_t));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   serializeHeaderInto(appender, frame.header_, /*extraFlags=*/0);
   appender.writeBE(frame.position_);
@@ -668,7 +668,7 @@ bool FrameSerializerV0::deserializeFrom(
     // TODO: Remove hack:
     // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
     if (resumable) {
-      frame.position_ = cur.readBE<ResumePosition>();
+      frame.position_ = cur.readBE<int64_t>();
     } else {
       frame.position_ = 0;
     }
@@ -705,7 +705,7 @@ bool FrameSerializerV0::deserializeFrom(
     // TODO: Remove hack:
     // https://github.com/ReactiveSocket/reactivesocket-cpp/issues/243
     if (!!(frame.header_.flags_ & FrameFlags::RESUME_ENABLE)) {
-      ResumeIdentificationToken::Data data;
+      std::vector<uint8_t> data(16);
       cur.pull(data.data(), data.size());
       frame.token_.set(std::move(data));
     } else {
@@ -747,10 +747,10 @@ bool FrameSerializerV0::deserializeFrom(
   try {
     FrameFlags_V0 flags;
     deserializeHeaderFrom(cur, frame.header_, flags);
-    ResumeIdentificationToken::Data data;
+    std::vector<uint8_t> data(16);
     cur.pull(data.data(), data.size());
     frame.token_.set(std::move(data));
-    frame.position_ = cur.readBE<ResumePosition>();
+    frame.position_ = cur.readBE<int64_t>();
   } catch (...) {
     return false;
   }
@@ -764,7 +764,7 @@ bool FrameSerializerV0::deserializeFrom(
   try {
     FrameFlags_V0 flags;
     deserializeHeaderFrom(cur, frame.header_, flags);
-    frame.position_ = cur.readBE<ResumePosition>();
+    frame.position_ = cur.readBE<int64_t>();
   } catch (...) {
     return false;
   }

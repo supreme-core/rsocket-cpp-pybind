@@ -66,32 +66,22 @@ StreamInterruptedException::StreamInterruptedException(int _terminatingSignal)
     : std::runtime_error(getTerminatingSignalErrorMessage(_terminatingSignal)),
       terminatingSignal(_terminatingSignal) {}
 
-ResumeIdentificationToken::ResumeIdentificationToken()
-    : ResumeIdentificationToken(
-          Data() = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}) {}
+ResumeIdentificationToken::ResumeIdentificationToken() {}
 
 ResumeIdentificationToken ResumeIdentificationToken::generateNew() {
-  // TODO: this will be replaced with a variable length bit array and the value
-  // will be generated outside of reactivesocket
-  // for now we will use temporary number generator
-  folly::ThreadLocalPRNG rng;
-
-  Data data;
-  for (size_t i = 0; i < data.size(); i++) {
-    data[i] = static_cast<Data::value_type>(folly::Random::rand32(rng));
+  constexpr size_t kSize = 16;
+  std::vector<uint8_t> data;
+  data.reserve(kSize);
+  for (size_t i = 0; i < kSize; i++) {
+    data.push_back(static_cast<uint8_t>(folly::Random::rand32()));
   }
   return ResumeIdentificationToken(std::move(data));
-}
-
-ResumeIdentificationToken ResumeIdentificationToken::fromString(
-    const std::string& /*str*/) {
-  CHECK(false) << "not implemented";
-  return ResumeIdentificationToken();
 }
 
 std::ostream& operator<<(
     std::ostream& out,
     const ResumeIdentificationToken& token) {
+  out << "0x";
   for (auto b : token.data()) {
     out << HEX_CHARS[(b & 0xF0) >> 4];
     out << HEX_CHARS[b & 0x0F];

@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <array>
 #include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 //
 // this file includes all PUBLIC common types.
@@ -57,19 +57,15 @@ class StreamInterruptedException : public std::runtime_error {
 
 class ResumeIdentificationToken {
  public:
-  using Data = std::array<uint8_t, 16>;
-
   /// Creates an empty token.
   ResumeIdentificationToken();
-
   static ResumeIdentificationToken generateNew();
-  static ResumeIdentificationToken fromString(const std::string& str);
 
-  const Data& data() const {
+  const std::vector<uint8_t>& data() const {
     return bits_;
   }
 
-  void set(Data newBits) {
+  void set(std::vector<uint8_t> newBits) {
     bits_ = std::move(newBits);
   }
 
@@ -82,9 +78,10 @@ class ResumeIdentificationToken {
   }
 
  private:
-  explicit ResumeIdentificationToken(Data bits) : bits_(std::move(bits)) {}
+  explicit ResumeIdentificationToken(std::vector<uint8_t> bits)
+      : bits_(std::move(bits)) {}
 
-  Data bits_;
+  std::vector<uint8_t> bits_;
 };
 
 std::ostream& operator<<(std::ostream&, const ResumeIdentificationToken&);

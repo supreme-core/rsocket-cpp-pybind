@@ -28,5 +28,5 @@ TEST(ResumeIdentificationTokenTest, ToString) {
               0x00}});
   std::ostringstream out;
   out << token;
-  ASSERT_EQ("123456789abcdeffedcba98765432100", out.str());
+  ASSERT_EQ("0x123456789abcdeffedcba98765432100", out.str());
 }

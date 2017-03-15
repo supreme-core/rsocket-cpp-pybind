@@ -171,8 +171,7 @@ TEST(FrameTest, Frame_SETUP) {
   uint16_t versionMinor = 5;
   uint32_t keepaliveTime = std::numeric_limits<uint32_t>::max();
   uint32_t maxLifetime = std::numeric_limits<uint32_t>::max();
-  ResumeIdentificationToken::Data tokenData;
-  tokenData.fill(1);
+  std::vector<uint8_t> tokenData(16, 1);
   ResumeIdentificationToken token;
   token.set(std::move(tokenData));
   auto data = folly::IOBuf::copyBuffer("424242");
@@ -205,8 +204,7 @@ TEST(FrameTest, Frame_SETUP_resume) {
   uint16_t versionMinor = 0;
   uint32_t keepaliveTime = std::numeric_limits<uint32_t>::max();
   uint32_t maxLifetime = std::numeric_limits<uint32_t>::max();
-  ResumeIdentificationToken::Data tokenData;
-  tokenData.fill(1);
+  std::vector<uint8_t> tokenData(16, 1);
   ResumeIdentificationToken token;
   token.set(std::move(tokenData));
   auto data = folly::IOBuf::copyBuffer("424242");
