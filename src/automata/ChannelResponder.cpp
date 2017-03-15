@@ -95,14 +95,28 @@ void ChannelResponder::endStream(StreamCompletionSignal signal) {
 }
 
 void ChannelResponder::processInitialFrame(Frame_REQUEST_CHANNEL&& frame) {
-  onNextFrame(std::move(frame));
+  onNextPayloadFrame(
+      frame.header_.flags_, frame.requestN_, std::move(frame.payload_));
 }
 
 void ChannelResponder::onNextFrame(Frame_REQUEST_CHANNEL&& frame) {
+  // TODO(t16487710): remove handling this frame when we remove support for
+  // protocol version < 1.0
+  processInitialFrame(std::move(frame));
+}
+
+void ChannelResponder::onNextFrame(Frame_PAYLOAD&& frame) {
+  onNextPayloadFrame(frame.header_.flags_, 0, std::move(frame.payload_));
+}
+
+void ChannelResponder::onNextPayloadFrame(
+    FrameFlags flags,
+    uint32_t requestN,
+    Payload&& payload) {
   bool end = false;
   switch (state_) {
     case State::RESPONDING:
-      if (!!(frame.header_.flags_ & FrameFlags::COMPLETE)) {
+      if (!!(flags & FrameFlags::COMPLETE)) {
         state_ = State::CLOSED;
         end = true;
       }
@@ -111,8 +125,8 @@ void ChannelResponder::onNextFrame(Frame_REQUEST_CHANNEL&& frame) {
       break;
   }
 
-  processRequestN(frame.requestN_);
-  processPayload(std::move(frame.payload_));
+  processRequestN(requestN);
+  processPayload(std::move(payload));
 
   if (end) {
     connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);

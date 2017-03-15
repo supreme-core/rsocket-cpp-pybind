@@ -40,6 +40,10 @@ class ChannelResponder : public ConsumerMixin,
   void onNextFrame(Frame_REQUEST_CHANNEL&&) override;
   void onNextFrame(Frame_CANCEL&&) override;
   void onNextFrame(Frame_REQUEST_N&&) override;
+  void onNextFrame(Frame_PAYLOAD&& frame) override;
+
+  void
+  onNextPayloadFrame(FrameFlags flags, uint32_t requestN, Payload&& payload);
 
   void endStream(StreamCompletionSignal) override;
 
