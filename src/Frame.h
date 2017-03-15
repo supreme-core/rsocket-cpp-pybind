@@ -132,8 +132,6 @@ constexpr inline FrameFlags operator~(FrameFlags a) {
 
 class FrameHeader {
  public:
-  static constexpr size_t kSize = 6;
-
   FrameHeader() {
 #ifndef NDEBUG
     type_ = FrameType::RESERVED;

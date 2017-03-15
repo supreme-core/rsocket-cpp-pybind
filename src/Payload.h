@@ -7,14 +7,6 @@
 #include <string>
 #include "src/Common.h"
 
-namespace folly {
-
-namespace io {
-class Cursor;
-class QueueAppender;
-} // io
-} // folly
-
 namespace reactivesocket {
 
 enum class FrameFlags : uint16_t;
@@ -36,31 +28,9 @@ struct Payload {
   }
 
   FrameFlags getFlags() const;
-
   void checkFlags(FrameFlags flags) const;
 
-  uint32_t framingSize() const {
-    return (metadata != nullptr ? sizeof(uint32_t) : 0);
-  }
-
-  void serializeInto(folly::io::QueueAppender& appender);
-  void deserializeFrom(folly::io::Cursor& cur, FrameFlags flags);
-
-  static void serializeMetadataInto(
-      folly::io::QueueAppender& appender,
-      std::unique_ptr<folly::IOBuf> metadata);
-
-  /// Deserializes metadata from cur returning a null pointer if the
-  /// FrameFlags_METADATA flag is not set in flags.
-  static std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
-      folly::io::Cursor& cur,
-      FrameFlags flags);
-
-  static std::unique_ptr<folly::IOBuf> deserializeDataFrom(
-      folly::io::Cursor& cur);
-
   std::string moveDataToString();
-
   void clear();
 
   std::unique_ptr<folly::IOBuf> data;

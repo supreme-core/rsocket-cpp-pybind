@@ -6,7 +6,9 @@
 
 namespace reactivesocket {
 
-enum class FrameFlags_V0 : uint16_t;
+std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
+    folly::io::Cursor& cur,
+    FrameFlags flags);
 
 class FrameSerializerV0 : public FrameSerializer {
  public:
@@ -53,21 +55,5 @@ class FrameSerializerV0 : public FrameSerializer {
   bool deserializeFrom(Frame_RESUME&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_RESUME_OK&, std::unique_ptr<folly::IOBuf>)
       override;
-
- private:
-  void serializeHeaderInto(
-      folly::io::QueueAppender& appender,
-      const FrameHeader& header,
-      uint16_t extraFlags);
-  void deserializeHeaderFrom(
-      folly::io::Cursor& cur,
-      FrameHeader& header,
-      FrameFlags_V0& flags);
-
-  std::unique_ptr<folly::IOBuf> serializeOutInternal(Frame_REQUEST_Base&&);
-  bool deserializeFromInternal(
-      Frame_REQUEST_Base&,
-      std::unique_ptr<folly::IOBuf>);
 };
-
 } // reactivesocket
