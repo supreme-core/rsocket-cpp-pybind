@@ -68,9 +68,7 @@ class ResumeIdentificationToken {
     return bits_;
   }
 
-  void set(std::vector<uint8_t> newBits) {
-    bits_ = std::move(newBits);
-  }
+  void set(std::vector<uint8_t> newBits);
 
   bool operator==(const ResumeIdentificationToken& right) const {
     return data() == right.data();

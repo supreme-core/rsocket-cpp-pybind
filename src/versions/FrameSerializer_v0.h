@@ -6,10 +6,6 @@
 
 namespace reactivesocket {
 
-std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
-    folly::io::Cursor& cur,
-    FrameFlags flags);
-
 class FrameSerializerV0 : public FrameSerializer {
  public:
   constexpr static const ProtocolVersion Version = ProtocolVersion(0, 0);
@@ -55,5 +51,9 @@ class FrameSerializerV0 : public FrameSerializer {
   bool deserializeFrom(Frame_RESUME&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_RESUME_OK&, std::unique_ptr<folly::IOBuf>)
       override;
+
+  static std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
+      folly::io::Cursor& cur,
+      FrameFlags flags);
 };
 } // reactivesocket

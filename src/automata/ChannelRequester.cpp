@@ -46,6 +46,9 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
     } break;
     case State::REQUESTED: {
       debugCheckOnNextOnCompleteOnError();
+
+      // TODO(t16487710): Subsequent messages from requester to responder MUST
+      // be sent as PAYLOAD frames
       Frame_REQUEST_CHANNEL frame(
           streamId_, FrameFlags::EMPTY, std::move(request));
       connection_->outputFrameOrEnqueue(

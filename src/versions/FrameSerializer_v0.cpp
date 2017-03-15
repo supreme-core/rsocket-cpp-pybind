@@ -180,10 +180,6 @@ static void deserializeHeaderFrom(
   header.streamId_ = cur.readBE<uint32_t>();
 }
 
-static uint32_t payloadFramingSize(const Payload& payload) {
-  return (payload.metadata != nullptr ? sizeof(uint32_t) : 0);
-}
-
 static void serializeMetadataInto(
     folly::io::QueueAppender& appender,
     std::unique_ptr<folly::IOBuf> metadata) {
@@ -201,7 +197,7 @@ static void serializeMetadataInto(
   appender.insert(std::move(metadata));
 }
 
-std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
+std::unique_ptr<folly::IOBuf> FrameSerializerV0::deserializeMetadataFrom(
     folly::io::Cursor& cur,
     FrameFlags flags) {
   if (!(flags & FrameFlags::METADATA)) {
@@ -243,7 +239,7 @@ static std::unique_ptr<folly::IOBuf> deserializeDataFrom(
 static Payload deserializePayloadFrom(
     folly::io::Cursor& cur,
     FrameFlags flags) {
-  auto metadata = deserializeMetadataFrom(cur, flags);
+  auto metadata = FrameSerializerV0::deserializeMetadataFrom(cur, flags);
   auto data = deserializeDataFrom(cur);
   return Payload(std::move(data), std::move(metadata));
 }
@@ -255,6 +251,10 @@ static void serializePayloadInto(
   if (payload.data) {
     appender.insert(std::move(payload.data));
   }
+}
+
+static uint32_t payloadFramingSize(const Payload& payload) {
+  return (payload.metadata != nullptr ? sizeof(uint32_t) : 0);
 }
 
 static std::unique_ptr<folly::IOBuf> serializeOutInternal(

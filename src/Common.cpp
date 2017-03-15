@@ -78,6 +78,11 @@ ResumeIdentificationToken ResumeIdentificationToken::generateNew() {
   return ResumeIdentificationToken(std::move(data));
 }
 
+void ResumeIdentificationToken::set(std::vector<uint8_t> newBits) {
+  CHECK(newBits.size() <= std::numeric_limits<uint16_t>::max());
+  bits_ = std::move(newBits);
+}
+
 std::ostream& operator<<(
     std::ostream& out,
     const ResumeIdentificationToken& token) {

@@ -6,7 +6,7 @@
 #include <folly/io/IOBuf.h>
 #include "src/Frame.h"
 #include "src/Payload.h"
-#include "src/versions/FrameSerializer_v0.h"
+#include "src/versions/FrameSerializer_v0_1.h"
 
 using namespace ::testing;
 using namespace ::reactivesocket;
@@ -32,5 +32,6 @@ TEST(PayloadTest, GiantMetadata) {
   folly::io::Cursor cur(metadata.get());
 
   EXPECT_THROW(
-      deserializeMetadataFrom(cur, FrameFlags::METADATA), std::runtime_error);
+      FrameSerializerV0_1::deserializeMetadataFrom(cur, FrameFlags::METADATA),
+      std::runtime_error);
 }
