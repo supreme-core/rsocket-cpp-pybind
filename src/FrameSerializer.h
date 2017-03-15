@@ -68,7 +68,7 @@ class FrameSerializer {
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_N&&) = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_METADATA_PUSH&&) = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_CANCEL&&) = 0;
-  virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESPONSE&&) = 0;
+  virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_PAYLOAD&&) = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_ERROR&&) = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(
       Frame_KEEPALIVE&&,
@@ -100,7 +100,7 @@ class FrameSerializer {
       Frame_CANCEL&,
       std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(
-      Frame_RESPONSE&,
+      Frame_PAYLOAD&,
       std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(Frame_ERROR&, std::unique_ptr<folly::IOBuf>) = 0;
   virtual bool deserializeFrom(

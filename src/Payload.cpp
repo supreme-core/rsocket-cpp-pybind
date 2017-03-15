@@ -1,9 +1,9 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "Payload.h"
-
+#include "src/Payload.h"
 #include <folly/String.h>
 #include <folly/io/Cursor.h>
+#include "src/Frame.h"
 
 namespace reactivesocket {
 
@@ -22,7 +22,7 @@ Payload::Payload(const std::string& _data, const std::string& _metadata)
 }
 
 void Payload::checkFlags(FrameFlags flags) const {
-  assert(bool(flags & FrameFlags_METADATA) == bool(metadata));
+  DCHECK(!!(flags & FrameFlags::METADATA) == bool(metadata));
 }
 
 void Payload::serializeMetadataInto(
@@ -34,7 +34,7 @@ void Payload::serializeMetadataInto(
 
   // Use signed int because the first bit in metadata length is reserved.
   if (metadata->length() >= kMaxMetadataLength - sizeof(uint32_t)) {
-    throw std::runtime_error("Metadata is too big to serialize");
+    CHECK(false) << "Metadata is too big to serialize";
   }
 
   appender.writeBE<uint32_t>(
@@ -52,7 +52,7 @@ void Payload::serializeInto(folly::io::QueueAppender& appender) {
 std::unique_ptr<folly::IOBuf> Payload::deserializeMetadataFrom(
     folly::io::Cursor& cur,
     FrameFlags flags) {
-  if ((flags & FrameFlags_METADATA) == 0) {
+  if (!(flags & FrameFlags::METADATA)) {
     return nullptr;
   }
 
@@ -116,6 +116,10 @@ std::string Payload::moveDataToString() {
 void Payload::clear() {
   data.reset();
   metadata.reset();
+}
+
+FrameFlags Payload::getFlags() const {
+  return (metadata != nullptr ? FrameFlags::METADATA : FrameFlags::EMPTY);
 }
 
 } // reactivesocket

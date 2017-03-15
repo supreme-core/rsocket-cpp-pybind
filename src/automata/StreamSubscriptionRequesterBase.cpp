@@ -28,8 +28,7 @@ void StreamSubscriptionRequesterBase::requestImpl(size_t n) noexcept {
       // We must inform ConsumerMixin about an implicit allowance we have
       // requested from the remote end.
       addImplicitAllowance(initialN);
-      sendRequestFrame(
-          FrameFlags_REQN_PRESENT, initialN, std::move(initialPayload_));
+      sendRequestFrame(initialN, std::move(initialPayload_));
 
       // Pump the remaining allowance into the ConsumerMixin _after_ sending the
       // initial request.
@@ -77,7 +76,7 @@ void StreamSubscriptionRequesterBase::endStream(StreamCompletionSignal signal) {
   Base::endStream(signal);
 }
 
-void StreamSubscriptionRequesterBase::onNextFrame(Frame_RESPONSE&& frame) {
+void StreamSubscriptionRequesterBase::onNextFrame(Frame_PAYLOAD&& frame) {
   bool end = false;
   switch (state_) {
     case State::NEW:
@@ -85,7 +84,7 @@ void StreamSubscriptionRequesterBase::onNextFrame(Frame_RESPONSE&& frame) {
       CHECK(false);
       break;
     case State::REQUESTED:
-      if (frame.header_.flags_ & FrameFlags_COMPLETE) {
+      if (!!(frame.header_.flags_ & FrameFlags::COMPLETE)) {
         state_ = State::CLOSED;
         end = true;
       }

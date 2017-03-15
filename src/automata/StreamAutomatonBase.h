@@ -20,7 +20,7 @@ class Frame_REQUEST_CHANNEL;
 class Frame_REQUEST_N;
 class Frame_REQUEST_RESPONSE;
 class Frame_REQUEST_STREAM;
-class Frame_RESPONSE;
+class Frame_PAYLOAD;
 class RequestHandler;
 
 ///
@@ -86,7 +86,7 @@ class StreamAutomatonBase {
   virtual void onNextFrame(Frame_REQUEST_RESPONSE&&);
   virtual void onNextFrame(Frame_REQUEST_N&&);
   virtual void onNextFrame(Frame_CANCEL&&);
-  virtual void onNextFrame(Frame_RESPONSE&&);
+  virtual void onNextFrame(Frame_PAYLOAD&&);
   virtual void onNextFrame(Frame_ERROR&&);
 
  private:

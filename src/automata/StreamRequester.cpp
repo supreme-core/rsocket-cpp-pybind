@@ -5,11 +5,13 @@
 namespace reactivesocket {
 
 void StreamRequester::sendRequestFrame(
-    FrameFlags flags,
     size_t initialN,
     Payload&& request) {
   Frame_REQUEST_STREAM frame(
-      streamId_, flags, static_cast<uint32_t>(initialN), std::move(request));
+      streamId_,
+      FrameFlags::EMPTY,
+      static_cast<uint32_t>(initialN),
+      std::move(request));
   connection_->outputFrameOrEnqueue(
       connection_->frameSerializer().serializeOut(std::move(frame)));
 }

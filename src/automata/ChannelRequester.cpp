@@ -28,10 +28,9 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
       size_t remainingN = initialResponseAllowance_.drain();
       // Send as much as possible with the initial request.
       CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
-      auto flags = initialN > 0 ? FrameFlags_REQN_PRESENT : FrameFlags_EMPTY;
       Frame_REQUEST_CHANNEL frame(
           streamId_,
-          flags,
+          FrameFlags::EMPTY,
           static_cast<uint32_t>(initialN),
           std::move(request));
       // We must inform ConsumerMixin about an implicit allowance we have
@@ -48,7 +47,7 @@ void ChannelRequester::onNextImpl(Payload request) noexcept {
     case State::REQUESTED: {
       debugCheckOnNextOnCompleteOnError();
       Frame_REQUEST_CHANNEL frame(
-          streamId_, FrameFlags_EMPTY, std::move(request));
+          streamId_, FrameFlags::EMPTY, std::move(request));
       connection_->outputFrameOrEnqueue(
           connection_->frameSerializer().serializeOut(std::move(frame)));
       break;
@@ -68,7 +67,7 @@ void ChannelRequester::onCompleteImpl() noexcept {
     case State::REQUESTED: {
       state_ = State::CLOSED;
       auto frame =
-          Frame_REQUEST_CHANNEL(streamId_, FrameFlags_COMPLETE, 0, Payload());
+          Frame_REQUEST_CHANNEL(streamId_, FrameFlags::COMPLETE, 0, Payload());
       connection_->outputFrameOrEnqueue(
           connection_->frameSerializer().serializeOut(std::move(frame)));
       connection_->endStream(streamId_, StreamCompletionSignal::GRACEFUL);
@@ -145,7 +144,7 @@ void ChannelRequester::endStream(StreamCompletionSignal signal) {
   ConsumerMixin::endStream(signal);
 }
 
-void ChannelRequester::onNextFrame(Frame_RESPONSE&& frame) {
+void ChannelRequester::onNextFrame(Frame_PAYLOAD&& frame) {
   bool end = false;
   switch (state_) {
     case State::NEW:
@@ -153,7 +152,7 @@ void ChannelRequester::onNextFrame(Frame_RESPONSE&& frame) {
       CHECK(false);
       break;
     case State::REQUESTED:
-      if (frame.header_.flags_ & FrameFlags_COMPLETE) {
+      if (!!(frame.header_.flags_ & FrameFlags::COMPLETE)) {
         state_ = State::CLOSED;
         end = true;
       }

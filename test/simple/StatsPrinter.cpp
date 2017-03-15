@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "StatsPrinter.h"
+#include "test/simple/StatsPrinter.h"
+#include <glog/logging.h>
 
 namespace reactivesocket {
 void StatsPrinter::socketCreated() {

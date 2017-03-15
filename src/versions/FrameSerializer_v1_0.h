@@ -11,13 +11,8 @@ class FrameSerializerV1_0 : public FrameSerializer {
   constexpr static const ProtocolVersion Version = ProtocolVersion(1, 0);
   ProtocolVersion protocolVersion() override;
 
-  FrameType peekFrameType(const folly::IOBuf& in) override {
-    throw std::runtime_error("v1 serialization not implemented");
-  }
-
-  folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) override {
-    throw std::runtime_error("v1 serialization not implemented");
-  }
+  FrameType peekFrameType(const folly::IOBuf& in) override;
+  folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) override;
 
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_STREAM&&) override {
     throw std::runtime_error("v1 serialization not implemented");
@@ -48,7 +43,7 @@ class FrameSerializerV1_0 : public FrameSerializer {
     throw std::runtime_error("v1 serialization not implemented");
   }
 
-  std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESPONSE&&) override {
+  std::unique_ptr<folly::IOBuf> serializeOut(Frame_PAYLOAD&&) override {
     throw std::runtime_error("v1 serialization not implemented");
   }
 
@@ -110,8 +105,7 @@ class FrameSerializerV1_0 : public FrameSerializer {
     throw std::runtime_error("v1 serialization not implemented");
   }
 
-  bool deserializeFrom(Frame_RESPONSE&, std::unique_ptr<folly::IOBuf>)
-      override {
+  bool deserializeFrom(Frame_PAYLOAD&, std::unique_ptr<folly::IOBuf>) override {
     throw std::runtime_error("v1 serialization not implemented");
   }
 
@@ -140,5 +134,11 @@ class FrameSerializerV1_0 : public FrameSerializer {
       override {
     throw std::runtime_error("v1 serialization not implemented");
   }
+
+ private:
+  void serializeHeaderInto(
+      folly::io::QueueAppender& appender,
+      const FrameHeader& header);
+  void deserializeHeaderFrom(folly::io::Cursor& cur, FrameHeader& header);
 };
 } // reactivesocket

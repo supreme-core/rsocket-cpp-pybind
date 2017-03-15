@@ -17,9 +17,7 @@ class QueueAppender;
 
 namespace reactivesocket {
 
-// TODO(lehecka): share the definition with Frame.h
-using FrameFlags = uint16_t;
-const FrameFlags FrameFlags_METADATA = 0x4000;
+enum class FrameFlags : uint16_t;
 
 /// The type of a read-only view on a binary buffer.
 /// MUST manage the lifetime of the underlying buffer.
@@ -37,9 +35,7 @@ struct Payload {
     return data != nullptr || metadata != nullptr;
   }
 
-  FrameFlags getFlags() const {
-    return (metadata != nullptr ? FrameFlags_METADATA : 0);
-  }
+  FrameFlags getFlags() const;
 
   void checkFlags(FrameFlags flags) const;
 

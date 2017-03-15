@@ -25,14 +25,14 @@ class StreamSubscriptionRequesterBase : public ConsumerMixin {
 
  private:
   /// Override in subclass to send the correct type of request frame
-  virtual void sendRequestFrame(FrameFlags, size_t, Payload&&) = 0;
+  virtual void sendRequestFrame(size_t, Payload&&) = 0;
 
   // implementation from ConsumerMixin::SubscriptionBase
   void requestImpl(size_t) noexcept override;
   void cancelImpl() noexcept override;
 
   using Base::onNextFrame;
-  void onNextFrame(Frame_RESPONSE&&) override;
+  void onNextFrame(Frame_PAYLOAD&&) override;
   void onNextFrame(Frame_ERROR&&) override;
 
   void endStream(StreamCompletionSignal) override;

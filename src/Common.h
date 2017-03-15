@@ -21,6 +21,10 @@ class exception_wrapper;
 namespace reactivesocket {
 
 class ReactiveSocket;
+enum class FrameType : uint8_t;
+
+std::string to_string(FrameType);
+std::ostream& operator<<(std::ostream&, FrameType);
 
 using ErrorCallback =
     std::function<void(const folly::exception_wrapper&) noexcept>;

@@ -22,6 +22,6 @@ class StreamRequester : public StreamSubscriptionRequesterBase {
       : ExecutorBase(params.executor), Base(params, std::move(payload)) {}
 
  private:
-  void sendRequestFrame(FrameFlags, size_t, Payload&&) override;
+  void sendRequestFrame(size_t, Payload&&) override;
 };
 } // reactivesocket

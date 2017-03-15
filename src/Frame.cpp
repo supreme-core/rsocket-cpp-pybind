@@ -7,9 +7,6 @@
 #include <bitset>
 #include "src/ConnectionSetupPayload.h"
 
-// TODO(stupaq): strict enum validation
-// TODO(stupaq): verify whether frames contain extra data
-// TODO(stupaq): get rid of these try-catch blocks
 namespace reactivesocket {
 
 std::unique_ptr<folly::IOBuf> FrameBufferAllocator::allocate(size_t size) {
@@ -39,8 +36,8 @@ std::string to_string(FrameType type) {
       return "REQUEST_FNF";
     case FrameType::CANCEL:
       return "CANCEL";
-    case FrameType::RESPONSE:
-      return "RESPONSE";
+    case FrameType::PAYLOAD:
+      return "PAYLOAD";
     case FrameType::ERROR:
       return "ERROR";
     case FrameType::RESERVED:
@@ -57,6 +54,8 @@ std::string to_string(FrameType type) {
       return "RESUME";
     case FrameType::RESUME_OK:
       return "RESUME_OK";
+    case FrameType::EXT:
+      return "EXT";
   }
   // this should be never hit because the switch is over all cases
   LOG(FATAL) << "unknown FrameType=" << static_cast<int>(type);
@@ -90,9 +89,14 @@ std::ostream& operator<<(std::ostream& os, ErrorCode errorCode) {
   return os << "ErrorCode(" << static_cast<uint32_t>(errorCode) << ")";
 }
 
+std::ostream& operator<<(std::ostream& os, FrameFlags frameFlags) {
+  std::bitset<16> flags(static_cast<uint16_t>(frameFlags));
+  return os << flags;
+}
+
 std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
-  std::bitset<16> flags(header.flags_);
-  return os << header.type_ << "[" << flags << ", " << header.streamId_ << "]";
+  return os << header.type_ << "[" << header.flags_ << ", " << header.streamId_
+            << "]";
 }
 /// @}
 
@@ -127,11 +131,11 @@ std::ostream& operator<<(std::ostream& os, const Frame_CANCEL& frame) {
                                 : 0);
 }
 
-Frame_RESPONSE Frame_RESPONSE::complete(StreamId streamId) {
-  return Frame_RESPONSE(streamId, FrameFlags_COMPLETE, Payload());
+Frame_PAYLOAD Frame_PAYLOAD::complete(StreamId streamId) {
+  return Frame_PAYLOAD(streamId, FrameFlags::COMPLETE, Payload());
 }
 
-std::ostream& operator<<(std::ostream& os, const Frame_RESPONSE& frame) {
+std::ostream& operator<<(std::ostream& os, const Frame_PAYLOAD& frame) {
   return os << frame.header_ << ", (" << frame.payload_;
 }
 
@@ -186,7 +190,7 @@ void Frame_SETUP::moveToSetupPayload(ConnectionSetupPayload& setupPayload) {
   setupPayload.dataMimeType = std::move(dataMimeType_);
   setupPayload.payload = std::move(payload_);
   setupPayload.token = std::move(token_);
-  setupPayload.resumable = header_.flags_ & FrameFlags_RESUME_ENABLE;
+  setupPayload.resumable = !!(header_.flags_ & FrameFlags::RESUME_ENABLE);
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_LEASE& frame) {

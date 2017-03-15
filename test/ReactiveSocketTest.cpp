@@ -374,8 +374,7 @@ TEST(ReactiveSocketTest, RequestStream) {
       }));
   // The request reaches the other end and triggers new responder to be set up.
   EXPECT_CALL(
-      serverHandlerRef,
-      handleRequestStream_(Equals(&originalPayload), _, _))
+      serverHandlerRef, handleRequestStream_(Equals(&originalPayload), _, _))
       .InSequence(s)
       .WillOnce(Invoke(
           [&](Payload& request,
@@ -415,8 +414,7 @@ TEST(ReactiveSocketTest, RequestStream) {
   EXPECT_CALL(*clientInput, onComplete_()).InSequence(s1);
 
   // Kick off the magic.
-  clientSock->requestStream(
-      Payload(originalPayload->clone()), clientInput);
+  clientSock->requestStream(Payload(originalPayload->clone()), clientInput);
 }
 
 TEST(ReactiveSocketTest, RequestStreamSendsOneRequest) {
@@ -520,8 +518,7 @@ TEST(ReactiveSocketTest, RequestStreamSurplusResponse) {
       }));
   // The request reaches the other end and triggers new responder to be set up.
   EXPECT_CALL(
-      serverHandlerRef,
-      handleRequestStream_(Equals(&originalPayload), _, _))
+      serverHandlerRef, handleRequestStream_(Equals(&originalPayload), _, _))
       .InSequence(s)
       .WillOnce(Invoke(
           [&](Payload& request,
@@ -548,8 +545,7 @@ TEST(ReactiveSocketTest, RequestStreamSurplusResponse) {
   }));
 
   // Kick off the magic.
-  clientSock->requestStream(
-      Payload(originalPayload->clone()), clientInput);
+  clientSock->requestStream(Payload(originalPayload->clone()), clientInput);
 }
 
 TEST(ReactiveSocketTest, RequestResponse) {
@@ -898,8 +894,7 @@ TEST(ReactiveSocketTest, Destructor) {
     // The request reaches the other end and triggers new responder to be set
     // up.
     EXPECT_CALL(
-        serverHandlerRef,
-        handleRequestStream_(Equals(&originalPayload), _, _))
+        serverHandlerRef, handleRequestStream_(Equals(&originalPayload), _, _))
         .InSequence(s)
         .WillOnce(Invoke([i, &serverOutputs, &serverOutputSubs](
             Payload& request,

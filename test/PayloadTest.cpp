@@ -4,7 +4,7 @@
 
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
-
+#include "src/Frame.h"
 #include "src/Payload.h"
 
 using namespace ::testing;
@@ -31,6 +31,6 @@ TEST(PayloadTest, GiantMetadata) {
   folly::io::Cursor cur(metadata.get());
 
   EXPECT_THROW(
-      Payload::deserializeMetadataFrom(cur, FrameFlags_METADATA),
+      Payload::deserializeMetadataFrom(cur, FrameFlags::METADATA),
       std::runtime_error);
 }

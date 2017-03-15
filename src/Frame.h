@@ -27,26 +27,23 @@ namespace reactivesocket {
 // TODO(stupaq): strong typedef and forward declarations all around
 using StreamId = uint32_t;
 
-enum class FrameType : uint16_t {
-  // TODO(stupaq): commented frame types indicate unimplemented frames
-  RESERVED = 0x0000,
-  SETUP = 0x0001,
-  LEASE = 0x0002,
-  KEEPALIVE = 0x0003,
-  REQUEST_RESPONSE = 0x0004,
-  REQUEST_FNF = 0x0005,
-  REQUEST_STREAM = 0x0006,
-  // will be handled in protocol 1.0 compatibility section
-  // removed REQUEST_SUB = 0x0007,
-  REQUEST_CHANNEL = 0x0008,
-  REQUEST_N = 0x0009,
-  CANCEL = 0x000A,
-  RESPONSE = 0x000B,
-  ERROR = 0x000C,
-  METADATA_PUSH = 0x000D,
-  RESUME = 0x000E,
-  RESUME_OK = 0x000F
-  // EXT = 0xFFFF,
+enum class FrameType : uint8_t {
+  RESERVED = 0x00,
+  SETUP = 0x01,
+  LEASE = 0x02,
+  KEEPALIVE = 0x03,
+  REQUEST_RESPONSE = 0x04,
+  REQUEST_FNF = 0x05,
+  REQUEST_STREAM = 0x06,
+  REQUEST_CHANNEL = 0x07,
+  REQUEST_N = 0x08,
+  CANCEL = 0x09,
+  PAYLOAD = 0x0A,
+  ERROR = 0x0B,
+  METADATA_PUSH = 0x0C,
+  RESUME = 0x0D,
+  RESUME_OK = 0x0E,
+  EXT = 0x3F,
 };
 std::string to_string(FrameType);
 std::ostream& operator<<(std::ostream&, FrameType);
@@ -81,22 +78,61 @@ enum class ErrorCode : uint32_t {
 };
 std::ostream& operator<<(std::ostream&, ErrorCode);
 
-// TODO(stupaq): strong typedef
-using FrameFlags = uint16_t;
-const FrameFlags FrameFlags_EMPTY = 0x0000;
-// const FrameFlags FrameFlags_IGNORE = 0x8000;
-// const FrameFlags FrameFlags_METADATA = 0x4000;
-// const FrameFlags FrameFlags_FOLLOWS = 0x2000;
-const FrameFlags FrameFlags_KEEPALIVE_RESPOND = 0x2000;
-const FrameFlags FrameFlags_LEASE = 0x2000;
-const FrameFlags FrameFlags_COMPLETE = 0x1000;
-// const FrameFlags FrameFlags_STRICT = 0x1000;
-const FrameFlags FrameFlags_REQN_PRESENT = 0x0800;
-const FrameFlags FrameFlags_RESUME_ENABLE = 0x0800;
+enum class FrameFlags : uint16_t {
+  EMPTY = 0x000,
+  IGNORE = 0x200,
+  METADATA = 0x100,
+
+  // SETUP frame
+  RESUME_ENABLE = 0x80,
+  LEASE = 0x40,
+  STRICT = 0x20,
+
+  // KEEPALIVE frame
+  KEEPALIVE_RESPOND = 0x80,
+
+  // REQUEST_RESPONSE, REQUEST_FNF, REQUEST_STREAM, REQUEST_CHANNEL,
+  // PAYLOAD frame
+  FOLLOWS = 0x80,
+
+  // REQUEST_CHANNEL, PAYLOAD frame
+  COMPLETE = 0x40,
+
+  // PAYLOAD frame
+  NEXT = 0x20,
+};
+
+std::ostream& operator<<(std::ostream&, FrameFlags);
+
+constexpr inline FrameFlags operator|(FrameFlags a, FrameFlags b) {
+  return static_cast<FrameFlags>(
+      static_cast<uint16_t>(a) | static_cast<uint16_t>(b));
+}
+
+constexpr inline FrameFlags operator&(FrameFlags a, FrameFlags b) {
+  return static_cast<FrameFlags>(
+      static_cast<uint16_t>(a) & static_cast<uint16_t>(b));
+}
+
+inline FrameFlags& operator|=(FrameFlags& a, FrameFlags b) {
+  return a = (a | b);
+}
+
+inline FrameFlags& operator&=(FrameFlags& a, FrameFlags b) {
+  return a = (a & b);
+}
+
+constexpr inline bool operator!(FrameFlags a) {
+  return !static_cast<uint16_t>(a);
+}
+
+constexpr inline FrameFlags operator~(FrameFlags a) {
+  return static_cast<FrameFlags>(~static_cast<uint16_t>(a));
+}
 
 class FrameHeader {
  public:
-  static constexpr size_t kSize = 8;
+  static constexpr size_t kSize = 6;
 
   FrameHeader() {
 #ifndef NDEBUG
@@ -110,6 +146,7 @@ class FrameHeader {
   FrameFlags flags_;
   StreamId streamId_;
 };
+
 std::ostream& operator<<(std::ostream&, const FrameHeader&);
 
 class FrameBufferAllocator {
@@ -162,6 +199,9 @@ std::ostream& operator<<(std::ostream&, const Frame_REQUEST_Base&);
 
 class Frame_REQUEST_STREAM : public Frame_REQUEST_Base {
  public:
+  constexpr static const FrameFlags AllowedFlags =
+      FrameFlags::METADATA | FrameFlags::FOLLOWS;
+
   Frame_REQUEST_STREAM() = default;
   Frame_REQUEST_STREAM(
       StreamId streamId,
@@ -177,11 +217,18 @@ class Frame_REQUEST_STREAM : public Frame_REQUEST_Base {
 
   /// For compatibility with other data-carrying frames.
   Frame_REQUEST_STREAM(StreamId streamId, FrameFlags flags, Payload payload)
-      : Frame_REQUEST_STREAM(streamId, flags, 0, std::move(payload)) {}
+      : Frame_REQUEST_STREAM(
+            streamId,
+            flags & AllowedFlags,
+            0,
+            std::move(payload)) {}
 };
 
 class Frame_REQUEST_CHANNEL : public Frame_REQUEST_Base {
  public:
+  constexpr static const FrameFlags AllowedFlags =
+      FrameFlags::METADATA | FrameFlags::FOLLOWS | FrameFlags::COMPLETE;
+
   Frame_REQUEST_CHANNEL() = default;
   Frame_REQUEST_CHANNEL(
       StreamId streamId,
@@ -197,16 +244,23 @@ class Frame_REQUEST_CHANNEL : public Frame_REQUEST_Base {
 
   /// For compatibility with other data-carrying frames.
   Frame_REQUEST_CHANNEL(StreamId streamId, FrameFlags flags, Payload payload)
-      : Frame_REQUEST_CHANNEL(streamId, flags, 0, std::move(payload)) {}
+      : Frame_REQUEST_CHANNEL(
+            streamId,
+            flags & AllowedFlags,
+            0,
+            std::move(payload)) {}
 };
 
 class Frame_REQUEST_RESPONSE {
  public:
+  constexpr static const FrameFlags AllowedFlags =
+      FrameFlags::METADATA | FrameFlags::FOLLOWS;
+
   Frame_REQUEST_RESPONSE() = default;
   Frame_REQUEST_RESPONSE(StreamId streamId, FrameFlags flags, Payload payload)
       : header_(
             FrameType::REQUEST_RESPONSE,
-            flags | payload.getFlags(),
+            (flags & AllowedFlags) | payload.getFlags(),
             streamId),
         payload_(std::move(payload)) {
     payload_.checkFlags(header_.flags_); // to verify the client didn't set
@@ -220,9 +274,15 @@ std::ostream& operator<<(std::ostream&, const Frame_REQUEST_RESPONSE&);
 
 class Frame_REQUEST_FNF {
  public:
+  constexpr static const FrameFlags AllowedFlags =
+      FrameFlags::METADATA | FrameFlags::FOLLOWS;
+
   Frame_REQUEST_FNF() = default;
   Frame_REQUEST_FNF(StreamId streamId, FrameFlags flags, Payload payload)
-      : header_(FrameType::REQUEST_FNF, flags | payload.getFlags(), streamId),
+      : header_(
+            FrameType::REQUEST_FNF,
+            (flags & AllowedFlags) | payload.getFlags(),
+            streamId),
         payload_(std::move(payload)) {
     payload_.checkFlags(header_.flags_); // to verify the client didn't set
     // METADATA and provided none
@@ -245,7 +305,7 @@ class Frame_REQUEST_N {
 
   Frame_REQUEST_N() = default;
   Frame_REQUEST_N(StreamId streamId, uint32_t requestN)
-      : header_(FrameType::REQUEST_N, FrameFlags_EMPTY, streamId),
+      : header_(FrameType::REQUEST_N, FrameFlags::EMPTY, streamId),
         requestN_(requestN) {}
 
   FrameHeader header_;
@@ -257,7 +317,7 @@ class Frame_METADATA_PUSH {
  public:
   Frame_METADATA_PUSH() {}
   explicit Frame_METADATA_PUSH(std::unique_ptr<folly::IOBuf> metadata)
-      : header_(FrameType::METADATA_PUSH, FrameFlags_METADATA, 0),
+      : header_(FrameType::METADATA_PUSH, FrameFlags::METADATA, 0),
         metadata_(std::move(metadata)) {
     CHECK(metadata_);
   }
@@ -269,13 +329,15 @@ std::ostream& operator<<(std::ostream&, const Frame_METADATA_PUSH&);
 
 class Frame_CANCEL {
  public:
+  constexpr static const FrameFlags AllowedFlags = FrameFlags::METADATA;
+
   Frame_CANCEL() = default;
   explicit Frame_CANCEL(
       StreamId streamId,
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
       : header_(
             FrameType::CANCEL,
-            metadata ? FrameFlags_METADATA : 0,
+            metadata ? FrameFlags::METADATA : FrameFlags::EMPTY,
             streamId),
         metadata_(std::move(metadata)) {}
 
@@ -284,25 +346,33 @@ class Frame_CANCEL {
 };
 std::ostream& operator<<(std::ostream&, const Frame_CANCEL&);
 
-class Frame_RESPONSE {
+class Frame_PAYLOAD {
  public:
-  Frame_RESPONSE() = default;
-  Frame_RESPONSE(StreamId streamId, FrameFlags flags, Payload payload)
-      : header_(FrameType::RESPONSE, flags | payload.getFlags(), streamId),
+  constexpr static const FrameFlags AllowedFlags = FrameFlags::METADATA |
+      FrameFlags::FOLLOWS | FrameFlags::COMPLETE | FrameFlags::NEXT;
+
+  Frame_PAYLOAD() = default;
+  Frame_PAYLOAD(StreamId streamId, FrameFlags flags, Payload payload)
+      : header_(
+            FrameType::PAYLOAD,
+            (flags & AllowedFlags) | payload.getFlags(),
+            streamId),
         payload_(std::move(payload)) {
     payload_.checkFlags(header_.flags_); // to verify the client didn't set
     // METADATA and provided none
   }
 
-  static Frame_RESPONSE complete(StreamId streamId);
+  static Frame_PAYLOAD complete(StreamId streamId);
 
   FrameHeader header_;
   Payload payload_;
 };
-std::ostream& operator<<(std::ostream&, const Frame_RESPONSE&);
+std::ostream& operator<<(std::ostream&, const Frame_PAYLOAD&);
 
 class Frame_ERROR {
  public:
+  constexpr static const FrameFlags AllowedFlags = FrameFlags::METADATA;
+
   Frame_ERROR() = default;
   Frame_ERROR(StreamId streamId, ErrorCode errorCode, Payload payload)
       : header_(FrameType::ERROR, payload.getFlags(), streamId),
@@ -326,16 +396,17 @@ std::ostream& operator<<(std::ostream&, const Frame_ERROR&);
 
 class Frame_KEEPALIVE {
  public:
+  constexpr static const FrameFlags AllowedFlags =
+      FrameFlags::KEEPALIVE_RESPOND;
+
   Frame_KEEPALIVE() = default;
   Frame_KEEPALIVE(
       FrameFlags flags,
       ResumePosition position,
       std::unique_ptr<folly::IOBuf> data)
-      : header_(FrameType::KEEPALIVE, flags, 0),
+      : header_(FrameType::KEEPALIVE, flags & AllowedFlags, 0),
         position_(position),
-        data_(std::move(data)) {
-    assert(!(flags & FrameFlags_METADATA));
-  }
+        data_(std::move(data)) {}
 
   FrameHeader header_;
   ResumePosition position_;
@@ -347,6 +418,9 @@ class ConnectionSetupPayload;
 
 class Frame_SETUP {
  public:
+  constexpr static const FrameFlags AllowedFlags = FrameFlags::METADATA |
+      FrameFlags::RESUME_ENABLE | FrameFlags::LEASE | FrameFlags::STRICT;
+
   Frame_SETUP() = default;
   Frame_SETUP(
       FrameFlags flags,
@@ -358,7 +432,10 @@ class Frame_SETUP {
       std::string metadataMimeType,
       std::string dataMimeType,
       Payload payload)
-      : header_(FrameType::SETUP, flags | payload.getFlags(), 0),
+      : header_(
+            FrameType::SETUP,
+            (flags & AllowedFlags) | payload.getFlags(),
+            0),
         versionMajor_(versionMajor),
         versionMinor_(versionMinor),
         keepaliveTime_(keepaliveTime),
@@ -388,12 +465,17 @@ std::ostream& operator<<(std::ostream&, const Frame_SETUP&);
 
 class Frame_LEASE {
  public:
+  constexpr static const FrameFlags AllowedFlags = FrameFlags::METADATA;
+
   Frame_LEASE() = default;
   Frame_LEASE(
       uint32_t ttl,
       uint32_t numberOfRequests,
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>())
-      : header_(FrameType::LEASE, metadata ? FrameFlags_METADATA : 0, 0),
+      : header_(
+            FrameType::LEASE,
+            metadata ? FrameFlags::METADATA : FrameFlags::EMPTY,
+            0),
         ttl_(ttl),
         numberOfRequests_(numberOfRequests),
         metadata_(std::move(metadata)) {}
@@ -410,7 +492,9 @@ class Frame_RESUME {
  public:
   Frame_RESUME() = default;
   Frame_RESUME(const ResumeIdentificationToken& token, ResumePosition position)
-      : header_(FrameType::RESUME, 0, 0), token_(token), position_(position) {}
+      : header_(FrameType::RESUME, FrameFlags::EMPTY, 0),
+        token_(token),
+        position_(position) {}
 
   FrameHeader header_;
   ResumeIdentificationToken token_;
@@ -423,7 +507,8 @@ class Frame_RESUME_OK {
  public:
   Frame_RESUME_OK() = default;
   explicit Frame_RESUME_OK(ResumePosition position)
-      : header_(FrameType::RESUME_OK, 0, 0), position_(position) {}
+      : header_(FrameType::RESUME_OK, FrameFlags::EMPTY, 0),
+        position_(position) {}
 
   FrameHeader header_;
   ResumePosition position_;

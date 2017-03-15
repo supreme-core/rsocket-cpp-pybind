@@ -515,7 +515,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
         false);
 
     Frame_SETUP frameSetup(
-        FrameFlags_EMPTY,
+        FrameFlags::EMPTY,
         0,
         1,
         0,
@@ -554,7 +554,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
 
 TEST_F(InitialRequestNDeliveredTest, RequestResponse) {
   expectedRequestN = 1;
-  Frame_REQUEST_RESPONSE requestFrame(kStreamId, FrameFlags_EMPTY, Payload());
+  Frame_REQUEST_RESPONSE requestFrame(kStreamId, FrameFlags::EMPTY, Payload());
   testConnection->getOutput()->onNext(
       frameSerializer.serializeOut(std::move(requestFrame)));
   loopEventBaseUntilDone();
@@ -562,7 +562,7 @@ TEST_F(InitialRequestNDeliveredTest, RequestResponse) {
 
 TEST_F(InitialRequestNDeliveredTest, RequestStream) {
   Frame_REQUEST_STREAM requestFrame(
-      kStreamId, FrameFlags_EMPTY, kRequestN, Payload());
+      kStreamId, FrameFlags::EMPTY, kRequestN, Payload());
   testConnection->getOutput()->onNext(
       frameSerializer.serializeOut(std::move(requestFrame)));
   loopEventBaseUntilDone();

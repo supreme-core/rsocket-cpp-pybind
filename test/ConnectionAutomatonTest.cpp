@@ -21,11 +21,14 @@ using namespace ::reactivesocket;
 static std::unique_ptr<folly::IOBuf> makeInvalidFrameHeader() {
   // Create a header without the stream id
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
+
+  static_assert(
+      FrameHeader::kSize > sizeof(StreamId), "this test needs to be fixed");
   queue.append(folly::IOBuf::create(FrameHeader::kSize - sizeof(StreamId)));
 
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   appender.writeBE<uint16_t>(static_cast<uint16_t>(FrameType::REQUEST_N));
-  appender.writeBE<uint16_t>(FrameFlags_EMPTY);
+  appender.writeBE<uint16_t>(static_cast<uint16_t>(FrameFlags::EMPTY));
   return queue.move();
 }
 

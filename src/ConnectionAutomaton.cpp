@@ -395,8 +395,8 @@ void ConnectionAutomaton::onConnectionFrame(
         return;
       }
       if (mode_ == ReactiveSocketMode::SERVER) {
-        if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
-          sendKeepalive(FrameFlags_EMPTY, std::move(frame.data_));
+        if (!!(frame.header_.flags_ & FrameFlags::KEEPALIVE_RESPOND)) {
+          sendKeepalive(FrameFlags::EMPTY, std::move(frame.data_));
         } else {
           closeWithError(
               Frame_ERROR::connectionError("keepalive without flag"));
@@ -404,7 +404,7 @@ void ConnectionAutomaton::onConnectionFrame(
 
         streamState_->resumeCache_.resetUpToPosition(frame.position_);
       } else {
-        if (frame.header_.flags_ & FrameFlags_KEEPALIVE_RESPOND) {
+        if (!!(frame.header_.flags_ & FrameFlags::KEEPALIVE_RESPOND)) {
           closeWithError(Frame_ERROR::connectionError(
               "client received keepalive with respond flag"));
         } else if (keepaliveTimer_) {
@@ -419,7 +419,7 @@ void ConnectionAutomaton::onConnectionFrame(
       if (!deserializeFrameOrError(frame, payload->clone())) {
         return;
       }
-      if (frame.header_.flags_ & FrameFlags_RESUME_ENABLE) {
+      if (!!(frame.header_.flags_ & FrameFlags::RESUME_ENABLE)) {
         remoteResumeable_ = true;
       } else {
         remoteResumeable_ = false;
@@ -519,7 +519,7 @@ void ConnectionAutomaton::onConnectionFrame(
     case FrameType::REQUEST_CHANNEL:
     case FrameType::REQUEST_N:
     case FrameType::CANCEL:
-    case FrameType::RESPONSE:
+    case FrameType::PAYLOAD:
     default:
       closeWithError(Frame_ERROR::unexpectedFrame());
       return;
@@ -593,7 +593,7 @@ void ConnectionAutomaton::handleUnknownStream(
     case FrameType::RESERVED:
     case FrameType::REQUEST_N:
     case FrameType::CANCEL:
-    case FrameType::RESPONSE:
+    case FrameType::PAYLOAD:
     case FrameType::ERROR:
     case FrameType::RESUME_OK:
     default:
@@ -603,7 +603,7 @@ void ConnectionAutomaton::handleUnknownStream(
 /// @}
 
 void ConnectionAutomaton::sendKeepalive(std::unique_ptr<folly::IOBuf> data) {
-  sendKeepalive(FrameFlags_KEEPALIVE_RESPOND, std::move(data));
+  sendKeepalive(FrameFlags::KEEPALIVE_RESPOND, std::move(data));
 }
 
 void ConnectionAutomaton::sendKeepalive(

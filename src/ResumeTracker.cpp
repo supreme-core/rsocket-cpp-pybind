@@ -30,7 +30,7 @@ bool ResumeTracker::shouldTrackFrame(
     case FrameType::REQUEST_N:
     case FrameType::CANCEL:
     case FrameType::ERROR:
-    case FrameType::RESPONSE:
+    case FrameType::PAYLOAD:
       return true;
 
     case FrameType::RESERVED:

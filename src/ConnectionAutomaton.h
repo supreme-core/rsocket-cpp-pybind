@@ -28,8 +28,6 @@ class RequestHandler;
 class Stats;
 class StreamState;
 
-enum class FrameType : uint16_t;
-
 /// Creates, registers and spins up responder for provided new stream ID and
 /// serialised frame.
 ///

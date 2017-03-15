@@ -6,6 +6,8 @@
 
 namespace reactivesocket {
 
+enum class FrameFlags_V0 : uint16_t;
+
 class FrameSerializerV0 : public FrameSerializer {
  public:
   constexpr static const ProtocolVersion Version = ProtocolVersion(0, 0);
@@ -21,7 +23,7 @@ class FrameSerializerV0 : public FrameSerializer {
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_REQUEST_N&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_METADATA_PUSH&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_CANCEL&&) override;
-  std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESPONSE&&) override;
+  std::unique_ptr<folly::IOBuf> serializeOut(Frame_PAYLOAD&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_ERROR&&) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_KEEPALIVE&&, bool) override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_SETUP&&) override;
@@ -42,7 +44,7 @@ class FrameSerializerV0 : public FrameSerializer {
   bool deserializeFrom(Frame_METADATA_PUSH&, std::unique_ptr<folly::IOBuf>)
       override;
   bool deserializeFrom(Frame_CANCEL&, std::unique_ptr<folly::IOBuf>) override;
-  bool deserializeFrom(Frame_RESPONSE&, std::unique_ptr<folly::IOBuf>) override;
+  bool deserializeFrom(Frame_PAYLOAD&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_ERROR&, std::unique_ptr<folly::IOBuf>) override;
   bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>, bool)
       override;
@@ -55,8 +57,12 @@ class FrameSerializerV0 : public FrameSerializer {
  private:
   void serializeHeaderInto(
       folly::io::QueueAppender& appender,
-      const FrameHeader& header);
-  void deserializeHeaderFrom(folly::io::Cursor& cur, FrameHeader& header);
+      const FrameHeader& header,
+      uint16_t extraFlags);
+  void deserializeHeaderFrom(
+      folly::io::Cursor& cur,
+      FrameHeader& header,
+      FrameFlags_V0& flags);
 
   std::unique_ptr<folly::IOBuf> serializeOutInternal(Frame_REQUEST_Base&&);
   bool deserializeFromInternal(

@@ -68,7 +68,7 @@ void ServerConnectionAcceptor::processFrame(
     case FrameType::REQUEST_RESPONSE:
     case FrameType::REQUEST_STREAM:
     case FrameType::RESERVED:
-    case FrameType::RESPONSE:
+    case FrameType::PAYLOAD:
     case FrameType::RESUME_OK:
     default: {
       transport->outputFrameOrEnqueue(

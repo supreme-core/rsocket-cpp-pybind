@@ -5,10 +5,11 @@
 #include <stdint.h>
 #include <string>
 #include "src/Common.h"
-#include "src/DuplexConnection.h"
-#include "src/Frame.h"
 
 namespace reactivesocket {
+
+class DuplexConnection;
+
 class Stats {
  public:
   virtual ~Stats() = default;
@@ -21,10 +22,10 @@ class Stats {
 
   virtual void duplexConnectionCreated(
       const std::string& type,
-      reactivesocket::DuplexConnection* connection) = 0;
+      DuplexConnection* connection) = 0;
   virtual void duplexConnectionClosed(
       const std::string& type,
-      reactivesocket::DuplexConnection* connection) = 0;
+      DuplexConnection* connection) = 0;
 
   virtual void bytesWritten(size_t bytes) = 0;
   virtual void bytesRead(size_t bytes) = 0;

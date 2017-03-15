@@ -148,7 +148,7 @@ void StandardReactiveSocket::requestFireAndForget(Payload request) {
   checkNotClosed();
   Frame_REQUEST_FNF frame(
       connection_->streamsFactory().getNextStreamId(),
-      FrameFlags_EMPTY,
+      FrameFlags::EMPTY,
       std::move(std::move(request)));
   connection_->outputFrameOrEnqueue(
       connection_->frameSerializer().serializeOut(std::move(frame)));
@@ -174,7 +174,7 @@ void StandardReactiveSocket::onConnectionFrame(
               frame, std::move(serializedFrame))) {
         return;
       }
-      if (frame.header_.flags_ & FrameFlags_LEASE) {
+      if (!!(frame.header_.flags_ & FrameFlags::LEASE)) {
         // TODO(yschimke) We don't have the correct lease and wait logic above
         // yet
         LOG(WARNING) << "ignoring setup frame with lease";
@@ -232,7 +232,7 @@ void StandardReactiveSocket::onConnectionFrame(
     case FrameType::RESERVED:
     case FrameType::REQUEST_N:
     case FrameType::CANCEL:
-    case FrameType::RESPONSE:
+    case FrameType::PAYLOAD:
     case FrameType::ERROR:
     case FrameType::RESUME_OK:
     default:
@@ -260,7 +260,7 @@ void StandardReactiveSocket::clientConnect(
 
   // TODO set correct version
   Frame_SETUP frame(
-      setupPayload.resumable ? FrameFlags_RESUME_ENABLE : FrameFlags_EMPTY,
+      setupPayload.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY,
       FrameSerializer::kCurrentProtocolVersion.major,
       FrameSerializer::kCurrentProtocolVersion.minor,
       connection_->getKeepaliveTime(),

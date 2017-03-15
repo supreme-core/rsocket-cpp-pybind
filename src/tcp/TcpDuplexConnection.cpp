@@ -2,6 +2,7 @@
 
 #include "TcpDuplexConnection.h"
 #include <folly/ExceptionWrapper.h>
+#include <folly/io/IOBufQueue.h>
 #include "src/SubscriberBase.h"
 #include "src/SubscriptionBase.h"
 

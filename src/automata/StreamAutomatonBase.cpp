@@ -24,8 +24,8 @@ void StreamAutomatonBase::onNextFrame(std::unique_ptr<folly::IOBuf> payload) {
     case FrameType::CANCEL:
       deserializeAndDispatch<Frame_CANCEL>(std::move(payload));
       return;
-    case FrameType::RESPONSE:
-      deserializeAndDispatch<Frame_RESPONSE>(std::move(payload));
+    case FrameType::PAYLOAD:
+      deserializeAndDispatch<Frame_PAYLOAD>(std::move(payload));
       return;
     case FrameType::ERROR:
       deserializeAndDispatch<Frame_ERROR>(std::move(payload));
@@ -87,7 +87,7 @@ void StreamAutomatonBase::onNextFrame(Frame_CANCEL&& f) {
   onUnexpectedFrame(f);
 }
 
-void StreamAutomatonBase::onNextFrame(Frame_RESPONSE&& f) {
+void StreamAutomatonBase::onNextFrame(Frame_PAYLOAD&& f) {
   onUnexpectedFrame(f);
 }
 
