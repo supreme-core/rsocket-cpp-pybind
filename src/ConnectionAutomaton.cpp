@@ -394,6 +394,8 @@ void ConnectionAutomaton::onConnectionFrame(
               remoteResumeable_, frame, std::move(payload))) {
         return;
       }
+
+      streamState_->resumeCache_.resetUpToPosition(frame.position_);
       if (mode_ == ReactiveSocketMode::SERVER) {
         if (!!(frame.header_.flags_ & FrameFlags::KEEPALIVE_RESPOND)) {
           sendKeepalive(FrameFlags::EMPTY, std::move(frame.data_));
@@ -401,8 +403,6 @@ void ConnectionAutomaton::onConnectionFrame(
           closeWithError(
               Frame_ERROR::connectionError("keepalive without flag"));
         }
-
-        streamState_->resumeCache_.resetUpToPosition(frame.position_);
       } else {
         if (!!(frame.header_.flags_ & FrameFlags::KEEPALIVE_RESPOND)) {
           closeWithError(Frame_ERROR::connectionError(
