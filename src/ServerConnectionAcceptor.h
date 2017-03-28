@@ -26,6 +26,8 @@ class Stats;
 class ServerConnectionAcceptor {
  public:
   ServerConnectionAcceptor();
+  explicit ServerConnectionAcceptor(ProtocolVersion defaultProtocolVersion);
+
   virtual ~ServerConnectionAcceptor();
 
   /// Called when we've received a setup frame on the connection and are ready
@@ -56,10 +58,11 @@ class ServerConnectionAcceptor {
       folly::Executor&);
 
  private:
-  bool ensureOrAutodetectFrameSerializer(const folly::IOBuf& firstFrame);
+  std::shared_ptr<FrameSerializer> getOrAutodetectFrameSerializer(
+      const folly::IOBuf& firstFrame);
 
   std::unordered_set<std::shared_ptr<FrameTransport>> connections_;
-  std::unique_ptr<FrameSerializer> frameSerializer_;
+  std::shared_ptr<FrameSerializer> defaultFrameSerializer_;
 };
 
 } // reactivesocket

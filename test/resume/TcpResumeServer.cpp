@@ -136,7 +136,9 @@ class ServerRequestHandler : public DefaultRequestHandler {
 class MyServerConnectionAcceptor : public ServerConnectionAcceptor {
  public:
   MyServerConnectionAcceptor(EventBase& eventBase, std::shared_ptr<Stats> stats)
-      : eventBase_(eventBase), stats_(std::move(stats)) {}
+      : ServerConnectionAcceptor(ProtocolVersion::Unknown),
+        eventBase_(eventBase),
+        stats_(std::move(stats)) {}
 
   void setupNewSocket(
       std::shared_ptr<FrameTransport> frameTransport,
@@ -164,12 +166,13 @@ class MyServerConnectionAcceptor : public ServerConnectionAcceptor {
 
     if (g_reactiveSockets.empty()) {
       LOG(INFO) << "requestStream";
-      rs->requestStream(
-          Payload("from server"), std::make_shared<PrintSubscriber>());
+      // not permited to make requests at this moment
+      // rs->requestStream(
+      //     Payload("from server"), std::make_shared<PrintSubscriber>());
     }
 
     LOG(INFO) << "serverConnecting ...";
-    rs->serverConnect(std::move(frameTransport), true);
+    rs->serverConnect(std::move(frameTransport), setupPayload);
 
     LOG(INFO) << "RS " << rs.get();
 
@@ -183,7 +186,7 @@ class MyServerConnectionAcceptor : public ServerConnectionAcceptor {
     LOG(INFO) << "MyServerConnectionAcceptor::resumeSocket resume token ["
               << resumeParams.token << "]";
 
-    CHECK(g_reactiveSockets.size() == 1);
+    CHECK_EQ(1, g_reactiveSockets.size());
     CHECK(g_reactiveSockets[0].second == resumeParams.token);
 
     LOG(INFO) << "tryResumeServer...";
@@ -212,12 +215,10 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     auto socket =
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
 
-    std::unique_ptr<DuplexConnection> connection =
-        std::make_unique<TcpDuplexConnection>(
-            std::move(socket), inlineExecutor(), stats_);
-    std::unique_ptr<DuplexConnection> framedConnection =
-        std::make_unique<FramedDuplexConnection>(
-            std::move(connection), eventBase_);
+    auto connection = std::make_unique<TcpDuplexConnection>(
+        std::move(socket), inlineExecutor(), stats_);
+    auto framedConnection = std::make_unique<FramedDuplexConnection>(
+        std::move(connection), ProtocolVersion::Unknown, eventBase_);
 
     connectionAcceptor_.acceptConnection(
         std::move(framedConnection), eventBase_);
