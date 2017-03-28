@@ -8,10 +8,10 @@
 #include "src/versions/FrameSerializer_v1_0.h"
 
 DEFINE_string(
-    rs_use_protocol_version,
+    rs_latest_protocol_version,
     "",
-    "override for the ReactiveSocket protocol version to be used"
-    " [MAJOR.MINOR].");
+    "override for the latest ReactiveSocket protocol version to be used by "
+    "the client [MAJOR.MINOR]");
 
 namespace reactivesocket {
 
@@ -24,23 +24,20 @@ constexpr static const ProtocolVersion kLatestProtocolVersion =
     FrameSerializerV0_1::Version;
 
 ProtocolVersion FrameSerializer::getCurrentProtocolVersion() {
-  if (FLAGS_rs_use_protocol_version.empty()) {
+  if (FLAGS_rs_latest_protocol_version.empty()) {
     return kLatestProtocolVersion;
   }
 
-  if (FLAGS_rs_use_protocol_version == "*") {
-    return ProtocolVersion::Unknown;
-  }
-
-  if (FLAGS_rs_use_protocol_version.size() != 3) {
-    LOG(ERROR) << "unknown protocol version " << FLAGS_rs_use_protocol_version
-               << " defaulting to v" << kLatestProtocolVersion;
+  if (FLAGS_rs_latest_protocol_version.size() != 3) {
+    LOG(ERROR) << "unknown protocol version "
+               << FLAGS_rs_latest_protocol_version << " defaulting to v"
+               << kLatestProtocolVersion;
     return kLatestProtocolVersion;
   }
 
   return ProtocolVersion(
-      folly::to<uint16_t>(FLAGS_rs_use_protocol_version[0] - '0'),
-      folly::to<uint16_t>(FLAGS_rs_use_protocol_version[2] - '0'));
+      folly::to<uint16_t>(FLAGS_rs_latest_protocol_version[0]),
+      folly::to<uint16_t>(FLAGS_rs_latest_protocol_version[2]));
 }
 
 std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
@@ -53,23 +50,12 @@ std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
     return std::make_unique<FrameSerializerV1_0>();
   }
 
-  DCHECK(protocolVersion == ProtocolVersion::Unknown);
-  LOG_IF(ERROR, protocolVersion != ProtocolVersion::Unknown)
-      << "unknown protocol version " << protocolVersion;
+  LOG(ERROR) << "unknown protocol version " << protocolVersion;
   return nullptr;
 }
 
 std::unique_ptr<FrameSerializer> FrameSerializer::createCurrentVersion() {
   return createFrameSerializer(getCurrentProtocolVersion());
-}
-
-std::unique_ptr<FrameSerializer> FrameSerializer::createAutodetectedSerializer(
-    const folly::IOBuf& firstFrame) {
-  auto detectedVersion = FrameSerializerV1_0::detectProtocolVersion(firstFrame);
-  if (detectedVersion == ProtocolVersion::Unknown) {
-    detectedVersion = FrameSerializerV0_1::detectProtocolVersion(firstFrame);
-  }
-  return createFrameSerializer(detectedVersion);
 }
 
 std::ostream& operator<<(std::ostream& os, const ProtocolVersion& version) {
