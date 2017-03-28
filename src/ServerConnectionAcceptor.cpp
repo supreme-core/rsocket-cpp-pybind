@@ -52,10 +52,9 @@ void ServerConnectionAcceptor::processFrame(
       transport->setFrameProcessor(nullptr);
       resumeSocket(
           std::move(transport),
-          ResumeParameters(
-              std::move(resumeFrame.token_),
-              resumeFrame.lastReceivedServerPosition_,
-              resumeFrame.clientPosition_),
+          std::move(resumeFrame.token_),
+          resumeFrame.lastReceivedServerPosition_,
+          resumeFrame.clientPosition_,
           executor);
     } break;
 

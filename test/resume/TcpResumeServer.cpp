@@ -91,7 +91,9 @@ class ServerRequestHandler : public DefaultRequestHandler {
 
   bool handleResume(
       ReactiveSocket& socket,
-      ResumeParameters) noexcept override {
+      const ResumeIdentificationToken& token,
+      ResumePosition,
+      ResumePosition) noexcept override {
     CHECK(false) << "unexpected call";
     return false;
   }
@@ -178,17 +180,19 @@ class MyServerConnectionAcceptor : public ServerConnectionAcceptor {
 
   void resumeSocket(
       std::shared_ptr<FrameTransport> frameTransport,
-      ResumeParameters resumeParams,
+      ResumeIdentificationToken token,
+      ResumePosition serverPosition,
+      ResumePosition clientPosition,
       folly::Executor& executor) override {
     LOG(INFO) << "MyServerConnectionAcceptor::resumeSocket resume token ["
-              << resumeParams.token << "]";
+              << token << "]";
 
     CHECK(g_reactiveSockets.size() == 1);
-    CHECK(g_reactiveSockets[0].second == resumeParams.token);
+    CHECK(g_reactiveSockets[0].second == token);
 
     LOG(INFO) << "tryResumeServer...";
     auto result = g_reactiveSockets[0].first->tryResumeServer(
-        frameTransport, resumeParams);
+        frameTransport, serverPosition, clientPosition);
     LOG(INFO) << "resume " << (result ? "SUCCEEDED" : "FAILED");
   }
 

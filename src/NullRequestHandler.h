@@ -61,7 +61,11 @@ class NullRequestHandler : public RequestHandler {
       ReactiveSocket& socket,
       ConnectionSetupPayload request) noexcept override;
 
-  bool handleResume(ReactiveSocket& socket, ResumeParameters) noexcept override;
+  bool handleResume(
+      ReactiveSocket& socket,
+      const ResumeIdentificationToken& token,
+      ResumePosition,
+      ResumePosition) noexcept override;
 
   void handleCleanResume(
       std::shared_ptr<Subscription> response) noexcept override;
