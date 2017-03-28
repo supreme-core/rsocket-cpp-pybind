@@ -37,9 +37,6 @@ StandardReactiveSocket::StandardReactiveSocket(
           std::move(keepaliveTimer),
           mode)),
       executor_(executor) {
-  // TODO: In case of server, FrameSerializer should be ideally set after
-  // inspecting the SETUP frame from the client
-  connection_->setFrameSerializer(FrameSerializer::createCurrentVersion());
   debugCheckCorrectExecutor();
   connection_->stats().socketCreated();
 }
@@ -107,6 +104,13 @@ StandardReactiveSocket::disconnectedServer(
       std::move(stats),
       nullptr,
       executor));
+  auto protocolVersion = FrameSerializer::getCurrentProtocolVersion();
+  // if protocolVersion is unknown we will try to autodetect the version
+  // with the first frame
+  if (protocolVersion != ProtocolVersion::Unknown) {
+    socket->connection_->setFrameSerializer(
+        FrameSerializer::createFrameSerializer(protocolVersion));
+  }
   return socket;
 }
 
@@ -177,8 +181,15 @@ void StandardReactiveSocket::onConnectionFrame(
         //          disconnect();
       }
 
-      connection_->setFrameSerializer(FrameSerializer::createFrameSerializer(
-          ProtocolVersion{frame.versionMajor_, frame.versionMinor_}));
+      // this should be already set to the correct version
+      if (connection_->frameSerializer().protocolVersion() !=
+          ProtocolVersion(frame.versionMajor_, frame.versionMinor_)) {
+        // TODO(lehecka): the "connection" and "this" arguments needs to be
+        // cleaned up. It is not intuitive what is their lifetime.
+        auto connectionCopy = std::move(connection_);
+        connectionCopy->closeWithError(
+            Frame_ERROR::badSetupFrame("invalid protocol version"));
+      }
 
       ConnectionSetupPayload setupPayload;
       frame.moveToSetupPayload(setupPayload);

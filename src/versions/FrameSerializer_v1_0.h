@@ -13,6 +13,8 @@ class FrameSerializerV1_0 : public FrameSerializer {
 
   ProtocolVersion protocolVersion() override;
 
+  static ProtocolVersion detectProtocolVersion(const folly::IOBuf& firstFrame);
+
   FrameType peekFrameType(const folly::IOBuf& in) override;
   folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) override;
 
