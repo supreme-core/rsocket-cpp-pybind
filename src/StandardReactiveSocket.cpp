@@ -256,11 +256,12 @@ void StandardReactiveSocket::clientConnect(
   checkNotClosed();
   connection_->setResumable(setupPayload.resumable);
 
-  // TODO set correct version
+  auto currentProtocolVersion =
+      connection_->frameSerializer().protocolVersion();
   Frame_SETUP frame(
       setupPayload.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY,
-      FrameSerializer::kCurrentProtocolVersion.major,
-      FrameSerializer::kCurrentProtocolVersion.minor,
+      currentProtocolVersion.major,
+      currentProtocolVersion.minor,
       connection_->getKeepaliveTime(),
       Frame_SETUP::kMaxLifetime,
       setupPayload.token,
