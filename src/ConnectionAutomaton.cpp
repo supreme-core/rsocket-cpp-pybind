@@ -704,7 +704,7 @@ uint32_t ConnectionAutomaton::getKeepaliveTime() const {
   debugCheckCorrectExecutor();
   return keepaliveTimer_
       ? static_cast<uint32_t>(keepaliveTimer_->keepaliveTime().count())
-      : std::numeric_limits<uint32_t>::max();
+      : Frame_SETUP::kMaxKeepaliveTime;
 }
 
 bool ConnectionAutomaton::isDisconnectedOrClosed() const {
