@@ -56,22 +56,19 @@ class StandardReactiveSocket : public ReactiveSocket {
       std::unique_ptr<RequestHandler> handler,
       std::shared_ptr<Stats> stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
-          std::unique_ptr<KeepaliveTimer>(nullptr),
-      ProtocolVersion protocolVersion = ProtocolVersion::Unknown);
+          std::unique_ptr<KeepaliveTimer>(nullptr));
 
   static std::unique_ptr<StandardReactiveSocket> fromServerConnection(
       folly::Executor& executor,
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
       std::shared_ptr<Stats> stats = Stats::noop(),
-      bool isResumable = false,
-      ProtocolVersion protocolVersion = ProtocolVersion::Unknown);
+      bool isResumable = false);
 
   static std::unique_ptr<StandardReactiveSocket> disconnectedServer(
       folly::Executor& executor,
       std::shared_ptr<RequestHandler> handler,
-      std::shared_ptr<Stats> stats = Stats::noop(),
-      ProtocolVersion protocolVersion = ProtocolVersion::Unknown);
+      std::shared_ptr<Stats> stats = Stats::noop());
 
   std::shared_ptr<Subscriber<Payload>> requestChannel(
       std::shared_ptr<Subscriber<Payload>> responseSink) override;
@@ -94,7 +91,7 @@ class StandardReactiveSocket : public ReactiveSocket {
 
   void serverConnect(
       std::shared_ptr<FrameTransport> frameTransport,
-      const SocketParameters& socketParams) override;
+      bool isResumable) override;
 
   void close() override;
   void disconnect() override;

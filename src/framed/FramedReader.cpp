@@ -2,21 +2,17 @@
 
 #include "src/framed/FramedReader.h"
 #include <folly/io/Cursor.h>
-#include "src/versions/FrameSerializer_v0_1.h"
+#include "src/versions/FrameSerializer_v0.h"
 #include "src/versions/FrameSerializer_v1_0.h"
 
 namespace reactivesocket {
-namespace {
-constexpr auto kFrameLengthFieldLengthV0_1 = sizeof(int32_t);
-constexpr auto kFrameLengthFieldLengthV1_0 = 3; // bytes
-} // namespace
 
 size_t FramedReader::getFrameSizeFieldLength() const {
   DCHECK(*protocolVersion_ != ProtocolVersion::Unknown);
   if (*protocolVersion_ < FrameSerializerV1_0::Version) {
-    return kFrameLengthFieldLengthV0_1;
+    return sizeof(int32_t);
   } else {
-    return kFrameLengthFieldLengthV1_0; // bytes
+    return 3; // bytes
   }
 }
 
@@ -91,12 +87,6 @@ void FramedReader::parseFrames() {
   dispatchingFrames_ = true;
 
   while (allowance_.canAcquire() && frames_) {
-    if (!ensureOrAutodetectProtocolVersion()) {
-      // at this point we dont have enough bytes onthe wire
-      // or we errored out
-      break;
-    }
-
     if (payloadQueue_.chainLength() < getFrameSizeFieldLength()) {
       // we don't even have the next frame size value
       break;
@@ -170,43 +160,6 @@ void FramedReader::cancelImpl() noexcept {
   if (auto subscriber = std::move(frames_)) {
     subscriber->onComplete();
   }
-}
-
-bool FramedReader::ensureOrAutodetectProtocolVersion() {
-  if (*protocolVersion_ != ProtocolVersion::Unknown) {
-    return true;
-  }
-
-  auto minBytesNeeded = std::max(
-      FrameSerializerV0_1::kMinBytesNeededForAutodetection,
-      FrameSerializerV1_0::kMinBytesNeededForAutodetection);
-  DCHECK(minBytesNeeded > 0);
-  if (payloadQueue_.chainLength() < minBytesNeeded) {
-    return false;
-  }
-
-  DCHECK(minBytesNeeded > kFrameLengthFieldLengthV0_1);
-  DCHECK(minBytesNeeded > kFrameLengthFieldLengthV1_0);
-
-  bool recognized = FrameSerializerV1_0::detectProtocolVersion(
-                        *payloadQueue_.front(), kFrameLengthFieldLengthV1_0) !=
-      ProtocolVersion::Unknown;
-  if (recognized) {
-    *protocolVersion_ = FrameSerializerV1_0::Version;
-    return true;
-  }
-
-  recognized = FrameSerializerV0_1::detectProtocolVersion(
-                   *payloadQueue_.front(), kFrameLengthFieldLengthV0_1) !=
-      ProtocolVersion::Unknown;
-  if (recognized) {
-    *protocolVersion_ = FrameSerializerV0_1::Version;
-    return true;
-  }
-
-  onErrorImpl(
-      std::runtime_error("could not detect protocol version from framing"));
-  return false;
 }
 
 } // reactivesocket

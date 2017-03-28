@@ -28,7 +28,6 @@ class KeepaliveTimer;
 class RequestHandler;
 class Stats;
 class StreamState;
-class SocketParameters;
 
 class FrameSink {
  public:
@@ -74,10 +73,7 @@ class ConnectionAutomaton final
   ///
   /// May result, depending on the implementation of the DuplexConnection, in
   /// processing of one or more frames.
-  bool connect(
-      std::shared_ptr<FrameTransport>,
-      bool sendingPendingFrames,
-      ProtocolVersion protocolVersion);
+  void connect(std::shared_ptr<FrameTransport>, bool sendingPendingFrames);
 
   /// Disconnects DuplexConnection from the automaton.
   /// Existing streams will stay intact.

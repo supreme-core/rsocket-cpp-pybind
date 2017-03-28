@@ -53,8 +53,7 @@ StandardReactiveSocket::fromClientConnection(
       executor,
       std::move(handler),
       std::move(stats),
-      std::move(keepaliveTimer),
-      setupPayload.protocolVersion);
+      std::move(keepaliveTimer));
   socket->clientConnect(
       std::make_shared<FrameTransport>(std::move(connection)),
       std::move(setupPayload));
@@ -66,8 +65,7 @@ StandardReactiveSocket::disconnectedClient(
     folly::Executor& executor,
     std::unique_ptr<RequestHandler> handler,
     std::shared_ptr<Stats> stats,
-    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
-    ProtocolVersion protocolVersion) {
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
       ReactiveSocketMode::CLIENT,
       std::move(handler),
@@ -75,9 +73,7 @@ StandardReactiveSocket::disconnectedClient(
       std::move(keepaliveTimer),
       executor));
   socket->connection_->setFrameSerializer(
-      protocolVersion == ProtocolVersion::Unknown
-          ? FrameSerializer::createCurrentVersion()
-          : FrameSerializer::createFrameSerializer(protocolVersion));
+      FrameSerializer::createCurrentVersion());
   return socket;
 }
 
@@ -87,16 +83,13 @@ StandardReactiveSocket::fromServerConnection(
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
     std::shared_ptr<Stats> stats,
-    bool isResumable,
-    ProtocolVersion protocolVersion) {
+    bool isResumable) {
   // TODO: isResumable should come as a flag on Setup frame and it should be
   // exposed to the application code. We should then remove this parameter
-  auto socket = disconnectedServer(
-      executor, std::move(handler), std::move(stats), protocolVersion);
-
+  auto socket =
+      disconnectedServer(executor, std::move(handler), std::move(stats));
   socket->serverConnect(
-      std::make_shared<FrameTransport>(std::move(connection)),
-      SocketParameters(isResumable, ProtocolVersion::Unknown));
+      std::make_shared<FrameTransport>(std::move(connection)), isResumable);
   return socket;
 }
 
@@ -104,14 +97,16 @@ std::unique_ptr<StandardReactiveSocket>
 StandardReactiveSocket::disconnectedServer(
     folly::Executor& executor,
     std::shared_ptr<RequestHandler> handler,
-    std::shared_ptr<Stats> stats,
-    ProtocolVersion protocolVersion) {
+    std::shared_ptr<Stats> stats) {
   std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
       ReactiveSocketMode::SERVER,
       std::move(handler),
       std::move(stats),
       nullptr,
       executor));
+  auto protocolVersion = FrameSerializer::getCurrentProtocolVersion();
+  // if protocolVersion is unknown we will try to autodetect the version
+  // with the first frame
   if (protocolVersion != ProtocolVersion::Unknown) {
     socket->connection_->setFrameSerializer(
         FrameSerializer::createFrameSerializer(protocolVersion));
@@ -164,6 +159,106 @@ void StandardReactiveSocket::metadataPush(
       Frame_METADATA_PUSH(std::move(metadata))));
 }
 
+void StandardReactiveSocket::onConnectionFrame(
+    std::shared_ptr<RequestHandler> handler,
+    std::unique_ptr<folly::IOBuf> serializedFrame) {
+  debugCheckCorrectExecutor();
+  auto type = connection_->frameSerializer().peekFrameType(*serializedFrame);
+  switch (type) {
+    case FrameType::SETUP: {
+      Frame_SETUP frame;
+      if (!connection_->deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
+      }
+      if (!!(frame.header_.flags_ & FrameFlags::LEASE)) {
+        // TODO(yschimke) We don't have the correct lease and wait logic above
+        // yet
+        LOG(WARNING) << "ignoring setup frame with lease";
+        //          connectionOutput_.onNext(
+        //              Frame_ERROR::badSetupFrame("leases not supported")
+        //                  .serializeOut());
+        //          disconnect();
+      }
+
+      // this should be already set to the correct version
+      if (connection_->frameSerializer().protocolVersion() !=
+          ProtocolVersion(frame.versionMajor_, frame.versionMinor_)) {
+        // TODO(lehecka): the "connection" and "this" arguments needs to be
+        // cleaned up. It is not intuitive what is their lifetime.
+        auto connectionCopy = std::move(connection_);
+        connectionCopy->closeWithError(
+            Frame_ERROR::badSetupFrame("invalid protocol version"));
+      }
+
+      ConnectionSetupPayload setupPayload;
+      frame.moveToSetupPayload(setupPayload);
+      auto streamState =
+          handler->handleSetupPayload(*this, std::move(setupPayload));
+
+      // TODO(lehecka): use again
+      // connection.useStreamState(streamState);
+      break;
+    }
+    case FrameType::RESUME: {
+      Frame_RESUME frame;
+      if (!connection_->deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
+      }
+      auto resumed = handler->handleResume(
+          *this,
+          ResumeParameters(
+              std::move(frame.token_),
+              frame.lastReceivedServerPosition_,
+              frame.clientPosition_));
+      if (!resumed) {
+        // TODO(lehecka): the "connection" and "this" arguments needs to be
+        // cleaned up. It is not intuitive what is their lifetime.
+        auto connectionCopy = std::move(connection_);
+        connectionCopy->closeWithError(
+            Frame_ERROR::connectionError("can not resume"));
+      }
+      break;
+    }
+    case FrameType::METADATA_PUSH: {
+      Frame_METADATA_PUSH frame;
+      if (!connection_->deserializeFrameOrError(
+              frame, std::move(serializedFrame))) {
+        return;
+      }
+      handler->handleMetadataPush(std::move(frame.metadata_));
+      break;
+    }
+
+    case FrameType::REQUEST_CHANNEL:
+    case FrameType::REQUEST_STREAM:
+    case FrameType::REQUEST_RESPONSE:
+    case FrameType::REQUEST_FNF:
+    case FrameType::LEASE:
+    case FrameType::KEEPALIVE:
+    case FrameType::RESERVED:
+    case FrameType::REQUEST_N:
+    case FrameType::CANCEL:
+    case FrameType::PAYLOAD:
+    case FrameType::ERROR:
+    case FrameType::RESUME_OK:
+    case FrameType::EXT:
+    default:
+      auto connectionCopy = std::move(connection_);
+      connectionCopy->closeWithError(Frame_ERROR::unexpectedFrame());
+  }
+}
+
+std::shared_ptr<StreamState> StandardReactiveSocket::resumeListener(
+    const ResumeIdentificationToken& token) {
+  debugCheckCorrectExecutor();
+  CHECK(false) << "not implemented";
+  // TODO(lehecka)
+  return nullptr;
+  //  return handler_->handleResume(token);
+}
+
 void StandardReactiveSocket::clientConnect(
     std::shared_ptr<FrameTransport> frameTransport,
     ConnectionSetupPayload setupPayload) {
@@ -172,16 +267,12 @@ void StandardReactiveSocket::clientConnect(
   checkNotClosed();
   connection_->setResumable(setupPayload.resumable);
 
-  if (setupPayload.protocolVersion != ProtocolVersion::Unknown) {
-    CHECK_EQ(
-        setupPayload.protocolVersion,
-        connection_->frameSerializer().protocolVersion());
-  }
-
+  auto currentProtocolVersion =
+      connection_->frameSerializer().protocolVersion();
   Frame_SETUP frame(
       setupPayload.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY,
-      setupPayload.protocolVersion.major,
-      setupPayload.protocolVersion.minor,
+      currentProtocolVersion.major,
+      currentProtocolVersion.minor,
       connection_->getKeepaliveTime(),
       Frame_SETUP::kMaxLifetime,
       setupPayload.token,
@@ -196,17 +287,15 @@ void StandardReactiveSocket::clientConnect(
   frameTransport->outputFrameOrEnqueue(
       connection_->frameSerializer().serializeOut(std::move(frame)));
   // then the rest of the cached frames will be sent
-  connection_->connect(
-      std::move(frameTransport), true, ProtocolVersion::Unknown);
+  connection_->connect(std::move(frameTransport), true);
 }
 
 void StandardReactiveSocket::serverConnect(
     std::shared_ptr<FrameTransport> frameTransport,
-    const SocketParameters& socketParams) {
+    bool isResumable) {
   debugCheckCorrectExecutor();
-  connection_->setResumable(socketParams.resumable);
-  connection_->connect(
-      std::move(frameTransport), true, socketParams.protocolVersion);
+  connection_->setResumable(isResumable);
+  connection_->connect(std::move(frameTransport), true);
 }
 
 void StandardReactiveSocket::close() {
@@ -273,8 +362,6 @@ void StandardReactiveSocket::tryClientResume(
 bool StandardReactiveSocket::tryResumeServer(
     std::shared_ptr<FrameTransport> frameTransport,
     const ResumeParameters& resumeParams) {
-  CHECK(resumeParams.protocolVersion != ProtocolVersion::Unknown);
-
   // TODO: verify/assert that the new frameTransport is on the same event base
   debugCheckCorrectExecutor();
   checkNotClosed();
@@ -284,12 +371,9 @@ bool StandardReactiveSocket::tryResumeServer(
   connection_->disconnect(
       std::runtime_error("resuming server on a different connection"));
   // TODO: verify, we should not be receiving any frames, not a single one
-  return connection_->connect(
-             std::move(frameTransport),
-             /*sendPendingFrames=*/false,
-             resumeParams.protocolVersion) &&
-      connection_->resumeFromPositionOrClose(
-          resumeParams.serverPosition, resumeParams.clientPosition);
+  connection_->connect(std::move(frameTransport), /*sendPendingFrames=*/false);
+  return connection_->resumeFromPositionOrClose(
+      resumeParams.serverPosition, resumeParams.clientPosition);
 }
 
 void StandardReactiveSocket::checkNotClosed() const {

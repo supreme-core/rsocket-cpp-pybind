@@ -15,13 +15,17 @@ DEFINE_string(
 
 namespace reactivesocket {
 
+constexpr const ProtocolVersion ProtocolVersion::Unknown = ProtocolVersion(
+    std::numeric_limits<uint16_t>::max(),
+    std::numeric_limits<uint16_t>::max());
+
 // TODO: this should default to 1.0 when we deploy successfully
-constexpr const ProtocolVersion ProtocolVersion::Latest =
+constexpr static const ProtocolVersion kLatestProtocolVersion =
     FrameSerializerV0_1::Version;
 
 ProtocolVersion FrameSerializer::getCurrentProtocolVersion() {
   if (FLAGS_rs_use_protocol_version.empty()) {
-    return ProtocolVersion::Latest;
+    return kLatestProtocolVersion;
   }
 
   if (FLAGS_rs_use_protocol_version == "*") {
@@ -30,8 +34,8 @@ ProtocolVersion FrameSerializer::getCurrentProtocolVersion() {
 
   if (FLAGS_rs_use_protocol_version.size() != 3) {
     LOG(ERROR) << "unknown protocol version " << FLAGS_rs_use_protocol_version
-               << " defaulting to v" << ProtocolVersion::Latest;
-    return ProtocolVersion::Latest;
+               << " defaulting to v" << kLatestProtocolVersion;
+    return kLatestProtocolVersion;
   }
 
   return ProtocolVersion(
