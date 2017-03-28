@@ -169,7 +169,7 @@ void StandardReactiveSocket::clientConnect(
       FrameSerializer::kCurrentProtocolVersion.major,
       FrameSerializer::kCurrentProtocolVersion.minor,
       connection_->getKeepaliveTime(),
-      Frame_SETUP::kMaxLifetime,
+      std::numeric_limits<uint32_t>::max(),
       setupPayload.token,
       std::move(setupPayload.metadataMimeType),
       std::move(setupPayload.dataMimeType),
