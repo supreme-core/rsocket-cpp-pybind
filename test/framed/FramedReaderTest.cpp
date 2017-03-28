@@ -6,7 +6,6 @@
 #include <folly/Format.h>
 #include <folly/io/Cursor.h>
 #include <gmock/gmock.h>
-#include "src/FrameSerializer.h"
 #include "src/StandardReactiveSocket.h"
 #include "src/framed/FramedDuplexConnection.h"
 #include "src/framed/FramedReader.h"
@@ -22,18 +21,15 @@ TEST(FramedReaderTest, Read1Frame) {
       std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   auto wireSubscription = std::make_shared<MockSubscription>();
 
-  std::string msg1("value1value1");
+  std::string msg1("value1");
 
   auto payload1 = folly::IOBuf::create(0);
   folly::io::Appender a1(payload1.get(), 10);
   a1.writeBE<int32_t>(msg1.size() + sizeof(int32_t));
   folly::format("{}", msg1.c_str())(a1);
 
-  auto framedReader = std::make_shared<FramedReader>(
-      frameSubscriber,
-      inlineExecutor(),
-      std::make_shared<ProtocolVersion>(
-          FrameSerializer::getCurrentProtocolVersion()));
+  auto framedReader =
+      std::make_shared<FramedReader>(frameSubscriber, inlineExecutor());
 
   EXPECT_CALL(*frameSubscriber, onSubscribe_(_)).Times(1);
 
@@ -67,9 +63,9 @@ TEST(FramedReaderTest, Read3Frames) {
       std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   auto wireSubscription = std::make_shared<MockSubscription>();
 
-  std::string msg1("value1value1");
-  std::string msg2("value2value2");
-  std::string msg3("value3value3");
+  std::string msg1("value1");
+  std::string msg2("value2");
+  std::string msg3("value3");
 
   auto payload1 = folly::IOBuf::create(0);
   folly::io::Appender a1(payload1.get(), 10);
@@ -87,11 +83,8 @@ TEST(FramedReaderTest, Read3Frames) {
   bufQueue.append(std::move(payload1));
   bufQueue.append(std::move(payload2));
 
-  auto framedReader = std::make_shared<FramedReader>(
-      frameSubscriber,
-      inlineExecutor(),
-      std::make_shared<ProtocolVersion>(
-          FrameSerializer::getCurrentProtocolVersion()));
+  auto framedReader =
+      std::make_shared<FramedReader>(frameSubscriber, inlineExecutor());
 
   EXPECT_CALL(*frameSubscriber, onSubscribe_(_)).Times(1);
 
@@ -133,11 +126,8 @@ TEST(FramedReaderTest, Read1FrameIncomplete) {
   std::string part2("ueXXX");
   std::string msg1 = part1 + part2;
 
-  auto framedReader = std::make_shared<FramedReader>(
-      frameSubscriber,
-      inlineExecutor(),
-      std::make_shared<ProtocolVersion>(
-          FrameSerializer::getCurrentProtocolVersion()));
+  auto framedReader =
+      std::make_shared<FramedReader>(frameSubscriber, inlineExecutor());
   framedReader->onSubscribe(wireSubscription);
 
   EXPECT_CALL(*frameSubscriber, onNext_(_)).Times(0);
@@ -234,34 +224,26 @@ TEST(FramedReaderTest, InvalidDataStream) {
       ConnectionSetupPayload("", "", Payload("test client payload")));
 }
 
-// TODO(lehecka): verify FramedReader protocol autodetection mechanism
-// with this test
-// make sure it will never crash
-//
-// TEST(FramedReaderTest, ReadEmptyPayload) {
-//   auto frameSubscriber = std::make_shared<
-//       NiceMock<MockSubscriber<std::unique_ptr<folly::IOBuf>>>>();
-//
-//   auto payload = folly::IOBuf::create(0);
-//   auto frameSize = sizeof(int32_t);
-//   folly::io::Appender a(payload.get(), frameSize);
-//   a.writeBE<int32_t>(frameSize);
-//
-//   auto framedReader = std::make_shared<FramedReader>(
-//       frameSubscriber,
-//       inlineExecutor(),
-//       std::make_shared<ProtocolVersion>(
-//           FrameSerializer::getCurrentProtocolVersion()));
-//
-//   framedReader->onSubscribe(std::make_shared<NiceMock<MockSubscription>>());
-//   framedReader->onNext(std::move(payload));
-//
-//   EXPECT_CALL(*frameSubscriber, onNext_(_))
-//       .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& p) {
-//         ASSERT_EQ("", p->moveToFbString().toStdString());
-//       }));
-//   EXPECT_CALL(*frameSubscriber, onError_(_)).Times(0);
-//
-//   frameSubscriber->subscription()->request(1);
-//   framedReader->onComplete();
-// }
+TEST(FramedReaderTest, ReadEmptyPayload) {
+  auto frameSubscriber = std::make_shared<
+      NiceMock<MockSubscriber<std::unique_ptr<folly::IOBuf>>>>();
+
+  auto payload = folly::IOBuf::create(0);
+  auto frameSize = sizeof(int32_t);
+  folly::io::Appender a(payload.get(), frameSize);
+  a.writeBE<int32_t>(frameSize);
+
+  auto framedReader =
+      std::make_shared<FramedReader>(frameSubscriber, inlineExecutor());
+
+  framedReader->onSubscribe(std::make_shared<NiceMock<MockSubscription>>());
+  framedReader->onNext(std::move(payload));
+
+  EXPECT_CALL(*frameSubscriber, onNext_(_))
+      .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& p) {
+        ASSERT_EQ("", p->moveToFbString().toStdString());
+      }));
+
+  frameSubscriber->subscription()->request(1);
+  framedReader->onComplete();
+}

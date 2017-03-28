@@ -11,8 +11,6 @@
 
 namespace reactivesocket {
 
-struct ProtocolVersion;
-
 class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
                      public SubscriptionBase,
                      public EnableSharedFromThisBase<FramedReader> {
@@ -20,12 +18,10 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
   explicit FramedReader(
       std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
           frames,
-      folly::Executor& executor,
-      std::shared_ptr<ProtocolVersion> protocolVersion)
+      folly::Executor& executor)
       : ExecutorBase(executor),
         frames_(std::move(frames)),
-        payloadQueue_(folly::IOBufQueue::cacheChainLength()),
-        protocolVersion_(std::move(protocolVersion)) {}
+        payloadQueue_(folly::IOBufQueue::cacheChainLength()) {}
 
  private:
   // Subscriber methods
@@ -42,12 +38,6 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
   void parseFrames();
   void requestStream();
 
-  size_t getFrameSizeFieldLength() const;
-  size_t getFrameMinimalLength() const;
-  size_t getFrameSizeWithLengthField(size_t frameSize) const;
-  size_t getPayloadSize(size_t frameSize) const;
-  size_t readFrameLength() const;
-
   using EnableSharedFromThisBase<FramedReader>::shared_from_this;
 
   std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
@@ -60,7 +50,6 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
   bool dispatchingFrames_{false};
 
   folly::IOBufQueue payloadQueue_;
-  std::shared_ptr<ProtocolVersion> protocolVersion_;
 };
 
 } // reactivesocket

@@ -1,19 +1,15 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
+#include "FramedDuplexConnection.h"
 
-#include "src/framed/FramedDuplexConnection.h"
-#include "src/FrameSerializer.h"
-#include "src/framed/FramedReader.h"
-#include "src/framed/FramedWriter.h"
+#include "FramedReader.h"
+#include "FramedWriter.h"
 
 namespace reactivesocket {
 
 FramedDuplexConnection::FramedDuplexConnection(
     std::unique_ptr<DuplexConnection> connection,
     folly::Executor& executor)
-    : connection_(std::move(connection)),
-      protocolVersion_(std::make_shared<ProtocolVersion>(
-          FrameSerializer::getCurrentProtocolVersion())),
-      executor_(executor) {}
+    : connection_(std::move(connection)), executor_(executor) {}
 
 FramedDuplexConnection::~FramedDuplexConnection() {
   // to make sure we close the parties when the connection dies
@@ -28,8 +24,8 @@ FramedDuplexConnection::~FramedDuplexConnection() {
 std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>>
 FramedDuplexConnection::getOutput() noexcept {
   if (!outputWriter_) {
-    outputWriter_ = std::make_shared<FramedWriter>(
-        connection_->getOutput(), executor_, protocolVersion_);
+    outputWriter_ =
+        std::make_shared<FramedWriter>(connection_->getOutput(), executor_);
   }
   return outputWriter_;
 }
@@ -37,8 +33,8 @@ FramedDuplexConnection::getOutput() noexcept {
 void FramedDuplexConnection::setInput(
     std::shared_ptr<Subscriber<std::unique_ptr<folly::IOBuf>>> framesSink) {
   CHECK(!inputReader_);
-  inputReader_ = std::make_shared<FramedReader>(
-      std::move(framesSink), executor_, protocolVersion_);
+  inputReader_ =
+      std::make_shared<FramedReader>(std::move(framesSink), executor_);
   connection_->setInput(inputReader_);
 }
 
