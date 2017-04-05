@@ -6,9 +6,9 @@
 namespace reactivesocket {
 
 constexpr const ProtocolVersion FrameSerializerV1_0::Version;
+constexpr const size_t FrameSerializerV1_0::kFrameHeaderSize; // bytes
 
 namespace {
-constexpr const auto kFrameHeaderSize = 6; // bytes
 constexpr const auto kMedatadaLengthSize = 3; // bytes
 constexpr const auto kMaxMetadataLength = 0xFFFFFF; // 24bit max value
 } // namespace
@@ -133,7 +133,8 @@ static uint32_t payloadFramingSize(const Payload& payload) {
 static std::unique_ptr<folly::IOBuf> serializeOutInternal(
     Frame_REQUEST_Base&& frame) {
   auto queue = createBufferQueue(
-      kFrameHeaderSize + sizeof(uint32_t) + payloadFramingSize(frame.payload_));
+      FrameSerializerV1_0::kFrameHeaderSize + sizeof(uint32_t) +
+      payloadFramingSize(frame.payload_));
 
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   serializeHeaderInto(appender, frame.header_);
