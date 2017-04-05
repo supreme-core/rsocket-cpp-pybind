@@ -756,7 +756,7 @@ void ConnectionAutomaton::setFrameSerializer(
     std::unique_ptr<FrameSerializer> frameSerializer) {
   CHECK(frameSerializer);
   // serializer is not interchangeable, it would screw up resumability
-  CHECK(!frameSerializer_);
+  //CHECK(!frameSerializer_);
   frameSerializer_ = std::move(frameSerializer);
 }
 
