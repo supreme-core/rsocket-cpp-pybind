@@ -193,18 +193,18 @@ TEST(FramedReaderTest, InvalidDataStream) {
 
   // Dump 1 invalid frame and expect an error
   auto inputSubscription = std::make_shared<MockSubscription>();
-
-  EXPECT_CALL(*inputSubscription, request_(_)).WillOnce(Invoke([&](size_t n) {
+  auto sub = testConnection->getOutput();
+  EXPECT_CALL(*inputSubscription, request_(_))
+      .WillOnce(Invoke([&](auto) {
     auto invalidFrameSizePayload =
         folly::IOBuf::createCombined(sizeof(int32_t));
     folly::io::Appender appender(
         invalidFrameSizePayload.get(), /* do not grow */ 0);
     appender.writeBE<int32_t>(1);
-
-    testConnection->getOutput()->onNext(std::move(invalidFrameSizePayload));
+    sub->onNext(std::move(invalidFrameSizePayload));
   }));
-  EXPECT_CALL(*inputSubscription, cancel_()).WillOnce(Invoke([&]() {
-    testConnection->getOutput()->onComplete();
+  EXPECT_CALL(*inputSubscription, cancel_()).WillOnce(Invoke([&sub]() {
+    sub->onComplete();
   }));
 
   auto testOutputSubscriber =
@@ -223,7 +223,7 @@ TEST(FramedReaderTest, InvalidDataStream) {
   EXPECT_CALL(*testOutputSubscriber, onError_(_)).Times(1);
 
   testConnection->setInput(testOutputSubscriber);
-  testConnection->getOutput()->onSubscribe(inputSubscription);
+  sub->onSubscribe(inputSubscription);
 
   auto reactiveSocket = StandardReactiveSocket::fromClientConnection(
       defaultExecutor(),
