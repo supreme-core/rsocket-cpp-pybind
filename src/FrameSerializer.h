@@ -74,6 +74,9 @@ class FrameSerializer {
       const ProtocolVersion& protocolVersion);
   static std::unique_ptr<FrameSerializer> createCurrentVersion();
 
+  static std::unique_ptr<FrameSerializer> createAutodetectedSerializer(
+      const folly::IOBuf& firstFrame);
+
   virtual FrameType peekFrameType(const folly::IOBuf& in) = 0;
   virtual folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) = 0;
 
