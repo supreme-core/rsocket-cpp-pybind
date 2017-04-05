@@ -993,7 +993,8 @@ TEST(ReactiveSocketTest, CloseWithError) {
   });
 
   serverSock->serverConnect(
-      std::make_shared<FrameTransport>(std::move(serverConn)), false);
+      std::make_shared<FrameTransport>(std::move(serverConn)),
+      SocketParameters(false, FrameSerializer::getCurrentProtocolVersion()));
 }
 
 class ReactiveSocketIgnoreRequestTest : public testing::Test {

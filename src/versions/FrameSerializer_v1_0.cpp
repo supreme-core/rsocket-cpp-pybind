@@ -6,7 +6,8 @@
 namespace reactivesocket {
 
 constexpr const ProtocolVersion FrameSerializerV1_0::Version;
-constexpr const size_t FrameSerializerV1_0::kFrameHeaderSize; // bytes
+constexpr const size_t FrameSerializerV1_0::kFrameHeaderSize;
+constexpr const size_t FrameSerializerV1_0::kMinBytesNeededForAutodetection;
 
 namespace {
 constexpr const auto kMedatadaLengthSize = 3; // bytes
@@ -618,7 +619,8 @@ bool FrameSerializerV1_0::deserializeFrom(
 }
 
 ProtocolVersion FrameSerializerV1_0::detectProtocolVersion(
-    const folly::IOBuf& firstFrame) {
+    const folly::IOBuf& firstFrame,
+    size_t skipBytes) {
   // SETUP frame
   //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
   //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -645,18 +647,21 @@ ProtocolVersion FrameSerializerV1_0::detectProtocolVersion(
 
   folly::io::Cursor cur(&firstFrame);
   try {
+    cur.skip(skipBytes);
+
     auto streamId = cur.readBE<int32_t>();
     auto frameType = cur.readBE<uint8_t>() >> 2;
     cur.skip(sizeof(uint8_t)); // flags
     auto majorVersion = cur.readBE<uint16_t>();
     auto minorVersion = cur.readBE<uint16_t>();
 
-    constexpr auto kSETUP = 0x01;
-    constexpr auto kRESUME = 0x0D;
+    constexpr static const auto kSETUP = 0x01;
+    constexpr static const auto kRESUME = 0x0D;
 
     if (streamId == 0 && (frameType == kSETUP || frameType == kRESUME) &&
-        majorVersion == 1 && minorVersion == 0) {
-      return ProtocolVersion(1, 0);
+        majorVersion == FrameSerializerV1_0::Version.major &&
+        minorVersion == FrameSerializerV1_0::Version.minor) {
+      return FrameSerializerV1_0::Version;
     }
   } catch (...) {
   }
