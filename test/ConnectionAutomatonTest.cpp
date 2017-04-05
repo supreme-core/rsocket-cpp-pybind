@@ -79,10 +79,10 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
+  connectionAutomaton->setFrameSerializer(
+      FrameSerializer::createCurrentVersion());
   connectionAutomaton->connect(
-      std::make_shared<FrameTransport>(std::move(automatonConnection)),
-      true,
-      FrameSerializer::getCurrentProtocolVersion());
+      std::make_shared<FrameTransport>(std::move(automatonConnection)), true);
   connectionAutomaton->close(
       folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
   testConnection->getOutput()->onComplete();
@@ -156,10 +156,10 @@ static void terminateTest(
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
+  connectionAutomaton->setFrameSerializer(
+      FrameSerializer::createCurrentVersion());
   connectionAutomaton->connect(
-      std::make_shared<FrameTransport>(std::move(automatonConnection)),
-      true,
-      FrameSerializer::getCurrentProtocolVersion());
+      std::make_shared<FrameTransport>(std::move(automatonConnection)), true);
   connectionAutomaton->close(
       folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
 
@@ -255,10 +255,11 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       Stats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
+  connectionAutomaton->setFrameSerializer(
+      FrameSerializer::createCurrentVersion());
   connectionAutomaton->connect(
       std::make_shared<FrameTransport>(std::move(framedAutomatonConnection)),
-      true,
-      FrameSerializer::getCurrentProtocolVersion());
+      true);
   connectionAutomaton->close(
       folly::exception_wrapper(), StreamCompletionSignal::CONNECTION_END);
 }

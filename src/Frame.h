@@ -504,11 +504,8 @@ class Frame_RESUME {
   Frame_RESUME(
       const ResumeIdentificationToken& token,
       ResumePosition lastReceivedServerPosition,
-      ResumePosition clientPosition,
-      ProtocolVersion protocolVersion)
+      ResumePosition clientPosition)
       : header_(FrameType::RESUME, FrameFlags::EMPTY, 0),
-        versionMajor_(protocolVersion.major),
-        versionMinor_(protocolVersion.minor),
         token_(token),
         lastReceivedServerPosition_(lastReceivedServerPosition),
         clientPosition_(clientPosition) {}

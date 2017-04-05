@@ -6,15 +6,13 @@
 namespace reactivesocket {
 
 constexpr const ProtocolVersion FrameSerializerV0_1::Version;
-constexpr const size_t FrameSerializerV0_1::kMinBytesNeededForAutodetection;
 
 ProtocolVersion FrameSerializerV0_1::protocolVersion() {
   return Version;
 }
 
 ProtocolVersion FrameSerializerV0_1::detectProtocolVersion(
-    const folly::IOBuf& firstFrame,
-    size_t skipBytes) {
+    const folly::IOBuf& firstFrame) {
   // SETUP frame
   //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
   //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -45,14 +43,12 @@ ProtocolVersion FrameSerializerV0_1::detectProtocolVersion(
 
   folly::io::Cursor cur(&firstFrame);
   try {
-    cur.skip(skipBytes);
-
     auto frameType = cur.readBE<uint16_t>();
     cur.skip(sizeof(uint16_t)); // flags
     auto streamId = cur.readBE<uint32_t>();
 
-    constexpr static const auto kSETUP = 0x0001;
-    constexpr static const auto kRESUME = 0x000E;
+    constexpr auto kSETUP = 0x0001;
+    constexpr auto kRESUME = 0x000E;
 
     if (frameType == kSETUP && streamId == 0) {
       auto majorVersion = cur.readBE<uint16_t>();

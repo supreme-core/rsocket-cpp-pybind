@@ -42,8 +42,6 @@ class FramedReader : public SubscriberBaseT<std::unique_ptr<folly::IOBuf>>,
   void parseFrames();
   void requestStream();
 
-  bool ensureOrAutodetectProtocolVersion();
-
   size_t getFrameSizeFieldLength() const;
   size_t getFrameMinimalLength() const;
   size_t getFrameSizeWithLengthField(size_t frameSize) const;

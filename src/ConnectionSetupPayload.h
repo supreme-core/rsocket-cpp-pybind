@@ -4,24 +4,11 @@
 
 #include <folly/io/IOBuf.h>
 #include <string>
-#include "src/Common.h"
-#include "src/FrameSerializer.h"
 #include "src/Payload.h"
 #include "src/StreamState.h"
 
 namespace reactivesocket {
-
-class SocketParameters {
- public:
-  SocketParameters(bool _resumable, ProtocolVersion _protocolVersion)
-      : resumable(_resumable), protocolVersion(std::move(_protocolVersion)) {}
-
-  bool resumable;
-  ProtocolVersion protocolVersion;
-};
-
-// TODO: rename this and the whole file to SetupParams
-class ConnectionSetupPayload : public SocketParameters {
+class ConnectionSetupPayload {
  public:
   explicit ConnectionSetupPayload(
       std::string _metadataMimeType = "",
@@ -29,32 +16,29 @@ class ConnectionSetupPayload : public SocketParameters {
       Payload _payload = Payload(),
       bool _resumable = false,
       const ResumeIdentificationToken& _token =
-          ResumeIdentificationToken::generateNew(),
-      ProtocolVersion _protocolVersion =
-          FrameSerializer::getCurrentProtocolVersion())
-      : SocketParameters(_resumable, _protocolVersion),
-        metadataMimeType(std::move(_metadataMimeType)),
+          ResumeIdentificationToken::generateNew())
+      : metadataMimeType(std::move(_metadataMimeType)),
         dataMimeType(std::move(_dataMimeType)),
         payload(std::move(_payload)),
-        token(_token) {}
+        token(_token),
+        resumable(_resumable) {}
 
   std::string metadataMimeType;
   std::string dataMimeType;
   Payload payload;
   ResumeIdentificationToken token;
+  bool resumable;
 };
 
 std::ostream& operator<<(std::ostream&, const ConnectionSetupPayload&);
 
-class ResumeParameters : public SocketParameters {
+class ResumeParameters {
  public:
   ResumeParameters(
       ResumeIdentificationToken _token,
       ResumePosition _serverPosition,
-      ResumePosition _clientPosition,
-      ProtocolVersion _protocolVersion)
-      : SocketParameters(true, _protocolVersion),
-        token(std::move(_token)),
+      ResumePosition _clientPosition)
+      : token(std::move(_token)),
         serverPosition(_serverPosition),
         clientPosition(_clientPosition) {}
 

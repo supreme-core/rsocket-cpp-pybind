@@ -48,7 +48,7 @@ class ReactiveSocket {
 
   virtual void serverConnect(
       std::shared_ptr<FrameTransport> frameTransport,
-      const SocketParameters& socketParams) = 0;
+      bool isResumable) = 0;
 
   virtual void close() = 0;
   virtual void disconnect() = 0;
