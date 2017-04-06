@@ -17,7 +17,7 @@ std::unique_ptr<ConnectionAcceptor> TcpConnectionAcceptor::create(int port) {
   return std::make_unique<TcpConnectionAcceptor>(port);
 }
 
-void TcpConnectionAcceptor::start(
+folly::Future<folly::Unit> TcpConnectionAcceptor::start(
     std::function<void(std::unique_ptr<DuplexConnection>, EventBase&)>
         acceptor) {
   // TODO needs to blow up if called more than once
@@ -40,6 +40,7 @@ void TcpConnectionAcceptor::start(
   });
 
   LOG(INFO) << "ConnectionAcceptor => leave start";
+  return folly::unit;
 }
 
 void TcpConnectionAcceptor::connectionAccepted(

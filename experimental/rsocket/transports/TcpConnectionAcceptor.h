@@ -25,23 +25,17 @@ class TcpConnectionAcceptor : public ConnectionAcceptor,
   static std::unique_ptr<ConnectionAcceptor> create(int port);
 
   explicit TcpConnectionAcceptor(int port);
-  virtual ~TcpConnectionAcceptor();
-  TcpConnectionAcceptor(const TcpConnectionAcceptor&) = delete; // copy
-  TcpConnectionAcceptor(TcpConnectionAcceptor&&) = delete; // move
-  TcpConnectionAcceptor& operator=(const TcpConnectionAcceptor&) =
-      delete; // copy
-  TcpConnectionAcceptor& operator=(TcpConnectionAcceptor&&) = delete; // move
+  ~TcpConnectionAcceptor();
 
   /**
    * Create an EventBase, Thread, and AsyncServerSocket. Bind to the given port
    * and start accepting TCP connections.
    *
    * This can only be called once.
-   *
-   * @param onAccept
    */
-  void start(std::function<void(std::unique_ptr<DuplexConnection>, EventBase&)>
-                 onAccept) override;
+  folly::Future<folly::Unit> start(
+      std::function<void(std::unique_ptr<DuplexConnection>, EventBase&)>
+          onAccept) override;
 
  private:
   // TODO this is single-threaded right now
