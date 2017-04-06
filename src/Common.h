@@ -88,6 +88,10 @@ class ResumeIdentificationToken {
     return data() != right.data();
   }
 
+  bool operator<(const ResumeIdentificationToken& right) const {
+    return data() < right.data();
+  }
+
  private:
   explicit ResumeIdentificationToken(std::vector<uint8_t> bits)
       : bits_(std::move(bits)) {}
