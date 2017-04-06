@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/framed/FramedReader.h"
+#include <folly/String.h>
 #include <folly/io/Cursor.h>
 #include "src/versions/FrameSerializer_v0.h"
 #include "src/versions/FrameSerializer_v1_0.h"
@@ -56,7 +57,7 @@ size_t FramedReader::readFrameLength() const {
   auto shift = (frameSizeFieldLength - 1) * 8;
 
   while (frameSizeFieldLength--) {
-    frameLength |= static_cast<uint8_t>(cur.read<uint8_t>() << shift);
+    frameLength |= static_cast<size_t>(cur.read<uint8_t>() << shift);
     shift -= 8;
   }
   return frameLength;
@@ -73,6 +74,8 @@ void FramedReader::onNextImpl(std::unique_ptr<folly::IOBuf> payload) noexcept {
   streamRequested_ = false;
 
   if (payload) {
+    VLOG(4) << "incoming bytes "
+            << folly::hexDump(payload->data(), payload->length());
     payloadQueue_.append(std::move(payload));
     parseFrames();
   }
@@ -114,6 +117,9 @@ void FramedReader::parseFrames() {
                                       : folly::IOBuf::create(0);
 
     CHECK(allowance_.tryAcquire(1));
+
+    VLOG(4) << "parsed frame "
+            << folly::hexDump(nextFrame->data(), nextFrame->length());
     frames_->onNext(std::move(nextFrame));
   }
   dispatchingFrames_ = false;

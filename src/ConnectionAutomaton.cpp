@@ -610,6 +610,8 @@ void ConnectionAutomaton::handleUnknownStream(
     case FrameType::RESUME_OK:
     case FrameType::EXT:
     default:
+      DLOG(ERROR) << "unknown stream frame (streamId=" << streamId
+                  << " frameType=" << type << ")";
       closeWithError(Frame_ERROR::unexpectedFrame());
   }
 }
@@ -756,7 +758,7 @@ void ConnectionAutomaton::setFrameSerializer(
     std::unique_ptr<FrameSerializer> frameSerializer) {
   CHECK(frameSerializer);
   // serializer is not interchangeable, it would screw up resumability
-  //CHECK(!frameSerializer_);
+  // CHECK(!frameSerializer_);
   frameSerializer_ = std::move(frameSerializer);
 }
 

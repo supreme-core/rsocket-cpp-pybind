@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/framed/FramedWriter.h"
+#include <folly/String.h>
 #include <folly/io/Cursor.h>
 #include "src/versions/FrameSerializer_v1_0.h"
 
@@ -76,12 +77,16 @@ std::unique_ptr<folly::IOBuf> FramedWriter::appendSize(
     payload->prepend(frameSizeFieldLength);
     folly::io::RWPrivateCursor cur(payload.get());
     writeFrameLength(cur, payloadLength, frameSizeFieldLength);
+    VLOG(4) << "writing frame "
+            << folly::hexDump(payload->data(), payload->length());
     return payload;
   } else {
     auto newPayload = folly::IOBuf::createCombined(frameSizeFieldLength);
     folly::io::Appender appender(newPayload.get(), /* do not grow */ 0);
     writeFrameLength(appender, payloadLength, frameSizeFieldLength);
     newPayload->appendChain(std::move(payload));
+    VLOG(4) << "writing frame "
+            << folly::hexDump(newPayload->data(), newPayload->length());
     return newPayload;
   }
 }

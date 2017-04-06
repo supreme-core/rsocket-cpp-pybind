@@ -220,8 +220,8 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
       .Times(AtMost(2))
       .InSequence(s)
       .WillOnce(Invoke([&](size_t n) {
-        auto framedWriter = std::dynamic_pointer_cast<FramedWriter>(
-            framedTestConnectionOutput);
+        auto framedWriter =
+            std::dynamic_pointer_cast<FramedWriter>(framedTestConnectionOutput);
         CHECK(framedWriter);
         auto frameSerializer = FrameSerializer::createCurrentVersion();
         std::vector<std::unique_ptr<folly::IOBuf>> frames;

@@ -100,5 +100,4 @@ std::ostream& operator<<(
   }
   return out;
 }
-
 } // reactivesocket
