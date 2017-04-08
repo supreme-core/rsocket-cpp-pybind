@@ -259,7 +259,7 @@ class ServerSideConcurrencyTest : public testing::Test {
           std::move(serverConn),
           std::move(serverHandler),
           Stats::noop(),
-          false);
+          SocketParameters(false, ProtocolVersion::Unknown));
     });
 
     EXPECT_CALL(*clientInput, onSubscribe_(_))
@@ -513,7 +513,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
             std::move(serverSocketConnection), inlineExecutor()),
         std::move(serverHandler),
         Stats::noop(),
-        false);
+        SocketParameters(false, ProtocolVersion::Unknown));
 
     Frame_SETUP frameSetup(
         FrameFlags::EMPTY,

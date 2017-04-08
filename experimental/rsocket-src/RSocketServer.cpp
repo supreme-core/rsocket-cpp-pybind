@@ -52,7 +52,8 @@ class RSocketConnectionHandler : public reactivesocket::ConnectionHandler {
 
 RSocketServer::RSocketServer(
     std::unique_ptr<ConnectionAcceptor> connectionAcceptor)
-    : lazyAcceptor_(std::move(connectionAcceptor)) {}
+    : lazyAcceptor_(std::move(connectionAcceptor)),
+      acceptor_(ProtocolVersion::Unknown) {}
 
 RSocketServer::~RSocketServer() {
   {
@@ -86,7 +87,7 @@ void RSocketServer::start(OnAccept onAccept) {
     onAccept = std::move(onAccept)
   ](std::shared_ptr<FrameTransport> frameTransport,
     ConnectionSetupPayload setupPayload,
-    folly::Executor& executor_) {
+    folly::Executor & executor_) {
     LOG(INFO) << "RSocketServer => received new setup payload";
 
     std::shared_ptr<RequestHandler> requestHandler;
@@ -119,7 +120,9 @@ void RSocketServer::start(OnAccept onAccept) {
     addSocket(std::move(rs));
 
     // Connect last, after all state has been set up.
-    rawRs->serverConnect(std::move(frameTransport), true /* resumable */);
+    rawRs->serverConnect(
+        std::move(frameTransport),
+        SocketParameters(true /* resumable */, ProtocolVersion::Unknown));
   });
 
   lazyAcceptor_->start([this](

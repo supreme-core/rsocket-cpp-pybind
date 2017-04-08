@@ -42,26 +42,26 @@ public:
 
 class ServerConnectionAcceptorTest : public Test {
 public:
-  ServerConnectionAcceptorTest() {
-    handler_ = std::make_shared<StrictMock<MockConnectionHandler>>();
+ ServerConnectionAcceptorTest() : acceptor_(ProtocolVersion::Unknown) {
+   handler_ = std::make_shared<StrictMock<MockConnectionHandler>>();
 
-    clientConnection_ = std::make_unique<InlineConnection>();
-    serverConnection_ = std::make_unique<InlineConnection>();
-    clientConnection_->connectTo(*serverConnection_);
+   clientConnection_ = std::make_unique<InlineConnection>();
+   serverConnection_ = std::make_unique<InlineConnection>();
+   clientConnection_->connectTo(*serverConnection_);
 
-    auto testInputSubscription = std::make_shared<MockSubscription>();
+   auto testInputSubscription = std::make_shared<MockSubscription>();
 
-    clientInput_ =
-        std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
-    EXPECT_CALL(*clientInput_, onSubscribe_(_))
-        .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
-          // allow receiving frames from the automaton
-          subscription->request(std::numeric_limits<size_t>::max());
-        }));
+   clientInput_ =
+       std::make_shared<MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+   EXPECT_CALL(*clientInput_, onSubscribe_(_))
+       .WillOnce(Invoke([&](std::shared_ptr<Subscription> subscription) {
+         // allow receiving frames from the automaton
+         subscription->request(std::numeric_limits<size_t>::max());
+       }));
 
-    clientConnection_->setInput(clientInput_);
-    clientOutput_ = clientConnection_->getOutput();
-    clientOutput_->onSubscribe(testInputSubscription);
+   clientConnection_->setInput(clientInput_);
+   clientOutput_ = clientConnection_->getOutput();
+   clientOutput_->onSubscribe(testInputSubscription);
   }
 
   std::unique_ptr<InlineConnection> clientConnection_;
@@ -134,9 +134,10 @@ TEST_F(ServerConnectionAcceptorTest, SetupFrame) {
 
 TEST_F(ServerConnectionAcceptorTest, ResumeFrame) {
   ResumeParameters resumeParams(
-    ResumeIdentificationToken::generateNew(),
-    1,
-    2);
+      ResumeIdentificationToken::generateNew(),
+      1,
+      2,
+      FrameSerializer::getCurrentProtocolVersion());
   EXPECT_CALL(*handler_, resumeSocket(_, _))
     .WillOnce(Invoke([&](
       std::shared_ptr<FrameTransport> transport,
@@ -152,8 +153,9 @@ TEST_F(ServerConnectionAcceptorTest, ResumeFrame) {
   auto frameSerializer = FrameSerializer::createCurrentVersion();
   acceptor_.accept(std::move(serverConnection_), handler_);
   clientOutput_->onNext(frameSerializer->serializeOut(Frame_RESUME(
-    resumeParams.token,
-    resumeParams.serverPosition,
-    resumeParams.clientPosition)));
+      resumeParams.token,
+      resumeParams.serverPosition,
+      resumeParams.clientPosition,
+      FrameSerializer::getCurrentProtocolVersion())));
   clientOutput_->onComplete();
 }

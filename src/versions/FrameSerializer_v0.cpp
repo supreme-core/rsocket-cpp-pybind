@@ -460,6 +460,9 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOut(
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
 
   serializeHeaderInto(appender, frame.header_, extraFlags);
+  CHECK(
+      frame.versionMajor_ != ProtocolVersion::Unknown.major ||
+      frame.versionMinor_ != ProtocolVersion::Unknown.minor);
   appender.writeBE(static_cast<uint16_t>(frame.versionMajor_));
   appender.writeBE(static_cast<uint16_t>(frame.versionMinor_));
   appender.writeBE(static_cast<uint32_t>(frame.keepaliveTime_));

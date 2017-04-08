@@ -54,7 +54,7 @@ public:
 // is received. Then either onNewSocket or onResumeSocket is invoked.
 class ServerConnectionAcceptor final {
  public:
-  ServerConnectionAcceptor();
+  explicit ServerConnectionAcceptor(ProtocolVersion defaultProtocolVersion);
   ~ServerConnectionAcceptor();
 
   void accept(
@@ -76,10 +76,11 @@ class ServerConnectionAcceptor final {
   void removeConnection(const std::shared_ptr<FrameTransport>& transport);
 
  private:
-  bool ensureOrAutodetectFrameSerializer(const folly::IOBuf& firstFrame);
+  std::shared_ptr<FrameSerializer> getOrAutodetectFrameSerializer(
+      const folly::IOBuf& firstFrame);
 
   std::unordered_set<std::shared_ptr<FrameTransport>> connections_;
-  std::unique_ptr<FrameSerializer> frameSerializer_;
+  std::shared_ptr<FrameSerializer> defaultFrameSerializer_;
 };
 
 } // reactivesocket
