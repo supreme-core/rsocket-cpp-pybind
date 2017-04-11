@@ -136,11 +136,8 @@ add_library(
   src/automata/StreamAutomatonBase.h
   src/automata/StreamRequester.cpp
   src/automata/StreamRequester.h
+  src/automata/StreamResponder.cpp
   src/automata/StreamResponder.h
-  src/automata/StreamSubscriptionRequesterBase.cpp
-  src/automata/StreamSubscriptionRequesterBase.h
-  src/automata/StreamSubscriptionResponderBase.cpp
-  src/automata/StreamSubscriptionResponderBase.h
   src/ClientResumeStatusCallback.h
   src/Common.cpp
   src/Common.h
