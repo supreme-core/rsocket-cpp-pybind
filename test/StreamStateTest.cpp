@@ -27,7 +27,6 @@ class StreamStateTest : public Test {
 
 TEST_F(StreamStateTest, Stats) {
   auto frame1Size = 7, frame2Size = 11;
-  InSequence seq;
   EXPECT_CALL(*stats_, streamBufferChanged(1, frame1Size));
   state_.enqueueOutputPendingFrame(
       folly::IOBuf::copyBuffer(std::string(frame1Size, 'x')));
@@ -40,7 +39,6 @@ TEST_F(StreamStateTest, Stats) {
 
 TEST_F(StreamStateTest, StatsUpdatedInDtor) {
   auto frameSize = 7;
-  InSequence seq;
   EXPECT_CALL(*stats_, streamBufferChanged(1, frameSize));
   state_.enqueueOutputPendingFrame(
       folly::IOBuf::copyBuffer(std::string(frameSize, 'x')));

@@ -73,3 +73,6 @@ install_manifest.txt
 
 #CLion
 cmake-build-debug/
+
+# Facebook
+BUILD_MODE
