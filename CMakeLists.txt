@@ -175,8 +175,6 @@ add_library(
   src/RequestHandler.h
   src/ResumeCache.cpp
   src/ResumeCache.h
-  src/ResumeTracker.cpp
-  src/ResumeTracker.h
   src/ServerConnectionAcceptor.cpp
   src/ServerConnectionAcceptor.h
   src/StandardReactiveSocket.cpp
