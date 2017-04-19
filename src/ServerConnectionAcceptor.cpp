@@ -131,15 +131,16 @@ void ServerConnectionAcceptor::processFrame(
         break;
       }
 
-      transport->setFrameProcessor(nullptr);
       auto triedResume =
           connectionHandler->resumeSocket(transport, std::move(resumeParams));
-      if (!triedResume) {
+      if (triedResume) {
+        removeConnection(transport);
+      } else {
         transport->outputFrameOrEnqueue(frameSerializer->serializeOut(
             Frame_ERROR::connectionError("can not resume")));
         transport->close(std::runtime_error("can not resume"));
+        connections_.erase(transport);
       }
-      connections_.erase(transport);
     } break;
 
     case FrameType::CANCEL:
