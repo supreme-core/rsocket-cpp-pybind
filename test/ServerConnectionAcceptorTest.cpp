@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "src/ConnectionSetupPayload.h"
+#include "src/FrameProcessor.h"
 #include "src/FrameSerializer.h"
 #include "src/FrameTransport.h"
 #include "src/ServerConnectionAcceptor.h"
@@ -36,6 +37,11 @@ class MockConnectionHandler : public ConnectionHandler {
   MOCK_METHOD2(
       connectionError,
       void(std::shared_ptr<FrameTransport>, folly::exception_wrapper ex));
+};
+
+class MockFrameProcessor : public FrameProcessor {
+  void processFrame(std::unique_ptr<folly::IOBuf>) override {};
+  void onTerminal(folly::exception_wrapper) override {};
 };
 
 class ServerConnectionAcceptorTest : public Test {
@@ -151,4 +157,35 @@ TEST_F(ServerConnectionAcceptorTest, ResumeFrame) {
       resumeParams.clientPosition,
       FrameSerializer::getCurrentProtocolVersion())));
   clientOutput_->onComplete();
+}
+
+TEST_F(ServerConnectionAcceptorTest, VerifyTransport) {
+  ResumeParameters resumeParams(
+      ResumeIdentificationToken::generateNew(),
+      1,
+      2,
+      FrameSerializer::getCurrentProtocolVersion());
+  std::weak_ptr<MockFrameProcessor> wfp;
+  std::shared_ptr<FrameTransport> transport_;
+  EXPECT_CALL(*handler_, resumeSocket(_, _))
+      .WillOnce(Invoke(
+          [&](std::shared_ptr<FrameTransport> transport,
+              ResumeParameters params) -> bool {
+            auto fp = std::make_shared<MockFrameProcessor>();
+            wfp = fp;
+            transport->setFrameProcessor(std::move(fp));
+            transport_ = transport;
+            return true;
+          }));
+
+  auto frameSerializer = FrameSerializer::createCurrentVersion();
+  acceptor_.accept(std::move(serverConnection_), handler_);
+  clientOutput_->onNext(frameSerializer->serializeOut(Frame_RESUME(
+      resumeParams.token,
+      resumeParams.serverPosition,
+      resumeParams.clientPosition,
+      FrameSerializer::getCurrentProtocolVersion())));
+  EXPECT_TRUE(wfp.use_count() > 0);
+  clientOutput_->onComplete();
+  transport_->close(folly::exception_wrapper());
 }
