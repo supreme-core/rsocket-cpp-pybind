@@ -39,9 +39,9 @@ class MockConnectionHandler : public ConnectionHandler {
       void(std::shared_ptr<FrameTransport>, folly::exception_wrapper ex));
 };
 
-class MockFrameProcessor : public FrameProcessor {
-  void processFrame(std::unique_ptr<folly::IOBuf>) override {};
-  void onTerminal(folly::exception_wrapper) override {};
+struct MockFrameProcessor : public FrameProcessor {
+  MOCK_METHOD1(processFrame, void(std::unique_ptr<folly::IOBuf>));
+  MOCK_METHOD1(onTerminal, void(folly::exception_wrapper));
 };
 
 class ServerConnectionAcceptorTest : public Test {
@@ -219,5 +219,90 @@ TEST_F(ServerConnectionAcceptorTest, VerifyTransport) {
       FrameSerializer::getCurrentProtocolVersion())));
   EXPECT_TRUE(wfp.use_count() > 0);
   clientOutput_->onComplete();
+  transport_->close(folly::exception_wrapper());
+}
+
+TEST_F(ServerConnectionAcceptorTest, VerifyAsyncProcessorFrame) {
+  ResumeParameters resumeParams(
+      ResumeIdentificationToken::generateNew(),
+      1,
+      2,
+      FrameSerializer::getCurrentProtocolVersion());
+  std::shared_ptr<FrameTransport> transport_;
+  EXPECT_CALL(*handler_, resumeSocket(_, _))
+      .WillOnce(Invoke(
+          [&](std::shared_ptr<FrameTransport> transport,
+              ResumeParameters params) -> bool {
+            // Only capture the transport, wait with setting the processor.
+            transport_ = transport;
+            return true;
+          }));
+
+  auto frameSerializer = FrameSerializer::createCurrentVersion();
+  acceptor_.accept(std::move(serverConnection_), handler_);
+  clientOutput_->onNext(frameSerializer->serializeOut(Frame_RESUME(
+      resumeParams.token,
+      resumeParams.serverPosition,
+      resumeParams.clientPosition,
+      FrameSerializer::getCurrentProtocolVersion())));
+
+  // The transport won't have a processor now, try sending a frame
+  clientOutput_->onNext(frameSerializer->serializeOut(Frame_REQUEST_FNF(
+      1,
+      FrameFlags::EMPTY,
+      Payload())));
+
+  auto processor = std::make_shared<NiceMock<MockFrameProcessor>>();
+  EXPECT_CALL(*processor, onTerminal(_))
+    .Times(Exactly(0));
+  EXPECT_CALL(*processor, processFrame(_))
+    .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf> frame) {
+      Frame_REQUEST_FNF fnfFrame;
+      EXPECT_TRUE(frameSerializer->deserializeFrom(fnfFrame, std::move(frame)));
+    }));
+
+  transport_->setFrameProcessor(processor);
+
+  // Teardown will cause a terminal callback
+  Mock::VerifyAndClearExpectations(processor.get());
+  clientOutput_->onComplete();
+  transport_->close(folly::exception_wrapper());
+}
+
+TEST_F(ServerConnectionAcceptorTest, VerifyAsyncProcessorTerminal) {
+  ResumeParameters resumeParams(
+      ResumeIdentificationToken::generateNew(),
+      1,
+      2,
+      FrameSerializer::getCurrentProtocolVersion());
+  std::shared_ptr<FrameTransport> transport_;
+  EXPECT_CALL(*handler_, resumeSocket(_, _))
+      .WillOnce(Invoke(
+          [&](std::shared_ptr<FrameTransport> transport,
+              ResumeParameters params) -> bool {
+            // Only capture the transport, wait with setting the processor.
+            transport_ = transport;
+            return true;
+          }));
+
+  auto frameSerializer = FrameSerializer::createCurrentVersion();
+  acceptor_.accept(std::move(serverConnection_), handler_);
+  clientOutput_->onNext(frameSerializer->serializeOut(Frame_RESUME(
+      resumeParams.token,
+      resumeParams.serverPosition,
+      resumeParams.clientPosition,
+      FrameSerializer::getCurrentProtocolVersion())));
+
+  // The transport won't have a processor now, try sending terminal.
+  clientOutput_->onError(std::runtime_error("too bad"));
+
+  auto processor = std::make_shared<StrictMock<MockFrameProcessor>>();
+  EXPECT_CALL(*processor, onTerminal(_))
+    .WillOnce(Invoke([&](folly::exception_wrapper ex) {
+      EXPECT_THAT(ex.what().toStdString(), HasSubstr("too bad"));
+    }));
+
+  transport_->setFrameProcessor(processor);
+
   transport_->close(folly::exception_wrapper());
 }
