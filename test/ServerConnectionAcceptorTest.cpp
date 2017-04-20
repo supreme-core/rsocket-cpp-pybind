@@ -40,7 +40,11 @@ class MockConnectionHandler : public ConnectionHandler {
 };
 
 struct MockFrameProcessor : public FrameProcessor {
-  MOCK_METHOD1(processFrame, void(std::unique_ptr<folly::IOBuf>));
+  void processFrame(std::unique_ptr<folly::IOBuf> frame) override {
+    processFrame_(frame);
+  }
+
+  MOCK_METHOD1(processFrame_, void(std::unique_ptr<folly::IOBuf>&));
   MOCK_METHOD1(onTerminal, void(folly::exception_wrapper));
 };
 
@@ -255,8 +259,8 @@ TEST_F(ServerConnectionAcceptorTest, VerifyAsyncProcessorFrame) {
   auto processor = std::make_shared<NiceMock<MockFrameProcessor>>();
   EXPECT_CALL(*processor, onTerminal(_))
     .Times(Exactly(0));
-  EXPECT_CALL(*processor, processFrame(_))
-    .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf> frame) {
+  EXPECT_CALL(*processor, processFrame_(_))
+    .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& frame) {
       Frame_REQUEST_FNF fnfFrame;
       EXPECT_TRUE(frameSerializer->deserializeFrom(fnfFrame, std::move(frame)));
     }));
