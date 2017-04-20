@@ -131,6 +131,38 @@ TEST_F(ServerConnectionAcceptorTest, SetupFrame) {
   clientOutput_->onComplete();
 }
 
+TEST_F(ServerConnectionAcceptorTest, ResumeFrameNoSession) {
+  std::unique_ptr<folly::IOBuf> data;
+  EXPECT_CALL(*clientInput_, onNext_(_))
+    .WillOnce(Invoke([&](std::unique_ptr<folly::IOBuf>& buffer) {
+      data = std::move(buffer);
+    }));
+
+
+  ResumeParameters resumeParams(
+      ResumeIdentificationToken::generateNew(),
+      1,
+      2,
+      FrameSerializer::getCurrentProtocolVersion());
+  EXPECT_CALL(*handler_, resumeSocket(_, _))
+      .WillOnce(Return(false));
+
+  auto frameSerializer = FrameSerializer::createCurrentVersion();
+  acceptor_.accept(std::move(serverConnection_), handler_);
+  clientOutput_->onNext(frameSerializer->serializeOut(Frame_RESUME(
+      resumeParams.token,
+      resumeParams.serverPosition,
+      resumeParams.clientPosition,
+      FrameSerializer::getCurrentProtocolVersion())));
+
+  Frame_ERROR errorFrame;
+  ASSERT_TRUE(data != nullptr);
+  EXPECT_TRUE(frameSerializer->deserializeFrom(errorFrame, std::move(data)));
+  EXPECT_EQ(errorFrame.errorCode_, ErrorCode::CONNECTION_ERROR);
+
+  clientOutput_->onComplete();
+}
+
 TEST_F(ServerConnectionAcceptorTest, ResumeFrame) {
   ResumeParameters resumeParams(
       ResumeIdentificationToken::generateNew(),
