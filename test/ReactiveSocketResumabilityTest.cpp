@@ -4,7 +4,7 @@
 #include <gmock/gmock.h>
 
 #include "src/NullRequestHandler.h"
-#include "src/StandardReactiveSocket.h"
+#include "src/ReactiveSocket.h"
 #include "test/InlineConnection.h"
 #include "test/MockStats.h"
 #include "test/ReactiveStreamsMocksCompat.h"
@@ -34,7 +34,7 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
 
   auto stats = std::make_shared<MockStats>();
 
-  auto socket = StandardReactiveSocket::fromClientConnection(
+  auto socket = ReactiveSocket::fromClientConnection(
       defaultExecutor(),
       std::move(socketConnection),
       std::make_unique<DefaultRequestHandler>(),

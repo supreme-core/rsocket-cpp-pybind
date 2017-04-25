@@ -170,15 +170,14 @@ add_library(
   src/NullRequestHandler.h
   src/Payload.cpp
   src/Payload.h
-  src/ReactiveSocket.h
   src/ReactiveStreamsCompat.h
   src/RequestHandler.h
   src/ResumeCache.cpp
   src/ResumeCache.h
   src/ServerConnectionAcceptor.cpp
   src/ServerConnectionAcceptor.h
-  src/StandardReactiveSocket.cpp
-  src/StandardReactiveSocket.h
+  src/ReactiveSocket.cpp
+  src/ReactiveSocket.h
   src/Stats.cpp
   src/Stats.h
   src/StreamsFactory.cpp
@@ -259,8 +258,8 @@ add_executable(
         test/tcp/TcpClient.cpp
         test/simple/PrintSubscriber.cpp
         test/simple/PrintSubscriber.h
-        src/StandardReactiveSocket.cpp
-        src/StandardReactiveSocket.h
+        src/ReactiveSocket.cpp
+        src/ReactiveSocket.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 
@@ -338,8 +337,8 @@ add_executable(
         test/resume/TcpResumeClient.cpp
         test/simple/PrintSubscriber.cpp
         test/simple/PrintSubscriber.h
-        src/StandardReactiveSocket.cpp
-        src/StandardReactiveSocket.h
+        src/ReactiveSocket.cpp
+        src/ReactiveSocket.h
         test/simple/StatsPrinter.cpp
         test/simple/StatsPrinter.h)
 

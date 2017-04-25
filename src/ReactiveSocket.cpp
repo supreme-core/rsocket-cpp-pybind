@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "src/StandardReactiveSocket.h"
+#include "src/ReactiveSocket.h"
 
 #include <folly/Conv.h>
 #include <folly/ExceptionWrapper.h>
@@ -15,7 +15,7 @@
 
 namespace reactivesocket {
 
-StandardReactiveSocket::~StandardReactiveSocket() {
+ReactiveSocket::~ReactiveSocket() {
   debugCheckCorrectExecutor();
 
   // Force connection closure, this will trigger terminal signals to be
@@ -23,7 +23,7 @@ StandardReactiveSocket::~StandardReactiveSocket() {
   close();
 }
 
-StandardReactiveSocket::StandardReactiveSocket(
+ReactiveSocket::ReactiveSocket(
     ReactiveSocketMode mode,
     std::shared_ptr<RequestHandler> handler,
     std::shared_ptr<Stats> stats,
@@ -41,8 +41,8 @@ StandardReactiveSocket::StandardReactiveSocket(
   connection_->stats().socketCreated();
 }
 
-std::unique_ptr<StandardReactiveSocket>
-StandardReactiveSocket::fromClientConnection(
+std::unique_ptr<ReactiveSocket>
+ReactiveSocket::fromClientConnection(
     folly::Executor& executor,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
@@ -61,14 +61,14 @@ StandardReactiveSocket::fromClientConnection(
   return socket;
 }
 
-std::unique_ptr<StandardReactiveSocket>
-StandardReactiveSocket::disconnectedClient(
+std::unique_ptr<ReactiveSocket>
+ReactiveSocket::disconnectedClient(
     folly::Executor& executor,
     std::unique_ptr<RequestHandler> handler,
     std::shared_ptr<Stats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     ProtocolVersion protocolVersion) {
-  std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
+  std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       ReactiveSocketMode::CLIENT,
       std::move(handler),
       std::move(stats),
@@ -81,8 +81,8 @@ StandardReactiveSocket::disconnectedClient(
   return socket;
 }
 
-std::unique_ptr<StandardReactiveSocket>
-StandardReactiveSocket::fromServerConnection(
+std::unique_ptr<ReactiveSocket>
+ReactiveSocket::fromServerConnection(
     folly::Executor& executor,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
@@ -102,13 +102,13 @@ StandardReactiveSocket::fromServerConnection(
   return socket;
 }
 
-std::unique_ptr<StandardReactiveSocket>
-StandardReactiveSocket::disconnectedServer(
+std::unique_ptr<ReactiveSocket>
+ReactiveSocket::disconnectedServer(
     folly::Executor& executor,
     std::shared_ptr<RequestHandler> handler,
     std::shared_ptr<Stats> stats,
     ProtocolVersion protocolVersion) {
-  std::unique_ptr<StandardReactiveSocket> socket(new StandardReactiveSocket(
+  std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       ReactiveSocketMode::SERVER,
       std::move(handler),
       std::move(stats),
@@ -121,7 +121,7 @@ StandardReactiveSocket::disconnectedServer(
   return socket;
 }
 
-std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
+std::shared_ptr<Subscriber<Payload>> ReactiveSocket::requestChannel(
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
   checkNotClosed();
@@ -129,7 +129,7 @@ std::shared_ptr<Subscriber<Payload>> StandardReactiveSocket::requestChannel(
       std::move(responseSink), executor_);
 }
 
-void StandardReactiveSocket::requestStream(
+void ReactiveSocket::requestStream(
     Payload request,
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
@@ -138,7 +138,7 @@ void StandardReactiveSocket::requestStream(
       std::move(request), std::move(responseSink), executor_);
 }
 
-void StandardReactiveSocket::requestResponse(
+void ReactiveSocket::requestResponse(
     Payload payload,
     std::shared_ptr<Subscriber<Payload>> responseSink) {
   debugCheckCorrectExecutor();
@@ -147,7 +147,7 @@ void StandardReactiveSocket::requestResponse(
       std::move(payload), std::move(responseSink), executor_);
 }
 
-void StandardReactiveSocket::requestFireAndForget(Payload request) {
+void ReactiveSocket::requestFireAndForget(Payload request) {
   debugCheckCorrectExecutor();
   checkNotClosed();
   Frame_REQUEST_FNF frame(
@@ -158,7 +158,7 @@ void StandardReactiveSocket::requestFireAndForget(Payload request) {
       connection_->frameSerializer().serializeOut(std::move(frame)));
 }
 
-void StandardReactiveSocket::metadataPush(
+void ReactiveSocket::metadataPush(
     std::unique_ptr<folly::IOBuf> metadata) {
   debugCheckCorrectExecutor();
   checkNotClosed();
@@ -166,7 +166,7 @@ void StandardReactiveSocket::metadataPush(
       Frame_METADATA_PUSH(std::move(metadata))));
 }
 
-void StandardReactiveSocket::clientConnect(
+void ReactiveSocket::clientConnect(
     std::shared_ptr<FrameTransport> frameTransport,
     ConnectionSetupPayload setupPayload) {
   CHECK(frameTransport && !frameTransport->isClosed());
@@ -204,7 +204,7 @@ void StandardReactiveSocket::clientConnect(
       std::move(frameTransport), true, ProtocolVersion::Unknown);
 }
 
-void StandardReactiveSocket::serverConnect(
+void ReactiveSocket::serverConnect(
     std::shared_ptr<FrameTransport> frameTransport,
     const SocketParameters& socketParams) {
   debugCheckCorrectExecutor();
@@ -213,48 +213,48 @@ void StandardReactiveSocket::serverConnect(
       std::move(frameTransport), true, socketParams.protocolVersion);
 }
 
-void StandardReactiveSocket::close() {
+void ReactiveSocket::close() {
   debugCheckCorrectExecutor();
   connection_->close(
       folly::exception_wrapper(), StreamCompletionSignal::SOCKET_CLOSED);
 }
 
-void StandardReactiveSocket::disconnect() {
+void ReactiveSocket::disconnect() {
   debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->disconnect(folly::exception_wrapper());
 }
 
-void StandardReactiveSocket::closeConnectionError(const std::string& reason) {
+void ReactiveSocket::closeConnectionError(const std::string& reason) {
   debugCheckCorrectExecutor();
   connection_->closeWithError(Frame_ERROR::connectionError(reason));
 }
 
-std::shared_ptr<FrameTransport> StandardReactiveSocket::detachFrameTransport() {
+std::shared_ptr<FrameTransport> ReactiveSocket::detachFrameTransport() {
   debugCheckCorrectExecutor();
   checkNotClosed();
   return connection_->detachFrameTransport();
 }
 
-void StandardReactiveSocket::onConnected(std::function<void()> listener) {
+void ReactiveSocket::onConnected(std::function<void()> listener) {
   debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->addConnectedListener(std::move(listener));
 }
 
-void StandardReactiveSocket::onDisconnected(ErrorCallback listener) {
+void ReactiveSocket::onDisconnected(ErrorCallback listener) {
   debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->addDisconnectedListener(std::move(listener));
 }
 
-void StandardReactiveSocket::onClosed(ErrorCallback listener) {
+void ReactiveSocket::onClosed(ErrorCallback listener) {
   debugCheckCorrectExecutor();
   checkNotClosed();
   connection_->addClosedListener(std::move(listener));
 }
 
-void StandardReactiveSocket::tryClientResume(
+void ReactiveSocket::tryClientResume(
     const ResumeIdentificationToken& token,
     std::shared_ptr<FrameTransport> frameTransport,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
@@ -274,7 +274,7 @@ void StandardReactiveSocket::tryClientResume(
   connection_->reconnect(std::move(frameTransport), std::move(resumeCallback));
 }
 
-bool StandardReactiveSocket::tryResumeServer(
+bool ReactiveSocket::tryResumeServer(
     std::shared_ptr<FrameTransport> frameTransport,
     const ResumeParameters& resumeParams) {
   CHECK(resumeParams.protocolVersion != ProtocolVersion::Unknown);
@@ -296,22 +296,22 @@ bool StandardReactiveSocket::tryResumeServer(
           resumeParams.serverPosition, resumeParams.clientPosition);
 }
 
-void StandardReactiveSocket::checkNotClosed() const {
+void ReactiveSocket::checkNotClosed() const {
   CHECK(!connection_->isClosed()) << "ReactiveSocket already closed";
 }
 
-DuplexConnection* StandardReactiveSocket::duplexConnection() const {
+DuplexConnection* ReactiveSocket::duplexConnection() const {
   debugCheckCorrectExecutor();
   return connection_->duplexConnection();
 }
 
-void StandardReactiveSocket::debugCheckCorrectExecutor() const {
+void ReactiveSocket::debugCheckCorrectExecutor() const {
   DCHECK(
       !dynamic_cast<folly::EventBase*>(&executor_) ||
       dynamic_cast<folly::EventBase*>(&executor_)->isInEventBaseThread());
 }
 
-bool StandardReactiveSocket::isClosed() {
+bool ReactiveSocket::isClosed() {
   debugCheckCorrectExecutor();
   return connection_->isClosed();
 }

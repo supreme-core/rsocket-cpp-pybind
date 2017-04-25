@@ -13,7 +13,7 @@
 
 #include "src/RequestHandler.h"
 #include "src/ServerConnectionAcceptor.h"
-#include "src/StandardReactiveSocket.h"
+#include "src/ReactiveSocket.h"
 
 namespace rsocket {
 

@@ -7,7 +7,7 @@
 #include "yarpl/Flowable.h"
 
 #include "src/ReactiveStreamsCompat.h"
-#include "src/StandardReactiveSocket.h"
+#include "src/ReactiveSocket.h"
 
 namespace rsocket {
 
@@ -20,7 +20,7 @@ namespace rsocket {
 class RSocketRequester {
  public:
   static std::shared_ptr<RSocketRequester> create(
-      std::unique_ptr<reactivesocket::StandardReactiveSocket> srs,
+      std::unique_ptr<reactivesocket::ReactiveSocket> srs,
       folly::EventBase& executor);
   // TODO figure out how to use folly::Executor instead of EventBase
 
@@ -106,10 +106,10 @@ class RSocketRequester {
 
  private:
   RSocketRequester(
-      std::unique_ptr<reactivesocket::StandardReactiveSocket> srs,
+      std::unique_ptr<reactivesocket::ReactiveSocket> srs,
       folly::EventBase& eventBase);
-  std::shared_ptr<reactivesocket::StandardReactiveSocket>
-      standardReactiveSocket_;
+  std::shared_ptr<reactivesocket::ReactiveSocket>
+      reactiveSocket_;
   folly::EventBase& eventBase_;
 };
 }

@@ -6,7 +6,7 @@
 #include "src/NullRequestHandler.h"
 #include "src/Payload.h"
 #include "src/ReactiveStreamsCompat.h"
-#include "src/StandardReactiveSocket.h"
+#include "src/ReactiveSocket.h"
 #include "src/SubscriptionBase.h"
 
 class HelloStreamRequestHandler : public reactivesocket::DefaultRequestHandler {

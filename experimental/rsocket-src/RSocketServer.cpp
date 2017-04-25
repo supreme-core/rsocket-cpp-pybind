@@ -103,7 +103,7 @@ void RSocketServer::start(OnAccept onAccept) {
         }
         LOG(INFO) << "RSocketServer => received request handler";
 
-        auto rs = StandardReactiveSocket::disconnectedServer(
+        auto rs = ReactiveSocket::disconnectedServer(
             // we know this callback is on a specific EventBase
             executor_,
             std::move(requestHandler),
