@@ -7,7 +7,6 @@
 
 #include "handlers/HelloStreamRequestHandler.h"
 #include "rsocket/RSocket.h"
-#include "rsocket/RSocket.h"
 #include "rsocket/transports/TcpConnectionAcceptor.h"
 
 using namespace rsocket;

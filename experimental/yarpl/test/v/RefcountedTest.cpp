@@ -16,7 +16,7 @@ TEST(RefcountedTest, ObjectCountsAreMaintained) {
       EXPECT_EQ(i, Refcounted::objects());
       v.push_back(std::make_unique<Refcounted>());
       EXPECT_EQ(i + 1, Refcounted::objects());
-      EXPECT_EQ(0U, v[i]->count());  // no references.
+      EXPECT_EQ(0U, v[i]->count()); // no references.
     }
 
     v.resize(11);
@@ -59,4 +59,4 @@ TEST(RefcountedTest, ReferenceCountingWorks) {
   EXPECT_EQ(0U, Refcounted::objects());
 }
 
-}  // yarpl
+} // yarpl

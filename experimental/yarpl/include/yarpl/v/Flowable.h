@@ -46,7 +46,7 @@ class Flowable : public virtual Refcounted {
    *
    * \return a handle to a flowable that will use the emitter.
    */
-  template<typename Emitter>
+  template <typename Emitter>
   class EmitterWrapper;
 
   template <
@@ -205,13 +205,13 @@ namespace yarpl {
 template <typename T>
 template <typename Emitter>
 class Flowable<T>::EmitterWrapper : public Flowable<T> {
-public:
+ public:
   explicit EmitterWrapper(Emitter&& emitter)
-    : emitter_(std::forward<Emitter>(emitter)) {}
+      : emitter_(std::forward<Emitter>(emitter)) {}
 
   virtual void subscribe(Reference<Subscriber<T>> subscriber) {
     new SynchronousSubscription(
-          Reference<Flowable>(this), std::move(subscriber));
+        Reference<Flowable>(this), std::move(subscriber));
   }
 
   virtual std::tuple<int64_t, bool> emit(
@@ -228,8 +228,7 @@ template <typename T>
 template <typename Emitter, typename>
 auto Flowable<T>::create(Emitter&& emitter) {
   return Reference<Flowable<T>>(
-      new Flowable<T>::EmitterWrapper<Emitter>(
-          std::forward<Emitter>(emitter)));
+      new Flowable<T>::EmitterWrapper<Emitter>(std::forward<Emitter>(emitter)));
 }
 
 template <typename T>
@@ -246,7 +245,7 @@ auto Flowable<T>::take(int64_t limit) {
       new TakeOperator<T>(Reference<Flowable<T>>(this), limit));
 }
 
-template<typename T>
+template <typename T>
 auto Flowable<T>::subscribeOn(Scheduler& scheduler) {
   return Reference<Flowable<T>>(
       new SubscribeOnOperator<T>(Reference<Flowable<T>>(this), scheduler));

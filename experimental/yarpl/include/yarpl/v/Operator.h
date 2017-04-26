@@ -16,9 +16,9 @@ namespace yarpl {
  */
 template <typename U, typename D>
 class Operator : public Flowable<D> {
-public:
+ public:
   explicit Operator(Reference<Flowable<U>> upstream)
-    : upstream_(std::move(upstream)) {}
+      : upstream_(std::move(upstream)) {}
 
   virtual void subscribe(Reference<Subscriber<D>> subscriber) override {
     upstream_->subscribe(Reference<Subscription>(
@@ -183,41 +183,39 @@ class TakeOperator : public Operator<T, T> {
   const int64_t limit_;
 };
 
-template<typename T>
+template <typename T>
 class SubscribeOnOperator : public Operator<T, T> {
-public:
+ public:
   SubscribeOnOperator(Reference<Flowable<T>> upstream, Scheduler& scheduler)
-    : Operator<T, T>(std::move(upstream)), worker_(scheduler.createWorker()) {}
+      : Operator<T, T>(std::move(upstream)),
+        worker_(scheduler.createWorker()) {}
 
   virtual void subscribe(Reference<Subscriber<T>> subscriber) override {
     Operator<T, T>::upstream_->subscribe(
-        Reference<Subscription>(
-            new Subscription(
-                Reference<Flowable<T>>(this),
-                std::move(worker_),
-                std::move(subscriber))));
+        Reference<Subscription>(new Subscription(
+            Reference<Flowable<T>>(this),
+            std::move(worker_),
+            std::move(subscriber))));
   }
 
-private:
+ private:
   class Subscription : public Operator<T, T>::Subscription {
-  public:
-    Subscription(Reference<Flowable<T>> flowable,
-                 std::unique_ptr<Worker> worker,
-                 Reference<Subscriber<T>> subscriber)
-      : Operator<T, T>::Subscription(
-            std::move(flowable), std::move(subscriber)),
-        worker_(std::move(worker)) {}
+   public:
+    Subscription(
+        Reference<Flowable<T>> flowable,
+        std::unique_ptr<Worker> worker,
+        Reference<Subscriber<T>> subscriber)
+        : Operator<T, T>::Subscription(
+              std::move(flowable),
+              std::move(subscriber)),
+          worker_(std::move(worker)) {}
 
     virtual void request(int64_t delta) override {
-      worker_->schedule([delta, this] {
-        this->callSuperRequest(delta);
-      });
+      worker_->schedule([delta, this] { this->callSuperRequest(delta); });
     }
 
     virtual void cancel() override {
-      worker_->schedule([this] {
-        this->callSuperCancel();
-      });
+      worker_->schedule([this] { this->callSuperCancel(); });
     }
 
     virtual void onNext(const T& value) override {
@@ -225,7 +223,7 @@ private:
       subscriber->onNext(value);
     }
 
-  private:
+   private:
     // Trampoline to call superclass method; gcc bug 58972.
     void callSuperRequest(int64_t delta) {
       Operator<T, T>::Subscription::request(delta);

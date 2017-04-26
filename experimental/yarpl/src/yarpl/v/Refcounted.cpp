@@ -4,7 +4,7 @@ namespace yarpl {
 
 #if !defined(NDEBUG)
 
-Refcounted::Refcounted () {
+Refcounted::Refcounted() {
   ++objects_;
 }
 
@@ -18,6 +18,6 @@ size_t Refcounted::objects() {
 
 std::atomic_size_t Refcounted::objects_{0};
 
-#endif  /* !NDEBUG */
+#endif /* !NDEBUG */
 
-}  // yarpl
+} // yarpl

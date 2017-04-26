@@ -10,7 +10,9 @@
 
 int main() {
   std::cout << "*** Run yarpl::flowable::v examples ***" << std::endl;
-  FlowableVExamples::run();
+  // TODO: enable
+  // FlowableVExamples::run();
+  
   //  std::cout << "*** Run ObservableExamples ***" << std::endl;
   //  ObservableExamples::run();
   //  std::cout << "*** Run FlowableExamples ***" << std::endl;

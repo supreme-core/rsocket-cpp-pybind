@@ -8,12 +8,12 @@
 namespace yarpl {
 
 class ThreadScheduler : public Scheduler {
-public:
+ public:
   ThreadScheduler() {}
 
   std::unique_ptr<Worker> createWorker() override;
 
-private:
+ private:
   ThreadScheduler(ThreadScheduler&&) = delete;
   ThreadScheduler(const ThreadScheduler&) = delete;
   ThreadScheduler& operator=(ThreadScheduler&&) = delete;
