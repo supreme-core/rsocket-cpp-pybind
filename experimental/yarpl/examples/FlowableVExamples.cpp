@@ -23,10 +23,39 @@ auto printer() {
       2 /* low [optional] batch size for demo */);
 }
 
+Reference<Flowable<int64_t>> getData() {
+  return Flowables::range(2, 5);
+}
+
 std::string getThreadId() {
   std::ostringstream oss;
   oss << std::this_thread::get_id();
   return oss.str();
+}
+
+void fromPublisherExample() {
+  auto onSubscribe = [](Reference<Subscriber<int>> subscriber) {
+    class Subscription : public ::yarpl::Subscription {
+    public:
+      virtual void request(int64_t delta) override {
+        // TODO
+      }
+
+      virtual void cancel() override {
+        // TODO
+      }
+    };
+
+    Reference<::yarpl::Subscription> subscription(new Subscription);
+    subscriber->onSubscribe(subscription);
+    subscriber->onNext(1234);
+    subscriber->onNext(5678);
+    subscriber->onNext(1234);
+    subscriber->onComplete();
+  };
+
+  Flowables::fromPublisher<int>(std::move(onSubscribe))
+      ->subscribe(printer<int>());
 }
 
 } // namespace
@@ -34,6 +63,9 @@ std::string getThreadId() {
 void FlowableVExamples::run() {
   std::cout << "create a flowable" << std::endl;
   Flowables::range(2, 2);
+
+  std::cout << "get a flowable from a method" << std::endl;
+  getData()->subscribe(printer<int64_t>());
 
   std::cout << "just: single value" << std::endl;
   Flowables::just<long>(23)->subscribe(printer<long>());
@@ -96,4 +128,7 @@ void FlowableVExamples::run() {
       ->subscribe(printer<std::string>());
   std::cout << "  waiting   on " << getThreadId() << std::endl;
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  std::cout << "fromPublisher - delegate to onSubscribe" << std::endl;
+  fromPublisherExample();
 }
