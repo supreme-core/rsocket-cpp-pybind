@@ -2,9 +2,8 @@
 
 C++ implementation of [RSocket](https://rsocket.io)
 
-# Build Status
-
 <a href='https://travis-ci.org/rsocket/rsocket-cpp/builds'><img src='https://travis-ci.org/rsocket/rsocket-cpp.svg?branch=master'></a>
+[![Coverage Status](https://coveralls.io/repos/github/rsocket/rsocket-cpp/badge.svg?branch=master)](https://coveralls.io/github/rsocket/rsocket-cpp?branch=master)
 
 # Dependencies
 
