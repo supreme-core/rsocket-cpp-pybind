@@ -116,6 +116,8 @@ target_include_directories(
         PUBLIC "${PROJECT_SOURCE_DIR}/include" # allow include paths such as "yarpl/observable.h" can be used
 )
 
+add_dependencies(yarpl-tests gmock)
+
 ## perf tests
 #add_executable(
 #        yarpl-perf
