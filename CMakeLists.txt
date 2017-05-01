@@ -94,6 +94,8 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
     set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Wno-undefined-func-template)
   endif ()
+
+  set(TEST_CXX_FLAGS ${TEST_CXX_FLAGS} -Wno-inconsistent-missing-override)
 elseif(CMAKE_COMPILER_IS_GNUCXX)
   set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Werror -pedantic -pedantic-errors)
 endif()
@@ -252,6 +254,10 @@ target_link_libraries(
   ${GFLAGS_LIBRARY}
   ${GLOG_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT})
+
+target_compile_options(
+  tests
+  PRIVATE ${TEST_CXX_FLAGS})
 
 add_dependencies(tests gmock ReactiveSocket)
 
