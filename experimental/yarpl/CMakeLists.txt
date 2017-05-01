@@ -55,12 +55,11 @@ add_library(
         # Flowable sources
         src/yarpl/Refcounted.cpp
         # utils
-        src/yarpl/utils/type_traits.h
+        include/yarpl/utils/type_traits.h
         # Scheduler
+        include/yarpl/ThreadScheduler.h
         src/yarpl/ThreadScheduler.cpp
-        src/yarpl/ThreadScheduler.h
-        include/yarpl/observable/Subscriptions.h
-        )
+)
 
 target_include_directories(
         yarpl
