@@ -48,6 +48,8 @@ add_library(
         include/yarpl/Observable_Subscription.h
         include/yarpl/Observable_TestObserver.h
         src/yarpl/observable/Observable_Subscription.cpp
+        # utils
+        include/yarpl/utils/type_traits.h
         # Flowable sources
         src/yarpl/Refcounted.cpp
         # Observable sources
@@ -56,11 +58,9 @@ add_library(
         # Observable operators
         src/yarpl/observable/operators/Observable_Map.h
         src/yarpl/observable/operators/Observable_Take.h
-        # utils
-        src/yarpl/utils/type_traits.h
         # Scheduler
+        include/yarpl/ThreadScheduler.h
         src/yarpl/ThreadScheduler.cpp
-        src/yarpl/ThreadScheduler.h
 )
 
 target_include_directories(
