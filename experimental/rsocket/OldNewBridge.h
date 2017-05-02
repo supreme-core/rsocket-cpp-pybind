@@ -24,11 +24,16 @@ class NewToOldSubscription : public yarpl::flowable::Subscription {
   ~NewToOldSubscription() = default;
 
   void request(int64_t n) override {
-    inner_->request(n);
+    if (inner_) {
+      inner_->request(n);
+    }
   }
 
   void cancel() override {
     inner_->cancel();
+
+    inner_.reset();
+    release();
   }
 
  private:
@@ -55,10 +60,16 @@ class OldToNewSubscriber
 
   void onComplete() noexcept {
     inner_->onComplete();
+
+    inner_.reset();
+    bridge_.reset();
   }
 
   void onError(folly::exception_wrapper ex) noexcept {
     inner_->onError(ex.to_exception_ptr());
+
+    inner_.reset();
+    bridge_.reset();
   }
 
  private:
@@ -74,24 +85,24 @@ class OldToNewSubscription : public reactivesocket::Subscription {
       : inner_{inner} {}
 
   void request(size_t n) noexcept override {
-    if (!terminated_) {
+    if (inner_) {
       inner_->request(n);
     }
   }
 
   void cancel() noexcept override {
-    if (!terminated_) {
+    if (inner_) {
       inner_->cancel();
     }
+    inner_.reset();
   }
 
   void terminate() {
-    terminated_ = true;
+    inner_.reset();
   }
 
  private:
   yarpl::Reference<yarpl::flowable::Subscription> inner_{nullptr};
-  bool terminated_{false};
 };
 
 class NewToOldSubscriber : public yarpl::flowable::Subscriber<reactivesocket::Payload> {
@@ -120,6 +131,9 @@ class NewToOldSubscriber : public yarpl::flowable::Subscriber<reactivesocket::Pa
       bridge_->terminate();
     }
     inner_->onComplete();
+
+    inner_.reset();
+    bridge_.reset();
   }
 
   void onError(std::exception_ptr eptr) override {
@@ -127,6 +141,9 @@ class NewToOldSubscriber : public yarpl::flowable::Subscriber<reactivesocket::Pa
       bridge_->terminate();
     }
     inner_->onError(folly::exception_wrapper(std::move(eptr)));
+
+    inner_.reset();
+    bridge_.reset();
   }
 
  private:
