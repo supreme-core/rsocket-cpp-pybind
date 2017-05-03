@@ -12,12 +12,12 @@ namespace {
 template <typename T>
 class CollectingSubscriber : public Subscriber<T> {
  public:
-  virtual void onSubscribe(Reference<Subscription> subscription) override {
+  void onSubscribe(Reference<Subscription> subscription) override {
     Subscriber<T>::onSubscribe(subscription);
     subscription->request(100);
   }
 
-  virtual void onNext(const T& next) override {
+  void onNext(const T& next) override {
     Subscriber<T>::onNext(next);
     values_.push_back(next);
   }
@@ -27,14 +27,14 @@ class CollectingSubscriber : public Subscriber<T> {
     complete_ = true;
   }
 
-  virtual void onError(const std::exception_ptr ex) override {
+  void onError(const std::exception_ptr ex) override {
     Subscriber<T>::onError(ex);
     error_ = true;
 
     try {
       std::rethrow_exception(ex);
     }
-    catch (const std::exception &e) {
+    catch (const std::exception& e) {
       errorMsg_ = e.what();
     }
   }
@@ -51,7 +51,7 @@ class CollectingSubscriber : public Subscriber<T> {
     return error_;
   }
 
-  const std::string errorMsg() {
+  std::string errorMsg() const {
     return errorMsg_;
   }
 
@@ -129,6 +129,18 @@ TEST(FlowableTest, SimpleTake) {
 }
 
 TEST(FlowableTest, FlowableError) {
+  auto flowable = Flowables::error<int>(std::runtime_error("something broke!"));
+  auto collector =
+      Reference<CollectingSubscriber<int>>(new CollectingSubscriber<int>);
+  auto subscriber = Reference<Subscriber<int>>(collector.get());
+  flowable->subscribe(std::move(subscriber));
+
+  EXPECT_EQ(collector->complete(), false);
+  EXPECT_EQ(collector->error(), true);
+  EXPECT_EQ(collector->errorMsg(), "something broke!");
+}
+
+TEST(FlowableTest, FlowableErrorPtr) {
   auto flowable = Flowables::error<int>(
       std::make_exception_ptr(std::runtime_error("something broke!")));
   auto collector =
