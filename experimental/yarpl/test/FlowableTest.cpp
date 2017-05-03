@@ -22,12 +22,44 @@ class CollectingSubscriber : public Subscriber<T> {
     values_.push_back(next);
   }
 
+  void onComplete() override {
+    Subscriber<T>::onComplete();
+    complete_ = true;
+  }
+
+  virtual void onError(const std::exception_ptr ex) override {
+    Subscriber<T>::onError(ex);
+    error_ = true;
+
+    try {
+      std::rethrow_exception(ex);
+    }
+    catch (const std::exception &e) {
+      errorMsg_ = e.what();
+    }
+  }
+
   const std::vector<T>& values() const {
     return values_;
   }
 
+  bool complete() const {
+    return complete_;
+  }
+
+  bool error() const {
+    return error_;
+  }
+
+  const std::string errorMsg() {
+    return errorMsg_;
+  }
+
  private:
   std::vector<T> values_;
+  bool complete_{false};
+  bool error_{false};
+  std::string errorMsg_;
 };
 
 /// Construct a pipeline with a collecting subscriber against the supplied
@@ -94,6 +126,30 @@ TEST(FlowableTest, SimpleTake) {
       run(Flowables::range(10, 15)),
       std::vector<int64_t>({10, 11, 12, 13, 14}));
   EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, FlowableError) {
+  auto flowable = Flowables::error<int>(
+      std::make_exception_ptr(std::runtime_error("something broke!")));
+  auto collector =
+      Reference<CollectingSubscriber<int>>(new CollectingSubscriber<int>);
+  auto subscriber = Reference<Subscriber<int>>(collector.get());
+  flowable->subscribe(std::move(subscriber));
+
+  EXPECT_EQ(collector->complete(), false);
+  EXPECT_EQ(collector->error(), true);
+  EXPECT_EQ(collector->errorMsg(), "something broke!");
+}
+
+TEST(FlowableTest, FlowableEmpty) {
+  auto flowable = Flowables::empty<int>();
+  auto collector =
+      Reference<CollectingSubscriber<int>>(new CollectingSubscriber<int>);
+  auto subscriber = Reference<Subscriber<int>>(collector.get());
+  flowable->subscribe(std::move(subscriber));
+
+  EXPECT_EQ(collector->complete(), true);
+  EXPECT_EQ(collector->error(), false);
 }
 
 } // flowable
