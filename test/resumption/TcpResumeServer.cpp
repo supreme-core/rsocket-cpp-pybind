@@ -86,7 +86,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
-      ConnectionSetupPayload request) noexcept override {
+      SetupParameters request) noexcept override {
     CHECK(false) << "unexpected call";
     return nullptr;
   }
@@ -141,7 +141,7 @@ class MyConnectionHandler : public ConnectionHandler {
 
   void setupNewSocket(
       std::shared_ptr<FrameTransport> frameTransport,
-      ConnectionSetupPayload setupPayload) override {
+      SetupParameters setupPayload) override {
     LOG(INFO) << "MyConnectionHandler::setupNewSocket " << setupPayload;
 
     std::unique_ptr<RequestHandler> requestHandler =

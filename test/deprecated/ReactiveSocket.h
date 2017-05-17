@@ -4,7 +4,7 @@
 
 #include <memory>
 #include "src/internal/Common.h"
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 #include "src/Payload.h"
 #include "src/temporary_home/Stats.h"
 #include "yarpl/flowable/Subscriber.h"
@@ -38,7 +38,7 @@ class ReactiveSocket {
       folly::Executor& executor,
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
-      ConnectionSetupPayload setupPayload = ConnectionSetupPayload(),
+      SetupParameters setupPayload = SetupParameters(),
       std::shared_ptr<Stats> stats = Stats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
@@ -56,8 +56,8 @@ class ReactiveSocket {
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
       std::shared_ptr<Stats> stats = Stats::noop(),
-      const SocketParameters& socketParameters =
-          SocketParameters(/*resumable=*/false, ProtocolVersion::Unknown));
+      const RSocketParameters& socketParameters =
+          RSocketParameters(/*resumable=*/false, ProtocolVersion::Unknown));
 
   static std::unique_ptr<ReactiveSocket> disconnectedServer(
       folly::Executor& executor,
@@ -82,11 +82,11 @@ class ReactiveSocket {
 
   void clientConnect(
       std::shared_ptr<FrameTransport> frameTransport,
-      ConnectionSetupPayload setupPayload = ConnectionSetupPayload());
+      SetupParameters setupPayload = SetupParameters());
 
   void serverConnect(
       std::shared_ptr<FrameTransport> frameTransport,
-      const SocketParameters& socketParams);
+      const RSocketParameters& socketParams);
 
   void close();
   void disconnect();

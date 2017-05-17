@@ -220,7 +220,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     }
 
     std::shared_ptr<StreamState> handleSetupPayload(
-        ConnectionSetupPayload request) noexcept override {
+        SetupParameters request) noexcept override {
       LOG(INFO) << "handleSetupPayload " << request;
       return nullptr;
     }

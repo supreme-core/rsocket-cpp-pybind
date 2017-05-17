@@ -234,7 +234,7 @@ TEST(FramedReaderTest, InvalidDataStream) {
       // No interactions on this mock, the client will not accept any
       // requests.
       std::move(requestHandler),
-      ConnectionSetupPayload("", "", Payload("test client payload")));
+      SetupParameters("", "", Payload("test client payload")));
 }
 
 // TODO(lehecka): verify FramedReader protocol autodetection mechanism

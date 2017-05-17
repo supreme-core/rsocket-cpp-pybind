@@ -3,7 +3,7 @@
 #pragma once
 
 #include "src/internal/Common.h"
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 #include "src/Payload.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscription.h"
@@ -46,7 +46,7 @@ class RequestHandler {
 
   /// Temporary home - this should eventually be an input to asking for a
   /// RequestHandler so negotiation is possible
-  virtual std::shared_ptr<StreamState> handleSetupPayload(ConnectionSetupPayload request) noexcept = 0;
+  virtual std::shared_ptr<StreamState> handleSetupPayload(SetupParameters request) noexcept = 0;
 
   /// Temporary home - this should accompany handleSetupPayload
   /// Return stream state for the given token. Return nullptr to disable resume

@@ -8,7 +8,7 @@
 #include <folly/String.h>
 #include <folly/io/async/EventBase.h>
 #include "src/internal/ClientResumeStatusCallback.h"
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 #include "src/DuplexConnection.h"
 #include "src/framing/FrameTransport.h"
 #include "src/temporary_home/RequestHandler.h"
@@ -464,7 +464,7 @@ void RSocketStateMachine::handleConnectionFrame(
         LOG(ERROR) << "ignoring setup frame with lease";
       }
 
-      ConnectionSetupPayload setupPayload;
+      SetupParameters setupPayload;
       frame.moveToSetupPayload(setupPayload);
 
       // this should be already set to the correct version
@@ -886,7 +886,7 @@ void RSocketStateMachine::setFrameSerializer(
 
 void RSocketStateMachine::setUpFrame(
     std::shared_ptr<FrameTransport> frameTransport,
-    ConnectionSetupPayload setupPayload) {
+    SetupParameters setupPayload) {
   auto protocolVersion = getSerializerProtocolVersion();
 
   Frame_SETUP frame(

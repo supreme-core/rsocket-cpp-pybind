@@ -40,7 +40,7 @@ class MockRequestHandler : public RequestHandler {
   MOCK_METHOD1(
       handleSetupPayload_,
       std::shared_ptr<StreamState>(
-          ConnectionSetupPayload& request));
+          SetupParameters& request));
   MOCK_METHOD1(
       handleResume_,
       bool(ResumeParameters& resumeParams));
@@ -78,7 +78,7 @@ class MockRequestHandler : public RequestHandler {
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
-      ConnectionSetupPayload request) noexcept override {
+      SetupParameters request) noexcept override {
     return handleSetupPayload_(request);
   }
 

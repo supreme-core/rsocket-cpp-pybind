@@ -41,7 +41,7 @@ class ClientSideConcurrencyTest : public testing::Test {
           // No interactions on this mock, the client will not accept any
           // requests.
           std::move(requestHandler),
-          ConnectionSetupPayload("", "", Payload()),
+          SetupParameters("", "", Payload()),
           Stats::noop(),
           nullptr);
     });
@@ -252,7 +252,7 @@ class ServerSideConcurrencyTest : public testing::Test {
         // No interactions on this mock, the client will not accept any
         // requests.
         std::make_unique<StrictMock<MockRequestHandler>>(),
-        ConnectionSetupPayload("", "", Payload()));
+        SetupParameters("", "", Payload()));
 
     auto serverHandler = std::make_unique<StrictMock<MockRequestHandler>>();
     auto& serverHandlerRef = *serverHandler;
@@ -266,7 +266,7 @@ class ServerSideConcurrencyTest : public testing::Test {
           std::move(serverConn),
           std::move(serverHandler),
           Stats::noop(),
-          SocketParameters(false, ProtocolVersion::Unknown));
+          RSocketParameters(false, ProtocolVersion::Unknown));
     });
 
     EXPECT_CALL(*clientInput, onSubscribe_(_))
@@ -525,7 +525,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
             std::move(serverSocketConnection), inlineExecutor()),
         std::move(serverHandler),
         Stats::noop(),
-        SocketParameters(false, ProtocolVersion::Unknown));
+        RSocketParameters(false, ProtocolVersion::Unknown));
 
     Frame_SETUP frameSetup(
         FrameFlags::EMPTY,

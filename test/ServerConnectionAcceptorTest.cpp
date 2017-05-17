@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 #include "src/framing/FrameProcessor.h"
 #include "src/framing/FrameSerializer.h"
 #include "src/framing/FrameTransport.h"
@@ -19,13 +19,13 @@ class MockConnectionHandler : public ConnectionHandler {
  public:
   void setupNewSocket(
       std::shared_ptr<FrameTransport> frameTransport,
-      ConnectionSetupPayload setupPayload) override {
+      SetupParameters setupPayload) override {
     doSetupNewSocket(std::move(frameTransport), setupPayload);
   }
 
   MOCK_METHOD2(
       doSetupNewSocket,
-      void(std::shared_ptr<FrameTransport>, ConnectionSetupPayload&));
+      void(std::shared_ptr<FrameTransport>, SetupParameters&));
 
   MOCK_METHOD2(
       resumeSocket,
@@ -103,12 +103,12 @@ TEST_F(ServerConnectionAcceptorTest, EarlyError) {
 }
 
 TEST_F(ServerConnectionAcceptorTest, SetupFrame) {
-  ConnectionSetupPayload setupPayload(
+  SetupParameters setupPayload(
       "metadataMimeType", "dataMimeType", Payload(), true);
   EXPECT_CALL(*handler_, doSetupNewSocket(_, _))
       .WillOnce(Invoke(
           [&](std::shared_ptr<FrameTransport> transport,
-              ConnectionSetupPayload& payload) {
+              SetupParameters& payload) {
             ASSERT_EQ(setupPayload.token, payload.token);
             ASSERT_EQ(setupPayload.metadataMimeType, payload.metadataMimeType);
             ASSERT_EQ(setupPayload.dataMimeType, payload.dataMimeType);

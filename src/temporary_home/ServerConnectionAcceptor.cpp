@@ -86,7 +86,7 @@ void ServerConnectionAcceptor::processFrame(
         break;
       }
 
-      ConnectionSetupPayload setupPayload;
+      SetupParameters setupPayload;
       setupFrame.moveToSetupPayload(setupPayload);
 
       removeConnection(transport);

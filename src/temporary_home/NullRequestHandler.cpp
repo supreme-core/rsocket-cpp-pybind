@@ -48,7 +48,7 @@ void NullRequestHandler::handleMetadataPush(
     std::unique_ptr<folly::IOBuf> /*request*/) noexcept {}
 
 std::shared_ptr<StreamState> NullRequestHandler::handleSetupPayload(
-    ConnectionSetupPayload /*request*/) noexcept {
+    SetupParameters /*request*/) noexcept {
   return nullptr;
 }
 

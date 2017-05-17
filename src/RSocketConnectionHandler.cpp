@@ -115,14 +115,14 @@ class RSocketHandlerBridge : public reactivesocket::DefaultRequestHandler {
 
 void RSocketConnectionHandler::setupNewSocket(
     std::shared_ptr<FrameTransport> frameTransport,
-    ConnectionSetupPayload setupPayload) {
+    SetupParameters setupPayload) {
   LOG(INFO) << "RSocketServer => received new setup payload";
 
   // FIXME(alexanderm): Handler should be tied to specific executor
   auto executor = folly::EventBaseManager::get()->getExistingEventBase();
 
   auto socketParams =
-      SocketParameters(setupPayload.resumable, setupPayload.protocolVersion);
+      RSocketParameters(setupPayload.resumable, setupPayload.protocolVersion);
   std::shared_ptr<ConnectionSetupRequest> setupRequest =
       std::make_shared<ConnectionSetupRequest>(std::move(setupPayload));
   std::shared_ptr<RSocketResponder> requestHandler;

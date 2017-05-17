@@ -45,7 +45,7 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
       defaultExecutor(),
       std::move(socketConnection),
       std::move(requestHandler),
-      ConnectionSetupPayload("", "", Payload(), true),
+      SetupParameters("", "", Payload(), true),
       stats);
 
   auto responseSubscriber = make_ref<yarpl::flowable::MockSubscriber<Payload>>();

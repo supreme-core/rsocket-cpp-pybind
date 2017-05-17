@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "connecting RS ...";
     reactiveSocket->clientConnect(
         std::make_shared<FrameTransport>(std::move(framedConnection)),
-        ConnectionSetupPayload(
+        SetupParameters(
             "text/plain", "text/plain", Payload("meta", "data"), true, token));
   });
 

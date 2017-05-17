@@ -38,7 +38,7 @@ Future<std::shared_ptr<RSocketRequester>> RSocketClient::connect() {
         ReactiveSocketMode::CLIENT);
 
     // TODO need to allow this being passed in
-    auto setupPayload = ConnectionSetupPayload(
+    auto setupPayload = SetupParameters(
         "text/plain", "text/plain", Payload("meta", "data"));
 
     // TODO ---> this code needs to be moved inside RSocketStateMachine

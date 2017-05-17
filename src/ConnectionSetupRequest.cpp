@@ -7,7 +7,7 @@ using namespace reactivesocket;
 namespace rsocket {
 
 ConnectionSetupRequest::ConnectionSetupRequest(
-    ConnectionSetupPayload setupPayload)
+    SetupParameters setupPayload)
     : setupPayload_(std::move(setupPayload)) {}
 
 const std::string& ConnectionSetupRequest::getMetadataMimeType() const {

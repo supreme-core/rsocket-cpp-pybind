@@ -28,7 +28,7 @@ class RequestHandler;
 class ResumeCache;
 class Stats;
 class StreamState;
-class SocketParameters;
+class RSocketParameters;
 
 class FrameSink {
  public:
@@ -189,7 +189,7 @@ class RSocketStateMachine final
 
   ProtocolVersion getSerializerProtocolVersion();
   void setUpFrame(std::shared_ptr<FrameTransport> frameTransport,
-                  ConnectionSetupPayload setupPayload);
+                  SetupParameters setupPayload);
 
   void metadataPush(std::unique_ptr<folly::IOBuf> metadata);
 

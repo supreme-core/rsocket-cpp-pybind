@@ -134,6 +134,8 @@ add_library(
   src/RSocketRequester.h
   src/RSocketRequester.cpp
   src/RSocketErrors.h
+  src/RSocketParameters.cpp
+  src/RSocketParameters.h
   src/ConnectionAcceptor.h
   src/ConnectionFactory.h
   src/ConnectionSetupRequest.h
@@ -169,8 +171,6 @@ add_library(
   src/internal/Common.h
   src/statemachine/RSocketStateMachine.cpp
   src/statemachine/RSocketStateMachine.h
-  src/temporary_home/ConnectionSetupPayload.cpp
-  src/temporary_home/ConnectionSetupPayload.h
   src/DuplexConnection.h
   src/internal/EnableSharedFromThis.h
   src/temporary_home/Executor.cpp

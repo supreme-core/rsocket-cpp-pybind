@@ -30,7 +30,7 @@ class RSocketConnectionHandler : public reactivesocket::ConnectionHandler {
  public:
   virtual void setupNewSocket(
       std::shared_ptr<reactivesocket::FrameTransport> frameTransport,
-      reactivesocket::ConnectionSetupPayload setupPayload) override;
+      reactivesocket::SetupParameters setupPayload) override;
 
   virtual bool resumeSocket(
       std::shared_ptr<reactivesocket::FrameTransport> frameTransport,

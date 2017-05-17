@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 
 namespace rsocket {
 
@@ -18,7 +18,7 @@ namespace rsocket {
 class ConnectionSetupRequest {
  public:
   explicit ConnectionSetupRequest(
-      reactivesocket::ConnectionSetupPayload setupPayload);
+      reactivesocket::SetupParameters setupPayload);
   ConnectionSetupRequest(const ConnectionSetupRequest&) = delete; // copy
   ConnectionSetupRequest(ConnectionSetupRequest&&) = default; // move
   ConnectionSetupRequest& operator=(const ConnectionSetupRequest&) =
@@ -34,6 +34,6 @@ class ConnectionSetupRequest {
   bool willHonorLease() const;
 
  private:
-  reactivesocket::ConnectionSetupPayload setupPayload_;
+  reactivesocket::SetupParameters setupPayload_;
 };
 }

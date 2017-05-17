@@ -133,8 +133,8 @@ std::unique_ptr<ReactiveSocket> getRSocket(folly::EventBase* eventBase) {
 }
 
 // Utility function to create a SetupPayload
-ConnectionSetupPayload getSetupPayload(ResumeIdentificationToken token) {
-  return ConnectionSetupPayload(
+SetupParameters getSetupPayload(ResumeIdentificationToken token) {
+  return SetupParameters(
       "text/plain", "text/plain", Payload("meta", "data"), true, token);
 }
 }
