@@ -8,7 +8,7 @@
 #include "yarpl/Single.h"
 
 #include "src/Payload.h"
-#include "src/temporary_home/StreamState.h"
+#include "src/statemachine/StreamState.h"
 
 namespace rsocket {
 

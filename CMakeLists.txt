@@ -166,6 +166,11 @@ add_library(
   src/statemachine/StreamRequester.h
   src/statemachine/StreamResponder.cpp
   src/statemachine/StreamResponder.h
+  src/statemachine/StreamsFactory.cpp
+  src/statemachine/StreamsFactory.h
+  src/statemachine/StreamsHandler.h
+  src/statemachine/StreamState.cpp
+  src/statemachine/StreamState.h
   src/internal/ClientResumeStatusCallback.h
   src/internal/Common.cpp
   src/internal/Common.h
@@ -202,11 +207,6 @@ add_library(
   src/temporary_home/ServerConnectionAcceptor.h
   src/temporary_home/Stats.cpp
   src/temporary_home/Stats.h
-  src/temporary_home/StreamsFactory.cpp
-  src/temporary_home/StreamsFactory.h
-  src/temporary_home/StreamsHandler.h
-  src/temporary_home/StreamState.cpp
-  src/temporary_home/StreamState.h
   src/temporary_home/SubscriberBase.h
   src/temporary_home/SubscriptionBase.h
   src/transports/tcp/TcpDuplexConnection.cpp

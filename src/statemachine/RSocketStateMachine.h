@@ -13,8 +13,8 @@
 #include "src/framing/FrameProcessor.h"
 #include "src/framing/FrameSerializer.h"
 #include "src/Payload.h"
-#include "src/temporary_home/StreamsFactory.h"
-#include "src/temporary_home/StreamsHandler.h"
+#include "StreamsFactory.h"
+#include "StreamsHandler.h"
 
 namespace reactivesocket {
 

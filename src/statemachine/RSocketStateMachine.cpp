@@ -14,7 +14,7 @@
 #include "src/temporary_home/RequestHandler.h"
 #include "src/temporary_home/ResumeCache.h"
 #include "src/temporary_home/Stats.h"
-#include "src/temporary_home/StreamState.h"
+#include "StreamState.h"
 #include "src/statemachine/ChannelResponder.h"
 #include "src/statemachine/StreamAutomatonBase.h"
 

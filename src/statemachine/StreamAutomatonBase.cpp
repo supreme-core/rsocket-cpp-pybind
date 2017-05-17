@@ -3,7 +3,7 @@
 #include "src/statemachine/StreamAutomatonBase.h"
 #include <folly/io/IOBuf.h>
 #include "RSocketStateMachine.h"
-#include "src/temporary_home/StreamsHandler.h"
+#include "StreamsHandler.h"
 
 namespace reactivesocket {
 
