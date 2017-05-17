@@ -18,7 +18,7 @@
 
 namespace reactivesocket {
 
-class StreamAutomatonBase;
+class StreamStateMachineBase;
 class ClientResumeStatusCallback;
 class RSocketStateMachine;
 class DuplexConnection;
@@ -78,7 +78,7 @@ class RSocketStateMachine final
       bool sendingPendingFrames,
       ProtocolVersion protocolVersion);
 
-  /// Disconnects DuplexConnection from the automaton.
+  /// Disconnects DuplexConnection from the stateMachine.
   /// Existing streams will stay intact.
   void disconnect(folly::exception_wrapper ex);
 
@@ -100,20 +100,20 @@ class RSocketStateMachine final
   /// A contract exposed to StreamAutomatonBase, modelled after Subscriber
   /// and Subscription contracts, while omitting flow control related signals.
 
-  /// Adds a stream automaton to the connection.
+  /// Adds a stream stateMachine to the connection.
   ///
   /// This signal corresponds to Subscriber::onSubscribe.
   ///
-  /// No frames will be issued as a result of this call. Stream automaton
+  /// No frames will be issued as a result of this call. Stream stateMachine
   /// must take care of writing appropriate frames to the connection, using
   /// ::writeFrame after calling this method.
   void addStream(
       StreamId streamId,
-      yarpl::Reference<StreamAutomatonBase> automaton);
+      yarpl::Reference<StreamStateMachineBase> stateMachine);
 
   /// Indicates that the stream should be removed from the connection.
   ///
-  /// No frames will be issued as a result of this call. Stream automaton
+  /// No frames will be issued as a result of this call. Stream stateMachine
   /// must take care of writing appropriate frames to the connection, using
   /// ::writeFrame, prior to calling this method.
   ///
@@ -122,11 +122,11 @@ class RSocketStateMachine final
   /// Per ReactiveStreams specification:
   /// 1. no other signal can be delivered during or after this one,
   /// 2. "unsubscribe handshake" guarantees that the signal will be delivered
-  ///   at least once, even if the automaton initiated stream closure,
-  /// 3. per "unsubscribe handshake", the automaton must deliver corresponding
+  ///   at least once, even if the stateMachine initiated stream closure,
+  /// 3. per "unsubscribe handshake", the stateMachine must deliver corresponding
   ///   terminal signal to the connection.
   ///
-  /// Additionally, in order to simplify implementation of stream automaton:
+  /// Additionally, in order to simplify implementation of stream stateMachine:
   /// 4. the signal bound with a particular StreamId is idempotent and may be
   ///   delivered multiple times as long as the caller holds shared_ptr to
   ///   ConnectionAutomaton.

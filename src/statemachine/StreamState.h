@@ -6,14 +6,14 @@
 #include <stdint.h>
 #include <deque>
 #include <unordered_map>
-#include "src/statemachine/StreamAutomatonBase.h"
+#include "src/statemachine/StreamStateMachineBase.h"
 #include "yarpl/Refcounted.h"
 
 namespace reactivesocket {
 
 class RSocketStateMachine;
 class RSocketStats;
-class StreamAutomatonBase;
+class StreamStateMachineBase;
 using StreamId = uint32_t;
 
 class StreamState {
@@ -25,7 +25,7 @@ class StreamState {
 
   std::deque<std::unique_ptr<folly::IOBuf>> moveOutputPendingFrames();
 
-  std::unordered_map<StreamId, yarpl::Reference<StreamAutomatonBase>> streams_;
+  std::unordered_map<StreamId, yarpl::Reference<StreamStateMachineBase>> streams_;
 
  private:
   /// Called to update stats when outputFrames_ is about to be cleared.

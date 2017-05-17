@@ -4,17 +4,17 @@
 
 #include <iosfwd>
 #include "src/Payload.h"
-#include "src/statemachine/StreamAutomatonBase.h"
+#include "src/statemachine/StreamStateMachineBase.h"
 #include "yarpl/flowable/Subscription.h"
 #include "yarpl/flowable/Subscriber.h"
 
 namespace reactivesocket {
 
-/// Implementation of stream automaton that represents a RequestResponse
+/// Implementation of stream stateMachine that represents a RequestResponse
 /// requester
-class RequestResponseRequester : public StreamAutomatonBase,
+class RequestResponseRequester : public StreamStateMachineBase,
                                  public yarpl::flowable::Subscription {
-  using Base = StreamAutomatonBase;
+  using Base = StreamStateMachineBase;
 
  public:
   explicit RequestResponseRequester(const Parameters& params, Payload payload)

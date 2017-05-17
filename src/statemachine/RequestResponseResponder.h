@@ -3,19 +3,19 @@
 #pragma once
 
 #include "src/statemachine/PublisherBase.h"
-#include "src/statemachine/StreamAutomatonBase.h"
+#include "src/statemachine/StreamStateMachineBase.h"
 #include "yarpl/flowable/Subscriber.h"
 
 namespace reactivesocket {
 
-/// Implementation of stream automaton that represents a RequestResponse
+/// Implementation of stream stateMachine that represents a RequestResponse
 /// responder
-class RequestResponseResponder : public StreamAutomatonBase,
+class RequestResponseResponder : public StreamStateMachineBase,
                                  public PublisherBase,
                                  public yarpl::flowable::Subscriber<Payload> {
  public:
   explicit RequestResponseResponder(const Parameters& params)
-      : StreamAutomatonBase(params),
+      : StreamStateMachineBase(params),
         PublisherBase(1) {}
 
  private:

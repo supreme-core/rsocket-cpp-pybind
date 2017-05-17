@@ -31,7 +31,7 @@ class StreamsFactory {
       Payload payload,
       yarpl::Reference<yarpl::flowable::Subscriber<Payload>> responseSink);
 
-  // TODO: the return type should not be the automaton type, but something
+  // TODO: the return type should not be the stateMachine type, but something
   // generic
   yarpl::Reference<ChannelResponder> createChannelResponder(
       uint32_t initialRequestN,

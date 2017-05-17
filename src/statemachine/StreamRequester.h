@@ -14,7 +14,7 @@ namespace reactivesocket {
 
 enum class StreamCompletionSignal;
 
-/// Implementation of stream automaton that represents a Stream requester
+/// Implementation of stream stateMachine that represents a Stream requester
 class StreamRequester : public ConsumerBase {
   using Base = ConsumerBase;
 
