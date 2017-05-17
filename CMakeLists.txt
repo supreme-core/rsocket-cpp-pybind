@@ -201,8 +201,8 @@ add_library(
   src/Payload.h
   src/internal/ReactiveStreamsCompat.h
   src/temporary_home/RequestHandler.h
-  src/temporary_home/ResumeCache.cpp
-  src/temporary_home/ResumeCache.h
+  src/internal/ResumeCache.cpp
+  src/internal/ResumeCache.h
   src/temporary_home/ServerConnectionAcceptor.cpp
   src/temporary_home/ServerConnectionAcceptor.h
   src/temporary_home/Stats.cpp

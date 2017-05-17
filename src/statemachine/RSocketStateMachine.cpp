@@ -12,7 +12,7 @@
 #include "src/DuplexConnection.h"
 #include "src/framing/FrameTransport.h"
 #include "src/temporary_home/RequestHandler.h"
-#include "src/temporary_home/ResumeCache.h"
+#include "src/internal/ResumeCache.h"
 #include "src/temporary_home/Stats.h"
 #include "StreamState.h"
 #include "src/statemachine/ChannelResponder.h"

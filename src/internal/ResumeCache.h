@@ -9,7 +9,7 @@
 #include <folly/Optional.h>
 
 #include "src/internal/Common.h"
-#include "Stats.h"
+#include "src/temporary_home/Stats.h"
 
 namespace folly {
 class IOBuf;

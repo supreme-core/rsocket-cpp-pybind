@@ -7,7 +7,7 @@
 
 #include "src/framing/Frame.h"
 #include "src/framing/FrameTransport.h"
-#include "src/temporary_home/ResumeCache.h"
+#include "src/internal/ResumeCache.h"
 #include "src/temporary_home/Stats.h"
 #include "src/framing/FrameSerializer_v0_1.h"
 #include "test/test_utils/InlineConnection.h"
