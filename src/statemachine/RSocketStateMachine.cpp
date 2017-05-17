@@ -313,6 +313,7 @@ bool RSocketStateMachine::endStreamInternal(
     StreamId streamId,
     StreamCompletionSignal signal) {
   VLOG(6) << "endStreamInternal";
+  resumeCache_->onStreamClosed(streamId);
   auto it = streamState_->streams_.find(streamId);
   if (it == streamState_->streams_.end()) {
     // Unsubscribe handshake initiated by the connection, we're done.
@@ -375,11 +376,6 @@ void RSocketStateMachine::processFrameImpl(
   auto frameType = frameSerializer_->peekFrameType(*frame);
   stats_->frameRead(frameType);
 
-  // TODO(tmont): If a frame is invalid, it will still be tracked. However, we
-  // actually want that. We want to keep
-  // each side in sync, even if a frame is invalid.
-  resumeCache_->trackReceivedFrame(*frame, frameType);
-
   auto streamIdPtr = frameSerializer_->peekStreamId(*frame);
   if (!streamIdPtr) {
     // Failed to deserialize the frame.
@@ -387,6 +383,7 @@ void RSocketStateMachine::processFrameImpl(
     return;
   }
   auto streamId = *streamIdPtr;
+  resumeCache_->trackReceivedFrame(*frame, frameType, streamId);
   if (streamId == 0) {
     handleConnectionFrame(frameType, std::move(frame));
     return;
