@@ -1,11 +1,11 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "Stats.h"
+#include "RSocketStats.h"
 #include <src/transports/tcp/TcpDuplexConnection.h>
 
 namespace reactivesocket {
 
-class NoopStats : public Stats {
+class NoopStats : public RSocketStats {
  public:
   NoopStats() = default;
   ~NoopStats() = default;
@@ -41,7 +41,7 @@ class NoopStats : public Stats {
   NoopStats(NoopStats&&) = delete; // non construction-movable
 };
 
-std::shared_ptr<Stats> Stats::noop() {
+std::shared_ptr<RSocketStats> RSocketStats::noop() {
   return NoopStats::instance();
 }
 }

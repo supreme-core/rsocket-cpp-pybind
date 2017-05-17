@@ -12,13 +12,13 @@
 namespace reactivesocket {
 
 class RSocketStateMachine;
-class Stats;
+class RSocketStats;
 class StreamAutomatonBase;
 using StreamId = uint32_t;
 
 class StreamState {
  public:
-  explicit StreamState(Stats& stats);
+  explicit StreamState(RSocketStats& stats);
   ~StreamState();
 
   void enqueueOutputPendingFrame(std::unique_ptr<folly::IOBuf> frame);
@@ -31,7 +31,7 @@ class StreamState {
   /// Called to update stats when outputFrames_ is about to be cleared.
   void onClearFrames();
 
-  Stats& stats_;
+  RSocketStats& stats_;
 
   /// Total data length of all IOBufs in outputFrames_.
   uint64_t dataLength_{0};

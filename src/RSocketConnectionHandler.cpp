@@ -10,7 +10,7 @@
 #include "src/statemachine/RSocketStateMachine.h"
 #include "src/temporary_home/NullRequestHandler.h"
 #include "src/temporary_home/OldNewBridge.h"
-#include "src/temporary_home/Stats.h"
+#include "RSocketStats.h"
 
 namespace rsocket {
 
@@ -142,7 +142,7 @@ void RSocketConnectionHandler::setupNewSocket(
   auto rs = std::make_shared<RSocketStateMachine>(
       *executor,
       std::move(handlerBridge),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::SERVER);
 

@@ -10,11 +10,11 @@ namespace reactivesocket {
 
 class DuplexConnection;
 
-class Stats {
+class RSocketStats {
  public:
-  virtual ~Stats() = default;
+  virtual ~RSocketStats() = default;
 
-  static std::shared_ptr<Stats> noop();
+  static std::shared_ptr<RSocketStats> noop();
 
   virtual void socketCreated() = 0;
   virtual void socketDisconnected() = 0;

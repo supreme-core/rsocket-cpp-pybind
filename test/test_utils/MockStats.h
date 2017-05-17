@@ -5,14 +5,14 @@
 #include <memory>
 
 #include <gmock/gmock.h>
-#include <src/temporary_home/Stats.h>
+#include <src/RSocketStats.h>
 #include <src/transports/tcp/TcpDuplexConnection.h>
 
 #include "src/Payload.h"
 
 namespace reactivesocket {
 
-class MockStats : public Stats {
+class MockStats : public RSocketStats {
  public:
   MOCK_METHOD0(socketCreated, void());
   MOCK_METHOD1(socketClosed, void(StreamCompletionSignal));

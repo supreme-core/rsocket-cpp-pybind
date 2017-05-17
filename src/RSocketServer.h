@@ -71,7 +71,7 @@ class RSocketServer {
   //      std::function<std::shared_ptr<RequestHandler>(
   //          std::unique_ptr<ConnectionResumeRequest>)>);
 
-  // TODO version supporting Stats and other params
+  // TODO version supporting RSocketStats and other params
   // RSocketServer::start(OnAccept onAccept, ServerSetup setupParams)
 
   friend class RSocketServerConnectionHandler;

@@ -26,7 +26,7 @@ class Frame_ERROR;
 class KeepaliveTimer;
 class RequestHandler;
 class ResumeCache;
-class Stats;
+class RSocketStats;
 class StreamState;
 class RSocketParameters;
 
@@ -62,7 +62,7 @@ class RSocketStateMachine final
   RSocketStateMachine(
       folly::Executor& executor,
       std::shared_ptr<RequestHandler> requestHandler,
-      std::shared_ptr<Stats> stats,
+      std::shared_ptr<RSocketStats> stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer_,
       ReactiveSocketMode mode);
 
@@ -200,7 +200,7 @@ class RSocketStateMachine final
 
   void setFrameSerializer(std::unique_ptr<FrameSerializer>);
 
-  Stats& stats() {
+  RSocketStats& stats() {
     return *stats_;
   }
 
@@ -266,7 +266,7 @@ class RSocketStateMachine final
 
   bool ensureOrAutodetectFrameSerializer(const folly::IOBuf& firstFrame);
 
-  const std::shared_ptr<Stats> stats_;
+  const std::shared_ptr<RSocketStats> stats_;
   ReactiveSocketMode mode_;
   bool isResumable_{false};
   bool remoteResumeable_{false};

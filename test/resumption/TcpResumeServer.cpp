@@ -136,7 +136,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
 
 class MyConnectionHandler : public ConnectionHandler {
  public:
-  MyConnectionHandler(EventBase& eventBase, std::shared_ptr<Stats> stats)
+  MyConnectionHandler(EventBase& eventBase, std::shared_ptr<RSocketStats> stats)
       : eventBase_(eventBase), stats_(std::move(stats)) {}
 
   void setupNewSocket(
@@ -202,12 +202,12 @@ class MyConnectionHandler : public ConnectionHandler {
 
  private:
   EventBase& eventBase_;
-  std::shared_ptr<Stats> stats_;
+  std::shared_ptr<RSocketStats> stats_;
 };
 
 class Callback : public AsyncServerSocket::AcceptCallback {
  public:
-  Callback(EventBase& eventBase, std::shared_ptr<Stats> stats)
+  Callback(EventBase& eventBase, std::shared_ptr<RSocketStats> stats)
       : eventBase_(eventBase),
         stats_(stats),
         connectionHandler_(
@@ -243,7 +243,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
   // only one for demo purposes. Should be token dependent.
   std::shared_ptr<StreamState> streamState_;
   EventBase& eventBase_;
-  std::shared_ptr<Stats> stats_;
+  std::shared_ptr<RSocketStats> stats_;
   bool shuttingDown{false};
   std::shared_ptr<MyConnectionHandler> connectionHandler_;
   ServerConnectionAcceptor connectionAcceptor_;

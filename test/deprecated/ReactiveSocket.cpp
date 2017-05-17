@@ -26,7 +26,7 @@ ReactiveSocket::~ReactiveSocket() {
 ReactiveSocket::ReactiveSocket(
     ReactiveSocketMode mode,
     std::shared_ptr<RequestHandler> handler,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     folly::Executor& executor)
     : connection_(std::make_shared<RSocketStateMachine>(
@@ -46,7 +46,7 @@ ReactiveSocket::fromClientConnection(
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
     SetupParameters setupPayload,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer) {
   auto socket = disconnectedClient(
       executor,
@@ -64,7 +64,7 @@ std::unique_ptr<ReactiveSocket>
 ReactiveSocket::disconnectedClient(
     folly::Executor& executor,
     std::unique_ptr<RequestHandler> handler,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     ProtocolVersion protocolVersion) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
@@ -85,7 +85,7 @@ ReactiveSocket::fromServerConnection(
     folly::Executor& executor,
     std::unique_ptr<DuplexConnection> connection,
     std::unique_ptr<RequestHandler> handler,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     const RSocketParameters& RSocketParameters) {
   // TODO: isResumable should come as a flag on Setup frame and it should be
   // exposed to the application code. We should then remove this parameter
@@ -105,7 +105,7 @@ std::unique_ptr<ReactiveSocket>
 ReactiveSocket::disconnectedServer(
     folly::Executor& executor,
     std::shared_ptr<RequestHandler> handler,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     ProtocolVersion protocolVersion) {
   std::unique_ptr<ReactiveSocket> socket(new ReactiveSocket(
       ReactiveSocketMode::SERVER,

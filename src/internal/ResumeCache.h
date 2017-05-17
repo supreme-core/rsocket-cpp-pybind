@@ -9,7 +9,7 @@
 #include <folly/Optional.h>
 
 #include "src/internal/Common.h"
-#include "src/temporary_home/Stats.h"
+#include "src/RSocketStats.h"
 
 namespace folly {
 class IOBuf;
@@ -30,7 +30,7 @@ class FrameTransport;
 class ResumeCache {
  public:
   explicit ResumeCache(
-      std::shared_ptr<Stats> stats,
+      std::shared_ptr<RSocketStats> stats,
       size_t capacity = DEFAULT_CAPACITY)
       : stats_(std::move(stats)), capacity_(capacity) {}
   ~ResumeCache();
@@ -88,7 +88,7 @@ class ResumeCache {
   // Called before clearing cached frames to update stats.
   void clearFrames(ResumePosition position);
 
-  std::shared_ptr<Stats> stats_;
+  std::shared_ptr<RSocketStats> stats_;
 
   // End position of the send buffer queue
   ResumePosition position_{0};

@@ -3,10 +3,10 @@
 #pragma once
 
 #include <src/DuplexConnection.h>
-#include <src/temporary_home/Stats.h>
+#include <src/RSocketStats.h>
 
 namespace reactivesocket {
-class StatsPrinter : public Stats {
+class StatsPrinter : public RSocketStats {
  public:
   void socketCreated() override;
   void socketClosed(StreamCompletionSignal signal) override;

@@ -19,7 +19,7 @@ namespace reactivesocket {
 class DuplexConnection;
 class FrameSerializer;
 class FrameTransport;
-class Stats;
+class RSocketStats;
 class OneFrameProcessor;
 
 class ConnectionHandler {

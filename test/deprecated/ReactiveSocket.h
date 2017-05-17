@@ -6,7 +6,7 @@
 #include "src/internal/Common.h"
 #include "src/RSocketParameters.h"
 #include "src/Payload.h"
-#include "src/temporary_home/Stats.h"
+#include "src/RSocketStats.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscription.h"
 
@@ -39,14 +39,14 @@ class ReactiveSocket {
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
       SetupParameters setupPayload = SetupParameters(),
-      std::shared_ptr<Stats> stats = Stats::noop(),
+      std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr));
 
   static std::unique_ptr<ReactiveSocket> disconnectedClient(
       folly::Executor& executor,
       std::unique_ptr<RequestHandler> handler,
-      std::shared_ptr<Stats> stats = Stats::noop(),
+      std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       std::unique_ptr<KeepaliveTimer> keepaliveTimer =
           std::unique_ptr<KeepaliveTimer>(nullptr),
       ProtocolVersion protocolVersion = ProtocolVersion::Unknown);
@@ -55,14 +55,14 @@ class ReactiveSocket {
       folly::Executor& executor,
       std::unique_ptr<DuplexConnection> connection,
       std::unique_ptr<RequestHandler> handler,
-      std::shared_ptr<Stats> stats = Stats::noop(),
+      std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       const RSocketParameters& socketParameters =
           RSocketParameters(/*resumable=*/false, ProtocolVersion::Unknown));
 
   static std::unique_ptr<ReactiveSocket> disconnectedServer(
       folly::Executor& executor,
       std::shared_ptr<RequestHandler> handler,
-      std::shared_ptr<Stats> stats = Stats::noop(),
+      std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       ProtocolVersion protocolVersion = ProtocolVersion::Unknown);
 
   yarpl::Reference<yarpl::flowable::Subscriber<Payload>> requestChannel(
@@ -119,7 +119,7 @@ class ReactiveSocket {
   ReactiveSocket(
       ReactiveSocketMode mode,
       std::shared_ptr<RequestHandler> handler,
-      std::shared_ptr<Stats> stats,
+      std::shared_ptr<RSocketStats> stats,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer,
       folly::Executor& executor);
 

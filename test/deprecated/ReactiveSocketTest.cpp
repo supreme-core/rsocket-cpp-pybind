@@ -1396,7 +1396,7 @@ class ReactiveSocketRegressionTest : public Test {
         defaultExecutor(),
         std::move(connectionPtr),
         std::move(requestHandlerPtr_),
-        Stats::noop(),
+        RSocketStats::noop(),
         RSocketParameters(false, FrameSerializer::getCurrentProtocolVersion()));
   }
 

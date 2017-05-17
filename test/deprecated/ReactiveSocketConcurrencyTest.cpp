@@ -42,7 +42,7 @@ class ClientSideConcurrencyTest : public testing::Test {
           // requests.
           std::move(requestHandler),
           SetupParameters("", "", Payload()),
-          Stats::noop(),
+          RSocketStats::noop(),
           nullptr);
     });
 
@@ -265,7 +265,7 @@ class ServerSideConcurrencyTest : public testing::Test {
           *thread2.getEventBase(),
           std::move(serverConn),
           std::move(serverHandler),
-          Stats::noop(),
+          RSocketStats::noop(),
           RSocketParameters(false, ProtocolVersion::Unknown));
     });
 
@@ -524,7 +524,7 @@ class InitialRequestNDeliveredTest : public testing::Test {
         std::make_unique<FramedDuplexConnection>(
             std::move(serverSocketConnection), inlineExecutor()),
         std::move(serverHandler),
-        Stats::noop(),
+        RSocketStats::noop(),
         RSocketParameters(false, ProtocolVersion::Unknown));
 
     Frame_SETUP frameSetup(

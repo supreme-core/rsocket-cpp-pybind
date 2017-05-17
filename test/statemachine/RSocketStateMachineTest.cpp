@@ -74,7 +74,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   connectionAutomaton = std::make_shared<RSocketStateMachine>(
       defaultExecutor(),
       std::make_shared<NullRequestHandler>(),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->connect(
@@ -149,7 +149,7 @@ static void terminateTest(
   connectionAutomaton = std::make_shared<RSocketStateMachine>(
       defaultExecutor(),
       std::make_shared<NullRequestHandler>(),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->connect(
@@ -248,7 +248,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   connectionAutomaton = std::make_shared<RSocketStateMachine>(
       defaultExecutor(),
       std::make_shared<NullRequestHandler>(),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->connect(

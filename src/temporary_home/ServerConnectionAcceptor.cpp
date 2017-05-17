@@ -7,7 +7,7 @@
 #include "src/framing/FrameProcessor.h"
 #include "src/framing/FrameSerializer.h"
 #include "src/framing/FrameTransport.h"
-#include "Stats.h"
+#include "src/RSocketStats.h"
 
 #include <iostream>
 

@@ -104,12 +104,12 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     auto socket =
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
 
-    std::shared_ptr<Stats> stats;
+    std::shared_ptr<RSocketStats> stats;
 
     if (FLAGS_enable_stats_printer) {
       stats.reset(new reactivesocket::StatsPrinter());
     } else {
-      stats = Stats::noop();
+      stats = RSocketStats::noop();
     }
 
     std::unique_ptr<DuplexConnection> connection =

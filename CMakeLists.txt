@@ -205,8 +205,8 @@ add_library(
   src/internal/ResumeCache.h
   src/temporary_home/ServerConnectionAcceptor.cpp
   src/temporary_home/ServerConnectionAcceptor.h
-  src/temporary_home/Stats.cpp
-  src/temporary_home/Stats.h
+  src/RSocketStats.cpp
+  src/RSocketStats.h
   src/temporary_home/SubscriberBase.h
   src/temporary_home/SubscriptionBase.h
   src/transports/tcp/TcpDuplexConnection.cpp

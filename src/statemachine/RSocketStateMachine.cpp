@@ -13,7 +13,7 @@
 #include "src/framing/FrameTransport.h"
 #include "src/temporary_home/RequestHandler.h"
 #include "src/internal/ResumeCache.h"
-#include "src/temporary_home/Stats.h"
+#include "src/RSocketStats.h"
 #include "StreamState.h"
 #include "src/statemachine/ChannelResponder.h"
 #include "src/statemachine/StreamAutomatonBase.h"
@@ -23,7 +23,7 @@ namespace reactivesocket {
 RSocketStateMachine::RSocketStateMachine(
     folly::Executor& executor,
     std::shared_ptr<RequestHandler> requestHandler,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     ReactiveSocketMode mode)
     : ExecutorBase(executor),
