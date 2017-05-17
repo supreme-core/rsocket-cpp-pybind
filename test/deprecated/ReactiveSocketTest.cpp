@@ -21,7 +21,7 @@
 #include "test/streams/Mocks.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace std::string_literals;
 using namespace yarpl;
 

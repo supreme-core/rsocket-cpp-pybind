@@ -8,7 +8,7 @@
 #include "src/framing/FrameSerializer.h"
 #include "src/Payload.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class RSocketParameters {
  public:

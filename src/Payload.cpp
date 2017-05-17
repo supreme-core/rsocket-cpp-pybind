@@ -5,7 +5,7 @@
 #include <folly/io/Cursor.h>
 #include "src/framing/Frame.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 Payload::Payload(
     std::unique_ptr<folly::IOBuf> _data,

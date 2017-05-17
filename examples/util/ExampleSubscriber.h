@@ -16,14 +16,14 @@
  */
 namespace rsocket_example {
 class ExampleSubscriber
-    : public yarpl::flowable::Subscriber<reactivesocket::Payload> {
+    : public yarpl::flowable::Subscriber<rsocket::Payload> {
  public:
   ~ExampleSubscriber();
   ExampleSubscriber(int initialRequest, int numToTake);
 
   void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>
                        subscription) noexcept override;
-  void onNext(reactivesocket::Payload) noexcept override;
+  void onNext(rsocket::Payload) noexcept override;
   void onComplete() noexcept override;
   void onError(const std::exception_ptr ex) noexcept override;
 

@@ -13,7 +13,7 @@
 #include "src/framing/FrameTransport.h"
 #include "src/temporary_home/RequestHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 ReactiveSocket::~ReactiveSocket() {
   debugCheckCorrectExecutor();

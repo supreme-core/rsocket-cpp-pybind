@@ -5,7 +5,7 @@
 #include <src/DuplexConnection.h>
 #include <src/RSocketStats.h>
 
-namespace reactivesocket {
+namespace rsocket {
 class StatsPrinter : public RSocketStats {
  public:
   void socketCreated() override;
@@ -14,10 +14,10 @@ class StatsPrinter : public RSocketStats {
 
   void duplexConnectionCreated(
       const std::string& type,
-      reactivesocket::DuplexConnection* connection) override;
+      rsocket::DuplexConnection* connection) override;
   void duplexConnectionClosed(
       const std::string& type,
-      reactivesocket::DuplexConnection* connection) override;
+      rsocket::DuplexConnection* connection) override;
 
   void bytesWritten(size_t bytes) override;
   void bytesRead(size_t bytes) override;

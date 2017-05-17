@@ -12,7 +12,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using namespace reactivesocket;
+using namespace rsocket;
 using namespace testing;
 
 class MockConnectionHandler : public ConnectionHandler {

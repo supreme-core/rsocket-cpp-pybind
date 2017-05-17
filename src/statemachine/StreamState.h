@@ -9,7 +9,7 @@
 #include "src/statemachine/StreamStateMachineBase.h"
 #include "yarpl/Refcounted.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class RSocketStateMachine;
 class RSocketStats;

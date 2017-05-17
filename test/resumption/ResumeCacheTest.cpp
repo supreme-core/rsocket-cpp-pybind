@@ -14,7 +14,7 @@
 #include "test/test_utils/MockStats.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 
 class FrameTransportMock : public FrameTransport {
  public:

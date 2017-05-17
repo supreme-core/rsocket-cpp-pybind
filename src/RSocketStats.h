@@ -6,7 +6,7 @@
 #include <string>
 #include "src/internal/Common.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class DuplexConnection;
 

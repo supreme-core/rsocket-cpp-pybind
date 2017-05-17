@@ -7,7 +7,7 @@
 #include "RSocketConnectionHandler.h"
 #include "src/statemachine/RSocketStateMachine.h"
 
-using namespace reactivesocket;
+using namespace rsocket;
 
 namespace rsocket {
 
@@ -26,7 +26,7 @@ class RSocketServerConnectionHandler : public virtual RSocketConnectionHandler {
 
   void manageSocket(
       std::shared_ptr<ConnectionSetupRequest> request,
-      std::shared_ptr<reactivesocket::RSocketStateMachine> stateMachine)
+      std::shared_ptr<rsocket::RSocketStateMachine> stateMachine)
       override {
     stateMachine->addClosedListener(
         [this, stateMachine](const folly::exception_wrapper&) {
@@ -119,13 +119,13 @@ void RSocketServer::unpark() {
 }
 
 void RSocketServer::addConnection(
-    std::shared_ptr<reactivesocket::RSocketStateMachine> socket,
+    std::shared_ptr<rsocket::RSocketStateMachine> socket,
     folly::Executor& executor) {
   sockets_.lock()->insert({std::move(socket), executor});
 }
 
 void RSocketServer::removeConnection(
-    std::shared_ptr<reactivesocket::RSocketStateMachine> socket) {
+    std::shared_ptr<rsocket::RSocketStateMachine> socket) {
   auto locked = sockets_.lock();
   locked->erase(socket);
 

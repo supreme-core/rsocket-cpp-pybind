@@ -6,7 +6,7 @@
 #include "src/temporary_home/NullRequestHandler.h"
 #include "RSocketStats.h"
 
-using namespace reactivesocket;
+using namespace rsocket;
 using namespace folly;
 
 namespace rsocket {

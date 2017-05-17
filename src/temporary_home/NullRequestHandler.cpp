@@ -2,7 +2,7 @@
 
 #include "NullRequestHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 using namespace yarpl;
 using namespace yarpl::flowable;

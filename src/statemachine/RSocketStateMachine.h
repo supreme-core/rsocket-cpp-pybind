@@ -16,7 +16,7 @@
 #include "StreamsFactory.h"
 #include "StreamsHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class StreamStateMachineBase;
 class ClientResumeStatusCallback;

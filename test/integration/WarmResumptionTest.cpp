@@ -12,7 +12,7 @@
 #include "test/integration/ServerFixture.h"
 
 using namespace std::chrono_literals;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace ::testing;
 using namespace yarpl;
 

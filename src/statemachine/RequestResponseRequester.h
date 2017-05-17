@@ -8,7 +8,7 @@
 #include "yarpl/flowable/Subscription.h"
 #include "yarpl/flowable/Subscriber.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 /// Implementation of stream stateMachine that represents a RequestResponse
 /// requester

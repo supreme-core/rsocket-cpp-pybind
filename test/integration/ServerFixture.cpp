@@ -6,7 +6,7 @@
 #include <gflags/gflags.h>
 
 
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace yarpl;
 
 using folly::AsyncServerSocket;

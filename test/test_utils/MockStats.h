@@ -10,7 +10,7 @@
 
 #include "src/Payload.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class MockStats : public RSocketStats {
  public:
@@ -20,10 +20,10 @@ class MockStats : public RSocketStats {
 
   MOCK_METHOD2(
       duplexConnectionCreated,
-      void(const std::string&, reactivesocket::DuplexConnection*));
+      void(const std::string&, rsocket::DuplexConnection*));
   MOCK_METHOD2(
       duplexConnectionClosed,
-      void(const std::string&, reactivesocket::DuplexConnection*));
+      void(const std::string&, rsocket::DuplexConnection*));
 
   MOCK_METHOD1(bytesWritten, void(size_t));
   MOCK_METHOD1(bytesRead, void(size_t));

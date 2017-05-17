@@ -4,7 +4,7 @@
 
 #include "src/RSocketStats.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 StreamState::StreamState(RSocketStats& stats) : stats_(stats) {}
 

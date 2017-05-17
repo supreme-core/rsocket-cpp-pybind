@@ -20,7 +20,7 @@
 #include "test/streams/Mocks.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace yarpl;
 
 class ClientSideConcurrencyTest : public testing::Test {

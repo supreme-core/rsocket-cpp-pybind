@@ -46,7 +46,7 @@ std::map<std::string, std::pair<std::string, std::string>> getArgMap(
 }
 }
 
-namespace reactivesocket {
+namespace rsocket {
 namespace tck {
 
 MarbleProcessor::MarbleProcessor(

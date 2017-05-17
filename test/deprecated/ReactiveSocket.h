@@ -14,7 +14,7 @@ namespace folly {
 class Executor;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 class ClientResumeStatusCallback;
 class RSocketStateMachine;

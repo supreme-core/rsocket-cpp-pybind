@@ -8,7 +8,7 @@
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscription.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class StreamState;
 class ReactiveSocket;

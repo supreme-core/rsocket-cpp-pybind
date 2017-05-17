@@ -160,8 +160,8 @@ add_library(
   src/statemachine/RequestResponseRequester.h
   src/statemachine/RequestResponseResponder.cpp
   src/statemachine/RequestResponseResponder.h
-        src/statemachine/StreamStateMachineBase.cpp
-        src/statemachine/StreamStateMachineBase.h
+  src/statemachine/StreamStateMachineBase.cpp
+  src/statemachine/StreamStateMachineBase.h
   src/statemachine/StreamRequester.cpp
   src/statemachine/StreamRequester.h
   src/statemachine/StreamResponder.cpp

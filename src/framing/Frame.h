@@ -21,7 +21,7 @@ class QueueAppender;
 }
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 /// A unique identifier of a stream.
 // TODO(stupaq): strong typedef and forward declarations all around

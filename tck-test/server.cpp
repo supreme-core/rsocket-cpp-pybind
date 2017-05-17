@@ -19,7 +19,7 @@
 #include "tck-test/MarbleProcessor.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace ::folly;
 using namespace yarpl;
 
@@ -107,7 +107,7 @@ class Callback : public AsyncServerSocket::AcceptCallback {
     std::shared_ptr<RSocketStats> stats;
 
     if (FLAGS_enable_stats_printer) {
-      stats.reset(new reactivesocket::StatsPrinter());
+      stats.reset(new rsocket::StatsPrinter());
     } else {
       stats = RSocketStats::noop();
     }

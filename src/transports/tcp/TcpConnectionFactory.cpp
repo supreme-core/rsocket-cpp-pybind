@@ -9,7 +9,7 @@
 #include "src/framing/FramedDuplexConnection.h"
 #include "src/transports/tcp/TcpDuplexConnection.h"
 
-using namespace reactivesocket;
+using namespace rsocket;
 
 namespace rsocket {
 

@@ -14,7 +14,7 @@ namespace folly {
 class exception_wrapper;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 /// Implementation of stream stateMachine that represents a Channel requester.
 class ChannelRequester : public ConsumerBase,

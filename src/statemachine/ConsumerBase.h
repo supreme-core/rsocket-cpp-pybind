@@ -13,7 +13,7 @@
 #include "src/statemachine/StreamStateMachineBase.h"
 #include "yarpl/flowable/Subscription.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 enum class StreamCompletionSignal;
 

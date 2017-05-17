@@ -3,7 +3,7 @@
 #include "RSocketParameters.h"
 #include <folly/String.h>
 
-namespace reactivesocket {
+namespace rsocket {
 std::ostream& operator<<(
     std::ostream& os,
     const SetupParameters& setupPayload) {

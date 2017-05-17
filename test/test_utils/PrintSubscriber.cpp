@@ -6,7 +6,7 @@
 #include <folly/ExceptionString.h>
 #include <glog/logging.h>
 
-namespace reactivesocket {
+namespace rsocket {
 
 PrintSubscriber::~PrintSubscriber() {
   LOG(INFO) << "~PrintSubscriber " << this;

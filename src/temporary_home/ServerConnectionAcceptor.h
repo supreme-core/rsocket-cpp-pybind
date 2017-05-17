@@ -14,7 +14,7 @@ class exception_wrapper;
 class IOBuf;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 class DuplexConnection;
 class FrameSerializer;

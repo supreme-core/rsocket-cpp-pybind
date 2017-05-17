@@ -6,7 +6,7 @@
 #include "src/temporary_home/SubscriberBase.h"
 #include "src/temporary_home/SubscriptionBase.h"
 
-namespace reactivesocket {
+namespace rsocket {
 using namespace ::folly;
 
 class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
@@ -27,7 +27,7 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   }
 
   void setInput(
-      std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+      std::shared_ptr<rsocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
           inputSubscriber) {
     CHECK(!inputSubscriber_);
     inputSubscriber_ = std::move(inputSubscriber);
@@ -125,7 +125,7 @@ class TcpReaderWriter : public ::folly::AsyncTransportWrapper::WriteCallback,
   folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
   folly::AsyncSocket::UniquePtr socket_;
 
-  std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+  std::shared_ptr<rsocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       inputSubscriber_;
 };
 

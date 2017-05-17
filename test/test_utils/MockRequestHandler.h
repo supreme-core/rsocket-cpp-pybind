@@ -9,7 +9,7 @@
 #include "src/Payload.h"
 #include "src/temporary_home/RequestHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class MockRequestHandler : public RequestHandler {
  public:

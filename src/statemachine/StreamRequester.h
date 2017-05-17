@@ -10,7 +10,7 @@ namespace folly {
 class exception_wrapper;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 enum class StreamCompletionSignal;
 

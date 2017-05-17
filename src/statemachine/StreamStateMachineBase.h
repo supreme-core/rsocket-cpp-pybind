@@ -13,7 +13,7 @@ namespace folly {
 class IOBuf;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 class StreamsWriter;
 class RequestHandler;

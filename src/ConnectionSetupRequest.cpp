@@ -2,7 +2,7 @@
 
 #include "ConnectionSetupRequest.h"
 
-using namespace reactivesocket;
+using namespace rsocket;
 
 namespace rsocket {
 

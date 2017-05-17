@@ -15,7 +15,7 @@
 #include "test/streams/Mocks.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 
 TEST(FramedReaderTest, Read1Frame) {
   auto frameSubscriber =

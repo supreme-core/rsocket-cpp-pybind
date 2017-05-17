@@ -7,7 +7,7 @@
 #include <bitset>
 #include "src/RSocketParameters.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 const uint32_t Frame_LEASE::kMaxTtl;
 const uint32_t Frame_LEASE::kMaxNumRequests;

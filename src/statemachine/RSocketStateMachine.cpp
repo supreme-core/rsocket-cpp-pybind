@@ -18,7 +18,7 @@
 #include "src/statemachine/ChannelResponder.h"
 #include "src/statemachine/StreamStateMachineBase.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 RSocketStateMachine::RSocketStateMachine(
     folly::Executor& executor,

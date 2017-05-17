@@ -19,7 +19,7 @@ namespace rsocket {
 class NewToOldSubscription : public yarpl::flowable::Subscription {
  public:
   explicit NewToOldSubscription(
-      std::shared_ptr<reactivesocket::Subscription> inner)
+      std::shared_ptr<rsocket::Subscription> inner)
       : inner_{std::move(inner)} {}
   ~NewToOldSubscription() = default;
 
@@ -35,24 +35,24 @@ class NewToOldSubscription : public yarpl::flowable::Subscription {
   }
 
  private:
-  std::shared_ptr<reactivesocket::Subscription> inner_;
+  std::shared_ptr<rsocket::Subscription> inner_;
 };
 
 class OldToNewSubscriber
-    : public reactivesocket::Subscriber<reactivesocket::Payload> {
+    : public rsocket::Subscriber<rsocket::Payload> {
  public:
   explicit OldToNewSubscriber(
-      yarpl::Reference<yarpl::flowable::Subscriber<reactivesocket::Payload>> inner)
+      yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner)
       : inner_{std::move(inner)} {}
 
   void onSubscribe(
-      std::shared_ptr<reactivesocket::Subscription> subscription) noexcept {
+      std::shared_ptr<rsocket::Subscription> subscription) noexcept {
     bridge_ = yarpl::Reference<yarpl::flowable::Subscription>(
         new NewToOldSubscription(std::move(subscription)));
     inner_->onSubscribe(bridge_);
   }
 
-  void onNext(reactivesocket::Payload element) noexcept {
+  void onNext(rsocket::Payload element) noexcept {
     inner_->onNext(std::move(element));
   }
 
@@ -71,13 +71,13 @@ class OldToNewSubscriber
   }
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscriber<reactivesocket::Payload>> inner_;
+  yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner_;
   yarpl::Reference<yarpl::flowable::Subscription> bridge_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class OldToNewSubscription : public reactivesocket::Subscription {
+class OldToNewSubscription : public rsocket::Subscription {
  public:
   explicit OldToNewSubscription(yarpl::Reference<yarpl::flowable::Subscription> inner)
       : inner_{inner} {}
@@ -103,10 +103,10 @@ class OldToNewSubscription : public reactivesocket::Subscription {
   yarpl::Reference<yarpl::flowable::Subscription> inner_{nullptr};
 };
 
-class NewToOldSubscriber : public yarpl::flowable::Subscriber<reactivesocket::Payload> {
+class NewToOldSubscriber : public yarpl::flowable::Subscriber<rsocket::Payload> {
  public:
   explicit NewToOldSubscriber(
-      std::shared_ptr<reactivesocket::Subscriber<reactivesocket::Payload>>
+      std::shared_ptr<rsocket::Subscriber<rsocket::Payload>>
           inner)
       : inner_{std::move(inner)} {}
 
@@ -116,7 +116,7 @@ class NewToOldSubscriber : public yarpl::flowable::Subscriber<reactivesocket::Pa
     inner_->onSubscribe(bridge_);
   }
 
-  void onNext(reactivesocket::Payload payload) override {
+  void onNext(rsocket::Payload payload) override {
     inner_->onNext(std::move(payload));
   }
 
@@ -148,12 +148,12 @@ class NewToOldSubscriber : public yarpl::flowable::Subscriber<reactivesocket::Pa
   }
 
  private:
-  std::shared_ptr<reactivesocket::Subscriber<reactivesocket::Payload>> inner_;
+  std::shared_ptr<rsocket::Subscriber<rsocket::Payload>> inner_;
   std::shared_ptr<OldToNewSubscription> bridge_;
 };
 
 class EagerSubscriberBridge
-    : public yarpl::flowable::Subscriber<reactivesocket::Payload> {
+    : public yarpl::flowable::Subscriber<rsocket::Payload> {
  public:
   void onSubscribe(
       yarpl::Reference<yarpl::flowable::Subscription> subscription) noexcept {
@@ -164,7 +164,7 @@ class EagerSubscriberBridge
     }
   }
 
-  void onNext(reactivesocket::Payload element) noexcept {
+  void onNext(rsocket::Payload element) noexcept {
     DCHECK(inner_);
     inner_->onNext(std::move(element));
   }
@@ -185,7 +185,7 @@ class EagerSubscriberBridge
     subscription_.reset();
   }
 
-  void subscribe(yarpl::Reference<yarpl::flowable::Subscriber<reactivesocket::Payload>> inner) {
+  void subscribe(yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner) {
       CHECK(!inner_); // only one call to subscribe is supported
     CHECK(inner);
     inner_ = std::move(inner);
@@ -195,7 +195,7 @@ class EagerSubscriberBridge
   }
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscriber<reactivesocket::Payload>> inner_;
+  yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner_;
   yarpl::Reference<yarpl::flowable::Subscription> subscription_;
 };
 

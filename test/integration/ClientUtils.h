@@ -12,7 +12,7 @@
 #include "src/framing/FramedDuplexConnection.h"
 #include "src/transports/tcp/TcpDuplexConnection.h"
 
-namespace reactivesocket {
+namespace rsocket {
 namespace tests {
 
 class MyConnectCallback : public folly::AsyncSocket::ConnectCallback {

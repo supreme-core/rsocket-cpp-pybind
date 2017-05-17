@@ -7,7 +7,7 @@
 #include "src/internal/Common.h"
 #include "src/DuplexConnection.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class FramedReader;
 class FramedWriter;

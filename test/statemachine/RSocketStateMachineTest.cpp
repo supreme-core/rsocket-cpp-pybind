@@ -14,7 +14,7 @@
 #include "test/streams/Mocks.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 
 static std::unique_ptr<folly::IOBuf> makeInvalidFrameHeader() {
   // Create a header without the stream id

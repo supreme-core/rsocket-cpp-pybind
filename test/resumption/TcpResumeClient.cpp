@@ -17,7 +17,7 @@
 #include "test/test_utils/StatsPrinter.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace ::folly;
 using namespace yarpl;
 

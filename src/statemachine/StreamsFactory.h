@@ -10,7 +10,7 @@ namespace folly {
 class Executor;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 class RSocketStateMachine;
 class ChannelResponder;

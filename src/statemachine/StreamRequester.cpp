@@ -3,7 +3,7 @@
 #include "src/statemachine/StreamRequester.h"
 #include <folly/MoveWrapper.h>
 
-namespace reactivesocket {
+namespace rsocket {
 
 void StreamRequester::request(int64_t n) noexcept {
   if (n == 0) {

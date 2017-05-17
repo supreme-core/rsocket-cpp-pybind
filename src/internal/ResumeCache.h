@@ -15,7 +15,7 @@ namespace folly {
 class IOBuf;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 class RSocketStateMachine;
 class FrameTransport;

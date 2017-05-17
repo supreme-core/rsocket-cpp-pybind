@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-namespace reactivesocket {
+namespace rsocket {
 
 class OneFrameProcessor
     : public FrameProcessor,

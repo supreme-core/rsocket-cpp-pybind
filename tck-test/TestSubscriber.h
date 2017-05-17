@@ -9,7 +9,7 @@
 #include "src/Payload.h"
 #include "yarpl/flowable/Subscriber.h"
 
-namespace reactivesocket {
+namespace rsocket {
 namespace tck {
 
 class TestSubscriber : public yarpl::flowable::Subscriber<Payload> {

@@ -8,8 +8,8 @@
 class TextRequestHandler : public rsocket::RSocketResponder {
 public:
     /// Handles a new inbound Stream requested by the other end.
-    yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+    yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
     handleRequestStream(
-            reactivesocket::Payload request,
-            reactivesocket::StreamId streamId) override;
+            rsocket::Payload request,
+            rsocket::StreamId streamId) override;
 };

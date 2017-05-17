@@ -5,7 +5,7 @@
 #include "RSocketStateMachine.h"
 #include "StreamsHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 void StreamStateMachineBase::handlePayload(Payload&& payload,
                                         bool complete,

@@ -3,7 +3,7 @@
 #include "RSocketStats.h"
 #include <src/transports/tcp/TcpDuplexConnection.h>
 
-namespace reactivesocket {
+namespace rsocket {
 
 class NoopStats : public RSocketStats {
  public:
@@ -16,10 +16,10 @@ class NoopStats : public RSocketStats {
 
   void duplexConnectionCreated(
       const std::string& type,
-      reactivesocket::DuplexConnection* connection) override {}
+      rsocket::DuplexConnection* connection) override {}
   void duplexConnectionClosed(
       const std::string& type,
-      reactivesocket::DuplexConnection* connection) override {}
+      rsocket::DuplexConnection* connection) override {}
 
   void bytesWritten(size_t bytes) override {}
   void bytesRead(size_t bytes) override {}

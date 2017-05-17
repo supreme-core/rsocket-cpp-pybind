@@ -23,7 +23,7 @@ class Range;
 typedef Range<const char*> StringPiece;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
 class ReactiveSocket;
 enum class FrameType : uint8_t;

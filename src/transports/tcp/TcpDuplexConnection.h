@@ -7,7 +7,7 @@
 #include "src/DuplexConnection.h"
 #include "src/internal/ReactiveStreamsCompat.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class TcpReaderWriter;
 

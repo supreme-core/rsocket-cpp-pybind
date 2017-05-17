@@ -18,7 +18,7 @@ namespace rsocket {
 class ConnectionSetupRequest {
  public:
   explicit ConnectionSetupRequest(
-      reactivesocket::SetupParameters setupPayload);
+      rsocket::SetupParameters setupPayload);
   ConnectionSetupRequest(const ConnectionSetupRequest&) = delete; // copy
   ConnectionSetupRequest(ConnectionSetupRequest&&) = default; // move
   ConnectionSetupRequest& operator=(const ConnectionSetupRequest&) =
@@ -27,13 +27,13 @@ class ConnectionSetupRequest {
 
   const std::string& getMetadataMimeType() const;
   const std::string& getDataMimeType() const;
-  const reactivesocket::Payload& getPayload() const;
+  const rsocket::Payload& getPayload() const;
   bool clientRequestsResumability() const;
-  const reactivesocket::ResumeIdentificationToken&
+  const rsocket::ResumeIdentificationToken&
   getResumeIdentificationToken() const;
   bool willHonorLease() const;
 
  private:
-  reactivesocket::SetupParameters setupPayload_;
+  rsocket::SetupParameters setupPayload_;
 };
 }

@@ -9,7 +9,7 @@
 #include "src/statemachine/StreamRequester.h"
 #include "src/statemachine/StreamResponder.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 using namespace yarpl;
 

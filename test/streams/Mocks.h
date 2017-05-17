@@ -147,7 +147,7 @@ class MockSubscription : public yarpl::flowable::Subscription {
 } // flowable
 } // yarpl
 
-namespace reactivesocket {
+namespace rsocket {
 
 /// GoogleMock-compatible Publisher implementation for fast prototyping.
 /// UnmanagedMockPublisher's lifetime MUST be managed externally.

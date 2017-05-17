@@ -44,11 +44,11 @@ class RSocketResponder {
    * @param streamId
    * @return
    */
-  virtual yarpl::Reference<yarpl::single::Single<reactivesocket::Payload>>
+  virtual yarpl::Reference<yarpl::single::Single<rsocket::Payload>>
   handleRequestResponse(
-      reactivesocket::Payload request,
-      reactivesocket::StreamId streamId) {
-    return yarpl::single::Singles::error<reactivesocket::Payload>(
+      rsocket::Payload request,
+      rsocket::StreamId streamId) {
+    return yarpl::single::Singles::error<rsocket::Payload>(
         std::logic_error("handleRequestResponse not implemented"));
   }
 
@@ -61,11 +61,11 @@ class RSocketResponder {
    * @param streamId
    * @return
    */
-  virtual yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
   handleRequestStream(
-      reactivesocket::Payload request,
-      reactivesocket::StreamId streamId) {
-    return yarpl::flowable::Flowables::error<reactivesocket::Payload>(
+      rsocket::Payload request,
+      rsocket::StreamId streamId) {
+    return yarpl::flowable::Flowables::error<rsocket::Payload>(
         std::logic_error("handleRequestStream not implemented"));
   }
 
@@ -78,13 +78,13 @@ class RSocketResponder {
      * @param streamId
      * @return
      */
-  virtual yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
   handleRequestChannel(
-      reactivesocket::Payload request,
-      yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+      rsocket::Payload request,
+      yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
           requestStream,
-      reactivesocket::StreamId streamId) {
-    return yarpl::flowable::Flowables::error<reactivesocket::Payload>(
+      rsocket::StreamId streamId) {
+    return yarpl::flowable::Flowables::error<rsocket::Payload>(
         std::logic_error("handleRequestChannel not implemented"));
   }
 
@@ -98,8 +98,8 @@ class RSocketResponder {
    * @return
    */
   virtual void handleFireAndForget(
-      reactivesocket::Payload request,
-      reactivesocket::StreamId streamId) {
+      rsocket::Payload request,
+      rsocket::StreamId streamId) {
     // no default implementation, no error response to provide
   }
 };

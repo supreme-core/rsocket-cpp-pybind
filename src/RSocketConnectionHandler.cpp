@@ -14,10 +14,10 @@
 
 namespace rsocket {
 
-using namespace reactivesocket;
+using namespace rsocket;
 using namespace yarpl;
 
-class RSocketHandlerBridge : public reactivesocket::DefaultRequestHandler {
+class RSocketHandlerBridge : public rsocket::DefaultRequestHandler {
  public:
   RSocketHandlerBridge(std::shared_ptr<RSocketResponder> handler)
       : handler_(std::move(handler)){};

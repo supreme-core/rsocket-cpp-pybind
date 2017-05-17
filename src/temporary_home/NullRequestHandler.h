@@ -6,7 +6,7 @@
 #include "src/RSocketParameters.h"
 #include "RequestHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 template <typename T>
 class NullSubscriberT : public yarpl::flowable::Subscriber<T> {

@@ -5,7 +5,7 @@
 #include "src/internal/Common.h"
 #include "src/Payload.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class FrameSerializer;
 

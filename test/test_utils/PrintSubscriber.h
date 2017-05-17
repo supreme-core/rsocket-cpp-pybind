@@ -5,7 +5,7 @@
 #include "src/Payload.h"
 #include "yarpl/flowable/Subscriber.h"
 
-namespace reactivesocket {
+namespace rsocket {
 class PrintSubscriber : public yarpl::flowable::Subscriber<Payload> {
  public:
   ~PrintSubscriber();

@@ -3,7 +3,7 @@
 #include "src/statemachine/RequestResponseResponder.h"
 #include <folly/ExceptionString.h>
 
-namespace reactivesocket {
+namespace rsocket {
 
 using namespace yarpl;
 using namespace yarpl::flowable;
