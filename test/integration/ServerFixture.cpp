@@ -6,7 +6,7 @@
 #include <gflags/gflags.h>
 
 
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace yarpl;
 
 using folly::AsyncServerSocket;
@@ -67,7 +67,7 @@ class ServerRequestHandler : public DefaultRequestHandler {
   }
 
   std::shared_ptr<StreamState> handleSetupPayload(
-      ConnectionSetupPayload request) noexcept override {
+      SetupParameters request) noexcept override {
     LOG(INFO) << "Received SetupPayload. NOT IMPLEMENTED";
     return nullptr;
   }
@@ -115,13 +115,13 @@ class MyConnectionHandler : public ConnectionHandler {
 
   void setupNewSocket(
       std::shared_ptr<FrameTransport> frameTransport,
-      ConnectionSetupPayload setupPayload) override {
+      SetupParameters setupPayload) override {
     LOG(INFO) << "ServerSocket. SETUP socket from client";
 
     std::unique_ptr<RequestHandler> requestHandler =
         std::make_unique<ServerRequestHandler>();
     std::unique_ptr<ReactiveSocket> rs = ReactiveSocket::disconnectedServer(
-        eventBase_, std::move(requestHandler), Stats::noop());
+        eventBase_, std::move(requestHandler), RSocketStats::noop());
 
     rs->onConnected([]() { LOG(INFO) << "ServerSocket Connected"; });
     rs->onDisconnected([rs = rs.get()](const folly::exception_wrapper& ex) {
@@ -155,7 +155,7 @@ class MyConnectionHandler : public ConnectionHandler {
 
  private:
   EventBase& eventBase_;
-  std::shared_ptr<Stats> stats_;
+  std::shared_ptr<RSocketStats> stats_;
 };
 
 class MyAcceptCallback : public AsyncServerSocket::AcceptCallback {
@@ -172,7 +172,7 @@ class MyAcceptCallback : public AsyncServerSocket::AcceptCallback {
     auto socket =
         folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
     auto connection = std::make_unique<TcpDuplexConnection>(
-        std::move(socket), inlineExecutor(), Stats::noop());
+        std::move(socket), inlineExecutor(), RSocketStats::noop());
     auto framedConnection = std::make_unique<FramedDuplexConnection>(
         std::move(connection), eventBase_);
     connectionAcceptor_.accept(std::move(framedConnection), connectionHandler_);

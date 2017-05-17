@@ -11,7 +11,7 @@
 #include "test/streams/Mocks.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace yarpl;
 
 TEST(ReactiveSocketResumabilityTest, Disconnect) {
@@ -45,7 +45,7 @@ TEST(ReactiveSocketResumabilityTest, Disconnect) {
       defaultExecutor(),
       std::move(socketConnection),
       std::move(requestHandler),
-      ConnectionSetupPayload("", "", Payload(), true),
+      SetupParameters("", "", Payload(), true),
       stats);
 
   auto responseSubscriber = make_ref<yarpl::flowable::MockSubscriber<Payload>>();

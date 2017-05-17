@@ -17,7 +17,7 @@
 #include "test/test_utils/StatsPrinter.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace ::folly;
 using namespace yarpl;
 
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "connecting RS ...";
     reactiveSocket->clientConnect(
         std::make_shared<FrameTransport>(std::move(framedConnection)),
-        ConnectionSetupPayload(
+        SetupParameters(
             "text/plain", "text/plain", Payload("meta", "data"), true, token));
   });
 

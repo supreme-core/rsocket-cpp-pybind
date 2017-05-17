@@ -7,7 +7,7 @@
 #include "RSocketStateMachine.h"
 #include "src/temporary_home/RequestHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 using namespace yarpl;
 using namespace yarpl::flowable;

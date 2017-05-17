@@ -14,7 +14,7 @@
 #include "test/streams/Mocks.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 
 static std::unique_ptr<folly::IOBuf> makeInvalidFrameHeader() {
   // Create a header without the stream id
@@ -74,7 +74,7 @@ TEST(ConnectionAutomatonTest, InvalidFrameHeader) {
   connectionAutomaton = std::make_shared<RSocketStateMachine>(
       defaultExecutor(),
       std::make_shared<NullRequestHandler>(),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->connect(
@@ -149,7 +149,7 @@ static void terminateTest(
   connectionAutomaton = std::make_shared<RSocketStateMachine>(
       defaultExecutor(),
       std::make_shared<NullRequestHandler>(),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->connect(
@@ -248,7 +248,7 @@ TEST(ConnectionAutomatonTest, RefuseFrame) {
   connectionAutomaton = std::make_shared<RSocketStateMachine>(
       defaultExecutor(),
       std::make_shared<NullRequestHandler>(),
-      Stats::noop(),
+      RSocketStats::noop(),
       nullptr,
       ReactiveSocketMode::CLIENT);
   connectionAutomaton->connect(

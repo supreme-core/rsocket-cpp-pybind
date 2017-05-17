@@ -8,7 +8,7 @@
 #include "src/framing/FrameSerializer_v0_1.h"
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 
 TEST(PayloadTest, EmptyMetadata) {
   Payload p("some error message");

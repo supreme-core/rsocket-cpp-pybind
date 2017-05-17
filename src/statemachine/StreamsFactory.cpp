@@ -9,7 +9,7 @@
 #include "src/statemachine/StreamRequester.h"
 #include "src/statemachine/StreamResponder.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 using namespace yarpl;
 
@@ -27,30 +27,30 @@ StreamsFactory::StreamsFactory(
 Reference<yarpl::flowable::Subscriber<Payload>> StreamsFactory::createChannelRequester(
     Reference<yarpl::flowable::Subscriber<Payload>> responseSink) {
   ChannelRequester::Parameters params(connection_.shared_from_this(), getNextStreamId());
-  auto automaton = yarpl::make_ref<ChannelRequester>(params);
-  connection_.addStream(params.streamId, automaton);
-  automaton->subscribe(std::move(responseSink));
-  return automaton;
+  auto stateMachine = yarpl::make_ref<ChannelRequester>(params);
+  connection_.addStream(params.streamId, stateMachine);
+  stateMachine->subscribe(std::move(responseSink));
+  return stateMachine;
 }
 
 void StreamsFactory::createStreamRequester(
     Payload request,
     Reference<yarpl::flowable::Subscriber<Payload>> responseSink) {
   StreamRequester::Parameters params(connection_.shared_from_this(), getNextStreamId());
-  auto automaton =
+  auto stateMachine =
       yarpl::make_ref<StreamRequester>(params, std::move(request));
-  connection_.addStream(params.streamId, automaton);
-  automaton->subscribe(std::move(responseSink));
+  connection_.addStream(params.streamId, stateMachine);
+  stateMachine->subscribe(std::move(responseSink));
 }
 
 void StreamsFactory::createRequestResponseRequester(
     Payload payload,
     Reference<yarpl::flowable::Subscriber<Payload>> responseSink) {
   RequestResponseRequester::Parameters params(connection_.shared_from_this(), getNextStreamId());
-  auto automaton =
+  auto stateMachine =
       yarpl::make_ref<RequestResponseRequester>(params, std::move(payload));
-  connection_.addStream(params.streamId, automaton);
-  automaton->subscribe(std::move(responseSink));
+  connection_.addStream(params.streamId, stateMachine);
+  stateMachine->subscribe(std::move(responseSink));
 }
 
 StreamId StreamsFactory::getNextStreamId() {
@@ -81,27 +81,27 @@ Reference<ChannelResponder> StreamsFactory::createChannelResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
   ChannelResponder::Parameters params(connection_.shared_from_this(), streamId);
-  auto automaton = yarpl::make_ref<ChannelResponder>(initialRequestN, params);
-  connection_.addStream(streamId, automaton);
-  return automaton;
+  auto stateMachine = yarpl::make_ref<ChannelResponder>(initialRequestN, params);
+  connection_.addStream(streamId, stateMachine);
+  return stateMachine;
 }
 
 Reference<yarpl::flowable::Subscriber<Payload>> StreamsFactory::createStreamResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
   StreamResponder::Parameters params(connection_.shared_from_this(), streamId);
-  auto automaton = yarpl::make_ref<StreamResponder>(initialRequestN, params);
-  connection_.addStream(streamId, automaton);
-  return automaton;
+  auto stateMachine = yarpl::make_ref<StreamResponder>(initialRequestN, params);
+  connection_.addStream(streamId, stateMachine);
+  return stateMachine;
 }
 
 Reference<yarpl::flowable::Subscriber<Payload>>
 StreamsFactory::createRequestResponseResponder(
     StreamId streamId) {
   RequestResponseResponder::Parameters params(connection_.shared_from_this(), streamId);
-  auto automaton = yarpl::make_ref<RequestResponseResponder>(params);
-  connection_.addStream(streamId, automaton);
-  return automaton;
+  auto stateMachine = yarpl::make_ref<RequestResponseResponder>(params);
+  connection_.addStream(streamId, stateMachine);
+  return stateMachine;
 }
 
 } // reactivesocket

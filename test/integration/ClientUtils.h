@@ -12,7 +12,7 @@
 #include "src/framing/FramedDuplexConnection.h"
 #include "src/transports/tcp/TcpDuplexConnection.h"
 
-namespace reactivesocket {
+namespace rsocket {
 namespace tests {
 
 class MyConnectCallback : public folly::AsyncSocket::ConnectCallback {
@@ -104,7 +104,7 @@ std::shared_ptr<FrameTransport> getFrameTransport(
   LOG(INFO) << "Attempting connection to " << addr.describe();
   std::unique_ptr<DuplexConnection> connection =
       std::make_unique<TcpDuplexConnection>(
-          std::move(socket), inlineExecutor(), Stats::noop());
+          std::move(socket), inlineExecutor(), RSocketStats::noop());
   std::unique_ptr<DuplexConnection> framedConnection =
       std::make_unique<FramedDuplexConnection>(
           std::move(connection), *eventBase);
@@ -119,7 +119,7 @@ std::unique_ptr<ReactiveSocket> getRSocket(folly::EventBase* eventBase) {
   rsocket = ReactiveSocket::disconnectedClient(
       *eventBase,
       std::move(requestHandler),
-      Stats::noop(),
+      RSocketStats::noop(),
       std::make_unique<FollyKeepaliveTimer>(
           *eventBase, std::chrono::seconds(10)));
   rsocket->onConnected([]() { LOG(INFO) << "ClientSocket connected"; });
@@ -133,8 +133,8 @@ std::unique_ptr<ReactiveSocket> getRSocket(folly::EventBase* eventBase) {
 }
 
 // Utility function to create a SetupPayload
-ConnectionSetupPayload getSetupPayload(ResumeIdentificationToken token) {
-  return ConnectionSetupPayload(
+SetupParameters getSetupPayload(ResumeIdentificationToken token) {
+  return SetupParameters(
       "text/plain", "text/plain", Payload("meta", "data"), true, token);
 }
 }

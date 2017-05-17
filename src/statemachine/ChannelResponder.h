@@ -9,9 +9,9 @@
 #include "src/statemachine/PublisherBase.h"
 #include "yarpl/flowable/Subscriber.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
-/// Implementation of stream automaton that represents a Channel responder.
+/// Implementation of stream stateMachine that represents a Channel responder.
 class ChannelResponder : public ConsumerBase,
                          public PublisherBase,
                          public yarpl::flowable::Subscriber<Payload> {

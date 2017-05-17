@@ -13,7 +13,6 @@
 #include "src/transports/tcp/TcpConnectionFactory.h"
 #include "yarpl/Flowable.h"
 
-using namespace ::reactivesocket;
 using namespace ::folly;
 using namespace ::rsocket;
 using namespace yarpl;
@@ -62,10 +61,10 @@ class BM_RequestHandler : public RSocketResponder
 {
  public:
   // TODO(lehecka): enable when we have support for request-response
-  yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+  yarpl::Reference<yarpl::flowable::Flowable<Payload>>
   handleRequestStream(
-      reactivesocket::Payload request,
-      reactivesocket::StreamId streamId) override {
+      Payload request,
+      StreamId streamId) override {
       CHECK(false) << "not implemented";
   }
 
@@ -109,7 +108,7 @@ class BM_Subscriber
       subscription_->request(initialRequest_);
   }
 
-  void onNext(reactivesocket::Payload element) noexcept override
+  void onNext(Payload element) noexcept override
   {
       LOG(INFO) << "BM_Subscriber " << this
                 << " onNext as string: " << element.moveDataToString();

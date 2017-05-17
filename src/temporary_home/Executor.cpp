@@ -7,7 +7,7 @@
 #include "src/internal/StackTraceUtils.h"
 #include "SubscriberBase.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 // just instantiating of the template here
 template class SubscriberBaseT<Payload>;

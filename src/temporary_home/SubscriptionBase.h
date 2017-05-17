@@ -6,7 +6,7 @@
 #include "src/temporary_home/Executor.h"
 #include "src/internal/ReactiveStreamsCompat.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class SubscriptionBase : public Subscription,
                          public EnableSharedFromThisBase<SubscriptionBase>,

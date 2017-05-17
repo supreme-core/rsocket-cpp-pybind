@@ -15,7 +15,7 @@
 #include "src/Payload.h"
 #include "src/internal/ReactiveStreamsCompat.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class DuplexConnection;
 
@@ -76,7 +76,7 @@ class FrameTransport :
   AllowanceSemaphore writeAllowance_;
   std::shared_ptr<DuplexConnection> connection_;
 
-  std::shared_ptr<reactivesocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
+  std::shared_ptr<rsocket::Subscriber<std::unique_ptr<folly::IOBuf>>>
       connectionOutput_;
   std::shared_ptr<Subscription> connectionInputSub_;
 

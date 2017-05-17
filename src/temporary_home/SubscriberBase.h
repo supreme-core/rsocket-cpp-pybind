@@ -10,7 +10,7 @@
 #include "src/Payload.h"
 #include "src/internal/ReactiveStreamsCompat.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 class SubscriptionShim {
  public:

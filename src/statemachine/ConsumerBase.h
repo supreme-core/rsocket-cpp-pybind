@@ -10,16 +10,16 @@
 #include "RSocketStateMachine.h"
 #include "src/temporary_home/NullRequestHandler.h"
 #include "src/Payload.h"
-#include "src/statemachine/StreamAutomatonBase.h"
+#include "src/statemachine/StreamStateMachineBase.h"
 #include "yarpl/flowable/Subscription.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 enum class StreamCompletionSignal;
 
 /// A class that represents a flow-control-aware consumer of data.
-class ConsumerBase : public StreamAutomatonBase, public yarpl::flowable::Subscription {
-  using Base = StreamAutomatonBase;
+class ConsumerBase : public StreamStateMachineBase, public yarpl::flowable::Subscription {
+  using Base = StreamStateMachineBase;
 
  public:
   using Base::Base;

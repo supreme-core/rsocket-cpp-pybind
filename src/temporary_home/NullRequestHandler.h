@@ -3,10 +3,10 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 #include "RequestHandler.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 template <typename T>
 class NullSubscriberT : public yarpl::flowable::Subscriber<T> {
@@ -58,7 +58,7 @@ class NullRequestHandler : public RequestHandler {
       std::unique_ptr<folly::IOBuf> request) noexcept override;
 
   std::shared_ptr<StreamState> handleSetupPayload(
-      ConnectionSetupPayload request) noexcept override;
+      SetupParameters request) noexcept override;
 
   bool handleResume(ResumeParameters) noexcept override;
 

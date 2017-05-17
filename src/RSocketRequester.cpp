@@ -7,7 +7,7 @@
 
 #include <folly/ExceptionWrapper.h>
 
-using namespace reactivesocket;
+using namespace rsocket;
 using namespace folly;
 using namespace yarpl;
 
@@ -37,9 +37,9 @@ RSocketRequester::~RSocketRequester() {
   LOG(INFO) << "RSocketRequester => destroy";
 }
 
-yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
 RSocketRequester::requestChannel(
-    yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+    yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
         requestStream) {
   auto& eb = eventBase_;
   auto srs = stateMachine_;
@@ -80,7 +80,7 @@ RSocketRequester::requestStream(Payload request) {
   });
 }
 
-yarpl::Reference<yarpl::single::Single<reactivesocket::Payload>>
+yarpl::Reference<yarpl::single::Single<rsocket::Payload>>
 RSocketRequester::requestResponse(Payload request) {
   // TODO bridge in use until SingleSubscriber is used internally
   class SingleToSubscriberBridge : public yarpl::flowable::Subscriber<Payload> {
@@ -133,7 +133,7 @@ RSocketRequester::requestResponse(Payload request) {
 }
 
 yarpl::Reference<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
-    reactivesocket::Payload request) {
+    rsocket::Payload request) {
   return yarpl::single::Single<void>::create([
     eb = &eventBase_,
     request = std::move(request),

@@ -43,7 +43,7 @@ class TcpConnectionAcceptor : public ConnectionAcceptor {
    */
   folly::Future<folly::Unit> start(
       std::function<void(
-          std::unique_ptr<reactivesocket::DuplexConnection>,
+          std::unique_ptr<rsocket::DuplexConnection>,
           folly::EventBase&)>) override;
 
   /**
@@ -62,7 +62,7 @@ class TcpConnectionAcceptor : public ConnectionAcceptor {
   std::vector<std::unique_ptr<SocketCallback>> callbacks_;
 
   std::function<void(
-      std::unique_ptr<reactivesocket::DuplexConnection>,
+      std::unique_ptr<rsocket::DuplexConnection>,
       folly::EventBase&)>
       onAccept_;
 

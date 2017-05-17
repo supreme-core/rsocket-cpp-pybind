@@ -8,22 +8,22 @@
 #include <folly/String.h>
 #include <folly/io/async/EventBase.h>
 #include "src/internal/ClientResumeStatusCallback.h"
-#include "src/temporary_home/ConnectionSetupPayload.h"
+#include "src/RSocketParameters.h"
 #include "src/DuplexConnection.h"
 #include "src/framing/FrameTransport.h"
 #include "src/temporary_home/RequestHandler.h"
-#include "src/temporary_home/ResumeCache.h"
-#include "src/temporary_home/Stats.h"
-#include "src/temporary_home/StreamState.h"
+#include "src/internal/ResumeCache.h"
+#include "src/RSocketStats.h"
+#include "StreamState.h"
 #include "src/statemachine/ChannelResponder.h"
-#include "src/statemachine/StreamAutomatonBase.h"
+#include "src/statemachine/StreamStateMachineBase.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 RSocketStateMachine::RSocketStateMachine(
     folly::Executor& executor,
     std::shared_ptr<RequestHandler> requestHandler,
-    std::shared_ptr<Stats> stats,
+    std::shared_ptr<RSocketStats> stats,
     std::unique_ptr<KeepaliveTimer> keepaliveTimer,
     ReactiveSocketMode mode)
     : ExecutorBase(executor),
@@ -285,9 +285,9 @@ void RSocketStateMachine::reconnect(
 
 void RSocketStateMachine::addStream(
     StreamId streamId,
-    yarpl::Reference<StreamAutomatonBase> automaton) {
+    yarpl::Reference<StreamStateMachineBase> stateMachine) {
   debugCheckCorrectExecutor();
-  auto result = streamState_->streams_.emplace(streamId, std::move(automaton));
+  auto result = streamState_->streams_.emplace(streamId, std::move(stateMachine));
   (void)result;
   assert(result.second);
 }
@@ -318,10 +318,10 @@ bool RSocketStateMachine::endStreamInternal(
     // Unsubscribe handshake initiated by the connection, we're done.
     return false;
   }
-  // Remove from the map before notifying the automaton.
-  auto automaton = std::move(it->second);
+  // Remove from the map before notifying the stateMachine.
+  auto stateMachine = std::move(it->second);
   streamState_->streams_.erase(it);
-  automaton->endStream(signal);
+  stateMachine->endStream(signal);
   return true;
 }
 
@@ -464,7 +464,7 @@ void RSocketStateMachine::handleConnectionFrame(
         LOG(ERROR) << "ignoring setup frame with lease";
       }
 
-      ConnectionSetupPayload setupPayload;
+      SetupParameters setupPayload;
       frame.moveToSetupPayload(setupPayload);
 
       // this should be already set to the correct version
@@ -572,7 +572,7 @@ void RSocketStateMachine::handleStreamFrame(
     handleUnknownStream(streamId, frameType, std::move(serializedFrame));
     return;
   }
-  auto &automaton = it->second;
+  auto &stateMachine = it->second;
 
   switch (frameType) {
     case FrameType::REQUEST_N: {
@@ -581,11 +581,11 @@ void RSocketStateMachine::handleStreamFrame(
                                    std::move(serializedFrame))) {
         return;
       }
-      automaton->handleRequestN(frameRequestN.requestN_);
+      stateMachine->handleRequestN(frameRequestN.requestN_);
       break;
     }
     case FrameType::CANCEL: {
-      automaton->handleCancel();
+      stateMachine->handleCancel();
       break;
     }
     case FrameType::PAYLOAD: {
@@ -594,7 +594,7 @@ void RSocketStateMachine::handleStreamFrame(
                                    std::move(serializedFrame))) {
         return;
       }
-      automaton->handlePayload(std::move(framePayload.payload_),
+      stateMachine->handlePayload(std::move(framePayload.payload_),
                                framePayload.header_.flagsComplete(),
                                framePayload.header_.flagsNext());
       break;
@@ -605,7 +605,7 @@ void RSocketStateMachine::handleStreamFrame(
                                    std::move(serializedFrame))) {
         return;
       }
-      automaton->handleError(
+      stateMachine->handleError(
           std::runtime_error(frameError.payload_.moveDataToString()));
       break;
     }
@@ -649,11 +649,11 @@ void RSocketStateMachine::handleUnknownStream(
       if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
         return;
       }
-      auto automaton = streamsFactory_.createChannelResponder(
+      auto stateMachine = streamsFactory_.createChannelResponder(
           frame.requestN_, streamId);
       auto requestSink = requestHandler_->handleRequestChannel(
-          std::move(frame.payload_), streamId, automaton);
-      automaton->subscribe(requestSink);
+          std::move(frame.payload_), streamId, stateMachine);
+      stateMachine->subscribe(requestSink);
       break;
     }
     case FrameType::REQUEST_STREAM: {
@@ -661,10 +661,10 @@ void RSocketStateMachine::handleUnknownStream(
       if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
         return;
       }
-      auto automaton = streamsFactory_.createStreamResponder(
+      auto stateMachine = streamsFactory_.createStreamResponder(
           frame.requestN_, streamId);
       requestHandler_->handleRequestStream(
-          std::move(frame.payload_), streamId, automaton);
+          std::move(frame.payload_), streamId, stateMachine);
       break;
     }
     case FrameType::REQUEST_RESPONSE: {
@@ -672,10 +672,10 @@ void RSocketStateMachine::handleUnknownStream(
       if (!deserializeFrameOrError(frame, std::move(serializedFrame))) {
         return;
       }
-      auto automaton =
+      auto stateMachine =
           streamsFactory_.createRequestResponseResponder(streamId);
       requestHandler_->handleRequestResponse(
-          std::move(frame.payload_), streamId, automaton);
+          std::move(frame.payload_), streamId, stateMachine);
       break;
     }
     case FrameType::REQUEST_FNF: {
@@ -886,7 +886,7 @@ void RSocketStateMachine::setFrameSerializer(
 
 void RSocketStateMachine::setUpFrame(
     std::shared_ptr<FrameTransport> frameTransport,
-    ConnectionSetupPayload setupPayload) {
+    SetupParameters setupPayload) {
   auto protocolVersion = getSerializerProtocolVersion();
 
   Frame_SETUP frame(

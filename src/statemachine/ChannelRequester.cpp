@@ -3,7 +3,7 @@
 #include "src/statemachine/ChannelRequester.h"
 #include <folly/ExceptionString.h>
 
-namespace reactivesocket {
+namespace rsocket {
 
 using namespace yarpl;
 using namespace yarpl::flowable;

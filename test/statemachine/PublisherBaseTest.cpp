@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 using namespace ::testing;
-using namespace ::reactivesocket;
+using namespace ::rsocket;
 using namespace yarpl;
 
 namespace {
@@ -25,7 +25,7 @@ class UserSubscriber : public yarpl::flowable::Subscriber<Payload>, private Publ
     publisherSubscribe(std::move(subscription));
   }
 
-  void onNext(::reactivesocket::Payload element) noexcept override {
+  void onNext(::rsocket::Payload element) noexcept override {
     FAIL();
 
   }

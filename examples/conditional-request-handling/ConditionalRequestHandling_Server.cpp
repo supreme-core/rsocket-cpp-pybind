@@ -10,7 +10,6 @@
 #include "JsonRequestHandler.h"
 #include "TextRequestHandler.h"
 
-using namespace ::reactivesocket;
 using namespace ::folly;
 using namespace ::rsocket;
 

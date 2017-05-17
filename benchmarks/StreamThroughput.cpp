@@ -14,7 +14,6 @@
 #include "src/transports/tcp/TcpConnectionFactory.h"
 #include "yarpl/Flowable.h"
 
-using namespace ::reactivesocket;
 using namespace ::folly;
 using namespace ::rsocket;
 using namespace yarpl;
@@ -63,13 +62,13 @@ private:
 class BM_RequestHandler : public RSocketResponder
 {
 public:
-    yarpl::Reference<yarpl::flowable::Flowable<reactivesocket::Payload>>
+    yarpl::Reference<yarpl::flowable::Flowable<  Payload>>
     handleRequestStream(
-      reactivesocket::Payload request,
-      reactivesocket::StreamId streamId) override {
+        Payload request,
+        StreamId streamId) override {
         CHECK(false) << "not implemented";
         // TODO(lehecka) need to implement new operator fromGenerator
-        // return yarpl::flowable::Flowables::fromGenerator<reactivesocket::Payload>(
+        // return yarpl::flowable::Flowables::fromGenerator<  Payload>(
         //     []{return Payload(std::string(MESSAGE_LENGTH, 'a')); });
     }
 };
@@ -100,7 +99,7 @@ public:
         subscription_->request(initialRequest_);
     }
 
-    void onNext(reactivesocket::Payload element) noexcept override
+    void onNext(  Payload element) noexcept override
     {
         LOG(INFO) << "BM_Subscriber " << this
             << " onNext as string: " << element.moveDataToString();

@@ -14,9 +14,9 @@ namespace folly {
 class exception_wrapper;
 }
 
-namespace reactivesocket {
+namespace rsocket {
 
-/// Implementation of stream automaton that represents a Channel requester.
+/// Implementation of stream stateMachine that represents a Channel requester.
 class ChannelRequester : public ConsumerBase,
                          public PublisherBase,
                          public yarpl::flowable::Subscriber<Payload> {

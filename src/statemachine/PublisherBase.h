@@ -12,7 +12,7 @@
 #include "src/temporary_home/RequestHandler.h"
 #include "yarpl/flowable/Subscription.h"
 
-namespace reactivesocket {
+namespace rsocket {
 
 enum class StreamCompletionSignal;
 

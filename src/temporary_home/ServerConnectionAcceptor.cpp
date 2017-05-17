@@ -7,11 +7,11 @@
 #include "src/framing/FrameProcessor.h"
 #include "src/framing/FrameSerializer.h"
 #include "src/framing/FrameTransport.h"
-#include "Stats.h"
+#include "src/RSocketStats.h"
 
 #include <iostream>
 
-namespace reactivesocket {
+namespace rsocket {
 
 class OneFrameProcessor
     : public FrameProcessor,
@@ -86,7 +86,7 @@ void ServerConnectionAcceptor::processFrame(
         break;
       }
 
-      ConnectionSetupPayload setupPayload;
+      SetupParameters setupPayload;
       setupFrame.moveToSetupPayload(setupPayload);
 
       removeConnection(transport);
