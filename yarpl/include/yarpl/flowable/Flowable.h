@@ -231,7 +231,8 @@ class Flowable : public virtual Refcounted {
           // Don't destroy a locked mutex.
           lock.unlock();
 
-          return release();
+          release();
+          return;
         }
 
         // If no more items can be emitted now, wait for a request(n).

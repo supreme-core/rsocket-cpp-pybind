@@ -16,11 +16,7 @@ void unreachable() {
 template <typename T>
 class CollectingSubscriber : public Subscriber<T> {
  public:
-  static_assert(
-      std::is_copy_constructible<T>::value,
-      "CollectingSubscriber needs to copy the value in order to collect it");
-
-  CollectingSubscriber(int64_t requestCount = 100)
+  explicit CollectingSubscriber(int64_t requestCount = 100)
       : requestCount_(requestCount) {}
 
   void onSubscribe(Reference<Subscription> subscription) override {
@@ -62,6 +58,10 @@ class CollectingSubscriber : public Subscriber<T> {
 
   const std::string& errorMsg() const {
     return errorMsg_;
+  }
+
+  void cancelSubscription() {
+    Subscriber<T>::subscription()->cancel();
   }
 
  private:
@@ -208,6 +208,51 @@ TEST(FlowableTest, FlowableEmpty) {
 
   EXPECT_EQ(collector->complete(), true);
   EXPECT_EQ(collector->error(), false);
+}
+
+TEST(FlowableTest, FlowableFromGenerator) {
+  EXPECT_EQ(0u, Refcounted::objects());
+
+  auto flowable = Flowables::fromGenerator<std::unique_ptr<int>>(
+      [] {return std::unique_ptr<int>();}
+  );
+  EXPECT_EQ(1u, Refcounted::objects());
+
+  auto collector = make_ref<CollectingSubscriber<std::unique_ptr<int>>>(10);
+  flowable->subscribe(collector);
+
+  EXPECT_EQ(collector->complete(), false);
+  EXPECT_EQ(collector->error(), false);
+  EXPECT_EQ(std::size_t{10}, collector->values().size());
+
+  collector->cancelSubscription();
+
+  flowable.reset();
+  collector.reset();
+  EXPECT_EQ(0u, Refcounted::objects());
+}
+
+TEST(FlowableTest, FlowableFromGeneratorException) {
+  EXPECT_EQ(0u, Refcounted::objects());
+
+  int count = 5;
+  auto flowable = Flowables::fromGenerator<std::unique_ptr<int>>(
+  [&] {
+    while (count--) { return std::unique_ptr<int>(); }
+    throw std::runtime_error("error from generator");
+  });
+  EXPECT_EQ(1u, Refcounted::objects());
+
+  auto collector = make_ref<CollectingSubscriber<std::unique_ptr<int>>>(10);
+  flowable->subscribe(collector);
+
+  EXPECT_EQ(collector->complete(), false);
+  EXPECT_EQ(collector->error(), true);
+  EXPECT_EQ(std::size_t{5}, collector->values().size());
+
+  collector.reset();
+  flowable.reset();
+  EXPECT_EQ(0u, Refcounted::objects());
 }
 
 TEST(FlowableTest, SubscribersComplete) {
