@@ -42,7 +42,7 @@ class StreamsFactory {
       uint32_t initialRequestN,
       StreamId streamId);
 
-  yarpl::Reference<yarpl::flowable::Subscriber<Payload>>
+  yarpl::Reference<yarpl::single::SingleObserver<Payload>>
   createRequestResponseResponder(StreamId streamId);
 
   bool registerNewPeerStreamId(StreamId streamId);
