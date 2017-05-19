@@ -156,6 +156,94 @@ TEST(FlowableTest, RangeWithMap) {
   EXPECT_EQ(std::size_t{0}, Refcounted::objects());
 }
 
+TEST(FlowableTest, RangeWithReduceMoreItems) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(0, 10)
+      ->reduce([](int64_t acc, int64_t v) { return acc + v; });
+  EXPECT_EQ(
+      run(std::move(flowable)), std::vector<int64_t>({45}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithReduceByMultiplication) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(0, 10)
+      ->reduce([](int64_t acc, int64_t v) { return acc * v; });
+  EXPECT_EQ(
+      run(std::move(flowable)), std::vector<int64_t>({0}));
+
+  flowable = Flowables::range(1, 10)
+      ->reduce([](int64_t acc, int64_t v) { return acc * v; });
+  EXPECT_EQ(
+      run(std::move(flowable)), std::vector<int64_t>({2*3*4*5*6*7*8*9*10}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithReduceLessItems) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(0, 10)
+      ->reduce([](int64_t acc, int64_t v) { return acc + v; });
+  // Even if we ask for 1 item only, it will reduce all the items
+  EXPECT_EQ(
+      run(std::move(flowable), 5), std::vector<int64_t>({45}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithReduceOneItem) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(5, 1)
+      ->reduce([](int64_t acc, int64_t v) { return acc + v; });
+  EXPECT_EQ(
+      run(std::move(flowable)), std::vector<int64_t>({5}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithReduceNoItem) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  {
+    auto flowable = Flowables::range(0, 0)
+        ->reduce([](int64_t acc, int64_t v) { return acc + v; });
+    auto collector = make_ref<CollectingSubscriber<int64_t>>(100);
+    flowable->subscribe(collector);
+    EXPECT_EQ(collector->error(), false);
+    EXPECT_EQ(
+        collector->values(), std::vector<int64_t>({}));
+  }
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithFilterAndReduce) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(0, 10)
+      ->filter([](int64_t v) { return v % 2 != 0; })
+      ->reduce([](int64_t acc, int64_t v) { return acc + v; });
+  EXPECT_EQ(
+      run(std::move(flowable)), std::vector<int64_t>({1+3+5+7+9}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithReduceToBiggerType) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(5, 1)
+      ->map([](int64_t v){ return (char)(v + 10); })
+      ->reduce([](int64_t acc, char v) { return acc + v; });
+  EXPECT_EQ(
+      run(std::move(flowable)), std::vector<int64_t>({15}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, StringReduce) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::justN<std::string>(
+    {"a", "b", "c", "d", "e", "f", "g", "h", "i"})
+    ->reduce([](std::string acc, std::string v) {
+      return acc + v;
+    });
+  EXPECT_EQ(
+    run(std::move(flowable)), std::vector<std::string>({"abcdefghi"}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
 TEST(FlowableTest, RangeWithFilterRequestMoreItems) {
   ASSERT_EQ(std::size_t{0}, Refcounted::objects());
   auto flowable =
@@ -169,6 +257,24 @@ TEST(FlowableTest, RangeWithFilterRequestLessItems) {
   auto flowable =
       Flowables::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
   EXPECT_EQ(run(std::move(flowable), 5), std::vector<int64_t>({1, 3, 5, 7, 9}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithFilterAndMap) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(0, 10)
+      ->filter([](int64_t v) { return v % 2 != 0; })
+      ->map([](int64_t v){ return v + 10; });
+  EXPECT_EQ(run(std::move(flowable)), std::vector<int64_t>({11, 13, 15, 17, 19}));
+  EXPECT_EQ(std::size_t{0}, Refcounted::objects());
+}
+
+TEST(FlowableTest, RangeWithMapAndFilter) {
+  ASSERT_EQ(std::size_t{0}, Refcounted::objects());
+  auto flowable = Flowables::range(0, 10)
+      ->map([](int64_t v){ return (char)(v + 10); })
+      ->filter([](char v) { return v % 2 != 0; });
+  EXPECT_EQ(run(std::move(flowable)), std::vector<char>({11, 13, 15, 17, 19}));
   EXPECT_EQ(std::size_t{0}, Refcounted::objects());
 }
 

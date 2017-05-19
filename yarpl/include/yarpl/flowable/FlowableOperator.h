@@ -73,18 +73,19 @@ class FlowableOperator : public Flowable<D> {
       Refcounted::decRef(*this);
     }
 
+   protected:
+    void onComplete() override {
+      subscriber_->onComplete();
+      upstream_.reset(); // breaking the cycle
+      Refcounted::decRef(*this);
+    }
+
    private:
     void onSubscribe(
         Reference<::yarpl::flowable::Subscription> subscription) override {
       upstream_ = std::move(subscription);
       subscriber_->onSubscribe(
           Reference<::yarpl::flowable::Subscription>(this));
-    }
-
-    void onComplete() override {
-      subscriber_->onComplete();
-      upstream_.reset(); // breaking the cycle
-      Refcounted::decRef(*this);
     }
 
     void onError(const std::exception_ptr error) override {
@@ -137,7 +138,7 @@ class MapOperator : public FlowableOperator<U, D> {
     Subscription(
         Reference<Flowable<D>> flowable,
         Reference<Subscriber<D>> subscriber)
-        : FlowableOperator<U, D>::Subscription(
+        : Super(
               std::move(flowable),
               std::move(subscriber)) {}
 
@@ -175,7 +176,7 @@ class FilterOperator : public FlowableOperator<U, U> {
     Subscription(
         Reference<Flowable<U>> flowable,
         Reference<Subscriber<U>> subscriber)
-        : FlowableOperator<U, U>::Subscription(
+        : Super(
               std::move(flowable),
               std::move(subscriber)) {}
 
@@ -187,8 +188,68 @@ class FilterOperator : public FlowableOperator<U, U> {
         Super::request(1l);
       }
     }
+  };
 
-   private:
+  F function_;
+};
+
+template <
+    typename U,
+    typename D,
+    typename F,
+    typename = typename std::enable_if<std::is_assignable<D, U>::value>,
+    typename = typename std::enable_if<std::is_callable<F(D, U), D>::value>::type>
+class ReduceOperator : public FlowableOperator<U, D> {
+public:
+  ReduceOperator(Reference<Flowable<U>> upstream, F&& function)
+      : FlowableOperator<U, D>(std::move(upstream)),
+        function_(std::forward<F>(function)) {}
+
+  void subscribe(Reference<Subscriber<D>> subscriber) override {
+    FlowableOperator<U, D>::upstream_->subscribe(
+        // Note: implicit cast to a reference to a subscriber.
+        Reference<Subscription>(new Subscription(
+            Reference<Flowable<D>>(this), std::move(subscriber))));
+  }
+
+private:
+  class Subscription : public FlowableOperator<U, D>::Subscription {
+    using Super = typename FlowableOperator<U,D>::Subscription;
+  public:
+    Subscription(
+        Reference<Flowable<D>> flowable,
+        Reference<Subscriber<D>> subscriber)
+        : Super(
+        std::move(flowable),
+        std::move(subscriber)),
+          accInitialized_(false) {
+    }
+
+    void request(int64_t /* delta */) override {
+      // Request all of the items
+      Super::request(FlowableOperator<U, D>::NO_FLOW_CONTROL);
+    }
+
+    void onNext(U value) override {
+      auto* reduce = Super::template getFlowableAs<ReduceOperator>();
+      if (accInitialized_) {
+        acc_ = reduce->function_(std::move(acc_), std::move(value));
+      } else {
+        acc_ = std::move(value);
+        accInitialized_ = true;
+      }
+    }
+
+    void onComplete() override {
+      if (accInitialized_) {
+        Super::subscriberOnNext(std::move(acc_));
+      }
+      Super::onComplete();
+    }
+
+  private:
+    bool accInitialized_;
+    D acc_;
   };
 
   F function_;

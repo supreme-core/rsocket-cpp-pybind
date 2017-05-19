@@ -91,6 +91,9 @@ class Flowable : public virtual Refcounted {
   template <typename Function>
   auto filter(Function&& function);
 
+  template <typename Function>
+  auto reduce(Function&& function);
+
   auto take(int64_t);
 
   auto subscribeOn(Scheduler&);
@@ -329,6 +332,14 @@ template <typename T>
 template <typename Function>
 auto Flowable<T>::filter(Function&& function) {
   return Reference<Flowable<T>>(new FilterOperator<T, Function>(
+      Reference<Flowable<T>>(this), std::forward<Function>(function)));
+}
+
+template <typename T>
+template <typename Function>
+auto Flowable<T>::reduce(Function&& function) {
+  using D = typename std::result_of<Function(T, T)>::type;
+  return Reference<Flowable<D>>(new ReduceOperator<T, D, Function>(
       Reference<Flowable<T>>(this), std::forward<Function>(function)));
 }
 
