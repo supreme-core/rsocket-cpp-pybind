@@ -3,6 +3,7 @@
 #include "SetupResumeAcceptor.h"
 
 #include <folly/ExceptionWrapper.h>
+#include <folly/io/async/EventBaseManager.h>
 
 #include "src/DuplexConnection.h"
 #include "src/RSocketStats.h"
@@ -52,19 +53,19 @@ class OneFrameProcessor : public FrameProcessor {
 };
 
 SetupResumeAcceptor::SetupResumeAcceptor(
-    ProtocolVersion protocolVersion) {
+    ProtocolVersion protocolVersion, folly::EventBase* eventBase)
+    : eventBase_(eventBase) {
   // if protocolVersion is unknown we will try to autodetect the version
   // with the first frame
   if (protocolVersion != ProtocolVersion::Unknown) {
     defaultFrameSerializer_ =
         FrameSerializer::createFrameSerializer(protocolVersion);
   }
+  CHECK(eventBase_);
 }
 
 SetupResumeAcceptor::~SetupResumeAcceptor() {
-  for (auto& connection : connections_) {
-    connection->close(std::runtime_error("SetupResumeAcceptor closed"));
-  }
+  close().get();
 }
 
 void SetupResumeAcceptor::processFrame(
@@ -72,6 +73,13 @@ void SetupResumeAcceptor::processFrame(
     std::unique_ptr<folly::IOBuf> frame,
     SetupResumeAcceptor::OnSetup onSetup,
     SetupResumeAcceptor::OnResume onResume) {
+  DCHECK(eventBase_->isInEventBaseThread());
+
+  if (closed_) {
+    transport->close(std::runtime_error("shut down"));
+    return;
+  }
+
   auto frameSerializer = getOrAutodetectFrameSerializer(*frame);
   if (!frameSerializer) {
     closeAndRemoveConnection(
@@ -205,6 +213,25 @@ void SetupResumeAcceptor::removeConnection(
     const std::shared_ptr<FrameTransport>& transport) {
   transport->setFrameProcessor(nullptr);
   connections_.erase(transport);
+}
+
+folly::Future<folly::Unit> SetupResumeAcceptor::close() {
+  if(eventBase_->isInEventBaseThread()) {
+    closeAllConnections();
+    return folly::makeFuture();
+  } else {
+    return folly::via(eventBase_).then(
+        [this]() mutable {
+          closeAllConnections();
+        });
+  }
+}
+
+void SetupResumeAcceptor::closeAllConnections() {
+  closed_ = true;
+  for(auto& connection : connections_) {
+    connection->close(std::runtime_error("shutting down"));
+  }
 }
 
 } // reactivesocket
