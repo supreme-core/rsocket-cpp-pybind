@@ -31,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, const Payload& payload) {
                           payload.metadata->computeChainDataLength())
                     : "0")
             << (payload.metadata
-                    ?  "): '" + payload.metadata->cloneAsValue().moveToFbString().substr(0, 80).toStdString() + "'"
+                    ?  "): '" + payload.metadata->cloneAsValue().moveToFbString().substr(0, 40).toStdString() + "'"
                     : "): <nullptr>")
             << ", Data("
             << (payload.data
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const Payload& payload) {
                            payload.data->computeChainDataLength())
                      : "0")
             << (payload.data
-                    ? "): '" + payload.data->cloneAsValue().moveToFbString().substr(0, 80).toStdString() + "'"
+                    ? "): '" + payload.data->cloneAsValue().moveToFbString().substr(0, 40).toStdString() + "'"
                     : "): <nullptr>")
             << "]";
 }

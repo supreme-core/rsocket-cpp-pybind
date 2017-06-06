@@ -94,35 +94,84 @@ std::ostream& operator<<(std::ostream& os, ErrorCode errorCode) {
   return os << "ErrorCode(" << static_cast<uint32_t>(errorCode) << ")";
 }
 
-std::ostream& operator<<(std::ostream& os, FrameFlags frameFlags) {
-  // TODO Match the Flag names with the AllowedFlags in the Frame declarations
+std::ostream& operator<<(
+    std::ostream& os,
+    const std::pair<FrameFlags, FrameFlags>& frameFlagsAndAllowedFlags) {
+  FrameFlags frameFlags = frameFlagsAndAllowedFlags.first;
+  FrameFlags allowedFlags = frameFlagsAndAllowedFlags.second;
+  FrameFlags foundFlags = FrameFlags::EMPTY;
 
   std::stringstream ss;
   std::string delimeter = "";
-  if (!!(frameFlags & FrameFlags::NEXT)) {
-    ss << "NEXT";
-    delimeter = "|";
-  }
-  if (!!(frameFlags & FrameFlags::COMPLETE)) {
-    ss << delimeter << "COMPLETE";
-    delimeter = "|";
-  }
-  if (!!(frameFlags & FrameFlags::FOLLOWS)) {
-    ss << delimeter << "FOLLOWS";
-    delimeter = "|";
-  }
-  if (!!(frameFlags & FrameFlags::METADATA)) {
-    ss << delimeter << "METADATA";
-    delimeter = "|";
-  }
-  if (!!(frameFlags & FrameFlags::IGNORE)) {
+  if (!!(allowedFlags & FrameFlags::IGNORE)
+      && !!(frameFlags & FrameFlags::IGNORE)) {
     ss << delimeter << "IGNORE";
     delimeter = "|";
+    foundFlags |= FrameFlags::IGNORE;
+  }
+  if (!!(allowedFlags & FrameFlags::METADATA)
+      && !!(frameFlags & FrameFlags::METADATA)) {
+    ss << delimeter << "METADA";
+    delimeter = "|";
+    foundFlags |= FrameFlags::METADATA;
+  }
+  if (!!(allowedFlags & FrameFlags::RESUME_ENABLE)
+      && !!(frameFlags & FrameFlags::RESUME_ENABLE)) {
+    ss << delimeter << "RESUEN";
+    delimeter = "|";
+    foundFlags |= FrameFlags::RESUME_ENABLE;
+  }
+  if (!!(allowedFlags & FrameFlags::LEASE)
+      && !!(frameFlags & FrameFlags::LEASE)) {
+    ss << delimeter << "LEASE";
+    delimeter = "|";
+    foundFlags |= FrameFlags::LEASE;
+  }
+  if (!!(allowedFlags & FrameFlags::KEEPALIVE_RESPOND)
+      && !!(frameFlags & FrameFlags::KEEPALIVE_RESPOND)) {
+    ss << delimeter << "KALIVR";
+    delimeter = "|";
+    foundFlags |= FrameFlags::KEEPALIVE_RESPOND;
+  }
+  if (!!(allowedFlags & FrameFlags::FOLLOWS)
+      && !!(frameFlags & FrameFlags::FOLLOWS)) { // FOLLOWS = 0x80,
+    ss << delimeter << "FOLLOW";
+    delimeter = "|";
+    foundFlags |= FrameFlags::FOLLOWS;
+  }
+  if (!!(allowedFlags & FrameFlags::COMPLETE)
+      && !!(frameFlags & FrameFlags::COMPLETE)) { // COMPLETE = 0x40
+    ss << delimeter << "COMPLE";
+    delimeter = "|";
+    foundFlags |= FrameFlags::COMPLETE;
+  }
+  if (!!(allowedFlags & FrameFlags::NEXT)
+      && !!(frameFlags & FrameFlags::NEXT)) { // NEXT = 0x20
+    ss << "NEXT";
+    delimeter = "|";
+    foundFlags |= FrameFlags::NEXT;
+  }
+
+  if (foundFlags != frameFlags) {
+    return operator<<(os, frameFlags);
   }
   if (!delimeter.empty()) {
     return os << ss.str();
   }
   return os << "EMPTY";
+}
+
+std::ostream& operator<<(std::ostream& os, FrameFlags frameFlags) {
+  // TODO Match the Flag names with the AllowedFlags in the Frame declarations
+  std::bitset<16> flags(static_cast<uint16_t>(frameFlags));
+  return os << flags;
+}
+
+std::ostream& operator<<(std::ostream& os, const std::pair<const FrameHeader&, FrameFlags>& headerAndAllowedFlags) {
+  const auto& header = headerAndAllowedFlags.first;
+  return os << header.type_ << "["
+            << std::make_pair(header.flags_, headerAndAllowedFlags.second)
+            << ", " << header.streamId_ << "]";
 }
 
 std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
@@ -132,40 +181,48 @@ std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
 /// @}
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_Base& frame) {
-  return os << frame.header_ << "(" << frame.requestN_ << ", "
+  return os << std::make_pair(frame.header_, FrameFlags::EMPTY)
+            << "(" << frame.requestN_ << ", "
             << frame.payload_;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_N& frame) {
-  return os << frame.header_ << "(" << frame.requestN_ << ")";
+  return os << std::make_pair(frame.header_, FrameFlags::EMPTY)
+            << "(" << frame.requestN_ << ")";
 }
 
+constexpr FrameFlags Frame_REQUEST_RESPONSE::AllowedFlags;
 std::ostream& operator<<(
     std::ostream& os,
     const Frame_REQUEST_RESPONSE& frame) {
-  return os << frame.header_ << ", " << frame.payload_;
+  return os << std::make_pair(frame.header_, Frame_REQUEST_RESPONSE::AllowedFlags)
+            << ", " << frame.payload_;
 }
 
+constexpr FrameFlags Frame_REQUEST_FNF::AllowedFlags;
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_FNF& frame) {
-  return os << frame.header_ << ", " << frame.payload_;
+  return os << std::make_pair(frame.header_, Frame_REQUEST_FNF::AllowedFlags)
+            << ", " << frame.payload_;
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_METADATA_PUSH& frame) {
-  return os << frame.header_ << ", "
+  return os << std::make_pair(frame.header_, FrameFlags::METADATA) << ", "
             << (frame.metadata_ ? frame.metadata_->computeChainDataLength()
                                 : 0);
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_CANCEL& frame) {
-  return os << frame.header_;
+  return os << std::make_pair(frame.header_, FrameFlags::EMPTY);
 }
 
 Frame_PAYLOAD Frame_PAYLOAD::complete(StreamId streamId) {
   return Frame_PAYLOAD(streamId, FrameFlags::COMPLETE, Payload());
 }
 
+constexpr FrameFlags Frame_PAYLOAD::AllowedFlags;
 std::ostream& operator<<(std::ostream& os, const Frame_PAYLOAD& frame) {
-  return os << frame.header_ << ", (" << frame.payload_;
+  return os << std::make_pair(frame.header_, Frame_PAYLOAD::AllowedFlags)
+            << ", (" << frame.payload_;
 }
 
 Frame_ERROR Frame_ERROR::unexpectedFrame() {
@@ -198,19 +255,24 @@ Frame_ERROR Frame_ERROR::applicationError(
       streamId, ErrorCode::APPLICATION_ERROR, std::move(payload));
 }
 
+constexpr FrameFlags Frame_ERROR::AllowedFlags;
 std::ostream& operator<<(std::ostream& os, const Frame_ERROR& frame) {
-  return os << frame.header_ << ", " << frame.errorCode_ << ", "
+  return os << std::make_pair(frame.header_, Frame_ERROR::AllowedFlags)
+            << ", " << frame.errorCode_ << ", "
             << frame.payload_;
 }
 
+constexpr FrameFlags Frame_KEEPALIVE::AllowedFlags;
 std::ostream& operator<<(std::ostream& os, const Frame_KEEPALIVE& frame) {
-  return os << frame.header_ << "(<"
+  return os << std::make_pair(frame.header_, Frame_KEEPALIVE::AllowedFlags)
+            << "(<"
             << (frame.data_ ? frame.data_->computeChainDataLength() : 0)
             << ">)";
 }
 
+constexpr FrameFlags Frame_SETUP::AllowedFlags;
 std::ostream& operator<<(std::ostream& os, const Frame_SETUP& frame) {
-  return os << frame.header_
+  return os << std::make_pair(frame.header_, Frame_SETUP::AllowedFlags)
             << ", Version: " << frame.versionMajor_ << "." << frame.versionMinor_
             << ", (" << frame.payload_;
 }
@@ -224,14 +286,17 @@ void Frame_SETUP::moveToSetupPayload(SetupParameters& setupPayload) {
   setupPayload.protocolVersion = ProtocolVersion(versionMajor_, versionMinor_);
 }
 
+constexpr FrameFlags Frame_LEASE::AllowedFlags;
 std::ostream& operator<<(std::ostream& os, const Frame_LEASE& frame) {
-  return os << frame.header_ << ", ("
+  return os << std::make_pair(frame.header_, Frame_LEASE::AllowedFlags)
+            << ", ("
             << (frame.metadata_ ? frame.metadata_->computeChainDataLength() : 0)
             << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_RESUME& frame) {
-  return os << frame.header_ << ", ("
+  return os << std::make_pair(frame.header_, FrameFlags::EMPTY)
+            << ", ("
             << "token"
             << ", @server " << frame.lastReceivedServerPosition_ << ", @client "
             << frame.clientPosition_ << ")";
@@ -240,4 +305,13 @@ std::ostream& operator<<(std::ostream& os, const Frame_RESUME& frame) {
 std::ostream& operator<<(std::ostream& os, const Frame_RESUME_OK& frame) {
   return os << frame.header_ << ", (@" << frame.position_ << ")";
 }
+
+constexpr FrameFlags Frame_REQUEST_CHANNEL::AllowedFlags;
+std::ostream& operator<<(
+    std::ostream& os,
+    const Frame_REQUEST_CHANNEL& frame) {
+  return os << std::make_pair(frame.header_, Frame_REQUEST_CHANNEL::AllowedFlags)
+            << ", " << frame.payload_;
+}
+
 } // reactivesocket
