@@ -111,13 +111,13 @@ std::ostream& operator<<(
   }
   if (!!(allowedFlags & FrameFlags::METADATA)
       && !!(frameFlags & FrameFlags::METADATA)) {
-    ss << delimeter << "METADA";
+    ss << delimeter << "METADATA";
     delimeter = "|";
     foundFlags |= FrameFlags::METADATA;
   }
   if (!!(allowedFlags & FrameFlags::RESUME_ENABLE)
       && !!(frameFlags & FrameFlags::RESUME_ENABLE)) {
-    ss << delimeter << "RESUEN";
+    ss << delimeter << "RESUME_ENABLE";
     delimeter = "|";
     foundFlags |= FrameFlags::RESUME_ENABLE;
   }
@@ -129,19 +129,19 @@ std::ostream& operator<<(
   }
   if (!!(allowedFlags & FrameFlags::KEEPALIVE_RESPOND)
       && !!(frameFlags & FrameFlags::KEEPALIVE_RESPOND)) {
-    ss << delimeter << "KALIVR";
+    ss << delimeter << "KEEPALIVE_RESPOND";
     delimeter = "|";
     foundFlags |= FrameFlags::KEEPALIVE_RESPOND;
   }
   if (!!(allowedFlags & FrameFlags::FOLLOWS)
       && !!(frameFlags & FrameFlags::FOLLOWS)) { // FOLLOWS = 0x80,
-    ss << delimeter << "FOLLOW";
+    ss << delimeter << "FOLLOWS";
     delimeter = "|";
     foundFlags |= FrameFlags::FOLLOWS;
   }
   if (!!(allowedFlags & FrameFlags::COMPLETE)
       && !!(frameFlags & FrameFlags::COMPLETE)) { // COMPLETE = 0x40
-    ss << delimeter << "COMPLE";
+    ss << delimeter << "COMPLETE";
     delimeter = "|";
     foundFlags |= FrameFlags::COMPLETE;
   }
