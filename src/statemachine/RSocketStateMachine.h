@@ -205,6 +205,10 @@ class RSocketStateMachine final
     return *stats_;
   }
 
+  std::shared_ptr<RSocketNetworkStats>& networkStats() {
+    return networkStats_;
+  }
+
  private:
 
   bool connect(
