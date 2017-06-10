@@ -52,6 +52,8 @@ void RSocketServer::shutdownAndWait() {
 }
 
 void RSocketServer::start(OnRSocketSetup onRSocketSetup) {
+  CHECK(duplexConnectionAcceptor_); // RSocketServer has to be initialized with the acceptor
+
   if (started) {
     throw std::runtime_error("RSocketServer::start() already called.");
   }
@@ -70,8 +72,6 @@ void RSocketServer::acceptConnection(
     std::unique_ptr<DuplexConnection> connection,
     folly::EventBase & eventBase,
     OnRSocketSetup onRSocketSetup) {
-  CHECK(duplexConnectionAcceptor_); // RSocketServer has to be initialized with the acceptor
-
   if (isShutdown_) {
     // connection is getting out of scope and terminated
     return;
