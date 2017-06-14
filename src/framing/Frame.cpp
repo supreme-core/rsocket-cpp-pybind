@@ -5,8 +5,8 @@
 #include <folly/Optional.h>
 #include <folly/io/Cursor.h>
 #include <bitset>
+#include <map>
 #include <sstream>
-#include <unordered_map>
 #include "src/RSocketParameters.h"
 
 namespace rsocket {
@@ -96,71 +96,71 @@ std::ostream& operator<<(std::ostream& os, ErrorCode errorCode) {
   return os << "ErrorCode(" << static_cast<uint32_t>(errorCode) << ")";
 }
 
-std::string toString(FrameFlags frameFlags, FrameType frameType) {
+std::ostream&
+writeFlags(std::ostream& os, FrameFlags frameFlags, FrameType frameType) {
   constexpr const char* kEmpty = "0x00";
   constexpr const char* kMetadata = "METADATA";
   constexpr const char* kResumeEnable = "RESUME_ENABLE";
   constexpr const char* kLease = "LEASE";
-  constexpr const char* kKeepaliveRespond = "KEEPALIVE_RESPOND";
+  constexpr const char* kKeepAliveRespond = "KEEPALIVE_RESPOND";
   constexpr const char* kFollows = "FOLLOWS";
   constexpr const char* kComplete = "COMPLETE";
   constexpr const char* kNext = "NEXT";
 
-  static std::
-      unordered_map<FrameType, std::vector<std::pair<FrameFlags, std::string>>>
-          flagToNameMap{{FrameType::REQUEST_N, {}},
-                        {FrameType::REQUEST_RESPONSE,
-                         {{FrameFlags::METADATA, kMetadata},
-                          {FrameFlags::FOLLOWS, kFollows}}},
-                        {FrameType::REQUEST_FNF,
-                         {{FrameFlags::METADATA, kMetadata},
-                          {FrameFlags::FOLLOWS, kFollows}}},
-                        {FrameType::METADATA_PUSH, {}},
-                        {FrameType::CANCEL, {}},
-                        {FrameType::PAYLOAD,
-                         {{FrameFlags::METADATA, kMetadata},
-                          {FrameFlags::FOLLOWS, kFollows},
-                          {FrameFlags::COMPLETE, kComplete},
-                          {FrameFlags::NEXT, kNext}}},
-                        {FrameType::ERROR, {{FrameFlags::METADATA, kMetadata}}},
-                        {FrameType::KEEPALIVE,
-                         {{FrameFlags::KEEPALIVE_RESPOND, kKeepaliveRespond}}},
-                        {FrameType::SETUP,
-                         {{FrameFlags::METADATA, kMetadata},
-                          {FrameFlags::RESUME_ENABLE, kResumeEnable},
-                          {FrameFlags::LEASE, kLease}}},
-                        {FrameType::LEASE, {{FrameFlags::METADATA, kMetadata}}},
-                        {FrameType::RESUME, {}},
-                        {FrameType::REQUEST_CHANNEL,
-                         {{FrameFlags::METADATA, kMetadata},
-                          {FrameFlags::FOLLOWS, kFollows},
-                          {FrameFlags::COMPLETE, kComplete}}},
-                        {FrameType::REQUEST_STREAM,
-                         {{FrameFlags::METADATA, kMetadata},
-                          {FrameFlags::FOLLOWS, kFollows}}}};
+  static std::map<FrameType, std::vector<std::pair<FrameFlags, std::string>>>
+      flagToNameMap{{FrameType::REQUEST_N, {}},
+                    {FrameType::REQUEST_RESPONSE,
+                     {{FrameFlags::METADATA, kMetadata},
+                      {FrameFlags::FOLLOWS, kFollows}}},
+                    {FrameType::REQUEST_FNF,
+                     {{FrameFlags::METADATA, kMetadata},
+                      {FrameFlags::FOLLOWS, kFollows}}},
+                    {FrameType::METADATA_PUSH, {}},
+                    {FrameType::CANCEL, {}},
+                    {FrameType::PAYLOAD,
+                     {{FrameFlags::METADATA, kMetadata},
+                      {FrameFlags::FOLLOWS, kFollows},
+                      {FrameFlags::COMPLETE, kComplete},
+                      {FrameFlags::NEXT, kNext}}},
+                    {FrameType::ERROR, {{FrameFlags::METADATA, kMetadata}}},
+                    {FrameType::KEEPALIVE,
+                     {{FrameFlags::KEEPALIVE_RESPOND, kKeepAliveRespond}}},
+                    {FrameType::SETUP,
+                     {{FrameFlags::METADATA, kMetadata},
+                      {FrameFlags::RESUME_ENABLE, kResumeEnable},
+                      {FrameFlags::LEASE, kLease}}},
+                    {FrameType::LEASE, {{FrameFlags::METADATA, kMetadata}}},
+                    {FrameType::RESUME, {}},
+                    {FrameType::REQUEST_CHANNEL,
+                     {{FrameFlags::METADATA, kMetadata},
+                      {FrameFlags::FOLLOWS, kFollows},
+                      {FrameFlags::COMPLETE, kComplete}}},
+                    {FrameType::REQUEST_STREAM,
+                     {{FrameFlags::METADATA, kMetadata},
+                      {FrameFlags::FOLLOWS, kFollows}}}};
 
   FrameFlags foundFlags = FrameFlags::EMPTY;
 
-  // Search the corresponding string value for each flag, insert the missing ones as empty
+  // Search the corresponding string value for each flag, insert the missing
+  // ones as empty
   const std::vector<std::pair<FrameFlags, std::string>>& allowedFlags =
       flagToNameMap[frameType];
 
-  std::stringstream ss;
   std::string delimeter = "";
   for (const auto& pair : allowedFlags) {
     if (!!(frameFlags & pair.first)) {
-      ss << delimeter << pair.second;
+      os << delimeter << pair.second;
       delimeter = "|";
       foundFlags |= pair.first;
     }
   }
 
   if (foundFlags != frameFlags) {
-    ss << frameFlags;
+    os << frameFlags;
   } else if (delimeter.empty()) {
-    ss << kEmpty;
+    os << kEmpty;
   }
-  return ss.str();
+  return os;
 }
 
 std::ostream& operator<<(std::ostream& os, FrameFlags frameFlags) {
@@ -169,8 +169,8 @@ std::ostream& operator<<(std::ostream& os, FrameFlags frameFlags) {
 }
 
 std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
-  return os << header.type_ << "[" << toString(header.flags_, header.type_)
-            << ", " << header.streamId_ << "]";
+  os << header.type_ << "[";
+  return writeFlags(os, header.flags_, header.type_) << ", " << header.streamId_ << "]";
 }
 
 /// @}
@@ -209,8 +209,7 @@ Frame_PAYLOAD Frame_PAYLOAD::complete(StreamId streamId) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_PAYLOAD& frame) {
-  return os << frame.header_ << ", " << frame.header_.streamId_ << "], ("
-            << frame.payload_;
+  return os << frame.header_ << ", (" << frame.payload_;
 }
 
 Frame_ERROR Frame_ERROR::unexpectedFrame() {
