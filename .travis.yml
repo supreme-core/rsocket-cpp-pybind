@@ -15,6 +15,7 @@ matrix:
         apt:
           packages:
             - clang-4.0
+            - libstdc++-4.9-dev
             - valgrind
           sources:
             - ubuntu-toolchain-r-test
