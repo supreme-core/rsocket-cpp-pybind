@@ -21,19 +21,19 @@ TEST(Credits, addSmall2) {
   ASSERT_EQ(rn, 35);
 }
 
-TEST(Credits, DISABLED_addOverflow) {
+TEST(Credits, addOverflow) {
   std::atomic<std::int64_t> rn{0};
   add(&rn, INT64_MAX);
   ASSERT_EQ(rn, INT64_MAX);
 }
 
-TEST(Credits, DISABLED_addOverflow2) {
+TEST(Credits, addOverflow2) {
   std::atomic<std::int64_t> rn{6789};
   add(&rn, INT64_MAX);
   ASSERT_EQ(rn, INT64_MAX);
 }
 
-TEST(Credits, DISABLED_addOverflow3) {
+TEST(Credits, addOverflow3) {
   std::atomic<std::int64_t> rn{INT64_MAX};
   add(&rn, INT64_MAX);
   ASSERT_EQ(rn, INT64_MAX);
