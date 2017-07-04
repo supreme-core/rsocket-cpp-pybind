@@ -118,6 +118,6 @@ script:
 
 after_success:
     # Upload to coveralls.
-  - if [ -f build/coverage.info ]; then
-      coveralls-lcov --repo-token ${COVERALLS_TOKEN} build/coverage.info;
+  - if [ -f coverage.info ]; then
+      coveralls-lcov --repo-token=${COVERALLS_TOKEN} coverage.info;
     fi
