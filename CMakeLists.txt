@@ -62,7 +62,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     # Capture coverage info.
     COMMAND lcov --directory . --capture --output-file ${COVERAGE_INFO}
     # Filter out system and test code.
-    COMMAND lcov --remove ${COVERAGE_INFO} 'tests/*' '/usr/*' --output-file
+    COMMAND lcov --remove ${COVERAGE_INFO} 'tests/*' 'test/*' 'tck-test/*' '/usr/*' 'gmock/*' 'folly/*' --output-file
                  ${COVERAGE_INFO}
     # Debug before upload.
     COMMAND lcov --list ${COVERAGE_INFO})
