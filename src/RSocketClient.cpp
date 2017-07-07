@@ -42,10 +42,10 @@ folly::Future<std::unique_ptr<RSocketRequester>> RSocketClient::connect(
     keepaliveTimer = std::move(keepaliveTimer),
     stats = std::move(stats),
     networkStats = std::move(networkStats),
-    promise = std::move(promise)
-  ](std::unique_ptr<DuplexConnection> connection,
-    bool isFramedConnection,
-    folly::EventBase& eventBase) mutable {
+    promise = std::move(promise)](
+      std::unique_ptr<DuplexConnection> connection,
+      bool isFramedConnection,
+      folly::EventBase& eventBase) mutable {
     VLOG(3) << "onConnect received DuplexConnection";
 
     auto rsocket = fromConnection(
@@ -102,7 +102,7 @@ std::unique_ptr<RSocketRequester> RSocketClient::fromConnection(
     framedConnection = std::move(connection);
   } else {
     framedConnection = std::make_unique<FramedDuplexConnection>(
-        std::move(connection), setupParameters.protocolVersion, eventBase);
+        std::move(connection), setupParameters.protocolVersion);
   }
 
   rs->connectClientSendSetup(std::move(framedConnection), std::move(setupParameters));
