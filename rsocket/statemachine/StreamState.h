@@ -15,7 +15,6 @@ namespace rsocket {
 class RSocketStateMachine;
 class RSocketStats;
 class StreamStateMachineBase;
-using StreamId = uint32_t;
 
 class StreamState {
  public:
