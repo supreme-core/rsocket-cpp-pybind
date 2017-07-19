@@ -182,14 +182,21 @@ BENCHMARK_DEFINE_F(BM_RsFixture, BM_Stream_Throughput)
   folly::SocketAddress address;
   address.setFromHostPort(host_, port_);
 
-  auto clientRs = RSocket::createClient(
-      std::make_unique<TcpConnectionFactory>(std::move(address)));
-
   auto s = make_ref<BM_Subscriber>(state.range(0));
 
-  clientRs->connect().then([s](std::shared_ptr<RSocketRequester> rs) {
-    rs->requestStream(Payload("BM_Stream"))->subscribe(std::move(s));
-  });
+  std::shared_ptr<RSocketClient> client;
+
+  try {
+    client = RSocket::createConnectedClient(
+                 std::make_unique<TcpConnectionFactory>(std::move(address)))
+                 .get();
+    client->getRequester()
+        ->requestStream(Payload("BM_Stream"))
+        ->subscribe(std::move(s));
+  } catch (const std::exception& ex) {
+    LOG(INFO) << "Exception received " << ex;
+    return;
+  }
 
   while (state.KeepRunning()) {
     std::this_thread::yield();
