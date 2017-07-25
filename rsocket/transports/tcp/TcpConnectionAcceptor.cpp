@@ -76,7 +76,7 @@ void TcpConnectionAcceptor::start(OnDuplexConnectionAccept onAccept) {
         [] { folly::setThreadName("TcpConnectionAcceptor.Worker"); });
   }
 
-  LOG(INFO) << "Starting TCP listener on port " << options_.port << " with "
+  LOG(INFO) << "Starting TCP listener on port " << options_.address.getPort() << " with "
             << options_.threads << " request threads";
 
   serverSocket_.reset(
@@ -87,10 +87,7 @@ void TcpConnectionAcceptor::start(OnDuplexConnectionAccept onAccept) {
   folly::via(
       serverThread_->getEventBase(),
       [this] {
-        folly::SocketAddress addr;
-        addr.setFromLocalPort(options_.port);
-
-        serverSocket_->bind(addr);
+        serverSocket_->bind(options_.address);
 
         for (auto const& callback : callbacks_) {
           serverSocket_->addAcceptCallback(
