@@ -27,6 +27,8 @@ class RequestCommand;
 class AwaitCommand;
 class CancelCommand;
 class AssertCommand;
+class ResumeCommand;
+class DisconnectCommand;
 
 class TestInterpreter {
   class TestClient {
@@ -51,6 +53,8 @@ class TestInterpreter {
   void handleAwait(const AwaitCommand& command);
   void handleCancel(const CancelCommand& command);
   void handleAssert(const AssertCommand& command);
+  void handleDisconnect(const DisconnectCommand& command);
+  void handleResume(const ResumeCommand& command);
 
   yarpl::Reference<BaseSubscriber> getSubscriber(const std::string& id);
 
