@@ -78,6 +78,18 @@ void RSocketConnectionManager::manageConnection(
       }
     }
 
+    void onStreamsPaused() override {
+      if (inner) {
+        inner->onStreamsPaused();
+      }
+    }
+
+    void onStreamsResumed() override {
+      if (inner) {
+        inner->onStreamsResumed();
+      }
+    }
+
     RSocketConnectionManager& connectionManager_;
     std::shared_ptr<RSocketStateMachine> socket_;
     folly::EventBase& eventBase_;
