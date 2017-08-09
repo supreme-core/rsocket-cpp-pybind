@@ -211,6 +211,8 @@ class RSocketStateMachine final
     return connectionEvents_;
   }
 
+  bool isInEventBaseThread();
+
  private:
 
   bool connect(
