@@ -184,9 +184,9 @@ class MapOperator : public FlowableOperator<U, D, MapOperator<U, D, F>> {
   using Super = FlowableOperator<U, D, ThisOperatorT>;
 
  public:
-  MapOperator(Reference<Flowable<U>> upstream, F&& function)
+  MapOperator(Reference<Flowable<U>> upstream, F function)
       : Super(std::move(upstream)),
-        function_(std::forward<F>(function)) {}
+        function_(std::move(function)) {}
 
   void subscribe(Reference<Subscriber<D>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
@@ -223,9 +223,9 @@ class FilterOperator : public FlowableOperator<U, U, FilterOperator<U, F>> {
   using Super = FlowableOperator<U, U, ThisOperatorT>;
 
  public:
-  FilterOperator(Reference<Flowable<U>> upstream, F&& function)
+  FilterOperator(Reference<Flowable<U>> upstream, F function)
       : Super(std::move(upstream)),
-        function_(std::forward<F>(function)) {}
+        function_(std::move(function)) {}
 
   void subscribe(Reference<Subscriber<U>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
@@ -267,9 +267,9 @@ class ReduceOperator : public FlowableOperator<U, D, ReduceOperator<U, D, F>> {
   using Super = FlowableOperator<U, D, ThisOperatorT>;
 
  public:
-  ReduceOperator(Reference<Flowable<U>> upstream, F&& function)
+  ReduceOperator(Reference<Flowable<U>> upstream, F function)
       : Super(std::move(upstream)),
-        function_(std::forward<F>(function)) {}
+        function_(std::move(function)) {}
 
   void subscribe(Reference<Subscriber<D>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
@@ -505,7 +505,7 @@ class SubscribeOnOperator : public FlowableOperator<T, T, SubscribeOnOperator<T>
 template <typename T, typename OnSubscribe>
 class FromPublisherOperator : public Flowable<T> {
  public:
-  explicit FromPublisherOperator(OnSubscribe&& function)
+  explicit FromPublisherOperator(OnSubscribe function)
       : function_(std::move(function)) {}
 
   void subscribe(Reference<Subscriber<T>> subscriber) override {

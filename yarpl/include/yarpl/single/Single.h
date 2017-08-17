@@ -25,8 +25,8 @@ class Single : public virtual Refcounted {
       typename Success,
       typename = typename std::enable_if<
           std::is_callable<Success(T), void>::value>::type>
-  void subscribe(Success&& next) {
-    subscribe(SingleObservers::create<T>(next));
+  void subscribe(Success next) {
+    subscribe(SingleObservers::create<T>(std::move(next)));
   }
 
   /**
@@ -38,8 +38,9 @@ class Single : public virtual Refcounted {
       typename = typename std::enable_if<
           std::is_callable<Success(T), void>::value &&
           std::is_callable<Error(std::exception_ptr), void>::value>::type>
-  void subscribe(Success&& next, Error&& error) {
-    subscribe(SingleObservers::create<T>(next, error));
+  void subscribe(Success next, Error error) {
+    subscribe(SingleObservers::create<T>(
+        std::move(next), std::move(error)));
   }
 
   /**
@@ -51,10 +52,10 @@ class Single : public virtual Refcounted {
       typename Success,
       typename = typename std::enable_if<
           std::is_callable<Success(T), void>::value>::type>
-  void subscribeBlocking(Success&& next) {
+  void subscribeBlocking(Success next) {
     auto waiting_ = std::make_shared<folly::Baton<>>();
     subscribe(SingleObservers::create<T>(
-        [ next = std::forward<Success>(next), waiting_ ](T t) {
+        [ next = std::move(next), waiting_ ](T t) {
           next(std::move(t));
           waiting_->post();
         }));
@@ -67,10 +68,10 @@ class Single : public virtual Refcounted {
       typename = typename std::enable_if<std::is_callable<
           OnSubscribe(Reference<SingleObserver<T>>),
           void>::value>::type>
-  static auto create(OnSubscribe&&);
+  static auto create(OnSubscribe);
 
   template <typename Function>
-  auto map(Function&& function);
+  auto map(Function function);
 };
 
 template <>
@@ -86,10 +87,10 @@ class Single<void> : public virtual Refcounted {
       typename Success,
       typename = typename std::enable_if<
           std::is_callable<Success(), void>::value>::type>
-  void subscribe(Success&& s) {
+  void subscribe(Success s) {
     class SuccessSingleObserver : public SingleObserver<void> {
      public:
-      SuccessSingleObserver(Success&& s) : success_{std::move(s)} {}
+      SuccessSingleObserver(Success s) : success_{std::move(s)} {}
 
       void onSubscribe(Reference<SingleSubscription> subscription) override {
         SingleObserver<void>::onSubscribe(std::move(subscription));
@@ -109,7 +110,7 @@ class Single<void> : public virtual Refcounted {
       Success success_;
     };
 
-    subscribe(make_ref<SuccessSingleObserver>(std::forward<Success>(s)));
+    subscribe(make_ref<SuccessSingleObserver>(std::move(s)));
   }
 
   template <
@@ -117,7 +118,7 @@ class Single<void> : public virtual Refcounted {
       typename = typename std::enable_if<std::is_callable<
           OnSubscribe(Reference<SingleObserver<void>>),
           void>::value>::type>
-  static auto create(OnSubscribe&&);
+  static auto create(OnSubscribe);
 };
 
 } // single
@@ -130,13 +131,13 @@ namespace single {
 
 template <typename T>
 template <typename OnSubscribe, typename>
-auto Single<T>::create(OnSubscribe&& function) {
+auto Single<T>::create(OnSubscribe function) {
   return Reference<Single<T>>(new FromPublisherOperator<T, OnSubscribe>(
-      std::forward<OnSubscribe>(function)));
+      std::move(function)));
 }
 
 template <typename OnSubscribe, typename>
-auto Single<void>::create(OnSubscribe&& function) {
+auto Single<void>::create(OnSubscribe function) {
   return Reference<Single<void>>(
       new SingleVoidFromPublisherOperator<OnSubscribe>(
           std::forward<OnSubscribe>(function)));
@@ -144,10 +145,10 @@ auto Single<void>::create(OnSubscribe&& function) {
 
 template <typename T>
 template <typename Function>
-auto Single<T>::map(Function&& function) {
+auto Single<T>::map(Function function) {
   using D = typename std::result_of<Function(T)>::type;
   return Reference<Single<D>>(new MapOperator<T, D, Function>(
-      Reference<Single<T>>(this), std::forward<Function>(function)));
+      Reference<Single<T>>(this), std::move(function)));
 }
 
 } // single
