@@ -103,8 +103,8 @@ class MapOperator : public SingleOperator<U, D> {
   using OperatorSubscription = typename Super::template Subscription<ThisOperatorT>;
 
  public:
-  MapOperator(Reference<Single<U>> upstream, F&& function)
-      : Super(std::move(upstream)), function_(std::forward<F>(function)) {}
+  MapOperator(Reference<Single<U>> upstream, F function)
+      : Super(std::move(upstream)), function_(std::move(function)) {}
 
   void subscribe(Reference<SingleObserver<D>> observer) override {
     Super::upstream_->subscribe(
@@ -133,7 +133,7 @@ class MapOperator : public SingleOperator<U, D> {
 template <typename T, typename OnSubscribe>
 class FromPublisherOperator : public Single<T> {
  public:
-  explicit FromPublisherOperator(OnSubscribe&& function)
+  explicit FromPublisherOperator(OnSubscribe function)
       : function_(std::move(function)) {}
 
   void subscribe(Reference<SingleObserver<T>> observer) override {

@@ -104,9 +104,9 @@ class Flowables {
       typename = typename std::enable_if<std::is_callable<
           OnSubscribe(Reference<Subscriber<T>>),
           void>::value>::type>
-  static Reference<Flowable<T>> fromPublisher(OnSubscribe&& function) {
+  static Reference<Flowable<T>> fromPublisher(OnSubscribe function) {
     return Reference<Flowable<T>>(new FromPublisherOperator<T, OnSubscribe>(
-        std::forward<OnSubscribe>(function)));
+        std::move(function)));
   }
 
   template <typename T>

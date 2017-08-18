@@ -174,9 +174,9 @@ template <
     typename = typename std::enable_if<std::is_callable<F(U), D>::value>::type>
 class MapOperator : public ObservableOperator<U, D> {
  public:
-  MapOperator(Reference<Observable<U>> upstream, F&& function)
+  MapOperator(Reference<Observable<U>> upstream, F function)
       : ObservableOperator<U, D>(std::move(upstream)),
-        function_(std::forward<F>(function)) {}
+        function_(std::move(function)) {}
 
   void subscribe(Reference<Observer<D>> observer) override {
     ObservableOperator<U, D>::upstream_->subscribe(
@@ -212,9 +212,9 @@ template <
         typename std::enable_if<std::is_callable<F(U), bool>::value>::type>
 class FilterOperator : public ObservableOperator<U, U> {
  public:
-  FilterOperator(Reference<Observable<U>> upstream, F&& function)
+  FilterOperator(Reference<Observable<U>> upstream, F function)
       : ObservableOperator<U, U>(std::move(upstream)),
-        function_(std::forward<F>(function)) {}
+        function_(std::move(function)) {}
 
   void subscribe(Reference<Observer<U>> observer) override {
     ObservableOperator<U, U>::upstream_->subscribe(
@@ -253,9 +253,9 @@ template<
     typename = typename std::enable_if<std::is_callable<F(D, U), D>::value>::type>
 class ReduceOperator : public ObservableOperator<U, D> {
 public:
-  ReduceOperator(Reference<Observable<U>> upstream, F &&function)
+  ReduceOperator(Reference<Observable<U>> upstream, F function)
       : ObservableOperator<U, D>(std::move(upstream)),
-        function_(std::forward<F>(function)) {}
+        function_(std::move(function)) {}
 
   void subscribe(Reference<Observer<D>> subscriber) override {
     ObservableOperator<U, D>::upstream_->subscribe(
@@ -465,7 +465,7 @@ class SubscribeOnOperator : public ObservableOperator<T, T> {
 template <typename T, typename OnSubscribe>
 class FromPublisherOperator : public Observable<T> {
  public:
-  explicit FromPublisherOperator(OnSubscribe&& function)
+  explicit FromPublisherOperator(OnSubscribe function)
       : function_(std::move(function)) {}
 
   void subscribe(Reference<Observer<T>> observer) override {
