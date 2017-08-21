@@ -123,12 +123,12 @@ class Flowable : public virtual Refcounted {
   template <
       typename Emitter,
       typename = typename std::enable_if<std::is_callable<
-          Emitter(Subscriber<T>&, int64_t),
+          Emitter(Reference<Subscriber<T>>, int64_t),
           std::tuple<int64_t, bool>>::value>::type>
   static auto create(Emitter emitter);
 
  private:
-  virtual std::tuple<int64_t, bool> emit(Subscriber<T>&, int64_t) {
+  virtual std::tuple<int64_t, bool> emit(Reference<Subscriber<T>>, int64_t) {
     return std::make_tuple(static_cast<int64_t>(0), false);
   }
 
@@ -272,8 +272,8 @@ class Flowable : public virtual Refcounted {
         int64_t emitted;
         bool done;
 
-        std::tie(emitted, done) = flowable_->emit(
-            *this /* implicit conversion to subscriber */, current);
+        std::tie(emitted, done) =
+            flowable_->emit(yarpl::get_ref<Subscriber<T>>(this), current);
 
         while (true) {
           current = requested_.load(std::memory_order_relaxed);
@@ -329,9 +329,10 @@ class Flowable<T>::EmitterWrapper : public Flowable<T> {
         Reference<Flowable>(this), std::move(subscriber));
   }
 
-  std::tuple<int64_t, bool> emit(Subscriber<T>& subscriber, int64_t requested)
-      override {
-    return emitter_(subscriber, requested);
+  std::tuple<int64_t, bool> emit(
+      Reference<Subscriber<T>> subscriber,
+      int64_t requested) override {
+    return emitter_(std::move(subscriber), requested);
   }
 
  private:
