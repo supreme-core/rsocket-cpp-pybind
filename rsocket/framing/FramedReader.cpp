@@ -74,7 +74,7 @@ size_t FramedReader::readFrameLength() const {
 void FramedReader::onSubscribe(
     yarpl::Reference<Subscription> subscription) noexcept {
   DuplexConnection::Subscriber::onSubscribe(subscription);
-  subscription->request(kMaxRequestN);
+  subscription->request(std::numeric_limits<int64_t>::max());
 }
 
 void FramedReader::onNext(std::unique_ptr<folly::IOBuf> payload) noexcept {
@@ -141,6 +141,7 @@ void FramedReader::onComplete() noexcept {
   if (auto subscriber = std::move(frames_)) {
     subscriber->onComplete();
   }
+  DuplexConnection::Subscriber::onComplete();
 }
 
 void FramedReader::onError(std::exception_ptr ex) noexcept {
@@ -149,6 +150,7 @@ void FramedReader::onError(std::exception_ptr ex) noexcept {
   if (auto subscriber = std::move(frames_)) {
     subscriber->onError(std::move(ex));
   }
+  DuplexConnection::Subscriber::onError(nullptr);
 }
 
 void FramedReader::request(int64_t n) noexcept {
