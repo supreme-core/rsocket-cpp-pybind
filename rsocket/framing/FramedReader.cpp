@@ -144,7 +144,7 @@ void FramedReader::onComplete() noexcept {
   DuplexConnection::Subscriber::onComplete();
 }
 
-void FramedReader::onError(std::exception_ptr ex) noexcept {
+void FramedReader::onError(folly::exception_wrapper ex) noexcept {
   completed_ = true;
   payloadQueue_.move(); // equivalent to clear(), releases the buffers
   if (auto subscriber = std::move(frames_)) {
@@ -209,7 +209,7 @@ bool FramedReader::ensureOrAutodetectProtocolVersion() {
 
 void FramedReader::error(std::string errorMsg) {
   VLOG(1) << "error: " << errorMsg;
-  onError(std::make_exception_ptr(std::runtime_error(std::move(errorMsg))));
+  onError(std::runtime_error(std::move(errorMsg)));
   DuplexConnection::Subscriber::subscription()->cancel();
 }
 }

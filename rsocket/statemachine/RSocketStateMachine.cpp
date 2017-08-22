@@ -192,7 +192,7 @@ void RSocketStateMachine::close(
 
   if (resumeCallback_) {
     resumeCallback_->onResumeError(
-        ConnectionException(ex ? ex.what().c_str() : "RS closing"));
+        ConnectionException(ex ? ex.get_exception()->what() : "RS closing"));
     resumeCallback_.reset();
   }
 
@@ -219,8 +219,8 @@ void RSocketStateMachine::closeFrameTransport(
   }
 
   if (resumeCallback_) {
-    resumeCallback_->onResumeError(
-        ConnectionException(ex ? ex.what().c_str() : "connection closing"));
+    resumeCallback_->onResumeError(ConnectionException(
+        ex ? ex.get_exception()->what() : "connection closing"));
     resumeCallback_.reset();
   }
 
