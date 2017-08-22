@@ -39,13 +39,13 @@ class FlowableOperator : public Flowable<D> {
     Subscription(
         Reference<Operator> flowable,
         Reference<Subscriber<D>> subscriber)
-        : flowable_(std::move(flowable)), subscriber_(std::move(subscriber)) {
-      assert(flowable_);
+        : flowableOperator_(std::move(flowable)), subscriber_(std::move(subscriber)) {
+      assert(flowableOperator_);
       assert(subscriber_);
     }
 
     const Reference<Operator>& getFlowableOperator() {
-      return flowable_;
+      return flowableOperator_;
     }
 
     void subscriberOnNext(D value) {
@@ -86,7 +86,7 @@ class FlowableOperator : public Flowable<D> {
       }
 
       upstream_ = std::move(subscription);
-      subscriber_->onSubscribe(Reference<yarpl::flowable::Subscription>(this));
+      subscriber_->onSubscribe(get_ref(this));
     }
 
     void onComplete() override {
@@ -148,7 +148,7 @@ class FlowableOperator : public Flowable<D> {
     }
 
     /// The Flowable has the lambda, and other creation parameters.
-    Reference<Operator> flowable_;
+    Reference<Operator> flowableOperator_;
 
     /// This subscription controls the life-cycle of the subscriber.  The
     /// subscriber is retained as long as calls on it can be made.  (Note: the

@@ -150,7 +150,7 @@ void FramedReader::onError(folly::exception_wrapper ex) noexcept {
   if (auto subscriber = std::move(frames_)) {
     subscriber->onError(std::move(ex));
   }
-  DuplexConnection::Subscriber::onError(nullptr);
+  DuplexConnection::Subscriber::onError(folly::exception_wrapper());
 }
 
 void FramedReader::request(int64_t n) noexcept {
