@@ -275,11 +275,22 @@ Reference<T> make_ref(Args&&... args) {
 
 template <typename T>
 Reference<T> get_ref(T& object) {
+  static_assert(std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "This function requires a Refcounted object");
+  assert(
+      object.count() > 0 &&
+          "get_ref should not be called from a non referenced object");
+
   return Reference<T>(&object);
 }
 
 template <typename T>
 Reference<T> get_ref(T* object) {
+  static_assert(std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "This function requires a Refcounted object");
+  assert(
+      object->count() > 0 &&
+          "get_ref should not be called from a non referenced object");
   return Reference<T>(object);
 }
 
