@@ -16,6 +16,9 @@ struct skip_initial_refcount_check {};
 struct do_initial_refcount_check {};
 }
 
+template <typename T>
+class Reference;
+
 /// Base of refcounted objects.  The intention is the same as that
 /// of boost::intrusive_ptr<>, except that we have virtual methods
 /// anyway, and want to avoid argument-dependent lookup.
@@ -30,20 +33,10 @@ class Refcounted {
     return refcount_;
   }
 
-  // Not intended to be broadly used by the application code mostly for library
-  // code (static to purposely make it more awkward).
-  static void incRef(Refcounted& obj) {
-    obj.incRef();
-  }
-
-  // Not intended to be broadly used by the application code mostly for library
-  // code (static to purposely make it more awkward).
-  // TODO: remove these static methods
-  static void decRef(Refcounted& obj) {
-    obj.decRef();
-  }
-
  private:
+  template <typename U>
+  friend class Reference;
+
   void incRef() {
     refcount_.fetch_add(1, std::memory_order_relaxed);
   }
@@ -186,7 +179,7 @@ class Reference {
         "Reference must be used with types that virtually derive Refcounted");
 
     if (pointer_) {
-      Refcounted::incRef(*pointer_);
+      pointer_->incRef();
     }
   }
 
@@ -196,7 +189,7 @@ class Reference {
         "Reference must be used with types that virtually derive Refcounted");
 
     if (pointer_) {
-      Refcounted::decRef(*pointer_);
+      pointer_->decRef();
     }
   }
 
