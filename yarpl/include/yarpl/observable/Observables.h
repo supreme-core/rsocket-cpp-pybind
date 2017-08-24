@@ -74,8 +74,7 @@ class Observables {
           std::is_callable<OnSubscribe(Reference<Observer<T>>), void>::value>::
           type>
   static Reference<Observable<T>> create(OnSubscribe function) {
-    return Reference<Observable<T>>(
-        new FromPublisherOperator<T, OnSubscribe>(std::move(function)));
+    return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>

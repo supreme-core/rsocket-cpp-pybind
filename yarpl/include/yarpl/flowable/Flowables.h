@@ -106,8 +106,7 @@ class Flowables {
           OnSubscribe(Reference<Subscriber<T>>),
           void>::value>::type>
   static Reference<Flowable<T>> fromPublisher(OnSubscribe function) {
-    return Reference<Flowable<T>>(
-        new FromPublisherOperator<T, OnSubscribe>(std::move(function)));
+    return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>
