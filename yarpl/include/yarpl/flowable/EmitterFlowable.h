@@ -25,7 +25,7 @@ class EmiterBase : public virtual Refcounted {
  * of a request(n) call.
  */
 template <typename T>
-class EmiterSubscription : private Subscription, private Subscriber<T> {
+class EmiterSubscription : public Subscription, public Subscriber<T> {
   constexpr static auto kCanceled = credits::kCanceled;
   constexpr static auto kNoFlowControl = credits::kNoFlowControl;
 
@@ -34,10 +34,6 @@ class EmiterSubscription : private Subscription, private Subscriber<T> {
       Reference<EmiterBase<T>> emiter,
       Reference<Subscriber<T>> subscriber)
       : emiter_(std::move(emiter)), subscriber_(std::move(subscriber)) {
-    // We expect to be heap-allocated; until this subscription finishes
-    // (is canceled; completes; error's out), hold a reference so we are
-    // not deallocated (by the subscriber).
-    Refcounted::incRef(*this);
     subscriber_->onSubscribe(get_ref<Subscription>(this));
   }
 
@@ -140,6 +136,10 @@ class EmiterSubscription : private Subscription, private Subscriber<T> {
       return;
     }
 
+    // Keep a reference to ourselves here in case the emit() call
+    // frees all other references to 'this'
+    auto this_subscriber = get_ref<Subscriber<T>>(this);
+
     while (true) {
       auto current = requested_.load(std::memory_order_relaxed);
 
@@ -161,8 +161,7 @@ class EmiterSubscription : private Subscription, private Subscriber<T> {
       int64_t emitted;
       bool done;
 
-      std::tie(emitted, done) =
-          emiter_->emit(get_ref<Subscriber<T>>(this), current);
+      std::tie(emitted, done) = emiter_->emit(this_subscriber, current);
 
       while (true) {
         current = requested_.load(std::memory_order_relaxed);
@@ -181,7 +180,6 @@ class EmiterSubscription : private Subscription, private Subscriber<T> {
   void release() {
     emiter_.reset();
     subscriber_.reset();
-    Refcounted::decRef(*this);
   }
 
   // The number of items that can be sent downstream.  Each request(n)
@@ -203,7 +201,7 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
   explicit EmitterWrapper(Emitter emitter) : emitter_(std::move(emitter)) {}
 
   void subscribe(Reference<Subscriber<T>> subscriber) override {
-    new EmiterSubscription<T>(get_ref(this), std::move(subscriber));
+    make_ref<EmiterSubscription<T>>(get_ref(this), std::move(subscriber));
   }
 
   std::tuple<int64_t, bool> emit(

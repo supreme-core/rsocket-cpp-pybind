@@ -38,6 +38,7 @@ class Refcounted {
 
   // Not intended to be broadly used by the application code mostly for library
   // code (static to purposely make it more awkward).
+  // TODO: remove these static methods
   static void decRef(Refcounted& obj) {
     obj.decRef();
   }
@@ -56,7 +57,9 @@ class Refcounted {
     }
   }
 
-  mutable std::atomic_size_t refcount_{0};
+  // refcount starts at 1 always, so we don't destroy ourselves in
+  // the constructor if we call `get_ref` in it
+  mutable std::atomic_size_t refcount_{1};
 };
 
 /// RAII-enabling smart pointer for refcounted objects.  Each reference
@@ -71,14 +74,12 @@ class Reference {
   Reference() = default;
   inline /* implicit */ Reference(std::nullptr_t) {}
 
-  // TODO: Move check for count() into this constructor
-  // TODO: Remove public ctor for Reference(T*)
-  explicit Reference(T* pointer) : pointer_(pointer) {
-    inc();
-  }
   explicit Reference(T* pointer, detail::skip_initial_refcount_check)
       : pointer_(pointer) {
-    inc();
+    // newly constructed object in `make_ref` already had a refcount of 1,
+    // so don't increment it (we take 'ownership' of the reference made in
+    // make_ref)
+    assert(pointer->Refcounted::count() >= 1);
   }
   explicit Reference(T* pointer, detail::do_initial_refcount_check)
       : pointer_(pointer) {
@@ -316,8 +317,9 @@ Reference<CastTo> make_ref(Args&&... args) {
       "Concrete type must be a subclass of casted-to-type");
 
   return Reference<CastTo>(
-      new T(std::forward<Args>(args)...),
-      detail::skip_initial_refcount_check{});
+    new T(std::forward<Args>(args)...),
+    detail::skip_initial_refcount_check{}
+  );
 }
 
 template <typename T>
