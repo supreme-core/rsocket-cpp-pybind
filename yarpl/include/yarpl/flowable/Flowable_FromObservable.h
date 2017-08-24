@@ -48,7 +48,7 @@ class FlowableFromObservableSubscription
     if (!started) {
       bool expected = false;
       if (started.compare_exchange_strong(expected, true)) {
-        observable_->subscribe(Reference<yarpl::observable::Observer<T>>(this));
+        observable_->subscribe(get_ref(this));
       }
     }
   }

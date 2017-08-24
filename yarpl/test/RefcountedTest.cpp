@@ -20,7 +20,7 @@ TEST(RefcountedTest, ObjectCountsAreMaintained) {
 }
 
 TEST(RefcountedTest, ReferenceCountingWorks) {
-  auto first = Reference<Refcounted>(new Refcounted);
+  auto first = make_ref<Refcounted>();
   EXPECT_EQ(1U, first->count());
 
   auto second = first;

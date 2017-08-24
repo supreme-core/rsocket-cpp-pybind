@@ -11,6 +11,11 @@
 
 namespace yarpl {
 
+namespace detail {
+struct skip_initial_refcount_check {};
+struct do_initial_refcount_check {};
+}
+
 /// Base of refcounted objects.  The intention is the same as that
 /// of boost::intrusive_ptr<>, except that we have virtual methods
 /// anyway, and want to avoid argument-dependent lookup.
@@ -66,7 +71,38 @@ class Reference {
   Reference() = default;
   inline /* implicit */ Reference(std::nullptr_t) {}
 
+  // TODO: Move check for count() into this constructor
+  // TODO: Remove public ctor for Reference(T*)
   explicit Reference(T* pointer) : pointer_(pointer) {
+    inc();
+  }
+  explicit Reference(T* pointer, detail::skip_initial_refcount_check)
+      : pointer_(pointer) {
+    inc();
+  }
+  explicit Reference(T* pointer, detail::do_initial_refcount_check)
+      : pointer_(pointer) {
+    /**
+     * consider the following:
+     *
+     class MyClass : Refcounted {
+       MyClass() {
+        // count() == 0
+        auto r = get_ref<MyClass>(this)
+        // count() == 1
+        do_something_with(r);
+        // if do_something_with(r) doens't keep a reference to r somewhere, then
+        // count() == 0
+        // and we call ~MyClass() within the constructor, which is a Bad Thing
+       }
+     };
+
+     * the check below prevents (at runtime) taking a reference in situations
+     * like this
+     */
+    assert(
+        pointer->count() >= 1 &&
+        "can't take an additional reference to something with a zero refcount");
     inc();
   }
 
@@ -121,6 +157,7 @@ class Reference {
 
   //////////////////////////////////////////////////////////////////////////////
 
+  // TODO: remove this from public Reference API
   T* get() const {
     return pointer_;
   }
@@ -268,30 +305,37 @@ bool operator>=(std::nullptr_t, const Reference<T>& rhs) noexcept {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <typename T, typename... Args>
-Reference<T> make_ref(Args&&... args) {
-  return Reference<T>(new T(std::forward<Args>(args)...));
+template <typename T, typename CastTo = T, typename... Args>
+Reference<CastTo> make_ref(Args&&... args) {
+  static_assert(
+      std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "Reference can only be constructed with a Refcounted object");
+
+  static_assert(
+      std::is_base_of<std::decay_t<CastTo>, std::decay_t<T>>::value,
+      "Concrete type must be a subclass of casted-to-type");
+
+  return Reference<CastTo>(
+      new T(std::forward<Args>(args)...),
+      detail::skip_initial_refcount_check{});
 }
 
 template <typename T>
 Reference<T> get_ref(T& object) {
-  static_assert(std::is_base_of<Refcounted, std::decay_t<T>>::value,
-      "This function requires a Refcounted object");
-  assert(
-      object.count() > 0 &&
-          "get_ref should not be called from a non referenced object");
+  static_assert(
+      std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "Reference can only be constructed with a Refcounted object");
 
-  return Reference<T>(&object);
+  return Reference<T>(&object, detail::do_initial_refcount_check{});
 }
 
 template <typename T>
 Reference<T> get_ref(T* object) {
-  static_assert(std::is_base_of<Refcounted, std::decay_t<T>>::value,
-      "This function requires a Refcounted object");
-  assert(
-      object->count() > 0 &&
-          "get_ref should not be called from a non referenced object");
-  return Reference<T>(object);
+  static_assert(
+      std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "Reference can only be constructed with a Refcounted object");
+
+  return Reference<T>(object, detail::do_initial_refcount_check{});
 }
 
 } // namespace yarpl
