@@ -273,11 +273,10 @@ Reference<T> make_ref(Args&&... args) {
   return Reference<T>(new T(std::forward<Args>(args)...));
 }
 
-template <
-    typename T,
-    typename =
-    std::enable_if_t<std::is_base_of<Refcounted, std::decay_t<T>>::value>>
+template <typename T>
 Reference<T> get_ref(T& object) {
+  static_assert(std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "This function requires a Refcounted object");
   assert(
       object.count() > 0 &&
           "get_ref should not be called from a non referenced object");
@@ -285,11 +284,10 @@ Reference<T> get_ref(T& object) {
   return Reference<T>(&object);
 }
 
-template <
-    typename T,
-    typename =
-    std::enable_if_t<std::is_base_of<Refcounted, std::decay_t<T>>::value>>
+template <typename T>
 Reference<T> get_ref(T* object) {
+  static_assert(std::is_base_of<Refcounted, std::decay_t<T>>::value,
+      "This function requires a Refcounted object");
   assert(
       object->count() > 0 &&
           "get_ref should not be called from a non referenced object");
