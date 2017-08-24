@@ -25,7 +25,7 @@ class EmiterBase : public virtual Refcounted {
  * of a request(n) call.
  */
 template <typename T>
-class EmiterSubscription : private Subscription, private Subscriber<T> {
+class EmiterSubscription : public Subscription, public Subscriber<T> {
   constexpr static auto kCanceled = credits::kCanceled;
   constexpr static auto kNoFlowControl = credits::kNoFlowControl;
 
@@ -203,7 +203,7 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
   explicit EmitterWrapper(Emitter emitter) : emitter_(std::move(emitter)) {}
 
   void subscribe(Reference<Subscriber<T>> subscriber) override {
-    new EmiterSubscription<T>(get_ref(this), std::move(subscriber));
+    make_ref<EmiterSubscription<T>>(get_ref(this), std::move(subscriber));
   }
 
   std::tuple<int64_t, bool> emit(
