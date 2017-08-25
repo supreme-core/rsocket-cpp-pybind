@@ -316,15 +316,6 @@ Reference<CastTo> make_ref(Args&&... args) {
 }
 
 template <typename T>
-Reference<T> get_ref(T& object) {
-  static_assert(
-      std::is_base_of<Refcounted, std::decay_t<T>>::value,
-      "Reference can only be constructed with a Refcounted object");
-
-  return Reference<T>(&object, detail::do_initial_refcount_check{});
-}
-
-template <typename T>
 Reference<T> get_ref(T* object) {
   static_assert(
       std::is_base_of<Refcounted, std::decay_t<T>>::value,
