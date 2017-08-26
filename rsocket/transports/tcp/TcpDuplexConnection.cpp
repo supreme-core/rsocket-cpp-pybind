@@ -13,8 +13,11 @@ namespace rsocket {
 using namespace yarpl::flowable;
 
 class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
-                        public folly::AsyncTransportWrapper::ReadCallback,
-                        public std::enable_shared_from_this<TcpReaderWriter> {
+                        public folly::AsyncTransportWrapper::ReadCallback {
+
+  friend void intrusive_ptr_add_ref(TcpReaderWriter* x);
+  friend void intrusive_ptr_release(TcpReaderWriter* x);
+
  public:
   explicit TcpReaderWriter(
       folly::AsyncSocket::UniquePtr&& socket,
@@ -41,10 +44,13 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
     CHECK(!inputSubscriber_);
     inputSubscriber_ = std::move(inputSubscriber);
 
-    self_ = shared_from_this();
-
-    // safe to call repeatedly
-    socket_->setReadCB(this);
+    if (!readerSet_) {
+      readerSet_ = true;
+      // now AsyncSocket will hold a reference to this instance until
+      // they call readEOF or readErr
+      intrusive_ptr_add_ref(this);
+      socket_->setReadCB(this);
+    }
   }
 
   void setOutputSubscription(yarpl::Reference<Subscription> subscription) {
@@ -72,6 +78,9 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
     if (stats_) {
       stats_->bytesWritten(element->computeChainDataLength());
     }
+    // now AsyncSocket will hold a reference to this instance as a writer until
+    // they call writeComplete or writeErr
+    intrusive_ptr_add_ref(this);
     socket_->writeChain(this, std::move(element));
   }
 
@@ -104,13 +113,15 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
     return !socket_;
   }
 
-  void writeSuccess() noexcept override {}
+  void writeSuccess() noexcept override {
+    intrusive_ptr_release(this);
+  }
 
   void writeErr(
       size_t,
       const folly::AsyncSocketException& exn) noexcept override {
     closeErr(exn);
-    self_ = nullptr;
+    intrusive_ptr_release(this);
   }
 
   void getReadBuffer(void** bufReturn, size_t* lenReturn) noexcept override {
@@ -130,12 +141,12 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
 
   void readEOF() noexcept override {
     close();
-    self_ = nullptr;
+    intrusive_ptr_release(this);
   }
 
   void readErr(const folly::AsyncSocketException& exn) noexcept override {
     closeErr(exn);
-    self_ = nullptr;
+    intrusive_ptr_release(this);
   }
 
   bool isBufferMovable() noexcept override {
@@ -154,17 +165,27 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
 
   yarpl::Reference<DuplexConnection::Subscriber> inputSubscriber_;
   yarpl::Reference<Subscription> outputSubscription_;
-
-  // self reference is used to keep the instance alive for the AsyncSocket
-  // callbacks even after DuplexConnection releases references to this
-  std::shared_ptr<TcpReaderWriter> self_;
+  bool readerSet_{false};
+  int refCount_{0};
 };
+
+void intrusive_ptr_add_ref(TcpReaderWriter* x);
+void intrusive_ptr_release(TcpReaderWriter* x);
+
+inline void intrusive_ptr_add_ref(TcpReaderWriter* x){
+  ++x->refCount_;
+}
+
+inline void intrusive_ptr_release(TcpReaderWriter* x){
+  if(--x->refCount_ == 0)
+    delete x;
+}
 
 namespace {
 
 class TcpOutputSubscriber : public DuplexConnection::Subscriber {
  public:
-  explicit TcpOutputSubscriber(std::shared_ptr<TcpReaderWriter> tcpReaderWriter)
+  explicit TcpOutputSubscriber(boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter)
       : tcpReaderWriter_(std::move(tcpReaderWriter)) {
     CHECK(tcpReaderWriter_);
   }
@@ -191,13 +212,13 @@ class TcpOutputSubscriber : public DuplexConnection::Subscriber {
   }
 
  private:
-  std::shared_ptr<TcpReaderWriter> tcpReaderWriter_;
+  boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter_;
 };
 
 class TcpInputSubscription : public Subscription {
  public:
   explicit TcpInputSubscription(
-      std::shared_ptr<TcpReaderWriter> tcpReaderWriter)
+      boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter)
       : tcpReaderWriter_(std::move(tcpReaderWriter)) {
     CHECK(tcpReaderWriter_);
   }
@@ -214,7 +235,7 @@ class TcpInputSubscription : public Subscription {
   }
 
  private:
-  std::shared_ptr<TcpReaderWriter> tcpReaderWriter_;
+  boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter_;
 };
 }
 
@@ -222,7 +243,7 @@ TcpDuplexConnection::TcpDuplexConnection(
     folly::AsyncSocket::UniquePtr&& socket,
     std::shared_ptr<RSocketStats> stats)
     : tcpReaderWriter_(
-          std::make_shared<TcpReaderWriter>(std::move(socket), stats)),
+          new TcpReaderWriter(std::move(socket), stats)),
       stats_(stats) {
   if (stats_) {
     stats_->duplexConnectionCreated("tcp", this);
