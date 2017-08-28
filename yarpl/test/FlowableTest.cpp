@@ -1,8 +1,11 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include <gtest/gtest.h>
+#include <thread>
 #include <type_traits>
 #include <vector>
-#include <gtest/gtest.h>
+
+#include <folly/Baton.h>
 
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/TestSubscriber.h"
@@ -398,6 +401,142 @@ TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   EXPECT_FALSE(subscriber->isError());
   EXPECT_EQ(std::size_t{1}, subscriber->values().size());
 }
+
+class RangeCheckingSubscriber : public Subscriber<int32_t> {
+ public:
+  explicit RangeCheckingSubscriber(int32_t total, folly::Baton<>& b)
+      : total_(total), onComplete_(b) {}
+
+  void onSubscribe(Reference<Subscription> subscription) override {
+    Subscriber<int32_t>::onSubscribe(subscription);
+    subscription->request(total_);
+  }
+
+  void onNext(int32_t val) override {
+    EXPECT_EQ(val, current_);
+    current_++;
+  }
+
+  void onError(folly::exception_wrapper) override {
+    FAIL() << "shouldn't call onError";
+  }
+
+  void onComplete() override {
+    Subscriber<int32_t>::onComplete();
+    EXPECT_EQ(total_, current_);
+    onComplete_.post();
+  }
+
+ private:
+  int32_t current_{0};
+  int32_t total_;
+  folly::Baton<>& onComplete_;
+};
+
+namespace {
+// workaround for gcc-4.9
+auto const expect_count = 10000;
+TEST(FlowableTest, FlowableFromDifferentThreads) {
+
+  auto flowable = Flowable<int32_t>::create([&](auto subscriber, int64_t req) {
+    EXPECT_EQ(req, expect_count);
+    auto t1 = std::thread([&] {
+      for (int32_t i = 0; i < req; i++) {
+        subscriber->onNext(i);
+      }
+
+      subscriber->onComplete();
+    });
+    t1.join();
+    return std::make_tuple(req, true);
+  });
+
+  auto t2 = std::thread([&] {
+    folly::Baton<> on_flowable_complete;
+    flowable->subscribe(yarpl::make_ref<RangeCheckingSubscriber>(
+        expect_count, on_flowable_complete));
+    on_flowable_complete.timed_wait(std::chrono::milliseconds(100));
+  });
+
+  t2.join();
+}
+} // namespace
+
+class ErrorRangeCheckingSubscriber : public Subscriber<int32_t> {
+ public:
+  explicit ErrorRangeCheckingSubscriber(
+      int32_t expect,
+      int32_t request,
+      folly::Baton<>& b,
+      folly::exception_wrapper expected_err)
+      : expect_(expect),
+        request_(request),
+        onError_(b),
+        expectedErr_(expected_err) {}
+
+  void onSubscribe(Reference<Subscription> subscription) override {
+    Subscriber<int32_t>::onSubscribe(subscription);
+    subscription->request(request_);
+  }
+
+  void onNext(int32_t val) override {
+    EXPECT_EQ(val, current_);
+    current_++;
+  }
+
+  void onError(folly::exception_wrapper err) override {
+    EXPECT_EQ(expect_, current_);
+    EXPECT_TRUE(err);
+    EXPECT_EQ(
+        err.get_exception()->what(), expectedErr_.get_exception()->what());
+    onError_.post();
+  }
+
+  void onComplete() override {
+    Subscriber<int32_t>::onComplete();
+    FAIL() << "shouldn't ever onComplete";
+  }
+
+ private:
+  int32_t expect_;
+  int32_t request_;
+  folly::Baton<>& onError_;
+  folly::exception_wrapper expectedErr_;
+  int32_t current_{0};
+};
+
+namespace {
+// workaround for gcc-4.9
+auto const request = 10000;
+auto const expect = 5000;
+auto const the_ex = folly::make_exception_wrapper<std::runtime_error>("wat");
+
+TEST(FlowableTest, FlowableFromDifferentThreadsWithError) {
+  auto flowable = Flowable<int32_t>::create([=](auto subscriber, int64_t req) {
+    EXPECT_EQ(req, request);
+    EXPECT_LT(expect, request);
+
+    auto t1 = std::thread([&] {
+      for (int32_t i = 0; i < expect; i++) {
+        subscriber->onNext(i);
+      }
+
+      subscriber->onError(the_ex);
+    });
+    t1.join();
+    return std::make_tuple<int64_t, bool>(expect, true);
+  });
+
+  auto t2 = std::thread([&] {
+    folly::Baton<> on_flowable_error;
+    flowable->subscribe(yarpl::make_ref<ErrorRangeCheckingSubscriber>(
+        expect, request, on_flowable_error, the_ex));
+    on_flowable_error.timed_wait(std::chrono::milliseconds(100));
+  });
+
+  t2.join();
+}
+} // namespace
 
 } // flowable
 } // yarpl
