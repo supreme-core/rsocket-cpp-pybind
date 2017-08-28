@@ -18,11 +18,12 @@ namespace observable {
  * pipelines
  * can be built: a Observable heading a sequence of Operators.
  */
-template <typename U, typename D, typename ThisOperatorT>
+template <typename U, typename D, typename ThisOp>
 class ObservableOperator : public Observable<D> {
  public:
   explicit ObservableOperator(Reference<Observable<U>> upstream)
       : upstream_(std::move(upstream)) {}
+  using ThisOperatorT = ThisOp;
 
  protected:
   /// An Operator's subscription.
@@ -187,17 +188,17 @@ class MapOperator : public ObservableOperator<U, D, MapOperator<U, D, F>> {
 
  private:
   class MapSubscription : public Super::OperatorSubscription {
-    using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
 
    public:
     MapSubscription(
         Reference<ThisOperatorT> observable,
         Reference<Observer<D>> observer)
-        : Super(std::move(observable), std::move(observer)) {}
+        : SuperSub(std::move(observable), std::move(observer)) {}
 
     void onNext(U value) override {
-      auto& map = Super::getObservableOperator();
-      Super::observerOnNext(map->function_(std::move(value)));
+      auto& map = SuperSub::getObservableOperator();
+      SuperSub::observerOnNext(map->function_(std::move(value)));
     }
   };
 
@@ -227,18 +228,18 @@ class FilterOperator : public ObservableOperator<U, U, FilterOperator<U, F>> {
 
  private:
   class FilterSubscription : public Super::OperatorSubscription {
-    using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
 
    public:
     FilterSubscription(
         Reference<ThisOperatorT> observable,
         Reference<Observer<U>> observer)
-        : Super(std::move(observable), std::move(observer)) {}
+        : SuperSub(std::move(observable), std::move(observer)) {}
 
     void onNext(U value) override {
-      auto& filter = Super::getObservableOperator();
+      auto& filter = SuperSub::getObservableOperator();
       if (filter->function_(value)) {
-        Super::observerOnNext(std::move(value));
+        SuperSub::observerOnNext(std::move(value));
       }
     }
   };
@@ -272,17 +273,17 @@ class ReduceOperator
 
  private:
   class ReduceSubscription : public Super::OperatorSubscription {
-    using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
 
    public:
     ReduceSubscription(
         Reference<ThisOperatorT> flowable,
         Reference<Observer<D>> subscriber)
-        : Super(std::move(flowable), std::move(subscriber)),
+        : SuperSub(std::move(flowable), std::move(subscriber)),
           accInitialized_(false) {}
 
     void onNext(U value) override {
-      auto& reduce = Super::getObservableOperator();
+      auto& reduce = SuperSub::getObservableOperator();
       if (accInitialized_) {
         acc_ = reduce->function_(std::move(acc_), std::move(value));
       } else {
@@ -293,9 +294,9 @@ class ReduceOperator
 
     void onComplete() override {
       if (accInitialized_) {
-        Super::observerOnNext(std::move(acc_));
+        SuperSub::observerOnNext(std::move(acc_));
       }
-      Super::onComplete();
+      SuperSub::onComplete();
     }
 
    private:
@@ -324,23 +325,22 @@ class TakeOperator : public ObservableOperator<T, T, TakeOperator<T>> {
 
  private:
   class TakeSubscription : public Super::OperatorSubscription {
-    using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
 
    public:
     TakeSubscription(
         Reference<ThisOperatorT> observable,
         int64_t limit,
         Reference<Observer<T>> observer)
-        : Super(std::move(observable), std::move(observer)),
-          limit_(limit) {}
+        : SuperSub(std::move(observable), std::move(observer)), limit_(limit) {}
 
     void onNext(T value) override {
       if (limit_-- > 0) {
         if (pending_ > 0)
           --pending_;
-        Super::observerOnNext(std::move(value));
+        SuperSub::observerOnNext(std::move(value));
         if (limit_ == 0) {
-          Super::terminate();
+          SuperSub::terminate();
         }
       }
     }
@@ -371,19 +371,19 @@ class SkipOperator : public ObservableOperator<T, T, SkipOperator<T>> {
 
  private:
   class SkipSubscription : public Super::OperatorSubscription {
-    using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
 
    public:
     SkipSubscription(
         Reference<ThisOperatorT> observable,
         int64_t offset,
         Reference<Observer<T>> observer)
-        : Super(std::move(observable), std::move(observer)),
+        : SuperSub(std::move(observable), std::move(observer)),
           offset_(offset) {}
 
     void onNext(T value) override {
       if (offset_ <= 0) {
-        Super::observerOnNext(std::move(value));
+        SuperSub::observerOnNext(std::move(value));
       } else {
         --offset_;
       }
@@ -415,14 +415,13 @@ class IgnoreElementsOperator
 
  private:
   class IgnoreElementsSubscription : public Super::OperatorSubscription {
-    using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
 
+   public:
     IgnoreElementsSubscription(
-        Reference<Observable<T>> observable,
+        Reference<ThisOperatorT> observable,
         Reference<Observer<T>> observer)
-        : Super(
-              std::move(observable),
-              std::move(observer)) {}
+        : SuperSub(std::move(observable), std::move(observer)) {}
 
     void onNext(T) override {}
   };
@@ -447,15 +446,14 @@ class SubscribeOnOperator
 
  private:
   class SubscribeOnSubscription : public Super::OperatorSubscription {
-   using Super = typename Super::OperatorSubscription;
+    using SuperSub = typename Super::OperatorSubscription;
+
    public:
     SubscribeOnSubscription(
         Reference<ThisOperatorT> observable,
         std::unique_ptr<Worker> worker,
         Reference<Observer<T>> observer)
-        : Super(
-              std::move(observable),
-              std::move(observer)),
+        : SuperSub(std::move(observable), std::move(observer)),
           worker_(std::move(worker)) {}
 
     void cancel() override {
@@ -463,13 +461,13 @@ class SubscribeOnOperator
     }
 
     void onNext(T value) override {
-      Super::observerOnNext(std::move(value));
+      SuperSub::observerOnNext(std::move(value));
     }
 
    private:
     // Trampoline to call superclass method; gcc bug 58972.
     void callSuperCancel() {
-      Super::cancel();
+      SuperSub::cancel();
     }
 
     std::unique_ptr<Worker> worker_;

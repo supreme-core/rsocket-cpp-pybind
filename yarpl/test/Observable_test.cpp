@@ -475,23 +475,27 @@ TEST(Observable, CancelReleasesObjects) {
   observable->subscribe(collector);
 }
 
-class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
+class InfiniteAsyncTestOperator
+    : public ObservableOperator<int, int, InfiniteAsyncTestOperator> {
+  using Super = ObservableOperator<int, int, InfiniteAsyncTestOperator>;
+
  public:
-  InfiniteAsyncTestOperator(Reference<Observable<int>> upstream, testing::MockFunction<void()>& checkpoint)
-      : ObservableOperator<int, int>(std::move(upstream)), checkpoint_(checkpoint) {}
+  InfiniteAsyncTestOperator(
+      Reference<Observable<int>> upstream,
+      testing::MockFunction<void()>& checkpoint)
+      : Super(std::move(upstream)), checkpoint_(checkpoint) {}
 
   Reference<Subscription> subscribe(Reference<Observer<int>> observer) override {
     auto subscription = make_ref<TestSubscription>(get_ref(this), std::move(observer), checkpoint_);
-    ObservableOperator<int, int>::upstream_->subscribe(
+    Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
-        subscription
-        );
+        subscription);
     return subscription;
   }
 
  private:
-  class TestSubscription : public ObservableOperator<int, int>::OperatorSubscription {
-    using Super = typename ObservableOperator<int, int>::OperatorSubscription;
+  class TestSubscription : public Super::OperatorSubscription {
+    using SuperSub = typename Super::OperatorSubscription;
 
     ~TestSubscription() {
       t_.join();
@@ -500,19 +504,18 @@ class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
    public:
     void sendSuperNext() {
       // workaround for gcc bug 58972.
-      Super::observerOnNext(1);
+      SuperSub::observerOnNext(1);
     }
 
     TestSubscription(
-        Reference<Observable<int>> observable,
+        Reference<InfiniteAsyncTestOperator> observable,
         Reference<Observer<int>> observer,
         testing::MockFunction<void()>& checkpoint)
-        : Super(std::move(observable), std::move(observer)), checkpoint_(checkpoint) {
-
-    }
+        : SuperSub(std::move(observable), std::move(observer)),
+          checkpoint_(checkpoint) {}
 
     void onSubscribe(yarpl::Reference<Subscription> subscription) override {
-      Super::onSubscribe(std::move(subscription));
+      SuperSub::onSubscribe(std::move(subscription));
       t_ = std::thread([this](){
         while (!isCancelled()) {
           sendSuperNext();
