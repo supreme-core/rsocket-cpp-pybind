@@ -53,9 +53,14 @@ RSocketRequester::requestChannel(
               std::move(subscriber), *eb));
       // responseSink is wrapped with thread scheduling
       // so all emissions happen on the right thread
-      requestStream->subscribe(
-          yarpl::make_ref<ScheduledSubscriber<Payload>>(std::move(responseSink),
-                                                        *eb));
+
+      // if we don't get a responseSink back, that means that
+      // the requesting peer wasn't connected (or similar error)
+      // and the Flowable it gets back will immediately call onError
+      if (responseSink) {
+        requestStream->subscribe(yarpl::make_ref<ScheduledSubscriber<Payload>>(
+            std::move(responseSink), *eb));
+      }
     });
   });
 }
