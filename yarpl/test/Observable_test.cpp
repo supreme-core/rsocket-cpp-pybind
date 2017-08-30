@@ -11,11 +11,12 @@
 #include "yarpl/flowable/Subscribers.h"
 #include "yarpl/schedulers/ThreadScheduler.h"
 
-#include "Mocks.h"
-#include "Tuple.h"
+#include "yarpl/test_utils/Mocks.h"
+#include "yarpl/test_utils/Tuple.h"
 
 // TODO can we eliminate need to import both of these?
 using namespace yarpl;
+using namespace yarpl::mocks;
 using namespace yarpl::observable;
 using namespace testing;
 
@@ -258,7 +259,7 @@ TEST(Observable, toFlowableDrop) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -295,7 +296,7 @@ TEST(Observable, toFlowableErrorStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -318,7 +319,7 @@ TEST(Observable, toFlowableBufferStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -340,7 +341,7 @@ TEST(Observable, toFlowableLatestStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))

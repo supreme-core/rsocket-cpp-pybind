@@ -396,7 +396,6 @@ install(DIRECTORY yarpl/include/yarpl DESTINATION include FILES_MATCHING PATTERN
 
 add_executable(
   tests
-  test/MocksTest.cpp
   test/PayloadTest.cpp
   test/RSocketClientServerTest.cpp
   test/RSocketTests.h
@@ -424,7 +423,6 @@ add_executable(
   test/test_utils/MockKeepaliveTimer.h
   test/test_utils/MockRequestHandler.h
   test/test_utils/MockStats.h
-  test/test_utils/Mocks.h
   test/transport/DuplexConnectionTest.cpp
   test/transport/DuplexConnectionTest.h
   test/transport/TcpDuplexConnectionTest.cpp)
@@ -433,15 +431,17 @@ target_link_libraries(
   tests
   ReactiveSocket
   yarpl
+  yarpl-test-utils
   ${GMOCK_LIBS}
   ${GFLAGS_LIBRARY}
   ${GLOG_LIBRARY})
 
+target_include_directories(tests PUBLIC "${PROJECT_SOURCE_DIR}/yarpl/test/")
 target_compile_options(
   tests
   PRIVATE ${TEST_CXX_FLAGS})
 
-add_dependencies(tests gmock ReactiveSocket)
+add_dependencies(tests gmock yarpl-test-utils ReactiveSocket)
 
 add_test(NAME RSocketTests COMMAND tests)
 add_test(NAME RSocketTests-0.1 COMMAND tests --rs_use_protocol_version=0.1)
@@ -749,47 +749,10 @@ target_link_libraries(
   ${GFLAGS_LIBRARY}
   ${GLOG_LIBRARY})
 
-
 ########################################
 # End Examples
 ########################################
 
-if(BUILD_BENCHMARKS)
-  ExternalProject_Add(
-      google_benchmark
-      URL ${CMAKE_SOURCE_DIR}/benchmark-1.1.0.zip
-      URL_MD5 c3c5cca410a1959efc93946f1739547f
-      CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release"
-      INSTALL_COMMAND ""
-  )
-
-  ExternalProject_Get_Property(google_benchmark source_dir)
-  set(GOOGLE_BENCHMARK_SOURCE_DIR ${source_dir})
-  ExternalProject_Get_Property(google_benchmark binary_dir)
-  set(GOOGLE_BENCHMARK_BINARY_DIR ${binary_dir})
-
-  set(
-      GOOGLE_BENCHMARK_LIBS
-      ${GOOGLE_BENCHMARK_BINARY_DIR}/src/${CMAKE_STATIC_LIBRARY_PREFIX}benchmark${CMAKE_STATIC_LIBRARY_SUFFIX}
-  )
-
-  include_directories(${GOOGLE_BENCHMARK_SOURCE_DIR}/include)
-  include_directories(${CMAKE_SOURCE_DIR}/experimental)
-
-  function(benchmark name file)
-      add_executable(${name} ${file})
-      target_link_libraries(
-          ${name}
-          ReactiveSocket
-          yarpl
-          ${GOOGLE_BENCHMARK_LIBS}
-          ${GFLAGS_LIBRARY}
-          ${GLOG_LIBRARY})
-      add_dependencies(
-          ${name}
-          google_benchmark)
-  endfunction()
-
+if (BUILD_BENCHMARKS)
   add_subdirectory(benchmarks)
-  add_subdirectory(yarpl/perf)
-endif(BUILD_BENCHMARKS)
+endif ()

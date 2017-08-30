@@ -353,6 +353,10 @@ void RSocketStateMachine::closeStreams(StreamCompletionSignal signal) {
 void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   CHECK(!isClosed());
 
+  // Necessary in case the only stream state machine closes itself, and takes
+  // the RSocketStateMachine with it.
+  auto self = shared_from_this();
+
   if (!ensureOrAutodetectFrameSerializer(*frame)) {
     constexpr folly::StringPiece message{"Cannot detect protocol version"};
     closeWithError(Frame_ERROR::connectionError(message.str()));
@@ -558,7 +562,7 @@ void RSocketStateMachine::handleStreamFrame(
       break;
     }
     case FrameType::CANCEL: {
-      VLOG(3) << mode_ << " In: " << Frame_CANCEL();
+      VLOG(3) << mode_ << " In: " << Frame_CANCEL(streamId);
       stateMachine->handleCancel();
       break;
     }
