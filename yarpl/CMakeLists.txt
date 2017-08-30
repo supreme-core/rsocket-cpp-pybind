@@ -116,6 +116,7 @@ add_executable(
   test/Single_test.cpp
   test/Tuple.cpp
   test/Tuple.h
+  test/Mocks.h
   test/credits-test.cpp
   test/yarpl-tests.cpp)
 

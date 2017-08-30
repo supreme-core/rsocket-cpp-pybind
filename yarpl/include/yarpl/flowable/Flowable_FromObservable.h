@@ -49,29 +49,36 @@ class FlowableFromObservableSubscription
     if (n <= 0) {
       return;
     }
-    auto const r = credits::add(&requested_, n);
+    auto r = credits::add(&requested_, n);
     if (r <= 0) {
       return;
     }
 
+    // it is possible that after calling subscribe or in onCreditsAvailable
+    // methods, there will be a stream of
+    // onNext calls which the processing chain might cancel. The cancel signal
+    // will remove all references to this class and we need to keep this
+    // instance around to finish this method
+    auto thisPtr = get_ref(this);
+
     if (!started.exchange(true)) {
       observable_->subscribe(get_ref(this));
+
+      // the credits might have changed since subscribe
+      r = requested_.load();
     }
 
-    onCreditsAvailable(r);
+    if (r > 0) {
+      onCreditsAvailable(r);
+    }
   }
 
   void cancel() override {
-    if (credits::cancel(&requested_)) {
-      // if this is the first time calling cancel, send the cancel
-      observableSubscription_->cancel();
+    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+      return;
     }
-  }
-
-  // Observer override
-  void onSubscribe(
-      Reference<observable::Subscription> subscription) override {
-    observableSubscription_ = subscription;
+    observable::Observer<T>::subscription()->cancel();
+    credits::cancel(&requested_);
   }
 
   // Observer override
@@ -86,12 +93,22 @@ class FlowableFromObservableSubscription
 
   // Observer override
   void onComplete() override {
-    subscriber_->onComplete();
+    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+      return;
+    }
+    auto subscriber = std::move(subscriber_);
+    subscriber->onComplete();
+    observable::Observer<T>::onComplete();
   }
 
   // Observer override
   void onError(folly::exception_wrapper error) override {
-    subscriber_->onError(std::move(error));
+    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+      return;
+    }
+    auto subscriber = std::move(subscriber_);
+    subscriber->onError(std::move(error));
+    observable::Observer<T>::onError(folly::exception_wrapper());
   }
 
  protected:
@@ -102,7 +119,6 @@ class FlowableFromObservableSubscription
 
   Reference<observable::Observable<T>> observable_;
   Reference<flowable::Subscriber<T>> subscriber_;
-  Reference<observable::Subscription> observableSubscription_;
   std::atomic_bool started{false};
   std::atomic<int64_t> requested_{0};
 };
@@ -118,8 +134,11 @@ class FlowableFromObservableSubscriptionErrorStrategy : public FlowableFromObser
 
  private:
   void onNextWithoutCredits(T /*t*/) override {
-    Super::cancel();
+    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+      return;
+    }
     Super::onError(MissingBackpressureException());
+    Super::cancel();
   }
 };
 
@@ -130,7 +149,25 @@ class FlowableFromObservableSubscriptionBufferStrategy : public FlowableFromObse
   using Super::FlowableFromObservableSubscription;
 
  private:
+  void onComplete() override {
+    if(!buffer_->empty()) {
+      // we have buffered some items so we will defer delivering on complete for
+      // later
+      completed_ = true;
+    } else {
+      Super::onComplete();
+    }
+  }
+
+  //
+  // onError signal is delivered immediately by design
+  //
+
   void onNextWithoutCredits(T t) override {
+    if(Super::isUnsubscribed()) {
+      return;
+    }
+
     buffer_->push_back(std::move(t));
   }
 
@@ -138,12 +175,17 @@ class FlowableFromObservableSubscriptionBufferStrategy : public FlowableFromObse
     DCHECK(credits > 0);
     auto&& lockedBuffer = buffer_.wlock();
     while(credits-- > 0 && !lockedBuffer->empty()) {
-      Super::onNext(lockedBuffer->front());
+      Super::onNext(std::move(lockedBuffer->front()));
       lockedBuffer->pop_front();
+    }
+
+    if(lockedBuffer->empty() && completed_) {
+      Super::onComplete();
     }
   }
 
   folly::Synchronized<std::deque<T>> buffer_;
+  std::atomic<bool> completed_{false};
 };
 
 template <typename T>
@@ -153,6 +195,20 @@ class FlowableFromObservableSubscriptionLatestStrategy : public FlowableFromObse
   using Super::FlowableFromObservableSubscription;
 
  private:
+  void onComplete() override {
+    if(storesLatest_) {
+      // we have buffered an item so we will defer delivering on complete for
+      // later
+      completed_ = true;
+    } else {
+      Super::onComplete();
+    }
+  }
+
+  //
+  // onError signal is delivered immediately by design
+  //
+
   void onNextWithoutCredits(T t) override {
     storesLatest_ = true;
     *latest_.wlock() = std::move(t);
@@ -163,10 +219,15 @@ class FlowableFromObservableSubscriptionLatestStrategy : public FlowableFromObse
     if(storesLatest_) {
       storesLatest_ = false;
       Super::onNext(std::move(*latest_.wlock()));
+
+      if(completed_) {
+        Super::onComplete();
+      }
     }
   }
 
   std::atomic<bool> storesLatest_{false};
+  std::atomic<bool> completed_{false};
   folly::Synchronized<T> latest_;
 };
 

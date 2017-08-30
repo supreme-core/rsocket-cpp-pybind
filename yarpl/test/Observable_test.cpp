@@ -11,16 +11,18 @@
 #include "yarpl/flowable/Subscribers.h"
 #include "yarpl/schedulers/ThreadScheduler.h"
 
+#include "Mocks.h"
 #include "Tuple.h"
 
 // TODO can we eliminate need to import both of these?
 using namespace yarpl;
 using namespace yarpl::observable;
+using namespace testing;
 
 namespace {
 
 void unreachable() {
-  EXPECT_TRUE(false);
+  EXPECT_TRUE(false) << "unreachable code";
 }
 
 template <typename T>
@@ -249,29 +251,31 @@ TEST(Observable, CancelFromDifferentThread) {
   LOG(INFO) << "cancelled after " << emitted << " items";
 }
 
-TEST(Observable, toFlowable) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
-    obs->onNext(1);
-    obs->onComplete();
-  });
-
+TEST(Observable, toFlowableDrop) {
+  auto a = Observables::range(1,10);
   auto f = a->toFlowable(BackpressureStrategy::DROP);
 
-  std::vector<int> v;
-  f->subscribe(yarpl::flowable::Subscribers::create<int>(
-      [&v](const int& value) { v.push_back(value); }));
+  std::vector<int64_t> v;
 
-  EXPECT_EQ(v.at(0), 1);
+  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+
+  EXPECT_CALL(*subscriber, onSubscribe_(_));
+  EXPECT_CALL(*subscriber, onNext_(_))
+      .WillRepeatedly(Invoke([&](int64_t value) {
+    v.push_back(value);
+  }));
+  EXPECT_CALL(*subscriber, onComplete_());
+
+  f->subscribe(subscriber);
+
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5}));
 }
 
-TEST(Observable, toFlowableWithCancel) {
+TEST(Observable, toFlowableDropWithCancel) {
   auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
     int i = 0;
     while (!obs->isUnsubscribed()) {
       obs->onNext(++i);
-    }
-    if (!obs->isUnsubscribed()) {
-      obs->onComplete();
     }
   });
 
@@ -282,6 +286,73 @@ TEST(Observable, toFlowableWithCancel) {
       [&v](const int& value) { v.push_back(value); }));
 
   EXPECT_EQ(v, std::vector<int>({1, 2, 3, 4, 5}));
+}
+
+TEST(Observable, toFlowableErrorStrategy) {
+  auto a = Observables::range(1,10);
+  auto f = a->toFlowable(BackpressureStrategy::ERROR);
+
+  std::vector<int64_t> v;
+
+  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+
+  EXPECT_CALL(*subscriber, onSubscribe_(_));
+  EXPECT_CALL(*subscriber, onNext_(_))
+      .WillRepeatedly(Invoke([&](int64_t value) {
+          v.push_back(value);
+      }));
+  EXPECT_CALL(*subscriber, onError_(_))
+      .WillOnce(Invoke([&](folly::exception_wrapper ex) {
+          EXPECT_TRUE(ex.is_compatible_with<yarpl::flowable::MissingBackpressureException>());
+      }));
+
+  f->subscribe(subscriber);
+
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5}));
+}
+
+TEST(Observable, toFlowableBufferStrategy) {
+  auto a = Observables::range(1,10);
+  auto f = a->toFlowable(BackpressureStrategy::BUFFER);
+
+  std::vector<int64_t> v;
+
+  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+
+  EXPECT_CALL(*subscriber, onSubscribe_(_));
+  EXPECT_CALL(*subscriber, onNext_(_))
+      .WillRepeatedly(Invoke([&](int64_t value) {
+          v.push_back(value);
+      }));
+  EXPECT_CALL(*subscriber, onComplete_());
+
+  f->subscribe(subscriber);
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5}));
+
+  subscriber->subscription()->request(5);
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5, 6, 7, 8, 9}));
+}
+
+TEST(Observable, toFlowableLatestStrategy) {
+  auto a = Observables::range(1,10);
+  auto f = a->toFlowable(BackpressureStrategy::LATEST);
+
+  std::vector<int64_t> v;
+
+  auto subscriber = make_ref<testing::StrictMock<yarpl::flowable::MockSubscriber<int64_t>>>(5);
+
+  EXPECT_CALL(*subscriber, onSubscribe_(_));
+  EXPECT_CALL(*subscriber, onNext_(_))
+      .WillRepeatedly(Invoke([&](int64_t value) {
+          v.push_back(value);
+      }));
+  EXPECT_CALL(*subscriber, onComplete_());
+
+  f->subscribe(subscriber);
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5}));
+
+  subscriber->subscription()->request(5);
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5, 9}));
 }
 
 TEST(Observable, Just) {
@@ -482,7 +553,7 @@ class InfiniteAsyncTestOperator
  public:
   InfiniteAsyncTestOperator(
       Reference<Observable<int>> upstream,
-      testing::MockFunction<void()>& checkpoint)
+      MockFunction<void()>& checkpoint)
       : Super(std::move(upstream)), checkpoint_(checkpoint) {}
 
   Reference<Subscription> subscribe(Reference<Observer<int>> observer) override {
@@ -510,7 +581,7 @@ class InfiniteAsyncTestOperator
     TestSubscription(
         Reference<InfiniteAsyncTestOperator> observable,
         Reference<Observer<int>> observer,
-        testing::MockFunction<void()>& checkpoint)
+        MockFunction<void()>& checkpoint)
         : SuperSub(std::move(observable), std::move(observer)),
           checkpoint_(checkpoint) {}
 
@@ -527,10 +598,10 @@ class InfiniteAsyncTestOperator
     }
 
     std::thread t_;
-    testing::MockFunction<void()>& checkpoint_;
+    MockFunction<void()>& checkpoint_;
   };
 
-  testing::MockFunction<void()>& checkpoint_;
+  MockFunction<void()>& checkpoint_;
 };
 
 TEST(Observable, CancelSubscriptionChain) {
@@ -538,9 +609,9 @@ TEST(Observable, CancelSubscriptionChain) {
   std::mutex m;
   std::condition_variable cv;
 
-  testing::MockFunction<void()> checkpoint;
-  testing::MockFunction<void()> checkpoint2;
-  testing::MockFunction<void()> checkpoint3;
+  MockFunction<void()> checkpoint;
+  MockFunction<void()> checkpoint2;
+  MockFunction<void()> checkpoint3;
   std::thread t;
   auto infinite1 = Observable<int>::create([&](Reference<Observer<int>> obs) {
     EXPECT_CALL(checkpoint, Call()).Times(1);
