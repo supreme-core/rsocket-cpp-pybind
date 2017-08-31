@@ -48,6 +48,10 @@ class Observer : public virtual Refcounted {
     return subscription_->isCancelled();
   }
 
+  bool isUnsubscribedOrTerminated() const {
+    return !subscription_ || subscription_->isCancelled();
+  }
+
  protected:
   Subscription* subscription() {
     return subscription_.operator->();
