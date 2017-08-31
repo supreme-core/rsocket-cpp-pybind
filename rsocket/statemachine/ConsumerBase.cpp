@@ -32,6 +32,7 @@ void ConsumerBase::checkConsumerRequest() {
   CHECK((state_ == State::RESPONDING) == !!consumingSubscriber_);
 }
 
+// TODO: this is probably buggy and misused and not needed (when completeConsumer exists)
 void ConsumerBase::cancelConsumer() {
   state_ = State::CLOSED;
   consumingSubscriber_ = nullptr;
@@ -45,11 +46,14 @@ void ConsumerBase::generateRequest(size_t n) {
 }
 
 void ConsumerBase::endStream(StreamCompletionSignal signal) {
+  VLOG(5) << "ConsumerBase::endStream(" << signal << ")";
   if (auto subscriber = std::move(consumingSubscriber_)) {
     if (signal == StreamCompletionSignal::COMPLETE ||
         signal == StreamCompletionSignal::CANCEL) { // TODO: remove CANCEL
+      VLOG(5) << "Closing ConsumerBase subscriber with calling onComplete";
       subscriber->onComplete();
     } else {
+      VLOG(5) << "Closing ConsumerBase subscriber with calling onError";
       subscriber->onError(StreamInterruptedException(static_cast<int>(signal)));
     }
   }

@@ -117,6 +117,6 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
             FAIL();
           });
 
-  wait_for_on_error.timed_wait(std::chrono::milliseconds(100));
+  CHECK_WAIT(wait_for_on_error);
   ASSERT(did_call_on_error);
 }

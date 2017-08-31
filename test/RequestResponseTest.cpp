@@ -157,6 +157,23 @@ TEST(RequestResponseTest, RequestOnDisconnectedClient) {
   ASSERT(did_call_on_error);
 }
 
+// TODO: test that multiple requests on a requestResponse
+// fail in a well-defined way (right now it'd nullptr deref)
+TEST(RequestResponseTest, MultipleRequestsError) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<GenericRequestResponseHandler>(
+      [](StringPair const& request) {
+        EXPECT_EQ(request.first, "foo");
+        EXPECT_EQ(request.second, "bar");
+        return payload_response("baz", "quix");
+      }));
+
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+
+  auto flowable = requester->requestResponse(Payload("foo", "bar"));
+}
+
 // TODO: Currently, this hangs when the client sends a request,
 // we should fix this
 TEST(DISABLED_RequestResponseTest, FailureOnRequest) {
