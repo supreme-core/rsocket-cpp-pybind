@@ -18,13 +18,13 @@ using namespace rsocket::tests;
 using namespace rsocket::tests::client_server;
 
 struct LockstepBatons {
-  folly::Baton<> on_second_payload_sent;
-  folly::Baton<> on_cancel_sent;
-  folly::Baton<> on_cancel_recieved_toserver;
-  folly::Baton<> on_cancel_recieved_toclient;
-  folly::Baton<> on_request_recieved;
-  folly::Baton<> client_finished;
-  folly::Baton<> server_finished;
+  folly::Baton<> onSecondPayloadSent;
+  folly::Baton<> onCancelSent;
+  folly::Baton<> onCancelReceivedToserver;
+  folly::Baton<> onCancelReceivedToclient;
+  folly::Baton<> onRequestReceived;
+  folly::Baton<> clientFinished;
+  folly::Baton<> serverFinished;
 };
 
 using namespace yarpl::mocks;
@@ -38,7 +38,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
 
  public:
   LockstepAsyncHandler(LockstepBatons& batons, Sequence& subscription_seq)
-      : batons_(batons), subscription_seq_(subscription_seq){};
+      : batons_(batons), subscription_seq_(subscription_seq){}
 
   Reference<Flowable<Payload>> handleRequestStream(Payload p, StreamId)
       override {
@@ -48,20 +48,20 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
           auto subscription = make_ref<StrictMock<MockSubscription>>();
 
           std::thread([=] {
-            CHECK_WAIT(this->batons_.on_request_recieved);
+            CHECK_WAIT(this->batons_.onRequestReceived);
 
             LOCKSTEP_DEBUG("SERVER: sending onNext(foo)");
             subscriber->onNext(Payload("foo"));
-            CHECK_WAIT(this->batons_.on_cancel_sent);
-            CHECK_WAIT(this->batons_.on_cancel_recieved_toserver);
+            CHECK_WAIT(this->batons_.onCancelSent);
+            CHECK_WAIT(this->batons_.onCancelReceivedToserver);
 
             LOCKSTEP_DEBUG("SERVER: sending onNext(bar)");
             subscriber->onNext(Payload("bar"));
-            this->batons_.on_second_payload_sent.post();
+            this->batons_.onSecondPayloadSent.post();
             LOCKSTEP_DEBUG("SERVER: sending onComplete()");
             subscriber->onComplete();
-            LOCKSTEP_DEBUG("SERVER: posting server_finished");
-            this->batons_.server_finished.post();
+            LOCKSTEP_DEBUG("SERVER: posting serverFinished");
+            this->batons_.serverFinished.post();
           }).detach();
 
           // checked once the subscription is destroyed
@@ -70,15 +70,15 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
               .WillOnce(Invoke([=](auto n) {
                 LOCKSTEP_DEBUG("SERVER: got request(" << n << ")");
                 EXPECT_EQ(n, 2);
-                this->batons_.on_request_recieved.post();
+                this->batons_.onRequestReceived.post();
               }));
 
           EXPECT_CALL(*subscription, cancel_())
               .InSequence(this->subscription_seq_)
               .WillOnce(Invoke([=] {
-                LOCKSTEP_DEBUG("SERVER: recieved cancel()");
-                this->batons_.on_cancel_recieved_toclient.post();
-                this->batons_.on_cancel_recieved_toserver.post();
+                LOCKSTEP_DEBUG("SERVER: received cancel()");
+                this->batons_.onCancelReceivedToclient.post();
+                this->batons_.onCancelReceivedToserver.post();
               }));
 
           LOCKSTEP_DEBUG("SERVER: sending onSubscribe()");
@@ -98,12 +98,12 @@ TEST(RequestStreamTest, OperationsAfterCancel) {
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
 
-  auto scbr_mock =
+  auto subscriber_mock =
       make_ref<testing::StrictMock<yarpl::mocks::MockSubscriber<std::string>>>(
           0);
 
   Reference<Subscription> subscription;
-  EXPECT_CALL(*scbr_mock, onSubscribe_(_))
+  EXPECT_CALL(*subscriber_mock, onSubscribe_(_))
       .InSequence(client_seq)
       .WillOnce(Invoke([&](auto s) {
         LOCKSTEP_DEBUG("CLIENT: got onSubscribe(), sending request(2)");
@@ -111,34 +111,34 @@ TEST(RequestStreamTest, OperationsAfterCancel) {
         subscription = s;
         subscription->request(2);
       }));
-  EXPECT_CALL(*scbr_mock, onNext_("foo"))
+  EXPECT_CALL(*subscriber_mock, onNext_("foo"))
       .InSequence(client_seq)
       .WillOnce(Invoke([&](auto) {
         EXPECT_NE(subscription, nullptr);
         LOCKSTEP_DEBUG("CLIENT: got onNext(foo), sending cancel()");
         subscription->cancel();
-        batons.on_cancel_sent.post();
-        CHECK_WAIT(batons.on_cancel_recieved_toclient);
-        CHECK_WAIT(batons.on_second_payload_sent);
+        batons.onCancelSent.post();
+        CHECK_WAIT(batons.onCancelReceivedToclient);
+        CHECK_WAIT(batons.onSecondPayloadSent);
       }));
 
   // shouldn't recieve 'bar', we canceled syncronously with the Subscriber
   // had 'cancel' been called in a different thread with no synchronization,
-  // the client's Subscriber _could_ have recieved 'bar'
+  // the client's Subscriber _could_ have received 'bar'
 
-  EXPECT_CALL(*scbr_mock, onComplete_())
+  EXPECT_CALL(*subscriber_mock, onComplete_())
       .InSequence(client_seq)
       .WillOnce(Invoke([&]() {
         LOCKSTEP_DEBUG("CLIENT: got onComplete()");
-        batons.client_finished.post();
+        batons.clientFinished.post();
       }));
 
   LOCKSTEP_DEBUG("RUNNER: doing requestStream()");
   requester->requestStream(Payload("initial"))
       ->map([](auto p) { return p.moveDataToString(); })
-      ->subscribe(scbr_mock);
+      ->subscribe(subscriber_mock);
 
-  CHECK_WAIT(batons.client_finished);
-  CHECK_WAIT(batons.server_finished);
+  CHECK_WAIT(batons.clientFinished);
+  CHECK_WAIT(batons.serverFinished);
   LOCKSTEP_DEBUG("RUNNER: finished!");
 }
