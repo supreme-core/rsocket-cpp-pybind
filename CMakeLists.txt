@@ -404,6 +404,7 @@ add_executable(
   test/RSocketClientTest.cpp
   test/RequestResponseTest.cpp
   test/RequestStreamTest.cpp
+  test/RequestStreamTest_concurrency.cpp
   test/WarmResumptionTest.cpp
   test/ColdResumptionTest.cpp
   test/ConnectionEventsTest.cpp

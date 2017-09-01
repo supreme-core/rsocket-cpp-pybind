@@ -48,14 +48,16 @@ void StreamRequester::request(int64_t n) noexcept {
 }
 
 void StreamRequester::cancel() noexcept {
+  VLOG(5) << "StreamRequester::cancel(requested_=" << requested_ << ")";
   if (requested_) {
-    cancelConsumer();
     cancelStream();
   }
   closeStream(StreamCompletionSignal::CANCEL);
+  completeConsumer();
 }
 
 void StreamRequester::endStream(StreamCompletionSignal signal) {
+  VLOG(5) << "StreamRequester::endStream()";
   ConsumerBase::endStream(signal);
 }
 
