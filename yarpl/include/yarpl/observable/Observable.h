@@ -177,33 +177,39 @@ auto Observable<T>::toFlowable(BackpressureStrategy strategy) {
     strategy
   ](Reference<flowable::Subscriber<T>> subscriber) {
     Reference<flowable::Subscription> subscription;
-    switch(strategy) {
+    switch (strategy) {
       case BackpressureStrategy::DROP:
-        subscription = make_ref<
-            flowable::details::FlowableFromObservableSubscriptionDropStrategy<T>>(
-            thisObservable, subscriber);
+        subscription =
+            make_ref<flowable::details::
+                         FlowableFromObservableSubscriptionDropStrategy<T>>(
+                thisObservable, subscriber);
         break;
       case BackpressureStrategy::ERROR:
-        subscription = make_ref<
-            flowable::details::FlowableFromObservableSubscriptionErrorStrategy<T>>(
-            thisObservable, subscriber);
+        subscription =
+            make_ref<flowable::details::
+                         FlowableFromObservableSubscriptionErrorStrategy<T>>(
+                thisObservable, subscriber);
         break;
       case BackpressureStrategy::BUFFER:
-        subscription = make_ref<
-            flowable::details::FlowableFromObservableSubscriptionBufferStrategy<T>>(
-            thisObservable, subscriber);
+        subscription =
+            make_ref<flowable::details::
+                         FlowableFromObservableSubscriptionBufferStrategy<T>>(
+                thisObservable, subscriber);
         break;
       case BackpressureStrategy::LATEST:
-        subscription = make_ref<
-            flowable::details::FlowableFromObservableSubscriptionLatestStrategy<T>>(
-            thisObservable, subscriber);
+        subscription =
+            make_ref<flowable::details::
+                         FlowableFromObservableSubscriptionLatestStrategy<T>>(
+                thisObservable, subscriber);
         break;
       case BackpressureStrategy::MISSING:
-        subscription = make_ref<
-            flowable::details::FlowableFromObservableSubscriptionMissingStrategy<T>>(
-            thisObservable, subscriber);
+        subscription =
+            make_ref<flowable::details::
+                         FlowableFromObservableSubscriptionMissingStrategy<T>>(
+                thisObservable, subscriber);
         break;
-      default: CHECK(false); // unknown value for strategy
+      default:
+        CHECK(false); // unknown value for strategy
     }
     subscriber->onSubscribe(std::move(subscription));
   });

@@ -254,7 +254,7 @@ TEST(Observable, CancelFromDifferentThread) {
 }
 
 TEST(Observable, toFlowableDrop) {
-  auto a = Observables::range(1,10);
+  auto a = Observables::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::DROP);
 
   std::vector<int64_t> v;
@@ -263,9 +263,7 @@ TEST(Observable, toFlowableDrop) {
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
-      .WillRepeatedly(Invoke([&](int64_t value) {
-    v.push_back(value);
-  }));
+      .WillRepeatedly(Invoke([&](int64_t value) { v.push_back(value); }));
   EXPECT_CALL(*subscriber, onComplete_());
 
   f->subscribe(subscriber);
@@ -291,7 +289,7 @@ TEST(Observable, toFlowableDropWithCancel) {
 }
 
 TEST(Observable, toFlowableErrorStrategy) {
-  auto a = Observables::range(1,10);
+  auto a = Observables::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::ERROR);
 
   std::vector<int64_t> v;
@@ -300,12 +298,11 @@ TEST(Observable, toFlowableErrorStrategy) {
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
-      .WillRepeatedly(Invoke([&](int64_t value) {
-          v.push_back(value);
-      }));
+      .WillRepeatedly(Invoke([&](int64_t value) { v.push_back(value); }));
   EXPECT_CALL(*subscriber, onError_(_))
       .WillOnce(Invoke([&](folly::exception_wrapper ex) {
-          EXPECT_TRUE(ex.is_compatible_with<yarpl::flowable::MissingBackpressureException>());
+        EXPECT_TRUE(ex.is_compatible_with<
+                    yarpl::flowable::MissingBackpressureException>());
       }));
 
   f->subscribe(subscriber);
@@ -314,7 +311,7 @@ TEST(Observable, toFlowableErrorStrategy) {
 }
 
 TEST(Observable, toFlowableBufferStrategy) {
-  auto a = Observables::range(1,10);
+  auto a = Observables::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::BUFFER);
 
   std::vector<int64_t> v;
@@ -323,9 +320,7 @@ TEST(Observable, toFlowableBufferStrategy) {
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
-      .WillRepeatedly(Invoke([&](int64_t value) {
-          v.push_back(value);
-      }));
+      .WillRepeatedly(Invoke([&](int64_t value) { v.push_back(value); }));
   EXPECT_CALL(*subscriber, onComplete_());
 
   f->subscribe(subscriber);
@@ -336,7 +331,7 @@ TEST(Observable, toFlowableBufferStrategy) {
 }
 
 TEST(Observable, toFlowableLatestStrategy) {
-  auto a = Observables::range(1,10);
+  auto a = Observables::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::LATEST);
 
   std::vector<int64_t> v;
@@ -345,9 +340,7 @@ TEST(Observable, toFlowableLatestStrategy) {
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
-      .WillRepeatedly(Invoke([&](int64_t value) {
-          v.push_back(value);
-      }));
+      .WillRepeatedly(Invoke([&](int64_t value) { v.push_back(value); }));
   EXPECT_CALL(*subscriber, onComplete_());
 
   f->subscribe(subscriber);

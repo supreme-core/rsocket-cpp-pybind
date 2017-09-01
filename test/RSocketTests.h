@@ -13,7 +13,6 @@ auto const default_baton_timeout = std::chrono::milliseconds(100);
 // #define CHECK_WAIT(baton) baton.timed_wait(default_baton_timeout)
 // #define CHECK_WAIT(baton) baton.wait()
 
-
 namespace rsocket {
 namespace tests {
 namespace client_server {

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <deque>
 #include <folly/Synchronized.h>
+#include <deque>
 #include "yarpl/Flowable.h"
 #include "yarpl/utils/credits.h"
 
@@ -20,20 +20,21 @@ namespace flowable {
 // Exception thrown in case the downstream can't keep up.
 class MissingBackpressureException : public std::runtime_error {
  public:
-  MissingBackpressureException() : std::runtime_error("BACK_PRESSURE: DROP (missing credits onNext)") {}
+  MissingBackpressureException()
+      : std::runtime_error("BACK_PRESSURE: DROP (missing credits onNext)") {}
 };
 
 namespace details {
 
 template <typename T>
-class FlowableFromObservableSubscription
-    : public flowable::Subscription,
-      public observable::Observer<T> {
+class FlowableFromObservableSubscription : public flowable::Subscription,
+                                           public observable::Observer<T> {
  public:
   FlowableFromObservableSubscription(
       Reference<observable::Observable<T>> observable,
       Reference<flowable::Subscriber<T>> subscriber)
-      : observable_(std::move(observable)), subscriber_(std::move(subscriber)) {}
+      : observable_(std::move(observable)),
+        subscriber_(std::move(subscriber)) {}
 
   FlowableFromObservableSubscription(FlowableFromObservableSubscription&&) =
       delete;
@@ -74,7 +75,7 @@ class FlowableFromObservableSubscription
   }
 
   void cancel() override {
-    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
       return;
     }
     observable::Observer<T>::subscription()->cancel();
@@ -93,7 +94,7 @@ class FlowableFromObservableSubscription
 
   // Observer override
   void onComplete() override {
-    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
       return;
     }
     auto subscriber = std::move(subscriber_);
@@ -103,7 +104,7 @@ class FlowableFromObservableSubscription
 
   // Observer override
   void onError(folly::exception_wrapper error) override {
-    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
       return;
     }
     auto subscriber = std::move(subscriber_);
@@ -124,17 +125,20 @@ class FlowableFromObservableSubscription
 };
 
 template <typename T>
-using FlowableFromObservableSubscriptionDropStrategy = FlowableFromObservableSubscription<T>;
+using FlowableFromObservableSubscriptionDropStrategy =
+    FlowableFromObservableSubscription<T>;
 
 template <typename T>
-class FlowableFromObservableSubscriptionErrorStrategy : public FlowableFromObservableSubscription<T> {
- using Super = FlowableFromObservableSubscription<T>;
+class FlowableFromObservableSubscriptionErrorStrategy
+    : public FlowableFromObservableSubscription<T> {
+  using Super = FlowableFromObservableSubscription<T>;
+
  public:
   using Super::FlowableFromObservableSubscription;
 
  private:
   void onNextWithoutCredits(T /*t*/) override {
-    if(observable::Observer<T>::isUnsubscribedOrTerminated()) {
+    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
       return;
     }
     Super::onError(MissingBackpressureException());
@@ -143,14 +147,16 @@ class FlowableFromObservableSubscriptionErrorStrategy : public FlowableFromObser
 };
 
 template <typename T>
-class FlowableFromObservableSubscriptionBufferStrategy : public FlowableFromObservableSubscription<T> {
+class FlowableFromObservableSubscriptionBufferStrategy
+    : public FlowableFromObservableSubscription<T> {
   using Super = FlowableFromObservableSubscription<T>;
+
  public:
   using Super::FlowableFromObservableSubscription;
 
  private:
   void onComplete() override {
-    if(!buffer_->empty()) {
+    if (!buffer_->empty()) {
       // we have buffered some items so we will defer delivering on complete for
       // later
       completed_ = true;
@@ -164,7 +170,7 @@ class FlowableFromObservableSubscriptionBufferStrategy : public FlowableFromObse
   //
 
   void onNextWithoutCredits(T t) override {
-    if(Super::isUnsubscribed()) {
+    if (Super::isUnsubscribed()) {
       return;
     }
 
@@ -174,12 +180,12 @@ class FlowableFromObservableSubscriptionBufferStrategy : public FlowableFromObse
   void onCreditsAvailable(int64_t credits) override {
     DCHECK(credits > 0);
     auto&& lockedBuffer = buffer_.wlock();
-    while(credits-- > 0 && !lockedBuffer->empty()) {
+    while (credits-- > 0 && !lockedBuffer->empty()) {
       Super::onNext(std::move(lockedBuffer->front()));
       lockedBuffer->pop_front();
     }
 
-    if(lockedBuffer->empty() && completed_) {
+    if (lockedBuffer->empty() && completed_) {
       Super::onComplete();
     }
   }
@@ -189,14 +195,16 @@ class FlowableFromObservableSubscriptionBufferStrategy : public FlowableFromObse
 };
 
 template <typename T>
-class FlowableFromObservableSubscriptionLatestStrategy : public FlowableFromObservableSubscription<T> {
+class FlowableFromObservableSubscriptionLatestStrategy
+    : public FlowableFromObservableSubscription<T> {
   using Super = FlowableFromObservableSubscription<T>;
+
  public:
   using Super::FlowableFromObservableSubscription;
 
  private:
   void onComplete() override {
-    if(storesLatest_) {
+    if (storesLatest_) {
       // we have buffered an item so we will defer delivering on complete for
       // later
       completed_ = true;
@@ -216,11 +224,11 @@ class FlowableFromObservableSubscriptionLatestStrategy : public FlowableFromObse
 
   void onCreditsAvailable(int64_t credits) override {
     DCHECK(credits > 0);
-    if(storesLatest_) {
+    if (storesLatest_) {
       storesLatest_ = false;
       Super::onNext(std::move(*latest_.wlock()));
 
-      if(completed_) {
+      if (completed_) {
         Super::onComplete();
       }
     }
@@ -232,8 +240,10 @@ class FlowableFromObservableSubscriptionLatestStrategy : public FlowableFromObse
 };
 
 template <typename T>
-class FlowableFromObservableSubscriptionMissingStrategy : public FlowableFromObservableSubscription<T> {
+class FlowableFromObservableSubscriptionMissingStrategy
+    : public FlowableFromObservableSubscription<T> {
   using Super = FlowableFromObservableSubscription<T>;
+
  public:
   using Super::FlowableFromObservableSubscription;
 
@@ -242,7 +252,6 @@ class FlowableFromObservableSubscriptionMissingStrategy : public FlowableFromObs
     Super::onNext(std::move(t));
   }
 };
-
 }
 }
 }

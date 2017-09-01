@@ -20,9 +20,12 @@ namespace mocks {
 template <typename T>
 class MockFlowable : public flowable::Flowable<T> {
  public:
-  MOCK_METHOD1_T(subscribe_, void(yarpl::Reference<flowable::Subscriber<T>> subscriber));
+  MOCK_METHOD1_T(
+      subscribe_,
+      void(yarpl::Reference<flowable::Subscriber<T>> subscriber));
 
-  void subscribe(yarpl::Reference<flowable::Subscriber<T>> subscriber) noexcept override {
+  void subscribe(
+      yarpl::Reference<flowable::Subscriber<T>> subscriber) noexcept override {
     subscribe_(std::move(subscriber));
   }
 };
@@ -34,7 +37,9 @@ class MockFlowable : public flowable::Flowable<T> {
 template <typename T>
 class MockSubscriber : public flowable::Subscriber<T> {
  public:
-  MOCK_METHOD1(onSubscribe_, void(yarpl::Reference<flowable::Subscription> subscription));
+  MOCK_METHOD1(
+      onSubscribe_,
+      void(yarpl::Reference<flowable::Subscription> subscription));
   MOCK_METHOD1_T(onNext_, void(const T& value));
   MOCK_METHOD0(onComplete_, void());
   MOCK_METHOD1_T(onError_, void(folly::exception_wrapper ex));
@@ -42,7 +47,8 @@ class MockSubscriber : public flowable::Subscriber<T> {
   explicit MockSubscriber(int64_t initial = std::numeric_limits<int64_t>::max())
       : initial_(initial) {}
 
-  void onSubscribe(yarpl::Reference<flowable::Subscription> subscription) override {
+  void onSubscribe(
+      yarpl::Reference<flowable::Subscription> subscription) override {
     subscription_ = subscription;
     onSubscribe_(subscription);
 

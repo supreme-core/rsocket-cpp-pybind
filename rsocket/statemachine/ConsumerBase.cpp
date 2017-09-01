@@ -32,7 +32,8 @@ void ConsumerBase::checkConsumerRequest() {
   CHECK((state_ == State::RESPONDING) == !!consumingSubscriber_);
 }
 
-// TODO: this is probably buggy and misused and not needed (when completeConsumer exists)
+// TODO: this is probably buggy and misused and not needed (when
+// completeConsumer exists)
 void ConsumerBase::cancelConsumer() {
   state_ = State::CLOSED;
   consumingSubscriber_ = nullptr;
