@@ -3,7 +3,7 @@
 #pragma once
 
 #include "yarpl/Refcounted.h"
-#include "yarpl/observable/Subscription.h"
+#include "yarpl/observable/Subscriptions.h"
 
 #include <folly/ExceptionWrapper.h>
 
@@ -46,6 +46,23 @@ class Observer : public virtual Refcounted {
   bool isUnsubscribed() const {
     CHECK(subscription_);
     return subscription_->isCancelled();
+  }
+
+  // Ability to add more subscription objects which will be notified when the
+  // subscription has been cancelled.
+  // Note that calling cancel on the tied subscription is not going to cancel
+  // this subscriber
+  void addSubscription(Reference<Subscription> subscription) {
+    if(!subscription_) {
+      subscription->cancel();
+      return;
+    }
+    subscription_->tieSubscription(std::move(subscription));
+  }
+
+  template<typename OnCancel>
+  void addSubscription(OnCancel onCancel) {
+    addSubscription(Subscriptions::create(std::move(onCancel)));
   }
 
   bool isUnsubscribedOrTerminated() const {
