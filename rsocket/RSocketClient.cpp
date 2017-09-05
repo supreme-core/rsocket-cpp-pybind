@@ -123,10 +123,11 @@ folly::Future<folly::Unit> RSocketClient::resume() {
 
 void RSocketClient::disconnect(folly::exception_wrapper ex) {
   CHECK(stateMachine_);
-  evb_->runInEventBaseThread([ this, ex = std::move(ex) ]() mutable {
-    VLOG(2) << "Disconnecting RSocketStateMachine on EventBase";
-    stateMachine_->disconnect(std::move(ex));
-  });
+  evb_->runInEventBaseThread(
+      [ stateMachine = stateMachine_, ex = std::move(ex) ]() mutable {
+        VLOG(2) << "Disconnecting RSocketStateMachine on EventBase";
+        stateMachine->disconnect(std::move(ex));
+      });
 }
 
 void RSocketClient::fromConnection(
