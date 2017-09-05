@@ -19,7 +19,7 @@ using namespace yarpl::flowable;
 typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
 
 namespace {
-class HelloSubscriber : public virtual Refcounted, public Subscriber<Payload> {
+class HelloSubscriber : public Subscriber<Payload> {
  public:
   explicit HelloSubscriber(size_t latestValue) : latestValue_(latestValue) {}
 
@@ -29,10 +29,10 @@ class HelloSubscriber : public virtual Refcounted, public Subscriber<Payload> {
   }
 
   void awaitLatestValue(size_t value) {
-    auto count = 3;
+    auto count = 100;
     while (value != latestValue_ && count > 0) {
-      VLOG(1) << "Wait for " << count << " seconds for latest value";
-      /* sleep override */ sleep(1);
+      VLOG(1) << "Waiting " << count << " ticks for latest value...";
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       count--;
       std::this_thread::yield();
     }
