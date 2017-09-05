@@ -89,7 +89,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
 
 // FIXME: This hits an ASAN heap-use-after-free.  Disabling for now, but we need
 // to get back to this and fix it.
-TEST(RequestStreamTest, DISABLED_OperationsAfterCancel) {
+TEST(RequestStreamTest, OperationsAfterCancel) {
   LockstepBatons batons;
   Sequence server_seq;
   Sequence client_seq;
