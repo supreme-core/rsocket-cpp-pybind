@@ -58,7 +58,7 @@ class SingleOperator : public Single<D> {
     void onSubscribe(
         Reference<::yarpl::single::SingleSubscription> subscription) override {
       upstreamSubscription_ = std::move(subscription);
-      observer_->onSubscribe(get_ref(this));
+      observer_->onSubscribe(this->ref_from_this(this));
     }
 
     void onError(folly::exception_wrapper error) override {
@@ -109,7 +109,7 @@ class MapOperator : public SingleOperator<U, D> {
   void subscribe(Reference<SingleObserver<D>> observer) override {
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
-        make_ref<MapSubscription>(get_ref(this), std::move(observer)));
+        make_ref<MapSubscription>(this->ref_from_this(this), std::move(observer)));
   }
 
  private:

@@ -34,7 +34,7 @@ class EmiterSubscription : public Subscription, public Subscriber<T> {
       Reference<EmiterBase<T>> emiter,
       Reference<Subscriber<T>> subscriber)
       : emiter_(std::move(emiter)), subscriber_(std::move(subscriber)) {
-    subscriber_->onSubscribe(get_ref<Subscription>(this));
+    subscriber_->onSubscribe(this->ref_from_this(this));
   }
 
   virtual ~EmiterSubscription() {
@@ -126,7 +126,7 @@ class EmiterSubscription : public Subscription, public Subscriber<T> {
 
     // Keep a reference to ourselves here in case the emit() call
     // frees all other references to 'this'
-    auto this_subscriber = get_ref<Subscriber<T>>(this);
+    auto this_subscriber = this->ref_from_this(this);
 
     while (true) {
       auto current = requested_.load(std::memory_order_relaxed);
@@ -191,7 +191,7 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
   explicit EmitterWrapper(Emitter emitter) : emitter_(std::move(emitter)) {}
 
   void subscribe(Reference<Subscriber<T>> subscriber) override {
-    make_ref<EmiterSubscription<T>>(get_ref(this), std::move(subscriber));
+    make_ref<EmiterSubscription<T>>(this->ref_from_this(this), std::move(subscriber));
   }
 
   std::tuple<int64_t, bool> emit(

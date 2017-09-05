@@ -40,11 +40,11 @@ class Refcounted {
   template <typename U>
   friend class Reference;
 
-  void incRef() {
+  void incRef() const {
     refcount_.fetch_add(1, std::memory_order_relaxed);
   }
 
-  void decRef() {
+  void decRef() const {
     auto previous = refcount_.fetch_sub(1, std::memory_order_relaxed);
     assert(previous >= 1 && "decRef on a destroyed object!");
     if (previous == 1) {
@@ -54,7 +54,7 @@ class Refcounted {
   }
 
   // refcount starts at 1 always, so we don't destroy ourselves in
-  // the constructor if we call `get_ref` in it
+  // the constructor if we call `ref_from_this` in it
   mutable std::atomic_size_t refcount_{1};
 };
 
@@ -85,7 +85,7 @@ class Reference {
      class MyClass : Refcounted {
        MyClass() {
         // count() == 0
-        auto r = get_ref<MyClass>(this)
+        auto r = ref_from_this<MyClass>(this)
         // count() == 1
         do_something_with(r);
         // if do_something_with(r) doens't keep a reference to r somewhere, then
@@ -318,14 +318,58 @@ Reference<CastTo> make_ref(Args&&... args) {
   );
 }
 
-template <typename T>
-Reference<T> get_ref(T* object) {
-  static_assert(
-      std::is_base_of<Refcounted, std::decay_t<T>>::value,
-      "Reference can only be constructed with a Refcounted object");
+class enable_get_ref {
+ private:
+#ifdef DEBUG
+  // force the class to be polymorphic so we can dynamic_cast<T>(this)
+  virtual void dummy_internal_get_ref() {}
+#endif
 
-  return Reference<T>(object, detail::do_initial_refcount_check{});
-}
+ protected:
+  // materialize a reference to 'this', but a type even further derived from
+  // Derived, because C++ doesn't have covariant return types on methods
+  template <typename As>
+  Reference<As> ref_from_this(As* ptr) {
+    // at runtime, ensure that the most derived class can indeed be
+    // converted into an 'as'
+    (void) ptr; // silence 'unused parameter' errors in Release builds
+#ifdef DEBUG
+    assert(
+        dynamic_cast<As*>(this) && "must be able to convert from this to As*");
+#endif
+
+    assert(
+        static_cast<As*>(this) == ptr &&
+        "must give 'this' as argument to ref_from_this(this)");
+
+    static_assert(
+        std::is_base_of<Refcounted, As>::value,
+        "Inferred type must be a subclass of Refcounted");
+
+    return Reference<As>(
+        static_cast<As*>(this), detail::do_initial_refcount_check{});
+  }
+
+  template <typename As>
+  Reference<As const> ref_from_this(As const* ptr) const {
+    (void) ptr; // silence 'unused parameter' errors in Release builds
+#ifdef DEBUG
+    assert(
+        dynamic_cast<As const*>(this) && "must be able to convert from this to As*");
+#endif
+
+    assert(
+        static_cast<As const*>(this) == ptr &&
+        "must give 'this' as argument to ref_from_this(this)");
+
+    static_assert(
+        std::is_base_of<Refcounted, As>::value,
+        "Inferred type must be a subclass of Refcounted");
+
+    return Reference<As const>(
+        static_cast<As const*>(this), detail::do_initial_refcount_check{});
+  }
+};
 
 } // namespace yarpl
 

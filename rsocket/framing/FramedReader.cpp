@@ -93,7 +93,7 @@ void FramedReader::parseFrames() {
 
   // delivering onNext can trigger termination and destroying this instance
   // while in this method so we will make sure we survive
-  auto thisPtr = yarpl::get_ref(this);
+  auto thisPtr = this->ref_from_this(this);
 
   dispatchingFrames_ = true;
 
@@ -174,7 +174,7 @@ void FramedReader::setInput(
   CHECK(!frames_)
       << "FrameReader should be closed before setting another input.";
   frames_ = std::move(frames);
-  frames_->onSubscribe(yarpl::get_ref(this));
+  frames_->onSubscribe(this->ref_from_this(this));
 }
 
 bool FramedReader::ensureOrAutodetectProtocolVersion() {

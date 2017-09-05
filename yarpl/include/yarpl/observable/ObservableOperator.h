@@ -84,7 +84,7 @@ class ObservableOperator : public Observable<D> {
         return;
       }
       upstream_ = std::move(subscription);
-      observer_->onSubscribe(get_ref(this));
+      observer_->onSubscribe(this->ref_from_this(this));
     }
 
     void onComplete() override {
@@ -181,7 +181,7 @@ class MapOperator : public ObservableOperator<U, D, MapOperator<U, D, F>> {
 
   Reference<Subscription> subscribe(Reference<Observer<D>> observer) override {
     auto subscription =
-        make_ref<MapSubscription>(get_ref(this), std::move(observer));
+        make_ref<MapSubscription>(this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
@@ -222,7 +222,7 @@ class FilterOperator : public ObservableOperator<U, U, FilterOperator<U, F>> {
 
   Reference<Subscription> subscribe(Reference<Observer<U>> observer) override {
     auto subscription =
-        make_ref<FilterSubscription>(get_ref(this), std::move(observer));
+        make_ref<FilterSubscription>(this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
@@ -268,8 +268,8 @@ class ReduceOperator
 
   Reference<Subscription> subscribe(
       Reference<Observer<D>> subscriber) override {
-    auto subscription =
-        make_ref<ReduceSubscription>(get_ref(this), std::move(subscriber));
+    auto subscription = make_ref<ReduceSubscription>(
+        this->ref_from_this(this), std::move(subscriber));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a subscriber.
         subscription);
@@ -322,8 +322,8 @@ class TakeOperator : public ObservableOperator<T, T, TakeOperator<T>> {
       : Super(std::move(upstream)), limit_(limit) {}
 
   Reference<Subscription> subscribe(Reference<Observer<T>> observer) override {
-    auto subscription =
-        make_ref<TakeSubscription>(get_ref(this), limit_, std::move(observer));
+    auto subscription = make_ref<TakeSubscription>(
+        this->ref_from_this(this), limit_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -368,8 +368,8 @@ class SkipOperator : public ObservableOperator<T, T, SkipOperator<T>> {
       : Super(std::move(upstream)), offset_(offset) {}
 
   Reference<Subscription> subscribe(Reference<Observer<T>> observer) override {
-    auto subscription =
-        make_ref<SkipSubscription>(get_ref(this), offset_, std::move(observer));
+    auto subscription = make_ref<SkipSubscription>(
+        this->ref_from_this(this), offset_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -413,7 +413,7 @@ class IgnoreElementsOperator
 
   Reference<Subscription> subscribe(Reference<Observer<T>> observer) override {
     auto subscription = make_ref<IgnoreElementsSubscription>(
-        get_ref(this), std::move(observer));
+        this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -444,7 +444,7 @@ class SubscribeOnOperator
 
   Reference<Subscription> subscribe(Reference<Observer<T>> observer) override {
     auto subscription = make_ref<SubscribeOnSubscription>(
-        get_ref(this), std::move(worker_), std::move(observer));
+        this->ref_from_this(this), std::move(worker_), std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }

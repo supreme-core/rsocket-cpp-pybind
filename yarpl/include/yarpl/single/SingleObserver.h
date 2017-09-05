@@ -13,7 +13,7 @@ namespace yarpl {
 namespace single {
 
 template <typename T>
-class SingleObserver : public virtual Refcounted {
+class SingleObserver : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.

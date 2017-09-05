@@ -14,7 +14,7 @@ namespace yarpl {
 namespace single {
 
 template <typename T>
-class Single : public virtual Refcounted {
+class Single : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
   virtual void subscribe(Reference<SingleObserver<T>>) = 0;
 
@@ -146,7 +146,7 @@ template <typename Function>
 auto Single<T>::map(Function function) {
   using D = typename std::result_of<Function(T)>::type;
   return make_ref<MapOperator<T, D, Function>, Single<D>>(
-      get_ref<Single<T>>(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 } // single

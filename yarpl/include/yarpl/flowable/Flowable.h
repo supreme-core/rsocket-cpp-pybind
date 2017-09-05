@@ -19,7 +19,7 @@ namespace yarpl {
 namespace flowable {
 
 template <typename T>
-class Flowable : public virtual Refcounted {
+class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
   virtual void subscribe(Reference<Subscriber<T>>) = 0;
 
@@ -120,41 +120,41 @@ template <typename T>
 template <typename Function, typename R>
 Reference<Flowable<R>> Flowable<T>::map(Function function) {
   return make_ref<MapOperator<T, R, Function>>(
-      get_ref(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function>
 Reference<Flowable<T>> Flowable<T>::filter(Function function) {
   return make_ref<FilterOperator<T, Function>>(
-      get_ref(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function, typename R>
 Reference<Flowable<R>> Flowable<T>::reduce(Function function) {
   return make_ref<ReduceOperator<T, R, Function>>(
-      get_ref(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 Reference<Flowable<T>> Flowable<T>::take(int64_t limit) {
-  return make_ref<TakeOperator<T>>(get_ref(this), limit);
+  return make_ref<TakeOperator<T>>(this->ref_from_this(this), limit);
 }
 
 template <typename T>
 Reference<Flowable<T>> Flowable<T>::skip(int64_t offset) {
-  return make_ref<SkipOperator<T>>(get_ref(this), offset);
+  return make_ref<SkipOperator<T>>(this->ref_from_this(this), offset);
 }
 
 template <typename T>
 Reference<Flowable<T>> Flowable<T>::ignoreElements() {
-  return make_ref<IgnoreElementsOperator<T>>(get_ref(this));
+  return make_ref<IgnoreElementsOperator<T>>(this->ref_from_this(this));
 }
 
 template <typename T>
 Reference<Flowable<T>> Flowable<T>::subscribeOn(Scheduler& scheduler) {
-  return make_ref<SubscribeOnOperator<T>>(get_ref(this), scheduler);
+  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), scheduler);
 }
 
 } // flowable

@@ -15,7 +15,7 @@ void RequestResponseRequester::subscribe(
   DCHECK(!isTerminated());
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_ = std::move(subscriber);
-  consumingSubscriber_->onSubscribe(get_ref(this));
+  consumingSubscriber_->onSubscribe(this->ref_from_this(this));
 
   if (state_ == State::NEW) {
     state_ = State::REQUESTED;
