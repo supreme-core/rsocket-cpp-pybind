@@ -42,7 +42,6 @@ void ChannelResponder::tryCompleteChannel() {
 }
 
 void ChannelResponder::request(int64_t n) noexcept {
-  checkConsumerRequest();
   ConsumerBase::generateRequest(n);
 }
 

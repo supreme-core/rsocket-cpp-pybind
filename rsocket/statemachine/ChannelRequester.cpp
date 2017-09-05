@@ -78,7 +78,6 @@ void ChannelRequester::request(int64_t n) noexcept {
     initialResponseAllowance_.release(n);
     return;
   }
-  checkConsumerRequest();
   ConsumerBase::generateRequest(n);
 }
 

@@ -27,12 +27,6 @@ void ConsumerBase::subscribe(
   consumingSubscriber_->onSubscribe(get_ref(this));
 }
 
-void ConsumerBase::checkConsumerRequest() {
-  // we are either responding and subscribe method was called
-  // or we are already terminated
-  CHECK((state_ == State::RESPONDING) == !!consumingSubscriber_);
-}
-
 // TODO: this is probably buggy and misused and not needed (when
 // completeConsumer exists)
 void ConsumerBase::cancelConsumer() {
