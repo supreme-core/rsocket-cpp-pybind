@@ -50,6 +50,7 @@ class MockSubscriber : public flowable::Subscriber<T> {
   void onSubscribe(
       yarpl::Reference<flowable::Subscription> subscription) override {
     subscription_ = subscription;
+    auto this_ = get_ref(this);
     onSubscribe_(subscription);
 
     if (initial_ > 0) {
@@ -58,6 +59,7 @@ class MockSubscriber : public flowable::Subscriber<T> {
   }
 
   void onNext(T element) override {
+    auto this_ = get_ref(this);
     onNext_(element);
 
     --waitedFrameCount_;
@@ -65,6 +67,7 @@ class MockSubscriber : public flowable::Subscriber<T> {
   }
 
   void onComplete() override {
+    auto this_ = get_ref(this);
     onComplete_();
     subscription_.reset();
     terminated_ = true;
@@ -72,6 +75,7 @@ class MockSubscriber : public flowable::Subscriber<T> {
   }
 
   void onError(folly::exception_wrapper ex) override {
+    auto this_ = get_ref(this);
     onError_(std::move(ex));
     terminated_ = true;
     terminalEventCV_.notify_all();
