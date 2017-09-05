@@ -43,7 +43,6 @@ void StreamRequester::request(int64_t n) noexcept {
     return;
   }
 
-  checkConsumerRequest();
   generateRequest(n);
 }
 
