@@ -152,7 +152,9 @@ void FramedReader::onComplete() noexcept {
 void FramedReader::onError(folly::exception_wrapper ex) noexcept {
   completed_ = true;
   payloadQueue_.move(); // equivalent to clear(), releases the buffers
-  DuplexConnection::Subscriber::onError(folly::exception_wrapper());
+  if (DuplexConnection::Subscriber::subscription()) {
+    DuplexConnection::Subscriber::onError(folly::exception_wrapper());
+  }
   if (auto subscriber = std::move(frames_)) {
     // after this call the instance can be destroyed!
     subscriber->onError(std::move(ex));
