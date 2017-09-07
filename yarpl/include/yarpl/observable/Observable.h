@@ -29,7 +29,7 @@ namespace observable {
 enum class BackpressureStrategy { BUFFER, DROP, ERROR, LATEST, MISSING };
 
 template <typename T>
-class Observable : public virtual Refcounted {
+class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
   virtual Reference<Subscription> subscribe(Reference<Observer<T>>) = 0;
 
@@ -130,42 +130,41 @@ template <typename T>
 template <typename Function, typename R>
 Reference<Observable<R>> Observable<T>::map(Function function) {
   return make_ref<MapOperator<T, R, Function>>(
-      get_ref(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function>
 Reference<Observable<T>> Observable<T>::filter(Function function) {
   return make_ref<FilterOperator<T, Function>>(
-      get_ref(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function, typename R>
 Reference<Observable<R>> Observable<T>::reduce(Function function) {
   return make_ref<ReduceOperator<T, R, Function>>(
-      get_ref(this), std::move(function));
+      this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 Reference<Observable<T>> Observable<T>::take(int64_t limit) {
-  return make_ref<TakeOperator<T>>(get_ref(this), limit);
+  return make_ref<TakeOperator<T>>(this->ref_from_this(this), limit);
 }
 
 template <typename T>
 Reference<Observable<T>> Observable<T>::skip(int64_t offset) {
-  return make_ref<SkipOperator<T>>(get_ref(this), offset);
+  return make_ref<SkipOperator<T>>(this->ref_from_this(this), offset);
 }
 
 template <typename T>
 Reference<Observable<T>> Observable<T>::ignoreElements() {
-  return make_ref<IgnoreElementsOperator<T>>(get_ref(this));
+  return make_ref<IgnoreElementsOperator<T>>(this->ref_from_this(this));
 }
 
 template <typename T>
 Reference<Observable<T>> Observable<T>::subscribeOn(Scheduler& scheduler) {
-  return make_ref<SubscribeOnOperator<T>>(
-      get_ref(this), scheduler);
+  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), scheduler);
 }
 
 template <typename T>
@@ -173,7 +172,7 @@ auto Observable<T>::toFlowable(BackpressureStrategy strategy) {
   // we currently ONLY support the DROP strategy
   // so do not use the strategy parameter for anything
   return yarpl::flowable::Flowables::fromPublisher<T>([
-    thisObservable = get_ref(this),
+    thisObservable = this->ref_from_this(this),
     strategy
   ](Reference<flowable::Subscriber<T>> subscriber) {
     Reference<flowable::Subscription> subscription;

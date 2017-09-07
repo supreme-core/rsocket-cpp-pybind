@@ -555,7 +555,7 @@ class InfiniteAsyncTestOperator
   Reference<Subscription> subscribe(
       Reference<Observer<int>> observer) override {
     auto subscription = make_ref<TestSubscription>(
-        get_ref(this), std::move(observer), checkpoint_);
+        this->ref_from_this(this), std::move(observer), checkpoint_);
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);

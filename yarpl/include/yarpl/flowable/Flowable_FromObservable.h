@@ -60,10 +60,10 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     // onNext calls which the processing chain might cancel. The cancel signal
     // will remove all references to this class and we need to keep this
     // instance around to finish this method
-    auto thisPtr = get_ref(this);
+    auto thisPtr = this->ref_from_this(this);
 
     if (!started.exchange(true)) {
-      observable_->subscribe(get_ref(this));
+      observable_->subscribe(this->ref_from_this(this));
 
       // the credits might have changed since subscribe
       r = requested_.load();

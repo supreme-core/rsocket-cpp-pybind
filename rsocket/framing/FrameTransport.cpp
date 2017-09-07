@@ -31,7 +31,7 @@ void FrameTransport::connect() {
   }
 
   connectionOutput_ = connection_->getOutput();
-  connectionOutput_->onSubscribe(yarpl::get_ref(this));
+  connectionOutput_->onSubscribe(this->ref_from_this(this));
 
   // The onSubscribe call on the previous line may have called the terminating
   // signal which would call disconnect/close.
@@ -43,7 +43,7 @@ void FrameTransport::connect() {
     // will create a hard reference for that case and keep the object alive
     // until setInput method returns
     auto connectionCopy = connection_;
-    connectionCopy->setInput(yarpl::get_ref(this));
+    connectionCopy->setInput(this->ref_from_this(this));
   }
 }
 

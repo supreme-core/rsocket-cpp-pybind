@@ -47,15 +47,21 @@ TEST(RefcountedTest, ReferenceCountingWorks) {
 }
 
 
-class MyRefInside : public virtual Refcounted {
+class MyRefInside : public virtual Refcounted, public yarpl::enable_get_ref {
 public:
   MyRefInside() {
-    auto r = get_ref(this);
+    auto r = this->ref_from_this(this);
+  }
+
+  auto a_const_method() const {
+    return ref_from_this(this);
   }
 };
 
 TEST(RefcountedTest, CanCallGetRefInCtor) {
-  make_ref<MyRefInside>();
+  auto r = make_ref<MyRefInside>();
+  auto r2 = r->a_const_method();
+  EXPECT_EQ(r, r2);
 }
 
 } // yarpl

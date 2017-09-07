@@ -18,7 +18,8 @@ enum class StreamCompletionSignal;
 
 /// A class that represents a flow-control-aware consumer of data.
 class ConsumerBase : public StreamStateMachineBase,
-                     public yarpl::flowable::Subscription {
+                     public yarpl::flowable::Subscription,
+                     public yarpl::enable_get_ref {
  public:
   using StreamStateMachineBase::StreamStateMachineBase;
 
