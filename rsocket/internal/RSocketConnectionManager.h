@@ -16,22 +16,22 @@ class EventBase;
 
 namespace rsocket {
 
-class RSocketStateMachine;
+class ManageableConnection;
 
 class RSocketConnectionManager {
  public:
   ~RSocketConnectionManager();
 
   void manageConnection(
-      std::shared_ptr<rsocket::RSocketStateMachine>,
+      std::shared_ptr<ManageableConnection>,
       folly::EventBase&);
 
  private:
   using StateMachineMap = std::unordered_map<
-      std::shared_ptr<rsocket::RSocketStateMachine>,
+      std::shared_ptr<ManageableConnection>,
       folly::EventBase&>;
 
-  void removeConnection(const std::shared_ptr<rsocket::RSocketStateMachine>&);
+  void removeConnection(const std::shared_ptr<ManageableConnection>&);
 
   folly::Synchronized<StateMachineMap, std::mutex> sockets_;
 

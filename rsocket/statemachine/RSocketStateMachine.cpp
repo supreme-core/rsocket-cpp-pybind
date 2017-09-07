@@ -17,6 +17,7 @@
 #include "rsocket/framing/FrameSerializer.h"
 #include "rsocket/framing/FrameTransport.h"
 #include "rsocket/internal/ClientResumeStatusCallback.h"
+#include "rsocket/internal/ManageableConnection.h"
 #include "rsocket/internal/ScheduledSubscriber.h"
 #include "rsocket/internal/WarmResumeManager.h"
 #include "rsocket/statemachine/ChannelResponder.h"
@@ -199,6 +200,8 @@ void RSocketStateMachine::close(
   if (connectionEvents) {
     connectionEvents->onClosed(ex);
   }
+
+  ManageableConnection::onClose(ex);
 }
 
 void RSocketStateMachine::closeFrameTransport(

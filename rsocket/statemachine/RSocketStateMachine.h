@@ -12,6 +12,7 @@
 #include "rsocket/ResumeManager.h"
 #include "rsocket/framing/FrameProcessor.h"
 #include "rsocket/internal/Common.h"
+#include "rsocket/internal/ManageableConnection.h"
 #include "rsocket/statemachine/StreamState.h"
 #include "rsocket/statemachine/StreamsFactory.h"
 #include "rsocket/statemachine/StreamsWriter.h"
@@ -58,6 +59,7 @@ class FrameSink {
 class RSocketStateMachine final
     : public FrameSink,
       public FrameProcessor,
+      public ManageableConnection,
       public StreamsWriter,
       public std::enable_shared_from_this<RSocketStateMachine> {
  public:
@@ -93,7 +95,7 @@ class RSocketStateMachine final
   ///
   /// This may synchronously deliver terminal signals to all
   /// StreamAutomatonBase attached to this ConnectionAutomaton.
-  void close(folly::exception_wrapper, StreamCompletionSignal);
+  void close(folly::exception_wrapper, StreamCompletionSignal) override;
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
@@ -207,10 +209,6 @@ class RSocketStateMachine final
 
   RSocketStats& stats() {
     return *stats_;
-  }
-
-  std::shared_ptr<RSocketConnectionEvents>& connectionEvents() {
-    return connectionEvents_;
   }
 
  private:
