@@ -363,6 +363,7 @@ add_library(
   rsocket/internal/ScheduledSingleObserver.h
   rsocket/internal/ScheduledSingleSubscription.cpp
   rsocket/internal/ScheduledSingleSubscription.h
+  rsocket/internal/ManageableConnection.h
   rsocket/internal/RSocketConnectionManager.cpp
   rsocket/internal/RSocketConnectionManager.h
   rsocket/internal/SwappableEventBase.cpp
@@ -422,13 +423,15 @@ add_executable(
   test/test_utils/GenericRequestResponseHandler.h
   test/test_utils/MockDuplexConnection.h
   test/test_utils/MockKeepaliveTimer.h
+  test/test_utils/MockManageableConnection.h
   test/test_utils/MockRequestHandler.h
   test/test_utils/MockStats.h
   test/test_utils/ColdResumeManager.cpp
   test/test_utils/ColdResumeManager.h
   test/transport/DuplexConnectionTest.cpp
   test/transport/DuplexConnectionTest.h
-  test/transport/TcpDuplexConnectionTest.cpp)
+  test/transport/TcpDuplexConnectionTest.cpp
+  test/RSocketConnectionManagerTest.cpp)
 
 target_link_libraries(
   tests

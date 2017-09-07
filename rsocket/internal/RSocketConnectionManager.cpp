@@ -7,15 +7,14 @@
 #include <folly/io/async/EventBase.h>
 
 #include "rsocket/RSocketConnectionEvents.h"
-#include "rsocket/statemachine/RSocketStateMachine.h"
+#include "rsocket/internal/Common.h"
+#include "rsocket/internal/ManageableConnection.h"
 
 namespace rsocket {
 
 RSocketConnectionManager::~RSocketConnectionManager() {
   VLOG(1) << "Started ~RSocketConnectionManager";
-  SCOPE_EXIT {
-    VLOG(1) << "Finished ~RSocketConnectionManager";
-  };
+  SCOPE_EXIT { VLOG(1) << "Finished ~RSocketConnectionManager"; };
 
   StateMachineMap map;
 
@@ -73,73 +72,28 @@ RSocketConnectionManager::~RSocketConnectionManager() {
 }
 
 void RSocketConnectionManager::manageConnection(
-    std::shared_ptr<RSocketStateMachine> socket,
-    folly::EventBase& eventBase) {
-  class ConnectionEventsWrapper : public RSocketConnectionEvents {
-   public:
-    ConnectionEventsWrapper(
-        RSocketConnectionManager& connectionManager,
-        std::shared_ptr<RSocketStateMachine> socket,
-        folly::EventBase& eventBase)
-        : connectionManager_(connectionManager),
-          socket_(std::move(socket)),
-          eventBase_(eventBase) {}
-
-    void onConnected() override {
-      if (inner) {
-        inner->onConnected();
-      }
-    }
-
-    void onDisconnected(const folly::exception_wrapper& ex) override {
-      if (inner) {
-        inner->onDisconnected(ex);
-      }
-    }
-
-    void onClosed(const folly::exception_wrapper& ex) override {
-      connectionManager_.removeConnection(socket_);
-
-      if (inner) {
-        inner->onClosed(ex);
-      }
-    }
-
-    void onStreamsPaused() override {
-      if (inner) {
-        inner->onStreamsPaused();
-      }
-    }
-
-    void onStreamsResumed() override {
-      if (inner) {
-        inner->onStreamsResumed();
-      }
-    }
-
-    RSocketConnectionManager& connectionManager_;
-    std::shared_ptr<RSocketStateMachine> socket_;
-    folly::EventBase& eventBase_;
-
-    std::shared_ptr<RSocketConnectionEvents> inner;
-  };
-
-  auto connectionEventsWrapper =
-      std::make_shared<ConnectionEventsWrapper>(*this, socket, eventBase);
-  connectionEventsWrapper->inner = std::move(socket->connectionEvents());
-  socket->connectionEvents() = std::move(connectionEventsWrapper);
+    std::shared_ptr<ManageableConnection> socket, folly::EventBase &eventBase) {
+  auto future = socket->listenCloseEvent();
+  // We assume this object will out live this future's lifetime.
+  std::weak_ptr<ManageableConnection> weakSocket = socket;
+  future.then([this, weakSocket]() {
+    auto spSocket = weakSocket.lock();
+    LOG_IF(ERROR, !spSocket)
+        << "Connection manager has missed destruction of a connection.";
+    removeConnection(spSocket);
+  });
 
   sockets_.lock()->insert({std::move(socket), eventBase});
 }
 
 void RSocketConnectionManager::removeConnection(
-    const std::shared_ptr<RSocketStateMachine>& socket) {
+    const std::shared_ptr<ManageableConnection> &socket) {
   auto locked = sockets_.lock();
   auto const result = locked->erase(socket);
   DCHECK_LE(result, 1);
   DCHECK(result == 1 || shutdownBaton_);
 
-  VLOG(2) << "Removed RSocketStateMachine";
+  VLOG(2) << "Removed ManageableConnection";
 
   if (shutdownBaton_) {
     auto const old = shutdownCounter_.fetch_sub(1);
@@ -150,4 +104,4 @@ void RSocketConnectionManager::removeConnection(
     }
   }
 }
-}
+} // namespace rsocket
