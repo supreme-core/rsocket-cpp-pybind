@@ -122,18 +122,12 @@ TEST(RequestStreamTest, OperationsAfterCancel) {
         batons.onCancelSent.post();
         CHECK_WAIT(batons.onCancelReceivedToclient);
         CHECK_WAIT(batons.onSecondPayloadSent);
+        batons.clientFinished.post();
       }));
 
   // shouldn't recieve 'bar', we canceled syncronously with the Subscriber
   // had 'cancel' been called in a different thread with no synchronization,
   // the client's Subscriber _could_ have received 'bar'
-
-  EXPECT_CALL(*subscriber_mock, onComplete_())
-      .InSequence(client_seq)
-      .WillOnce(Invoke([&]() {
-        LOCKSTEP_DEBUG("CLIENT: got onComplete()");
-        batons.clientFinished.post();
-      }));
 
   LOCKSTEP_DEBUG("RUNNER: doing requestStream()");
   requester->requestStream(Payload("initial"))

@@ -50,9 +50,9 @@ void StreamRequester::cancel() noexcept {
   VLOG(5) << "StreamRequester::cancel(requested_=" << requested_ << ")";
   if (requested_) {
     cancelStream();
+    cancelConsumer();
   }
   closeStream(StreamCompletionSignal::CANCEL);
-  completeConsumer();
 }
 
 void StreamRequester::endStream(StreamCompletionSignal signal) {
