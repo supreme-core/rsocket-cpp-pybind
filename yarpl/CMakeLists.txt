@@ -41,14 +41,13 @@ include_directories(${CMAKE_SOURCE_DIR})
 add_library(
         yarpl
         # public API
-        include/yarpl/Scheduler.h
-        include/yarpl/Disposable.h
         include/yarpl/Refcounted.h
         # Flowable public API
         include/yarpl/Flowable.h
         include/yarpl/flowable/EmitterFlowable.h
         include/yarpl/flowable/Flowable.h
         include/yarpl/flowable/FlowableOperator.h
+        include/yarpl/flowable/FlowableObserveOnOperator.h
         include/yarpl/flowable/Flowable_FromObservable.h
         include/yarpl/flowable/Flowables.h
         include/yarpl/flowable/Subscriber.h
@@ -80,10 +79,7 @@ add_library(
         # utils
         include/yarpl/utils/type_traits.h
         include/yarpl/utils/credits.h
-        src/yarpl/utils/credits.cpp
-        # Scheduler
-        include/yarpl/schedulers/ThreadScheduler.h
-        src/yarpl/schedulers/ThreadScheduler.cpp)
+        src/yarpl/utils/credits.cpp)
 
 target_include_directories(
         yarpl
@@ -100,6 +96,7 @@ add_library(
   yarpl-test-utils
   test/yarpl/test_utils/Tuple.cpp
   test/yarpl/test_utils/Tuple.h
+  test/yarpl/test_utils/utils.h
   test/yarpl/test_utils/Mocks.h)
 
 # Executable for experimenting.
@@ -119,7 +116,7 @@ add_executable(
   test/Observable_test.cpp
   test/RefcountedTest.cpp
   test/ReferenceTest.cpp
-  test/Scheduler_test.cpp
+  test/SubscribeObserveOnTests.cpp
   test/Single_test.cpp
   test/credits-test.cpp
   test/yarpl-tests.cpp)

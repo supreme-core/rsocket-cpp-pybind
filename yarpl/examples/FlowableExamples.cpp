@@ -7,7 +7,7 @@
 #include <string>
 #include <thread>
 
-#include "yarpl/schedulers/ThreadScheduler.h"
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "yarpl/Flowable.h"
 
@@ -112,13 +112,13 @@ void FlowableExamples::run() {
 
   flowable->subscribe(subscriber);
 
-  ThreadScheduler scheduler;
+  folly::ScopedEventBaseThread worker;
 
   std::cout << "subscribe_on example" << std::endl;
   Flowables::justN({"0: ", "1: ", "2: "})
       ->map([](const char* p) { return std::string(p); })
       ->map([](std::string log) { return log + " on " + getThreadId(); })
-      ->subscribeOn(scheduler)
+      ->subscribeOn(*worker.getEventBase())
       ->subscribe(printer<std::string>());
   std::cout << "  waiting   on " << getThreadId() << std::endl;
   std::this_thread::sleep_for(std::chrono::milliseconds(10));

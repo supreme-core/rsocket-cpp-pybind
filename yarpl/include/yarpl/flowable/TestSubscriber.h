@@ -104,11 +104,14 @@ class TestSubscriber : public Subscriber<T> {
   /**
    * Block the current thread until either onSuccess or onError is called.
    */
-  void awaitTerminalEvent() {
+  void awaitTerminalEvent(
+      std::chrono::milliseconds ms = std::chrono::seconds{5}) {
     // now block this thread
     std::unique_lock<std::mutex> lk(m_);
     // if shutdown gets implemented this would then be released by it
-    terminalEventCV_.wait(lk, [this] { return terminated_; });
+    if (!terminalEventCV_.wait_for(lk, ms, [this] { return terminated_; })) {
+      throw std::runtime_error("timeout in awaitTerminalEvent");
+    }
   }
 
   void assertValueCount(size_t count) {
