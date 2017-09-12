@@ -80,6 +80,7 @@ class TestSubscriber : public Subscriber<T> {
     } else {
       values_.push_back(std::move(t));
     }
+    terminalEventCV_.notify_all();
   }
 
   void onComplete() override {
@@ -109,6 +110,18 @@ class TestSubscriber : public Subscriber<T> {
     std::unique_lock<std::mutex> lk(m_);
     // if shutdown gets implemented this would then be released by it
     terminalEventCV_.wait(lk, [this] { return terminated_; });
+  }
+
+  void awaitValueCount(int64_t n) {
+    // now block this thread
+    std::unique_lock<std::mutex> lk(m_);
+    terminalEventCV_.wait(lk, [this, n] {
+      if (terminated_) {
+        std::stringstream msg;
+        msg << "onComplete/onError called before valueCount() == " << n;
+        throw std::runtime_error(msg.str());
+      }
+      return getValueCount() >= n; });
   }
 
   void assertValueCount(size_t count) {
@@ -178,7 +191,7 @@ class TestSubscriber : public Subscriber<T> {
   void assertOnErrorMessage(std::string msg) {
     if (!e_ || e_.get_exception()->what() != msg) {
       std::stringstream ss;
-      ss << "Error is: " << e_ << " but expected: " << msg;
+      ss << "Error is: '" << e_ << "' but expected: '" << msg << "'";
       throw std::runtime_error(ss.str());
     }
   }
