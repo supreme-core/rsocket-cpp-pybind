@@ -117,15 +117,18 @@ class TestSubscriber : public Subscriber<T> {
       std::chrono::milliseconds ms = std::chrono::seconds{5}) {
     // now block this thread
     std::unique_lock<std::mutex> lk(m_);
-    if (!terminalEventCV_.wait_for(lk, ms, [this, n] {
-          if (getValueCount() < n && terminated_) {
-            std::stringstream msg;
-            msg << "onComplete/onError called before valueCount() == n;\nvalueCount: "
-                << getValueCount() << " != " << n;
-            throw std::runtime_error(msg.str());
-          }
-          return getValueCount() >= n;
-        })) {
+
+    auto didTimeOut = terminalEventCV_.wait_for(lk, ms, [this, n] {
+      if (getValueCount() < n && terminated_) {
+        std::stringstream msg;
+        msg << "onComplete/onError called before valueCount() == n;\nvalueCount: "
+            << getValueCount() << " != " << n;
+        throw std::runtime_error(msg.str());
+      }
+      return getValueCount() >= n;
+    });
+
+    if (!didTimeOut) {
       throw std::runtime_error("timeout in awaitValueCount");
     };
   }

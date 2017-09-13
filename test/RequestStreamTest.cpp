@@ -98,8 +98,7 @@ class TestHandlerAsync : public rsocket::RSocketResponder {
               return Payload(s, "metadata");
             })
             ->subscribe(subscriber);
-      })
-          .detach();
+      }).detach();
     });
   }
 };
@@ -148,7 +147,7 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
   ASSERT(did_call_on_error);
 }
 
-class TestHandlerError : public rsocket::RSocketResponder {
+class TestHandlerResponder : public rsocket::RSocketResponder {
  public:
   Reference<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
     return Flowables::error<Payload>(
@@ -158,7 +157,7 @@ class TestHandlerError : public rsocket::RSocketResponder {
 
 TEST(RequestStreamTest, HandleError) {
   folly::ScopedEventBaseThread worker;
-  auto server = makeServer(std::make_shared<TestHandlerError>());
+  auto server = makeServer(std::make_shared<TestHandlerResponder>());
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
   auto ts = TestSubscriber<std::string>::create();
@@ -169,7 +168,7 @@ TEST(RequestStreamTest, HandleError) {
   ts->assertOnErrorMessage("A wild Error appeared!");
 }
 
-class TestErrorThrown : public rsocket::RSocketResponder {
+class TestErrorAfterOnNextResponder : public rsocket::RSocketResponder {
  public:
   Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
       override {
@@ -184,14 +183,14 @@ class TestErrorThrown : public rsocket::RSocketResponder {
       subscriber->onNext(Payload(name, "meta"));
       subscriber->onNext(Payload(name, "meta"));
       subscriber->onError(std::runtime_error("A wild Error appeared!"));
-      return std::make_tuple(int64_t(1), true);
+      return std::make_tuple(int64_t(4), true);
     });
   }
 };
 
 TEST(RequestStreamTest, HandleErrorMidStream) {
   folly::ScopedEventBaseThread worker;
-  auto server = makeServer(std::make_shared<TestErrorThrown>());
+  auto server = makeServer(std::make_shared<TestErrorAfterOnNextResponder>());
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
   auto ts = TestSubscriber<std::string>::create();
