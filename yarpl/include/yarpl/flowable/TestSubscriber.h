@@ -112,16 +112,22 @@ class TestSubscriber : public Subscriber<T> {
     terminalEventCV_.wait(lk, [this] { return terminated_; });
   }
 
-  void awaitValueCount(int64_t n) {
+  void awaitValueCount(
+      int64_t n,
+      std::chrono::milliseconds ms = std::chrono::seconds{5}) {
     // now block this thread
     std::unique_lock<std::mutex> lk(m_);
-    terminalEventCV_.wait(lk, [this, n] {
-      if (terminated_) {
-        std::stringstream msg;
-        msg << "onComplete/onError called before valueCount() == " << n;
-        throw std::runtime_error(msg.str());
-      }
-      return getValueCount() >= n; });
+    if (!terminalEventCV_.wait_for(lk, ms, [this, n] {
+          if (getValueCount() < n && terminated_) {
+            std::stringstream msg;
+            msg << "onComplete/onError called before valueCount() == n;\nvalueCount: "
+                << getValueCount() << " != " << n;
+            throw std::runtime_error(msg.str());
+          }
+          return getValueCount() >= n;
+        })) {
+      throw std::runtime_error("timeout in awaitValueCount");
+    };
   }
 
   void assertValueCount(size_t count) {
@@ -153,7 +159,7 @@ class TestSubscriber : public Subscriber<T> {
   }
 
   std::string getErrorMsg() const {
-    return e_? e_.get_exception()->what() : "";
+    return e_ ? e_.get_exception()->what() : "";
   }
 
   void assertValueAt(int64_t index, T expected) {
@@ -217,5 +223,5 @@ class TestSubscriber : public Subscriber<T> {
   std::condition_variable terminalEventCV_;
   Reference<Subscription> subscription_;
 };
-}
-}
+} // namespace flowable
+} // namespace yarpl

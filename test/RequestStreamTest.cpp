@@ -152,7 +152,7 @@ class TestHandlerError : public rsocket::RSocketResponder {
  public:
   Reference<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
     return Flowables::error<Payload>(
-        std::runtime_error("A wild error appeared"));
+        std::runtime_error("A wild Error appeared!"));
   }
 };
 
@@ -166,7 +166,7 @@ TEST(RequestStreamTest, HandleError) {
       ->map([](auto p) { return p.moveDataToString(); })
       ->subscribe(ts);
   ts->awaitTerminalEvent();
-  ts->assertOnErrorMessage("A wild error appeared");
+  ts->assertOnErrorMessage("A wild Error appeared!");
 }
 
 class TestErrorThrown : public rsocket::RSocketResponder {
@@ -175,20 +175,22 @@ class TestErrorThrown : public rsocket::RSocketResponder {
       override {
     // string from payload data
     auto requestString = request.moveDataToString();
-      return Flowables::range(1, 10)->map([name = std::move(requestString)](
-          int64_t v) {
-        if (v == 5) {
-          throw std::runtime_error{"What an unexpected turn of events!"};
-        }
-        std::stringstream ss;
-        ss << "Hello " << name << " " << v << "!";
-        std::string s = ss.str();
-        return Payload(s, "metadata");
-      });
+
+    return Flowable<Payload>::create([name = std::move(requestString)](Reference<Subscriber<Payload>> subscriber,
+                                 int64_t requested) {
+          EXPECT_GT(requested, 1);
+          subscriber->onNext(Payload(name, "meta"));
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onError(std::runtime_error("A wild Error appeared!"));
+          return std::make_tuple(int64_t(1), true);
+        });
+
   }
 };
 
-TEST(RequestStreamTest, DISABLED_HandleErrorMidStream) {
+TEST(RequestStreamTest, HandleErrorMidStream) {
   folly::ScopedEventBaseThread worker;
   auto server = makeServer(std::make_shared<TestErrorThrown>());
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
@@ -197,5 +199,8 @@ TEST(RequestStreamTest, DISABLED_HandleErrorMidStream) {
     requester->requestStream(Payload("Bob"))
              ->map([](auto p) { return p.moveDataToString(); })
              ->subscribe(ts);
-    ts->awaitTerminalEvent(); // crashes, do we want to test that something else occurs?
+    ts->awaitTerminalEvent();
+  ts->assertValueCount(4);
+  ts->assertOnErrorMessage("A wild Error appeared!");
+
 }
