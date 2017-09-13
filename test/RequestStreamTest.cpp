@@ -176,17 +176,16 @@ class TestErrorThrown : public rsocket::RSocketResponder {
     // string from payload data
     auto requestString = request.moveDataToString();
 
-    return Flowable<Payload>::create([name = std::move(requestString)](Reference<Subscriber<Payload>> subscriber,
-                                 int64_t requested) {
-          EXPECT_GT(requested, 1);
-          subscriber->onNext(Payload(name, "meta"));
+    return Flowable<Payload>::create([name = std::move(requestString)](
+        Reference<Subscriber<Payload>> subscriber, int64_t requested) {
+      EXPECT_GT(requested, 1);
+      subscriber->onNext(Payload(name, "meta"));
       subscriber->onNext(Payload(name, "meta"));
       subscriber->onNext(Payload(name, "meta"));
       subscriber->onNext(Payload(name, "meta"));
       subscriber->onError(std::runtime_error("A wild Error appeared!"));
-          return std::make_tuple(int64_t(1), true);
-        });
-
+      return std::make_tuple(int64_t(1), true);
+    });
   }
 };
 
@@ -196,11 +195,10 @@ TEST(RequestStreamTest, HandleErrorMidStream) {
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
   auto ts = TestSubscriber<std::string>::create();
-    requester->requestStream(Payload("Bob"))
-             ->map([](auto p) { return p.moveDataToString(); })
-             ->subscribe(ts);
-    ts->awaitTerminalEvent();
+  requester->requestStream(Payload("Bob"))
+      ->map([](auto p) { return p.moveDataToString(); })
+      ->subscribe(ts);
+  ts->awaitTerminalEvent();
   ts->assertValueCount(4);
   ts->assertOnErrorMessage("A wild Error appeared!");
-
 }
