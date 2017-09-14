@@ -26,6 +26,11 @@ if(APPLE AND ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
   add_compile_options("-fno-sanitize=address,undefined")
 endif()
 
+option(YARPL_REFCOUNT_DEBUGGING "Enable refcount debugging/leak checking in Yarpl" OFF)
+if(YARPL_REFCOUNT_DEBUGGING)
+  add_compile_options(-DYARPL_REFCOUNT_DEBUGGING)
+endif()
+
 # Using NDEBUG in Release builds.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
 
@@ -44,6 +49,7 @@ add_library(
         include/yarpl/Scheduler.h
         include/yarpl/Disposable.h
         include/yarpl/Refcounted.h
+        src/yarpl/Refcounted.cpp
         # Flowable public API
         include/yarpl/Flowable.h
         include/yarpl/flowable/EmitterFlowable.h

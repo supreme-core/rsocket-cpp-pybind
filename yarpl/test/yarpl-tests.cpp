@@ -4,9 +4,18 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include "yarpl/Refcounted.h"
+
 int main(int argc, char** argv) {
-  FLAGS_logtostderr = true;
-  ::testing::InitGoogleTest(&argc, argv);
-  folly::init(&argc, &argv);
-  return RUN_ALL_TESTS();
+  int ret;
+  {
+    FLAGS_logtostderr = true;
+    ::testing::InitGoogleTest(&argc, argv);
+    folly::init(&argc, &argv);
+    ret = RUN_ALL_TESTS();
+  }
+
+  yarpl::detail::debug_refcounts(std::cerr);
+
+  return ret;
 }

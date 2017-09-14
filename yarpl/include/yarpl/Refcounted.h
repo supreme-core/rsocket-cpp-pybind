@@ -9,12 +9,46 @@
 #include <type_traits>
 #include <utility>
 
+#include <cstdlib>
+#include <cxxabi.h>
+#include <typeinfo>
+#include <unordered_map>
+#include <string>
+#include <ostream>
+
 namespace yarpl {
 
 namespace detail {
 struct skip_initial_refcount_check {};
 struct do_initial_refcount_check {};
+
+
+// refcount debugging utilities
+using refcount_map_type = std::unordered_map<std::string, int64_t>;
+void inc_created(std::string const&);
+
+void inc_live(std::string const&);
+void dec_live(std::string const&);
+void debug_refcounts(std::ostream& o);
+
+template<typename T>
+std::string type_name()
+{
+    int status;
+    std::string tname = typeid(T).name();
+    char *demangled_name = abi::__cxa_demangle(tname.c_str(), NULL, NULL, &status);
+    if (status == 0) {
+        tname = demangled_name;
+        std::free(demangled_name);
+    }
+    return tname;
 }
+
+#ifdef YARPL_REFCOUNT_DEBUGGING
+struct set_reference_name;
+#endif
+
+} /* namespace detail */
 
 template <typename T>
 class Reference;
@@ -39,6 +73,9 @@ class Refcounted {
  private:
   template <typename U>
   friend class Reference;
+#ifdef YARPL_REFCOUNT_DEBUGGING
+  friend struct detail::set_reference_name;
+#endif
 
   void incRef() const {
     refcount_.fetch_add(1, std::memory_order_relaxed);
@@ -49,6 +86,9 @@ class Refcounted {
     assert(previous >= 1 && "decRef on a destroyed object!");
     if (previous == 1) {
       std::atomic_thread_fence(std::memory_order_acquire);
+#ifdef YARPL_REFCOUNT_DEBUGGING
+      detail::dec_live(this->demangled_name_);
+#endif
       delete this;
     }
   }
@@ -56,7 +96,22 @@ class Refcounted {
   // refcount starts at 1 always, so we don't destroy ourselves in
   // the constructor if we call `ref_from_this` in it
   mutable std::atomic_size_t refcount_{1};
+
+#ifdef YARPL_REFCOUNT_DEBUGGING
+  // for memory debugging and instrumentation
+  std::string demangled_name_;
+#endif
 };
+
+#ifdef YARPL_REFCOUNT_DEBUGGING
+namespace detail {
+struct set_reference_name {
+  set_reference_name(std::string name, Refcounted& refcounted) {
+    refcounted.demangled_name_ = std::move(name);
+  }
+};
+}
+#endif
 
 /// RAII-enabling smart pointer for refcounted objects.  Each reference
 /// constructed against a target refcounted object increases its count by 1
@@ -312,10 +367,19 @@ Reference<CastTo> make_ref(Args&&... args) {
       std::is_base_of<std::decay_t<CastTo>, std::decay_t<T>>::value,
       "Concrete type must be a subclass of casted-to-type");
 
-  return Reference<CastTo>(
+  auto r = Reference<CastTo>(
     new T(std::forward<Args>(args)...),
     detail::skip_initial_refcount_check{}
   );
+
+#ifdef YARPL_REFCOUNT_DEBUGGING
+  auto demangled_name = detail::type_name<T>();
+  detail::inc_created(demangled_name);
+  detail::inc_live(demangled_name);
+  detail::set_reference_name{std::move(demangled_name), *r};
+#endif
+
+  return std::move(r);
 }
 
 class enable_get_ref {
