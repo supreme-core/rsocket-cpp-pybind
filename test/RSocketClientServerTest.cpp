@@ -87,7 +87,7 @@ TEST(RSocketClientServer, ServerGetsGarbage) {
   auto server = makeServer(std::make_shared<HelloStreamRequestHandler>());
   folly::SocketAddress address{"::1", *server->listeningPort()};
 
-  folly::ScopedEventBaseThread worker{"rsocket-client"};
+  folly::ScopedEventBaseThread worker;
   auto factory =
       std::make_shared<TcpConnectionFactory>(*worker.getEventBase(), address);
 

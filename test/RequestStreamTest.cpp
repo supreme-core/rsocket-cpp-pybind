@@ -1,8 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include <thread>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gtest/gtest.h>
+#include <thread>
 
 #include "RSocketTests.h"
 #include "yarpl/Flowable.h"
@@ -17,9 +17,8 @@ using namespace rsocket::tests::client_server;
 namespace {
 class TestHandlerSync : public rsocket::RSocketResponder {
  public:
-  Reference<Flowable<Payload>> handleRequestStream(
-      Payload request,
-      StreamId) override {
+  Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
+      override {
     // string from payload data
     auto requestString = request.moveDataToString();
 
@@ -49,11 +48,38 @@ TEST(RequestStreamTest, HelloSync) {
   ts->assertValueAt(9, "Hello Bob 10!");
 }
 
+TEST(RequestStreamTest, HelloFlowControl) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestHandlerSync>());
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+  auto ts = TestSubscriber<std::string>::create(5);
+  requester->requestStream(Payload("Bob"))
+      ->map([](auto p) { return p.moveDataToString(); })
+      ->subscribe(ts);
+
+  ts->awaitValueCount(5);
+
+  ts->assertValueCount(5);
+  ts->assertValueAt(0, "Hello Bob 1!");
+  ts->assertValueAt(4, "Hello Bob 5!");
+
+  ts->request(5);
+
+  ts->awaitValueCount(10);
+
+  ts->assertValueCount(10);
+  ts->assertValueAt(5, "Hello Bob 6!");
+  ts->assertValueAt(9, "Hello Bob 10!");
+
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+}
+
 class TestHandlerAsync : public rsocket::RSocketResponder {
  public:
-  Reference<Flowable<Payload>> handleRequestStream(
-      Payload request,
-      StreamId) override {
+  Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
+      override {
     // string from payload data
     auto requestString = request.moveDataToString();
 
@@ -76,7 +102,7 @@ class TestHandlerAsync : public rsocket::RSocketResponder {
     });
   }
 };
-}
+} // namespace
 
 TEST(RequestStreamTest, HelloAsync) {
   folly::ScopedEventBaseThread worker;
@@ -119,4 +145,59 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
 
   CHECK_WAIT(wait_for_on_error);
   ASSERT(did_call_on_error);
+}
+
+class TestHandlerResponder : public rsocket::RSocketResponder {
+ public:
+  Reference<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
+    return Flowables::error<Payload>(
+        std::runtime_error("A wild Error appeared!"));
+  }
+};
+
+TEST(RequestStreamTest, HandleError) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestHandlerResponder>());
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+  auto ts = TestSubscriber<std::string>::create();
+  requester->requestStream(Payload("Bob"))
+      ->map([](auto p) { return p.moveDataToString(); })
+      ->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertOnErrorMessage("A wild Error appeared!");
+}
+
+class TestErrorAfterOnNextResponder : public rsocket::RSocketResponder {
+ public:
+  Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
+      override {
+    // string from payload data
+    auto requestString = request.moveDataToString();
+
+    return Flowable<Payload>::create([name = std::move(requestString)](
+        Reference<Subscriber<Payload>> subscriber, int64_t requested) {
+      EXPECT_GT(requested, 1);
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onNext(Payload(name, "meta"));
+      subscriber->onError(std::runtime_error("A wild Error appeared!"));
+      return std::make_tuple(int64_t(4), true);
+    });
+  }
+};
+
+TEST(RequestStreamTest, HandleErrorMidStream) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestErrorAfterOnNextResponder>());
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+  auto ts = TestSubscriber<std::string>::create();
+  requester->requestStream(Payload("Bob"))
+      ->map([](auto p) { return p.moveDataToString(); })
+      ->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertValueCount(4);
+  ts->assertOnErrorMessage("A wild Error appeared!");
 }
