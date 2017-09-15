@@ -22,7 +22,8 @@ typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
 
 namespace {
 
-class HelloSubscriber : public virtual Refcounted, public LegacySubscriber<Payload> {
+class HelloSubscriber : public virtual Refcounted,
+                        public LegacySubscriber<Payload> {
  public:
   void request(int n) {
     while (!LegacySubscriber<Payload>::subscription()) {

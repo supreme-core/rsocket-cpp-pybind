@@ -29,7 +29,8 @@ namespace rsocket {
 /// before the connection is destroyed.
 class DuplexConnection {
  public:
-  using LegacySubscriber = yarpl::flowable::LegacySubscriber<std::unique_ptr<folly::IOBuf>>;
+  using LegacySubscriber =
+      yarpl::flowable::LegacySubscriber<std::unique_ptr<folly::IOBuf>>;
   using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
 
   virtual ~DuplexConnection() = default;

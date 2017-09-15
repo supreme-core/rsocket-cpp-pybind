@@ -11,14 +11,15 @@ namespace rsocket {
 
 class MockDuplexConnection : public DuplexConnection {
 public:
-  using LegacySubscriber = yarpl::flowable::LegacySubscriber<std::unique_ptr<folly::IOBuf>>;
-  using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
+ using LegacySubscriber =
+     yarpl::flowable::LegacySubscriber<std::unique_ptr<folly::IOBuf>>;
+ using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
 
-  MockDuplexConnection() {
-    ON_CALL(*this, getOutput_()).WillByDefault(testing::Invoke([] {
-      return yarpl::make_ref<
-          yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
-    }));
+ MockDuplexConnection() {
+   ON_CALL(*this, getOutput_()).WillByDefault(testing::Invoke([] {
+     return yarpl::make_ref<
+         yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
+   }));
   }
 
   /// Creates a DuplexConnection that always runs `in` on the input

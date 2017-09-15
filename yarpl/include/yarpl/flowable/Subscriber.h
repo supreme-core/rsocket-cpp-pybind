@@ -22,7 +22,6 @@ class Subscriber : public virtual Refcounted, public yarpl::enable_get_ref {
 };
 
 // codemod all things that inherit from Subscriber to inherit from
-// InternalSubscriber
 template <typename T>
 class InternalSubscriber : public Subscriber<T> {
  public:

@@ -41,8 +41,10 @@ class BoundedSubscriber : public yarpl::flowable::LegacySubscriber<Payload> {
 
   void onSubscribe(
       yarpl::Reference<yarpl::flowable::Subscription> subscription) override {
-    yarpl::flowable::LegacySubscriber<Payload>::onSubscribe(std::move(subscription));
-    yarpl::flowable::LegacySubscriber<Payload>::subscription()->request(requested_);
+    yarpl::flowable::LegacySubscriber<Payload>::onSubscribe(
+        std::move(subscription));
+    yarpl::flowable::LegacySubscriber<Payload>::subscription()->request(
+        requested_);
   }
 
   void onNext(Payload) override {

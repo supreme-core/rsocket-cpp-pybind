@@ -145,7 +145,8 @@ TEST(ObserveSubscribeTests, BothObserveAndSubscribeOn) {
 }
 
 namespace {
-class EarlyCancelSubscriber : public yarpl::flowable::LegacySubscriber<int64_t> {
+class EarlyCancelSubscriber
+    : public yarpl::flowable::LegacySubscriber<int64_t> {
  public:
   EarlyCancelSubscriber(
       folly::EventBase& on_base,
