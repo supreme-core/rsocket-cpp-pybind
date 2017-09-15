@@ -13,7 +13,7 @@ namespace flowable {
  * A Subscriber that always cancels the subscription passed to it.
  */
 template <typename T>
-class CancelingSubscriber final : public Subscriber<T> {
+class CancelingSubscriber final : public LegacySubscriber<T> {
  public:
   void onSubscribe(
       yarpl::Reference<yarpl::flowable::Subscription> sub) override {

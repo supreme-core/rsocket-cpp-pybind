@@ -11,12 +11,13 @@
 using yarpl::Refcounted;
 using yarpl::Reference;
 using yarpl::AtomicReference;
+using yarpl::flowable::LegacySubscriber;
 using yarpl::flowable::Subscriber;
 
 namespace {
 
 template <class T>
-class MySubscriber : public Subscriber<T> {
+class MySubscriber : public LegacySubscriber<T> {
   void onNext(T) override {}
 };
 }

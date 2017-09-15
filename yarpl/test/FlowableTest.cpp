@@ -20,13 +20,13 @@ namespace {
  * Used in place of TestSubscriber where we have move-only types.
  */
 template <typename T>
-class CollectingSubscriber : public Subscriber<T> {
+class CollectingSubscriber : public LegacySubscriber<T> {
  public:
   explicit CollectingSubscriber(int64_t requestCount = 100)
       : requestCount_(requestCount) {}
 
   void onSubscribe(Reference<Subscription> subscription) override {
-    Subscriber<T>::onSubscribe(subscription);
+    LegacySubscriber<T>::onSubscribe(subscription);
     subscription->request(requestCount_);
   }
 
@@ -35,12 +35,12 @@ class CollectingSubscriber : public Subscriber<T> {
   }
 
   void onComplete() override {
-    Subscriber<T>::onComplete();
+    LegacySubscriber<T>::onComplete();
     complete_ = true;
   }
 
   void onError(folly::exception_wrapper ex) override {
-    Subscriber<T>::onError(ex);
+    LegacySubscriber<T>::onError(ex);
     error_ = true;
     errorMsg_ = ex.get_exception()->what();
   }
@@ -62,7 +62,7 @@ class CollectingSubscriber : public Subscriber<T> {
   }
 
   void cancelSubscription() {
-    Subscriber<T>::subscription()->cancel();
+    LegacySubscriber<T>::subscription()->cancel();
   }
 
  private:
@@ -404,13 +404,13 @@ TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   EXPECT_EQ(std::size_t{1}, subscriber->values().size());
 }
 
-class RangeCheckingSubscriber : public Subscriber<int32_t> {
+class RangeCheckingSubscriber : public LegacySubscriber<int32_t> {
  public:
   explicit RangeCheckingSubscriber(int32_t total, folly::Baton<>& b)
       : total_(total), onComplete_(b) {}
 
   void onSubscribe(Reference<Subscription> subscription) override {
-    Subscriber<int32_t>::onSubscribe(subscription);
+    LegacySubscriber<int32_t>::onSubscribe(subscription);
     subscription->request(total_);
   }
 
@@ -424,7 +424,7 @@ class RangeCheckingSubscriber : public Subscriber<int32_t> {
   }
 
   void onComplete() override {
-    Subscriber<int32_t>::onComplete();
+    LegacySubscriber<int32_t>::onComplete();
     EXPECT_EQ(total_, current_);
     onComplete_.post();
   }
@@ -464,7 +464,7 @@ TEST(FlowableTest, FlowableFromDifferentThreads) {
 }
 } // namespace
 
-class ErrorRangeCheckingSubscriber : public Subscriber<int32_t> {
+class ErrorRangeCheckingSubscriber : public LegacySubscriber<int32_t> {
  public:
   explicit ErrorRangeCheckingSubscriber(
       int32_t expect,
@@ -477,7 +477,7 @@ class ErrorRangeCheckingSubscriber : public Subscriber<int32_t> {
         expectedErr_(expected_err) {}
 
   void onSubscribe(Reference<Subscription> subscription) override {
-    Subscriber<int32_t>::onSubscribe(subscription);
+    LegacySubscriber<int32_t>::onSubscribe(subscription);
     subscription->request(request_);
   }
 
@@ -495,7 +495,7 @@ class ErrorRangeCheckingSubscriber : public Subscriber<int32_t> {
   }
 
   void onComplete() override {
-    Subscriber<int32_t>::onComplete();
+    LegacySubscriber<int32_t>::onComplete();
     FAIL() << "shouldn't ever onComplete";
   }
 

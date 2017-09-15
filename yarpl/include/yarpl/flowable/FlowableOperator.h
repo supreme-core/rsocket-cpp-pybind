@@ -36,7 +36,7 @@ class FlowableOperator : public Flowable<D> {
   /// subscriber for the previous stage; as a subscription for the next one, the
   /// user-supplied subscriber being the last of the pipeline stages.
   class Subscription : public yarpl::flowable::Subscription,
-                       public Subscriber<U> {
+                       public LegacySubscriber<U> {
    protected:
     Subscription(
         Reference<Operator> flowable,

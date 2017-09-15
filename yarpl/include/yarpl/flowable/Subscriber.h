@@ -21,9 +21,10 @@ class Subscriber : public virtual Refcounted, public yarpl::enable_get_ref {
   virtual void onNext(T) = 0;
 };
 
-// codemod all things that inherit from Subscriber to inherit from LegacySubscriber
+// codemod all things that inherit from Subscriber to inherit from
+// InternalSubscriber
 template <typename T>
-class LegacySubscriber : public Subscriber<T> {
+class InternalSubscriber : public Subscriber<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
@@ -54,6 +55,12 @@ class LegacySubscriber : public Subscriber<T> {
   Reference<Subscription> subscription_;
 };
 
+#define SUBSCRIBER_KEEP_SELF() \
+  Reference<SafeSubscriber> self; \
+  if (!keeps_reference_to_this) { \
+    self = this->ref_from_this(this); \
+  }
+
 template <typename T>
 class SafeSubscriber : public Subscriber<T> {
  public:
@@ -62,6 +69,8 @@ class SafeSubscriber : public Subscriber<T> {
   void onSubscribe(Reference<Subscription> subscription) final override {
     DCHECK(subscription);
     CHECK(!subscription_);
+
+    SUBSCRIBER_KEEP_SELF()
     subscription_ = std::move(subscription);
     onSubscribeImpl();
   }
@@ -69,19 +78,44 @@ class SafeSubscriber : public Subscriber<T> {
   // No further calls to the subscription after this method is invoked.
   void onComplete() final override {
     DCHECK(subscription_) << "Calling onComplete() without a subscription";
-    subscription_.reset();
-    onCompleteImpl();
+
+    if(auto sub = subscription_.exchange(nullptr)) {
+      SUBSCRIBER_KEEP_SELF()
+      onCompleteImpl();
+      onTerminateImpl();
+    }
   }
 
   // No further calls to the subscription after this method is invoked.
   void onError(folly::exception_wrapper e) final override {
     DCHECK(subscription_) << "Calling onError() without a subscription";
-    subscription_.reset();
-    onErrorImpl(std::move(e));
+
+    if(auto sub = subscription_.exchange(nullptr)) {
+      SUBSCRIBER_KEEP_SELF()
+      onErrorImpl(std::move(e));
+      onTerminateImpl();
+    }
   }
 
   void onNext(T t) final override {
-    onNextImpl(std::move(t));
+    if(auto sub = subscription_.load()) {
+      SUBSCRIBER_KEEP_SELF()
+      onNextImpl(std::move(t));
+    }
+  }
+
+  void cancel() {
+    if(auto sub = subscription_.exchange(nullptr)) {
+      SUBSCRIBER_KEEP_SELF()
+      sub->cancel();
+      onTerminateImpl();
+    }
+  }
+
+  void request(int64_t n) {
+    if(auto sub = subscription_.load()) {
+      sub->request(n);
+    }
   }
 
   virtual void onSubscribeImpl() = 0;
@@ -89,21 +123,13 @@ class SafeSubscriber : public Subscriber<T> {
   virtual void onNextImpl(T) = 0;
   virtual void onErrorImpl(folly::exception_wrapper) = 0;
 
- protected:
-  Reference<Subscription> subscription() {
-    return subscription_;
-  }
+  virtual void onTerminateImpl() {}
 
  private:
-  Reference<Subscription> subscription_;
+  AtomicReference<Subscription> subscription_;
 };
 
-template <typename T>
-class SafeDefaultSubscriber : public SafeSubscriber<T> {
-  void onSubscribeImpl() override {}
-  void onNextImpl(T) override {}
-  void onCompleteImpl() override {}
-  void onErrorImpl(folly::exception_wrapper) override {}
-};
+#undef SUBSCRIBER_KEEP_SELF
 
-} } /* namespace yarpl::flowable */
+}
+} /* namespace yarpl::flowable */

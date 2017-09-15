@@ -35,7 +35,7 @@ class MockFlowable : public flowable::Flowable<T> {
 /// For the same reason putting mock instance in a smart pointer is a poor idea.
 /// Can only be instanciated for CopyAssignable E type.
 template <typename T>
-class MockSubscriber : public flowable::Subscriber<T> {
+class MockSubscriber : public flowable::LegacySubscriber<T> {
  public:
   MOCK_METHOD1(
       onSubscribe_,
