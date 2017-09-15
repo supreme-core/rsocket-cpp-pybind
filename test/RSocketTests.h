@@ -7,9 +7,7 @@
 #include "rsocket/RSocket.h"
 
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
-
-auto const default_baton_timeout = std::chrono::milliseconds(100);
-#define CHECK_WAIT(baton) CHECK(baton.timed_wait(default_baton_timeout))
+#include "yarpl/test_utils/utils.h"
 
 namespace rsocket {
 namespace tests {

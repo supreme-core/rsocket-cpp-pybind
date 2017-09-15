@@ -9,7 +9,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "yarpl/Scheduler.h"
 #include "yarpl/utils/type_traits.h"
 
 #include "yarpl/Refcounted.h"
@@ -98,7 +97,7 @@ class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
 
   Reference<Observable<T>> ignoreElements();
 
-  Reference<Observable<T>> subscribeOn(Scheduler&);
+  Reference<Observable<T>> subscribeOn(folly::Executor&);
 
   /**
   * Convert from Observable to Flowable with a given BackpressureStrategy.
@@ -163,8 +162,8 @@ Reference<Observable<T>> Observable<T>::ignoreElements() {
 }
 
 template <typename T>
-Reference<Observable<T>> Observable<T>::subscribeOn(Scheduler& scheduler) {
-  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), scheduler);
+Reference<Observable<T>> Observable<T>::subscribeOn(folly::Executor& executor) {
+  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
 }
 
 template <typename T>

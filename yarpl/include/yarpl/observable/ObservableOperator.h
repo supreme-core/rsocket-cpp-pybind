@@ -439,12 +439,14 @@ class SubscribeOnOperator
   using Super = ObservableOperator<T, T, ThisOperatorT>;
 
  public:
-  SubscribeOnOperator(Reference<Observable<T>> upstream, Scheduler& scheduler)
-      : Super(std::move(upstream)), worker_(scheduler.createWorker()) {}
+  SubscribeOnOperator(
+      Reference<Observable<T>> upstream,
+      folly::Executor& executor)
+      : Super(std::move(upstream)), executor_(executor) {}
 
   Reference<Subscription> subscribe(Reference<Observer<T>> observer) override {
     auto subscription = make_ref<SubscribeOnSubscription>(
-        this->ref_from_this(this), std::move(worker_), std::move(observer));
+        this->ref_from_this(this), executor_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -456,13 +458,15 @@ class SubscribeOnOperator
    public:
     SubscribeOnSubscription(
         Reference<ThisOperatorT> observable,
-        std::unique_ptr<Worker> worker,
+        folly::Executor& executor,
         Reference<Observer<T>> observer)
         : SuperSub(std::move(observable), std::move(observer)),
-          worker_(std::move(worker)) {}
+          executor_(executor) {}
 
     void cancel() override {
-      worker_->schedule([this] { this->callSuperCancel(); });
+      executor_.add([ self = this->ref_from_this(this), this ] {
+        this->callSuperCancel();
+      });
     }
 
     void onNext(T value) override {
@@ -475,10 +479,10 @@ class SubscribeOnOperator
       SuperSub::cancel();
     }
 
-    std::unique_ptr<Worker> worker_;
+    folly::Executor& executor_;
   };
 
-  std::unique_ptr<Worker> worker_;
+  folly::Executor& executor_;
 };
 
 template <typename T, typename OnSubscribe>

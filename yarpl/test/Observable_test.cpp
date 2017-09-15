@@ -9,7 +9,6 @@
 #include "yarpl/Observable.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscribers.h"
-#include "yarpl/schedulers/ThreadScheduler.h"
 
 #include "yarpl/test_utils/Mocks.h"
 #include "yarpl/test_utils/Tuple.h"

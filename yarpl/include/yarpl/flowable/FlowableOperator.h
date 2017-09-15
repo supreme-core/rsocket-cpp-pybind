@@ -10,6 +10,8 @@
 #include "yarpl/flowable/Subscription.h"
 #include "yarpl/utils/credits.h"
 
+#include "folly/Executor.h"
+
 namespace yarpl {
 namespace flowable {
 
@@ -437,12 +439,14 @@ class SubscribeOnOperator
   using Super = FlowableOperator<T, T, ThisOperatorT>;
 
  public:
-  SubscribeOnOperator(Reference<Flowable<T>> upstream, Scheduler& scheduler)
-      : Super(std::move(upstream)), worker_(scheduler.createWorker()) {}
+  SubscribeOnOperator(
+      Reference<Flowable<T>> upstream,
+      folly::Executor& executor)
+      : Super(std::move(upstream)), executor_(executor) {}
 
   void subscribe(Reference<Subscriber<T>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
-        this->ref_from_this(this), std::move(worker_), std::move(subscriber)));
+        this->ref_from_this(this), executor_, std::move(subscriber)));
   }
 
  private:
@@ -451,17 +455,21 @@ class SubscribeOnOperator
    public:
     Subscription(
         Reference<ThisOperatorT> flowable,
-        std::unique_ptr<Worker> worker,
+        folly::Executor& executor,
         Reference<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)),
-          worker_(std::move(worker)) {}
+          executor_(executor) {}
 
     void request(int64_t delta) override {
-      worker_->schedule([delta, this] { this->callSuperRequest(delta); });
+      executor_.add([ delta, this, self = this->ref_from_this(this) ] {
+        this->callSuperRequest(delta);
+      });
     }
 
     void cancel() override {
-      worker_->schedule([this] { this->callSuperCancel(); });
+      executor_.add([ this, self = this->ref_from_this(this) ] {
+        this->callSuperCancel();
+      });
     }
 
     void onNext(T value) override {
@@ -479,10 +487,10 @@ class SubscribeOnOperator
       SuperSubscription::cancel();
     }
 
-    std::unique_ptr<Worker> worker_;
+    folly::Executor& executor_;
   };
 
-  std::unique_ptr<Worker> worker_;
+  folly::Executor& executor_;
 };
 
 template <typename T, typename OnSubscribe>
@@ -501,3 +509,5 @@ class FromPublisherOperator : public Flowable<T> {
 
 } // namespace flowable
 } // namespace yarpl
+
+#include "yarpl/flowable/FlowableObserveOnOperator.h"

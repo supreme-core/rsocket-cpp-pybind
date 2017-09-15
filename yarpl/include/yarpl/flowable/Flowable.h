@@ -9,11 +9,12 @@
 #include <glog/logging.h>
 
 #include "yarpl/Refcounted.h"
-#include "yarpl/Scheduler.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscribers.h"
 #include "yarpl/utils/credits.h"
 #include "yarpl/utils/type_traits.h"
+
+#include "folly/Executor.h"
 
 namespace yarpl {
 namespace flowable {
@@ -91,7 +92,9 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
 
   Reference<Flowable<T>> ignoreElements();
 
-  Reference<Flowable<T>> subscribeOn(Scheduler&);
+  Reference<Flowable<T>> subscribeOn(folly::Executor&);
+
+  Reference<Flowable<T>> observeOn(folly::Executor&);
 
   template <
       typename Emitter,
@@ -153,8 +156,14 @@ Reference<Flowable<T>> Flowable<T>::ignoreElements() {
 }
 
 template <typename T>
-Reference<Flowable<T>> Flowable<T>::subscribeOn(Scheduler& scheduler) {
-  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), scheduler);
+Reference<Flowable<T>> Flowable<T>::subscribeOn(folly::Executor& executor) {
+  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
+}
+
+template <typename T>
+Reference<Flowable<T>> Flowable<T>::observeOn(folly::Executor& executor) {
+  return make_ref<yarpl::flowable::detail::ObserveOnOperator<T>>(
+      this->ref_from_this(this), executor);
 }
 
 } // flowable
