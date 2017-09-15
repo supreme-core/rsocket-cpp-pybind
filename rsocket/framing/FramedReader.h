@@ -11,7 +11,7 @@
 
 namespace rsocket {
 
-class FramedReader : public DuplexConnection::Subscriber,
+class FramedReader : public DuplexConnection::LegacySubscriber,
                      public yarpl::flowable::Subscription {
  public:
   explicit FramedReader(std::shared_ptr<ProtocolVersion> version)

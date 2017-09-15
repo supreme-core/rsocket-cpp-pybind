@@ -19,7 +19,7 @@ namespace rsocket {
 //
 
 template<typename T>
-class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
+class ScheduledSubscriber : public yarpl::flowable::LegacySubscriber<T> {
  public:
   ScheduledSubscriber(
       yarpl::Reference<yarpl::flowable::Subscriber<T>> inner,
@@ -88,7 +88,7 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
 // request and cancel from any thread.
 //
 template<typename T>
-class ScheduledSubscriptionSubscriber : public yarpl::flowable::Subscriber<T> {
+class ScheduledSubscriptionSubscriber : public yarpl::flowable::LegacySubscriber<T> {
  public:
   ScheduledSubscriptionSubscriber(
       yarpl::Reference<yarpl::flowable::Subscriber<T>> inner,

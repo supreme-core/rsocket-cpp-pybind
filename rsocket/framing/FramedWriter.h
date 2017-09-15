@@ -12,7 +12,7 @@ namespace rsocket {
 
 struct ProtocolVersion;
 
-class FramedWriter : public DuplexConnection::Subscriber {
+class FramedWriter : public DuplexConnection::LegacySubscriber {
  public:
   explicit FramedWriter(
       yarpl::Reference<DuplexConnection::Subscriber> stream,

@@ -45,7 +45,7 @@ RSocketResponder::handleRequestChannelCore(
     const yarpl::Reference<yarpl::flowable::Subscriber<Payload>>&
         response) noexcept {
   class EagerSubscriberBridge
-      : public yarpl::flowable::Subscriber<rsocket::Payload> {
+      : public yarpl::flowable::LegacySubscriber<rsocket::Payload> {
    public:
     void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>
                          subscription) noexcept override {

@@ -11,7 +11,7 @@ namespace rsocket {
 /// Implementation of stream stateMachine that represents a Stream responder
 class StreamResponder : public StreamStateMachineBase,
                         public PublisherBase,
-                        public yarpl::flowable::Subscriber<Payload> {
+                        public yarpl::flowable::LegacySubscriber<Payload> {
  public:
   StreamResponder(
       std::shared_ptr<StreamsWriter> writer,
