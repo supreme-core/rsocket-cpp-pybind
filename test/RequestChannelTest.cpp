@@ -281,7 +281,7 @@ TEST(RequestChannelTest, DISABLED_CancelFromRequester) {
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
 
-  auto requestSubscriber = TestSubscriber<std::string>::create(100);
+  auto requestSubscriber = TestSubscriber<std::string>::create(50);
   auto responderSubscriber = responder->getChannelSubscriber();
 
   int64_t requesterRangeEnd = 100;
@@ -298,18 +298,22 @@ TEST(RequestChannelTest, DISABLED_CancelFromRequester) {
       ->map([](auto p) { return p.moveDataToString(); })
       ->subscribe(requestSubscriber);
 
-  requestSubscriber->awaitValueCount(20);
-  requestSubscriber->cancel();
+  // make sure a few things have streamed
+  requestSubscriber->awaitValueCount(30);
+
+  worker.getEventBase()->runInEventBaseThread(
+      [=]() {
+        requestSubscriber->cancel();
+        requestSubscriber->request(50);
+      });
 
   responderSubscriber->awaitTerminalEvent();
+  EXPECT_LT(requestSubscriber->getValueCount(), 100);
 
   // Responder Subscriber should be at 100
-  // Requester Subscriber should be 20 - 30ish, depending on timing
+  // Requester Subscriber should be < 100
   LOG(INFO) << "Responder Subscriber: " << responderSubscriber->getValueCount();
   LOG(INFO) << "Requester Subscriber: " << requestSubscriber->getValueCount();
-
-  // This crashes with a memory error (NULL PTR), I don't think it should?
-
 }
 
 class TestChannelResponderFailure : public rsocket::RSocketResponder {
@@ -373,10 +377,10 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
   responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
 }
 
-TEST(RequestChannelTest, FailureOnRequestRequesterSees) {
+TEST(RequestChannelTest, DISABLED_FailureOnRequestRequesterSees) {
   // ???
 }
 
-TEST(RequestChannelTest, FailureFromRequester) {
+TEST(RequestChannelTest, DISABLED_FailureFromRequester) {
   // ???
 }
