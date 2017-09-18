@@ -26,8 +26,7 @@ class TcpConnectionAcceptor::SocketCallback
     folly::AsyncSocket::UniquePtr socket(
         new folly::AsyncSocket(eventBase(), fd));
 
-    auto connection = std::make_unique<TcpDuplexConnection>(
-        std::move(socket));
+    auto connection = std::make_unique<TcpDuplexConnection>(std::move(socket));
     onAccept_(std::move(connection), *eventBase());
   }
 
@@ -55,6 +54,7 @@ TcpConnectionAcceptor::TcpConnectionAcceptor(Options options)
 TcpConnectionAcceptor::~TcpConnectionAcceptor() {
   if (serverThread_) {
     stop();
+    serverThread_.reset();
   }
 }
 
@@ -111,8 +111,7 @@ void TcpConnectionAcceptor::stop() {
   VLOG(1) << "Shutting down TCP listener";
 
   serverThread_->getEventBase()->runInEventBaseThread(
-      [this] { serverSocket_.reset(); });
-  serverThread_.reset();
+      [serverSocket = std::move(serverSocket_)]() {});
 }
 
 folly::Optional<uint16_t> TcpConnectionAcceptor::listeningPort() const {
@@ -122,4 +121,4 @@ folly::Optional<uint16_t> TcpConnectionAcceptor::listeningPort() const {
   return serverSocket_->getAddress().getPort();
 }
 
-}
+} // namespace rsocket
