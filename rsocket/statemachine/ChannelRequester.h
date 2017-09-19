@@ -12,7 +12,7 @@ namespace rsocket {
 /// Implementation of stream stateMachine that represents a Channel requester.
 class ChannelRequester : public ConsumerBase,
                          public PublisherBase,
-                         public yarpl::flowable::LegacySubscriber<Payload> {
+                         public yarpl::flowable::InternalSubscriber<Payload> {
  public:
   ChannelRequester(std::shared_ptr<StreamsWriter> writer, StreamId streamId)
       : ConsumerBase(std::move(writer), streamId),

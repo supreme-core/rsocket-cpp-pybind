@@ -67,7 +67,7 @@ size_t FramedReader::readFrameLength() const {
 }
 
 void FramedReader::onSubscribe(yarpl::Reference<Subscription> subscription) {
-  DuplexConnection::LegacySubscriber::onSubscribe(subscription);
+  DuplexConnection::InternalSubscriber::onSubscribe(subscription);
   subscription->request(std::numeric_limits<int64_t>::max());
 }
 
@@ -131,7 +131,7 @@ void FramedReader::parseFrames() {
 
 void FramedReader::onComplete() {
   payloadQueue_.move();
-  DuplexConnection::LegacySubscriber::onComplete();
+  DuplexConnection::InternalSubscriber::onComplete();
   if (auto subscriber = std::move(inner_)) {
     // After this call the instance can be destroyed!
     subscriber->onComplete();
@@ -140,7 +140,7 @@ void FramedReader::onComplete() {
 
 void FramedReader::onError(folly::exception_wrapper ex) {
   payloadQueue_.move();
-  DuplexConnection::LegacySubscriber::onError({});
+  DuplexConnection::InternalSubscriber::onError({});
   if (auto subscriber = std::move(inner_)) {
     // After this call the instance can be destroyed!
     subscriber->onError(std::move(ex));
@@ -205,8 +205,8 @@ void FramedReader::error(std::string errorMsg) {
   VLOG(1) << "error: " << errorMsg;
 
   payloadQueue_.move();
-  if (DuplexConnection::LegacySubscriber::subscription()) {
-    DuplexConnection::LegacySubscriber::subscription()->cancel();
+  if (DuplexConnection::InternalSubscriber::subscription()) {
+    DuplexConnection::InternalSubscriber::subscription()->cancel();
   }
   if (auto subscriber = std::move(inner_)) {
     // After this call the instance can be destroyed!

@@ -11,8 +11,8 @@ namespace rsocket {
 
 class MockDuplexConnection : public DuplexConnection {
 public:
- using LegacySubscriber =
-     yarpl::flowable::LegacySubscriber<std::unique_ptr<folly::IOBuf>>;
+ using InternalSubscriber =
+     yarpl::flowable::InternalSubscriber<std::unique_ptr<folly::IOBuf>>;
  using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
 
  MockDuplexConnection() {

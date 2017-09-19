@@ -16,7 +16,7 @@
  */
 namespace rsocket_example {
 class ExampleSubscriber
-    : public yarpl::flowable::LegacySubscriber<rsocket::Payload> {
+    : public yarpl::flowable::InternalSubscriber<rsocket::Payload> {
  public:
   ~ExampleSubscriber();
   ExampleSubscriber(int initialRequest, int numToTake);

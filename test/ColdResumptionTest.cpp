@@ -21,13 +21,13 @@ using namespace yarpl::flowable;
 typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
 
 namespace {
-class HelloSubscriber : public LegacySubscriber<Payload> {
+class HelloSubscriber : public InternalSubscriber<Payload> {
  public:
   explicit HelloSubscriber(size_t latestValue) : latestValue_(latestValue) {}
 
   void request(int n) {
     subscribedBaton_.wait();
-    LegacySubscriber<Payload>::subscription()->request(n);
+    InternalSubscriber<Payload>::subscription()->request(n);
   }
 
   void awaitLatestValue(size_t value) {
@@ -51,7 +51,7 @@ class HelloSubscriber : public LegacySubscriber<Payload> {
 
  protected:
   void onSubscribe(Reference<Subscription> subscription) noexcept override {
-    LegacySubscriber<rsocket::Payload>::onSubscribe(subscription);
+    InternalSubscriber<rsocket::Payload>::onSubscribe(subscription);
     subscribedBaton_.post();
   }
 

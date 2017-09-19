@@ -22,7 +22,7 @@ DEFINE_int32(port, 9898, "host:port to connect to");
 namespace {
 
 class HelloSubscriber : public virtual yarpl::Refcounted,
-                        public yarpl::flowable::LegacySubscriber<Payload> {
+                        public yarpl::flowable::InternalSubscriber<Payload> {
  public:
   void request(int n) {
     LOG(INFO) << "... requesting " << n;

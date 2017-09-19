@@ -23,13 +23,13 @@ typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
 namespace {
 
 class HelloSubscriber : public virtual Refcounted,
-                        public LegacySubscriber<Payload> {
+                        public InternalSubscriber<Payload> {
  public:
   void request(int n) {
-    while (!LegacySubscriber<Payload>::subscription()) {
+    while (!InternalSubscriber<Payload>::subscription()) {
       std::this_thread::yield();
     }
-    LegacySubscriber<Payload>::subscription()->request(n);
+    InternalSubscriber<Payload>::subscription()->request(n);
   }
 
   int rcvdCount() const {
@@ -38,7 +38,7 @@ class HelloSubscriber : public virtual Refcounted,
 
  protected:
   void onSubscribe(Reference<Subscription> subscription) noexcept override {
-    LegacySubscriber<rsocket::Payload>::onSubscribe(subscription);
+    InternalSubscriber<rsocket::Payload>::onSubscribe(subscription);
   }
 
   void onNext(Payload) noexcept override {
