@@ -56,11 +56,20 @@ class InternalSubscriber : public Subscriber<T> {
 
 #define SUBSCRIBER_KEEP_SELF() \
   Reference<SafeSubscriber> self; \
-  if (!keeps_reference_to_this) { \
+  if (keep_reference_to_this) { \
     self = this->ref_from_this(this); \
   }
 
-template <typename T>
+// T : Type of Flowable that this Subscriber operates on
+//
+// keep_reference_to_this : SafeSubscriber will keep a live reference to
+// itself on the stack while in a signaling or requesting method, in case
+// the derived class causes all other references to itself to be dropped.
+//
+// Classes that ensure that at least one reference will stay live can
+// use `keep_reference_to_this = false` as an optimization to
+// prevent an atomic inc/dec pair
+template <typename T, bool keep_reference_to_this = true>
 class SafeSubscriber : public Subscriber<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
@@ -113,6 +122,7 @@ class SafeSubscriber : public Subscriber<T> {
 
   void request(int64_t n) {
     if(auto sub = subscription_.load()) {
+      SUBSCRIBER_KEEP_SELF()
       sub->request(n);
     }
   }
@@ -129,6 +139,5 @@ class SafeSubscriber : public Subscriber<T> {
 };
 
 #undef SUBSCRIBER_KEEP_SELF
-
 }
 } /* namespace yarpl::flowable */
