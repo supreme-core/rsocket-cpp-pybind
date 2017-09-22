@@ -135,22 +135,22 @@ class MockSubscription : public flowable::Subscription {
   MOCK_METHOD0(cancel_, void());
 
   void request(int64_t n) override {
-    if (!requested_) {
-      requested_ = true;
-      EXPECT_CALL(checkpoint_, Call()).Times(1);
-    }
-
     request_(n);
   }
 
   void cancel() override {
     cancel_();
-    checkpoint_.Call();
   }
-
- protected:
-  bool requested_{false};
-  testing::MockFunction<void()> checkpoint_;
 };
 }
+
+template <typename T>
+class MockSafeSubscriber : public flowable::SafeSubscriber<T> {
+public:
+  MOCK_METHOD0_T(onSubscribeImpl, void());
+  MOCK_METHOD1_T(onNextImpl, void(T));
+  MOCK_METHOD0_T(onCompleteImpl, void());
+  MOCK_METHOD1_T(onErrorImpl, void(folly::exception_wrapper));
+};
+
 } // namespace yarpl::mocks

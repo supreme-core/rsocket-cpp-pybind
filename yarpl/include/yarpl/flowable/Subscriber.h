@@ -55,12 +55,6 @@ class InternalSubscriber : public Subscriber<T> {
   Reference<Subscription> subscription_;
 };
 
-#define SUBSCRIBER_KEEP_SELF() \
-  Reference<SafeSubscriber> self; \
-  if (keep_reference_to_this) { \
-    self = this->ref_from_this(this); \
-  }
-
 // T : Type of Flowable that this Subscriber operates on
 //
 // keep_reference_to_this : SafeSubscriber will keep a live reference to
@@ -70,7 +64,7 @@ class InternalSubscriber : public Subscriber<T> {
 // Classes that ensure that at least one reference will stay live can
 // use `keep_reference_to_this = false` as an optimization to
 // prevent an atomic inc/dec pair
-template <typename T, bool keep_reference_to_this = true>
+template <typename T>
 class SafeSubscriber : public Subscriber<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
@@ -79,7 +73,6 @@ class SafeSubscriber : public Subscriber<T> {
     DCHECK(subscription);
     CHECK(!subscription_);
 
-    SUBSCRIBER_KEEP_SELF()
     subscription_ = std::move(subscription);
     onSubscribeImpl();
   }
@@ -89,7 +82,6 @@ class SafeSubscriber : public Subscriber<T> {
     DCHECK(subscription_) << "Calling onComplete() without a subscription";
 
     if(auto sub = subscription_.exchange(nullptr)) {
-      SUBSCRIBER_KEEP_SELF()
       onCompleteImpl();
       onTerminateImpl();
     }
@@ -100,7 +92,6 @@ class SafeSubscriber : public Subscriber<T> {
     DCHECK(subscription_) << "Calling onError() without a subscription";
 
     if(auto sub = subscription_.exchange(nullptr)) {
-      SUBSCRIBER_KEEP_SELF()
       onErrorImpl(std::move(e));
       onTerminateImpl();
     }
@@ -108,14 +99,12 @@ class SafeSubscriber : public Subscriber<T> {
 
   void onNext(T t) final override {
     if(auto sub = subscription_.load()) {
-      SUBSCRIBER_KEEP_SELF()
       onNextImpl(std::move(t));
     }
   }
 
   void cancel() {
     if(auto sub = subscription_.exchange(nullptr)) {
-      SUBSCRIBER_KEEP_SELF()
       sub->cancel();
       onTerminateImpl();
     }
@@ -123,7 +112,6 @@ class SafeSubscriber : public Subscriber<T> {
 
   void request(int64_t n) {
     if(auto sub = subscription_.load()) {
-      SUBSCRIBER_KEEP_SELF()
       sub->request(n);
     }
   }
@@ -136,9 +124,9 @@ class SafeSubscriber : public Subscriber<T> {
   virtual void onTerminateImpl() {}
 
  private:
+  // keeps a reference alive to the subscription
   AtomicReference<Subscription> subscription_;
 };
 
-#undef SUBSCRIBER_KEEP_SELF
 }
 } /* namespace yarpl::flowable */
