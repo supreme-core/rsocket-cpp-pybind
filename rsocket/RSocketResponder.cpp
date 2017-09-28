@@ -63,21 +63,19 @@ RSocketResponder::handleRequestChannelCore(
 
     void onComplete() noexcept override {
       DCHECK(inner_);
-      inner_->onComplete();
-
-      inner_.reset();
-      subscription_.reset();
+      if (auto inner = std::move(inner_)) {
+        inner->onComplete();
+        subscription_.reset();
+      } else {
+        completed_ = true;
+      }
     }
 
     void onError(folly::exception_wrapper ex) noexcept override {
       VLOG(3) << "handleRequestChannelCore::onError: " << ex.what();
-      std::lock_guard<std::mutex> guard(errorMutex_);
-      if (inner_) {
-        inner_->onError(std::move(ex));
-
-        inner_.reset();
+      if (auto inner = std::move(inner_)) {
+        inner->onError(std::move(ex));
         subscription_.reset();
-        error_.reset();
       } else {
         error_ = std::move(ex);
       }
@@ -87,25 +85,25 @@ RSocketResponder::handleRequestChannelCore(
         yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner) {
       CHECK(!inner_); // only one call to subscribe is supported
       CHECK(inner);
-      std::lock_guard<std::mutex> guard(errorMutex_);
 
       inner_ = std::move(inner);
       if (subscription_) {
         inner_->onSubscribe(subscription_);
-      }
-
-      // it's possible to get an error before subscribe happens, delay sending
-      // it but send it when this class gets subscribed
-      if (error_) {
-        onError(error_);
+        // it's possible to get an error or completion before subscribe happens,
+        // delay sending it but send it when this class gets subscribed
+        if (completed_) {
+          onComplete();
+        } else if (error_) {
+          onError(std::move(error_));
+        }
       }
     }
 
    private:
     yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner_;
     yarpl::Reference<yarpl::flowable::Subscription> subscription_;
-    std::mutex errorMutex_;
     folly::exception_wrapper error_;
+    bool completed_{false};
   };
 
   auto eagerSubscriber = yarpl::make_ref<EagerSubscriberBridge>();
