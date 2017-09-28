@@ -43,7 +43,7 @@ RSocketResponder::handleRequestChannelCore(
     Payload request,
     StreamId streamId,
     const yarpl::Reference<yarpl::flowable::Subscriber<Payload>>&
-    response) noexcept {
+        response) noexcept {
   class EagerSubscriberBridge
       : public yarpl::flowable::Subscriber<rsocket::Payload> {
    public:
@@ -63,42 +63,56 @@ RSocketResponder::handleRequestChannelCore(
 
     void onComplete() noexcept override {
       DCHECK(inner_);
-      inner_->onComplete();
-
-      inner_.reset();
-      subscription_.reset();
+      if (auto inner = std::move(inner_)) {
+        inner->onComplete();
+        subscription_.reset();
+      } else {
+        completed_ = true;
+      }
     }
 
     void onError(folly::exception_wrapper ex) noexcept override {
-      DCHECK(inner_);
-      inner_->onError(std::move(ex));
-
-      inner_.reset();
-      subscription_.reset();
+      VLOG(3) << "handleRequestChannelCore::onError: " << ex.what();
+      if (auto inner = std::move(inner_)) {
+        inner->onError(std::move(ex));
+        subscription_.reset();
+      } else {
+        error_ = std::move(ex);
+      }
     }
 
     void subscribe(
         yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner) {
       CHECK(!inner_); // only one call to subscribe is supported
       CHECK(inner);
+
       inner_ = std::move(inner);
       if (subscription_) {
         inner_->onSubscribe(subscription_);
+        // it's possible to get an error or completion before subscribe happens,
+        // delay sending it but send it when this class gets subscribed
+        if (completed_) {
+          onComplete();
+        } else if (error_) {
+          onError(std::move(error_));
+        }
       }
     }
 
    private:
     yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> inner_;
     yarpl::Reference<yarpl::flowable::Subscription> subscription_;
+    folly::exception_wrapper error_;
+    bool completed_{false};
   };
 
   auto eagerSubscriber = yarpl::make_ref<EagerSubscriberBridge>();
   auto flowable = handleRequestChannel(
       std::move(request),
-      yarpl::flowable::Flowables::fromPublisher<Payload>([eagerSubscriber](
-          yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber) {
-        eagerSubscriber->subscribe(subscriber);
-      }),
+      yarpl::flowable::Flowables::fromPublisher<Payload>(
+          [eagerSubscriber](
+              yarpl::Reference<yarpl::flowable::Subscriber<Payload>>
+                  subscriber) { eagerSubscriber->subscribe(subscriber); }),
       std::move(streamId));
   // bridge from the existing eager RequestHandler and old Subscriber type
   // to the lazy Flowable and new Subscriber type
@@ -111,7 +125,7 @@ void RSocketResponder::handleRequestStreamCore(
     Payload request,
     StreamId streamId,
     const yarpl::Reference<yarpl::flowable::Subscriber<Payload>>&
-    response) noexcept {
+        response) noexcept {
   auto flowable = handleRequestStream(std::move(request), std::move(streamId));
   flowable->subscribe(std::move(response));
 }
@@ -121,8 +135,8 @@ void RSocketResponder::handleRequestResponseCore(
     Payload request,
     StreamId streamId,
     const yarpl::Reference<yarpl::single::SingleObserver<Payload>>&
-    responseObserver) noexcept {
+        responseObserver) noexcept {
   auto single = handleRequestResponse(std::move(request), streamId);
   single->subscribe(std::move(responseObserver));
 }
-}
+} // namespace rsocket
