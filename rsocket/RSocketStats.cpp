@@ -34,6 +34,8 @@ class NoopStats : public RSocketStats {
   void resumeBufferChanged(int, int) override {}
   void streamBufferChanged(int64_t, int64_t) override {}
 
+  void resumeFailedNoState() override {}
+
   void keepaliveSent() override {}
   void keepaliveReceived() override {}
 

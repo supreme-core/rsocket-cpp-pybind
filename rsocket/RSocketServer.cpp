@@ -162,6 +162,7 @@ void RSocketServer::onRSocketResume(
     ResumeParameters resumeParams) {
   auto result = serviceHandler->onResume(resumeParams.token);
   if (result.hasError()) {
+    stats_->resumeFailedNoState();
     VLOG(3) << "Terminating RESUME attempt from client.  No ServerState found";
     throw result.error();
   }
