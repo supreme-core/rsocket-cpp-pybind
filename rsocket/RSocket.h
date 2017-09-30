@@ -64,7 +64,8 @@ class RSocket {
 
   // A convenience function to create RSocketServer
   static std::unique_ptr<RSocketServer> createServer(
-      std::unique_ptr<ConnectionAcceptor>);
+      std::unique_ptr<ConnectionAcceptor>,
+      std::shared_ptr<RSocketStats> stats = RSocketStats::noop());
 
   RSocket() = delete;
 

@@ -113,7 +113,9 @@ std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
 }
 
 std::unique_ptr<RSocketServer> RSocket::createServer(
-    std::unique_ptr<ConnectionAcceptor> connectionAcceptor) {
-  return std::make_unique<RSocketServer>(std::move(connectionAcceptor));
+    std::unique_ptr<ConnectionAcceptor> connectionAcceptor,
+    std::shared_ptr<RSocketStats> stats) {
+  return std::make_unique<RSocketServer>(
+      std::move(connectionAcceptor), std::move(stats));
 }
-}
+} // namespace rsocket

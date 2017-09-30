@@ -14,6 +14,8 @@ class NoopStats : public RSocketStats {
   void socketDisconnected() override {}
   void socketClosed(StreamCompletionSignal) override {}
 
+  void serverConnectionAccepted() override {}
+
   void duplexConnectionCreated(const std::string&, rsocket::DuplexConnection*)
       override {}
 
