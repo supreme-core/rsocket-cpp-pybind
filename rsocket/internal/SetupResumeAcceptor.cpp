@@ -44,7 +44,7 @@ void closeWithError(
 
 /// Subscriber that owns a connection, sets itself as that connection's input,
 /// and reads out a single frame before cancelling.
-class OneFrameSubscriber : public DuplexConnection::InternalSubscriber {
+class OneFrameSubscriber : public DuplexConnection::DuplexSubscriber {
  public:
   OneFrameSubscriber(
       SetupResumeAcceptor& acceptor,
@@ -65,7 +65,7 @@ class OneFrameSubscriber : public DuplexConnection::InternalSubscriber {
   }
 
   void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription> sub) override {
-    DuplexConnection::InternalSubscriber::onSubscribe(sub);
+    DuplexConnection::DuplexSubscriber::onSubscribe(sub);
     sub->request(std::numeric_limits<int32_t>::max());
   }
 
@@ -75,7 +75,7 @@ class OneFrameSubscriber : public DuplexConnection::InternalSubscriber {
     auto self = ref_from_this(this);
     acceptor_.remove(self);
 
-    if (auto sub = DuplexConnection::InternalSubscriber::subscription()) {
+    if (auto sub = DuplexConnection::DuplexSubscriber::subscription()) {
       sub->cancel();
     }
 
@@ -88,13 +88,13 @@ class OneFrameSubscriber : public DuplexConnection::InternalSubscriber {
 
   void onComplete() override {
     auto self = ref_from_this(this);
-    DuplexConnection::InternalSubscriber::onComplete();
+    DuplexConnection::DuplexSubscriber::onComplete();
     acceptor_.remove(self);
   }
 
   void onError(folly::exception_wrapper ew) override {
     auto self = ref_from_this(this);
-    DuplexConnection::InternalSubscriber::onError(std::move(ew));
+    DuplexConnection::DuplexSubscriber::onError(std::move(ew));
     acceptor_.remove(self);
   }
 

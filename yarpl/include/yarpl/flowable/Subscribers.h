@@ -64,38 +64,36 @@ class Subscribers {
 
  private:
   template <typename T, typename Next>
-  class Base : public InternalSubscriber<T> {
+  class Base : public BaseSubscriber<T> {
    public:
     Base(Next next, int64_t batch)
         : next_(std::move(next)), batch_(batch), pending_(0) {}
 
-    void onSubscribe(Reference<Subscription> subscription) override {
-      InternalSubscriber<T>::onSubscribe(subscription);
+    void onSubscribeImpl() override final {
       pending_ += batch_;
-      subscription->request(batch_);
+      this->request(batch_);
     }
 
-    void onNext(T value) override {
-      if (!InternalSubscriber<T>::subscription()) {
-        return;
-      }
+    void onNextImpl(T value) override final {
       try {
         next_(std::move(value));
       } catch (const std::exception& exn) {
-        InternalSubscriber<T>::subscription()->cancel();
-        onError(folly::exception_wrapper{std::current_exception(), exn});
+        this->cancel();
+        auto ew = folly::exception_wrapper{std::current_exception(), exn};
+        LOG(ERROR) << "'next' method should not throw: " << ew.what();
+        onErrorImpl(ew);
         return;
       }
 
       if (--pending_ < batch_ / 2) {
         const auto delta = batch_ - pending_;
         pending_ += delta;
-        InternalSubscriber<T>::subscription()->request(delta);
+        this->request(delta);
       }
     }
 
-   protected:
-    using InternalSubscriber<T>::onError;
+    void onCompleteImpl() override {}
+    void onErrorImpl(folly::exception_wrapper) override {}
 
    private:
     Next next_;
@@ -109,8 +107,7 @@ class Subscribers {
     WithError(Next next, Error error, int64_t batch)
         : Base<T, Next>(std::move(next), batch), error_(std::move(error)) {}
 
-    void onError(folly::exception_wrapper error) override {
-      InternalSubscriber<T>::onError(error);
+    void onErrorImpl(folly::exception_wrapper error) override final {
       try {
         error_(std::move(error));
       } catch (const std::exception& exn) {
@@ -137,18 +134,15 @@ class Subscribers {
         : WithError<T, Next, Error>(std::move(next), std::move(error), batch),
           complete_(std::move(complete)) {}
 
-    void onComplete() {
-      if (InternalSubscriber<T>::subscription()) { // already errored?
-        InternalSubscriber<T>::onComplete();
-        try {
-          complete_();
-        } catch (const std::exception& exn) {
-          auto ew = folly::exception_wrapper{std::current_exception(), exn};
-          LOG(ERROR) << "'complete' method should not throw: " << ew.what();
+    void onCompleteImpl() override final {
+      try {
+        complete_();
+      } catch (const std::exception& exn) {
+        auto ew = folly::exception_wrapper{std::current_exception(), exn};
+        LOG(ERROR) << "'complete' method should not throw: " << ew.what();
 #ifndef NDEBUG
-          throw ew; // Throw the wrapped exception
+        throw ew; // Throw the wrapped exception
 #endif
-        }
       }
     }
 

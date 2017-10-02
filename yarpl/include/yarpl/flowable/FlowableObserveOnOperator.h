@@ -40,7 +40,7 @@ class ObserveOnOperatorSubscription : public yarpl::flowable::Subscription,
 
 template <typename T>
 class ObserveOnOperatorSubscriber
-    : public yarpl::flowable::InternalSubscriber<T> {
+    : public yarpl::flowable::Subscriber<T> {
  public:
   ObserveOnOperatorSubscriber(
       Reference<Subscriber<T>> inner,

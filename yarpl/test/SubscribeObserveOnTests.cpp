@@ -145,36 +145,34 @@ TEST(ObserveSubscribeTests, BothObserveAndSubscribeOn) {
 }
 
 namespace {
-class EarlyCancelSubscriber
-    : public yarpl::flowable::InternalSubscriber<int64_t> {
+class EarlyCancelSubscriber : public yarpl::flowable::BaseSubscriber<int64_t> {
  public:
   EarlyCancelSubscriber(
       folly::EventBase& on_base,
       folly::Baton<>& subscriber_complete)
       : on_base_(on_base), subscriber_complete_(subscriber_complete) {}
 
-  void onSubscribe(Reference<yarpl::flowable::Subscription> s) override {
-    InternalSubscriber::onSubscribe(s);
-    s->request(5);
+  void onSubscribeImpl() override {
+    this->request(5);
   }
 
-  void onNext(int64_t n) override {
+  void onNextImpl(int64_t n) override {
     if (did_cancel_) {
       FAIL();
     }
 
     EXPECT_TRUE(on_base_.isInEventBaseThread());
     EXPECT_EQ(n, 1);
-    subscription()->cancel();
+    this->cancel();
     did_cancel_ = true;
     subscriber_complete_.post();
   }
 
-  void onError(folly::exception_wrapper e) override {
+  void onErrorImpl(folly::exception_wrapper e) override {
     FAIL();
   }
 
-  void onComplete() override {
+  void onCompleteImpl() override {
     FAIL();
   }
 

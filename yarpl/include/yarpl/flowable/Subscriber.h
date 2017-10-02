@@ -21,40 +21,6 @@ class Subscriber : public virtual Refcounted, public yarpl::enable_get_ref {
   virtual void onNext(T) = 0;
 };
 
-// codemod all things that inherit from Subscriber to inherit from
-// InternalSubscriber
-template <typename T>
-class InternalSubscriber : public Subscriber<T> {
- public:
-  // Note: If any of the following methods is overridden in a subclass, the new
-  // methods SHOULD ensure that these are invoked as well.
-  void onSubscribe(Reference<Subscription> subscription) override {
-    DCHECK(subscription);
-    CHECK(!subscription_);
-    subscription_ = std::move(subscription);
-  }
-
-  // No further calls to the subscription after this method is invoked.
-  void onComplete() override {
-    DCHECK(subscription_) << "Calling onComplete() without a subscription";
-    subscription_.reset();
-  }
-
-  // No further calls to the subscription after this method is invoked.
-  void onError(folly::exception_wrapper) override {
-    DCHECK(subscription_) << "Calling onError() without a subscription";
-    subscription_.reset();
-  }
-
- protected:
-  Reference<Subscription> subscription() {
-    return subscription_;
-  }
-
- private:
-  Reference<Subscription> subscription_;
-};
-
 // T : Type of Flowable that this Subscriber operates on
 //
 // keep_reference_to_this : BaseSubscriber will keep a live reference to
@@ -79,8 +45,6 @@ class BaseSubscriber : public Subscriber<T> {
 
   // No further calls to the subscription after this method is invoked.
   void onComplete() final override {
-    DCHECK(subscription_) << "Calling onComplete() without a subscription";
-
     if(auto sub = subscription_.exchange(nullptr)) {
       onCompleteImpl();
       onTerminateImpl();
@@ -89,8 +53,6 @@ class BaseSubscriber : public Subscriber<T> {
 
   // No further calls to the subscription after this method is invoked.
   void onError(folly::exception_wrapper e) final override {
-    DCHECK(subscription_) << "Calling onError() without a subscription";
-
     if(auto sub = subscription_.exchange(nullptr)) {
       onErrorImpl(std::move(e));
       onTerminateImpl();

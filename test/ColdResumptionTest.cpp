@@ -21,13 +21,13 @@ using namespace yarpl::flowable;
 typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
 
 namespace {
-class HelloSubscriber : public InternalSubscriber<Payload> {
+class HelloSubscriber : public BaseSubscriber<Payload> {
  public:
   explicit HelloSubscriber(size_t latestValue) : latestValue_(latestValue) {}
 
-  void request(int n) {
+  void doRequest(int n) {
     subscribedBaton_.wait();
-    InternalSubscriber<Payload>::subscription()->request(n);
+    this->request(n);
   }
 
   void awaitLatestValue(size_t value) {
@@ -50,17 +50,19 @@ class HelloSubscriber : public InternalSubscriber<Payload> {
   }
 
  protected:
-  void onSubscribe(Reference<Subscription> subscription) noexcept override {
-    InternalSubscriber<rsocket::Payload>::onSubscribe(subscription);
+  void onSubscribeImpl() noexcept override {
     subscribedBaton_.post();
   }
 
-  void onNext(Payload p) noexcept override {
+  void onNextImpl(Payload p) noexcept override {
     auto currValue = folly::to<size_t>(p.data->moveToFbString().toStdString());
     EXPECT_EQ(latestValue_, currValue - 1);
     latestValue_ = currValue;
     count_++;
   }
+
+  void onCompleteImpl() override {}
+  void onErrorImpl(folly::exception_wrapper) override {}
 
  private:
   std::atomic<size_t> latestValue_;
@@ -158,7 +160,7 @@ void coldResumer(uint32_t port, uint32_t client_num) {
       firstClient->getRequester()
           ->requestStream(Payload(firstPayload))
           ->subscribe(firstSub);
-      firstSub->request(4);
+      firstSub->doRequest(4);
       // Ensure reception of few frames before resuming.
       while (firstSub->valueCount() < 1) {
         std::this_thread::yield();
@@ -193,8 +195,8 @@ void coldResumer(uint32_t port, uint32_t client_num) {
       secondClient->getRequester()
           ->requestStream(Payload(secondPayload))
           ->subscribe(secondSub);
-      firstSub->request(3);
-      secondSub->request(5);
+      firstSub->doRequest(3);
+      secondSub->doRequest(5);
       // Ensure reception of few frames before resuming.
       while (secondSub->valueCount() < 1) {
         std::this_thread::yield();
@@ -237,9 +239,9 @@ void coldResumer(uint32_t port, uint32_t client_num) {
     thirdClient->getRequester()
         ->requestStream(Payload(thirdPayload))
         ->subscribe(thirdSub);
-    firstSub->request(3);
-    secondSub->request(5);
-    thirdSub->request(5);
+    firstSub->doRequest(3);
+    secondSub->doRequest(5);
+    thirdSub->doRequest(5);
 
     firstSub->awaitLatestValue(10);
     secondSub->awaitLatestValue(10);

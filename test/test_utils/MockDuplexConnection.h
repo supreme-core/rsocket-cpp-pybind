@@ -11,9 +11,7 @@ namespace rsocket {
 
 class MockDuplexConnection : public DuplexConnection {
 public:
- using InternalSubscriber =
-     yarpl::flowable::InternalSubscriber<std::unique_ptr<folly::IOBuf>>;
- using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
+ using Subscriber = DuplexConnection::Subscriber;
 
  MockDuplexConnection() {
    ON_CALL(*this, getOutput_()).WillByDefault(testing::Invoke([] {
