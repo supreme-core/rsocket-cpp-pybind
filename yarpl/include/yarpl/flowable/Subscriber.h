@@ -57,7 +57,7 @@ class InternalSubscriber : public Subscriber<T> {
 
 // T : Type of Flowable that this Subscriber operates on
 //
-// keep_reference_to_this : SafeSubscriber will keep a live reference to
+// keep_reference_to_this : BaseSubscriber will keep a live reference to
 // itself on the stack while in a signaling or requesting method, in case
 // the derived class causes all other references to itself to be dropped.
 //
@@ -65,7 +65,7 @@ class InternalSubscriber : public Subscriber<T> {
 // use `keep_reference_to_this = false` as an optimization to
 // prevent an atomic inc/dec pair
 template <typename T>
-class SafeSubscriber : public Subscriber<T> {
+class BaseSubscriber : public Subscriber<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.

@@ -145,7 +145,7 @@ class MockSubscription : public flowable::Subscription {
 }
 
 template <typename T>
-class MockSafeSubscriber : public flowable::SafeSubscriber<T> {
+class MockBaseSubscriber : public flowable::BaseSubscriber<T> {
 public:
   MOCK_METHOD0_T(onSubscribeImpl, void());
   MOCK_METHOD1_T(onNextImpl, void(T));

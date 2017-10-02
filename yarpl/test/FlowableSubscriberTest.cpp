@@ -12,7 +12,7 @@ namespace {
 
 TEST(FlowableSubscriberTest, TestBasicFunctionality) {
   Sequence subscriber_seq;
-  auto subscriber = yarpl::make_ref<StrictMock<MockSafeSubscriber<int>>>();
+  auto subscriber = yarpl::make_ref<StrictMock<MockBaseSubscriber<int>>>();
 
   EXPECT_CALL(*subscriber, onSubscribeImpl())
     .Times(1)
