@@ -5,7 +5,7 @@
 #include <folly/io/IOBufQueue.h>
 
 #include "rsocket/DuplexConnection.h"
-#include "rsocket/internal/AllowanceSemaphore.h"
+#include "rsocket/internal/Allowance.h"
 #include "rsocket/internal/Common.h"
 #include "yarpl/flowable/Subscription.h"
 
@@ -43,7 +43,7 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
 
   yarpl::Reference<DuplexConnection::Subscriber> inner_;
 
-  AllowanceSemaphore allowance_;
+  Allowance allowance_;
   bool dispatchingFrames_{false};
 
   folly::IOBufQueue payloadQueue_{folly::IOBufQueue::cacheChainLength()};

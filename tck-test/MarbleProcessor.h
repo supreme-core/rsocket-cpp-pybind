@@ -29,7 +29,7 @@ class MarbleProcessor {
   std::map<std::string, std::pair<std::string, std::string>> argMap_;
 
   // Keeps an account of how many messages can be sent.  This could be done
-  // with Semaphores (AllowanceSemaphore)
+  // with Allowance
   std::atomic<size_t> canSend_{0};
 
   size_t index_{0};

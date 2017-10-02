@@ -6,7 +6,7 @@
 #include <cstddef>
 
 #include "rsocket/Payload.h"
-#include "rsocket/internal/AllowanceSemaphore.h"
+#include "rsocket/internal/Allowance.h"
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/RSocketStateMachine.h"
 #include "rsocket/statemachine/StreamStateMachineBase.h"
@@ -28,7 +28,7 @@ class ConsumerBase : public StreamStateMachineBase,
   /// This portion of allowance will not be synced to the remote end, but will
   /// count towards the limit of allowance the remote PublisherBase may use.
   void addImplicitAllowance(size_t n) {
-    allowance_.release(n);
+    allowance_.add(n);
   }
 
   void subscribe(
@@ -63,10 +63,10 @@ class ConsumerBase : public StreamStateMachineBase,
   yarpl::Reference<yarpl::flowable::Subscriber<Payload>> consumingSubscriber_;
 
   /// A total, net allowance (requested less delivered) by this consumer.
-  AllowanceSemaphore allowance_;
+  Allowance allowance_;
   /// An allowance that have yet to be synced to the other end by sending
   /// REQUEST_N frames.
-  AllowanceSemaphore pendingAllowance_;
+  Allowance pendingAllowance_;
 
   enum class State : uint8_t {
     RESPONDING,

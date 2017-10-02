@@ -20,7 +20,7 @@ void PublisherBase::publisherSubscribe(
   DCHECK(!producingSubscription_);
   producingSubscription_ = std::move(subscription);
   if (initialRequestN_) {
-    producingSubscription_->request(initialRequestN_.drain());
+    producingSubscription_->request(initialRequestN_.consumeAll());
   }
 }
 
@@ -49,7 +49,7 @@ void PublisherBase::processRequestN(uint32_t requestN) {
   if (producingSubscription_) {
     producingSubscription_->request(requestN);
   } else {
-    initialRequestN_.release(requestN);
+    initialRequestN_.add(requestN);
   }
 }
 

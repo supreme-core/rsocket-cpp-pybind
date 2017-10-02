@@ -3,7 +3,7 @@
 #pragma once
 
 #include "rsocket/Payload.h"
-#include "rsocket/internal/AllowanceSemaphore.h"
+#include "rsocket/internal/Allowance.h"
 #include "yarpl/flowable/Subscription.h"
 
 namespace rsocket {
@@ -32,7 +32,7 @@ class PublisherBase {
   /// This is responsible for delivering a terminal signal to the
   /// Subscription once the stream ends.
   yarpl::Reference<yarpl::flowable::Subscription> producingSubscription_;
-  AllowanceSemaphore initialRequestN_;
+  Allowance initialRequestN_;
 
   enum class State : uint8_t {
     RESPONDING,

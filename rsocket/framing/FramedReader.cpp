@@ -88,7 +88,7 @@ void FramedReader::parseFrames() {
 
   dispatchingFrames_ = true;
 
-  while (allowance_.canAcquire() && inner_) {
+  while (allowance_.canConsume(1) && inner_) {
     if (!ensureOrAutodetectProtocolVersion()) {
       // At this point we dont have enough bytes on the wire or we errored out.
       break;
@@ -119,7 +119,7 @@ void FramedReader::parseFrames() {
         << "folly::IOBufQueue::split(0) returns a nullptr, can't have that";
     auto nextFrame = payloadQueue_.split(payloadSize);
 
-    CHECK(allowance_.tryAcquire(1));
+    CHECK(allowance_.tryConsume(1));
 
     VLOG(4) << "parsed frame length=" << nextFrame->length() << '\n'
             << hexDump(nextFrame->clone()->moveToFbString());
@@ -148,12 +148,12 @@ void FramedReader::onError(folly::exception_wrapper ex) {
 }
 
 void FramedReader::request(int64_t n) {
-  allowance_.release(n);
+  allowance_.add(n);
   parseFrames();
 }
 
 void FramedReader::cancel() {
-  allowance_.drain();
+  allowance_.consumeAll();
   inner_ = nullptr;
 }
 

@@ -35,8 +35,8 @@ void ConsumerBase::cancelConsumer() {
 }
 
 void ConsumerBase::generateRequest(size_t n) {
-  allowance_.release(n);
-  pendingAllowance_.release(n);
+  allowance_.add(n);
+  pendingAllowance_.add(n);
   sendRequests();
 }
 
@@ -56,14 +56,14 @@ void ConsumerBase::endStream(StreamCompletionSignal signal) {
 }
 
 size_t ConsumerBase::getConsumerAllowance() const {
-  return allowance_.getValue();
+  return allowance_.get();
 }
 
 void ConsumerBase::processPayload(Payload&& payload, bool onNext) {
   if (payload || onNext) {
     // Frames carry application-level payloads are taken into account when
     // figuring out flow control allowance.
-    if (allowance_.tryAcquire()) {
+    if (allowance_.tryConsume(1)) {
       sendRequests();
       consumingSubscriber_->onNext(std::move(payload));
     } else {
@@ -91,7 +91,7 @@ void ConsumerBase::sendRequests() {
   // TODO(stupaq): batch if remote end has some spare allowance
   // TODO(stupaq): limit how much is synced to the other end
   size_t toSync = Frame_REQUEST_N::kMaxRequestN;
-  toSync = pendingAllowance_.drainWithLimit(toSync);
+  toSync = pendingAllowance_.consumeUpTo(toSync);
   if (toSync > 0) {
     writeRequestN(static_cast<uint32_t>(toSync));
   }

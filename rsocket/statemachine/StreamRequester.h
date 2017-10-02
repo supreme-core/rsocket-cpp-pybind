@@ -3,7 +3,7 @@
 #pragma once
 
 #include <iosfwd>
-#include "rsocket/internal/AllowanceSemaphore.h"
+#include "rsocket/internal/Allowance.h"
 #include "rsocket/statemachine/ConsumerBase.h"
 
 namespace folly {
@@ -42,7 +42,7 @@ class StreamRequester : public ConsumerBase {
 
   /// An allowance accumulated before the stream is initialised.
   /// Remaining part of the allowance is forwarded to the ConsumerBase.
-  AllowanceSemaphore initialResponseAllowance_;
+  Allowance initialResponseAllowance_;
 
   /// Initial payload which has to be sent with 1st request.
   Payload initialPayload_;

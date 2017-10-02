@@ -18,8 +18,8 @@ void ChannelRequester::onNext(Payload request) noexcept {
     requested_ = true;
 
     size_t initialN =
-        initialResponseAllowance_.drainWithLimit(Frame_REQUEST_N::kMaxRequestN);
-    size_t remainingN = initialResponseAllowance_.drain();
+        initialResponseAllowance_.consumeUpTo(Frame_REQUEST_N::kMaxRequestN);
+    size_t remainingN = initialResponseAllowance_.consumeAll();
     // Send as much as possible with the initial request.
     CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
     newStream(
@@ -75,7 +75,7 @@ void ChannelRequester::request(int64_t n) noexcept {
     // the unsynchronised allowance, portion of which will be sent out with
     // the initial request frame, and the rest will be dispatched via
     // ConsumerBase:request (ultimately by sending REQUEST_N frames).
-    initialResponseAllowance_.release(n);
+    initialResponseAllowance_.add(n);
     return;
   }
   ConsumerBase::generateRequest(n);

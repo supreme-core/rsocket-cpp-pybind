@@ -38,7 +38,7 @@ class ChannelRequester : public ConsumerBase,
 
   /// An allowance accumulated before the stream is initialised.
   /// Remaining part of the allowance is forwarded to the ConsumerBase.
-  AllowanceSemaphore initialResponseAllowance_;
+  Allowance initialResponseAllowance_;
   bool requested_{false};
 };
 }

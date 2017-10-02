@@ -423,7 +423,7 @@ add_executable(
   test/handlers/HelloServiceHandler.h
   test/handlers/HelloStreamRequestHandler.cpp
   test/handlers/HelloStreamRequestHandler.h
-  test/internal/AllowanceSemaphoreTest.cpp
+  test/internal/AllowanceTest.cpp
   test/internal/ConnectionSetTest.cpp
   test/internal/FollyKeepaliveTimerTest.cpp
   test/internal/SetupResumeAcceptorTest.cpp

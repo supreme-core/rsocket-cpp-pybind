@@ -8,23 +8,23 @@
 
 namespace rsocket {
 
-class AllowanceSemaphore {
+class Allowance {
  public:
   using ValueType = size_t;
 
-  AllowanceSemaphore() = default;
+  Allowance() = default;
 
-  explicit AllowanceSemaphore(ValueType initialValue) : value_(initialValue) {}
+  explicit Allowance(ValueType initialValue) : value_(initialValue) {}
 
-  bool tryAcquire(ValueType n = 1) {
-    if (!canAcquire(n)) {
+  bool tryConsume(ValueType n) {
+    if (!canConsume(n)) {
       return false;
     }
     value_ -= n;
     return true;
   }
 
-  ValueType release(ValueType n) {
+  ValueType add(ValueType n) {
     auto old_value = value_;
     value_ += n;
     if (old_value > value_) {
@@ -33,15 +33,15 @@ class AllowanceSemaphore {
     return old_value;
   }
 
-  bool canAcquire(ValueType n = 1) const {
+  bool canConsume(ValueType n) const {
     return value_ >= n;
   }
 
-  ValueType drain() {
-    return drainWithLimit(max());
+  ValueType consumeAll() {
+    return consumeUpTo(max());
   }
 
-  ValueType drainWithLimit(ValueType limit) {
+  ValueType consumeUpTo(ValueType limit) {
     if (limit > value_) {
       limit = value_;
     }
@@ -53,7 +53,7 @@ class AllowanceSemaphore {
     return value_;
   }
 
-  ValueType getValue() const {
+  ValueType get() const {
     return value_;
   }
 
