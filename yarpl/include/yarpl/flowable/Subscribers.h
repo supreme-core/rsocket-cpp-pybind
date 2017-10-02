@@ -76,13 +76,26 @@ class Subscribers {
     }
 
     void onNext(T value) override {
-      next_(std::move(value));
+      if (!Subscriber<T>::subscription()) {
+        return;
+      }
+      try {
+        next_(std::move(value));
+      } catch (const std::exception& exn) {
+        Subscriber<T>::subscription()->cancel();
+        onError(folly::exception_wrapper{std::current_exception(), exn});
+        return;
+      }
+
       if (--pending_ < batch_ / 2) {
         const auto delta = batch_ - pending_;
         pending_ += delta;
         Subscriber<T>::subscription()->request(delta);
       }
     }
+
+   protected:
+    using Subscriber<T>::onError;
 
    private:
     Next next_;
@@ -98,7 +111,15 @@ class Subscribers {
 
     void onError(folly::exception_wrapper error) override {
       Subscriber<T>::onError(error);
-      error_(std::move(error));
+      try {
+        error_(std::move(error));
+      } catch (const std::exception& exn) {
+        auto ew = folly::exception_wrapper{std::current_exception(), exn};
+        LOG(ERROR) << "'error' method should not throw: " << ew.what();
+#ifndef NDEBUG
+        throw ew; // Throw the wrapped exception
+#endif
+      }
     }
 
    private:
@@ -113,15 +134,22 @@ class Subscribers {
         Error error,
         Complete complete,
         int64_t batch)
-        : WithError<T, Next, Error>(
-              std::move(next),
-              std::move(error),
-              batch),
+        : WithError<T, Next, Error>(std::move(next), std::move(error), batch),
           complete_(std::move(complete)) {}
 
     void onComplete() {
-      Subscriber<T>::onComplete();
-      complete_();
+      if (Subscriber<T>::subscription()) { // already errored?
+        Subscriber<T>::onComplete();
+        try {
+          complete_();
+        } catch (const std::exception& exn) {
+          auto ew = folly::exception_wrapper{std::current_exception(), exn};
+          LOG(ERROR) << "'complete' method should not throw: " << ew.what();
+#ifndef NDEBUG
+          throw ew; // Throw the wrapped exception
+#endif
+        }
+      }
     }
 
    private:
@@ -131,5 +159,5 @@ class Subscribers {
   Subscribers() = delete;
 };
 
-} // flowable
-} // yarpl
+} // namespace flowable
+} // namespace yarpl
