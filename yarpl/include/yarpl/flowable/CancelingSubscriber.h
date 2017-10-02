@@ -13,15 +13,20 @@ namespace flowable {
  * A Subscriber that always cancels the subscription passed to it.
  */
 template <typename T>
-class CancelingSubscriber final : public InternalSubscriber<T> {
+class CancelingSubscriber final : public BaseSubscriber<T> {
  public:
-  void onSubscribe(
-      yarpl::Reference<yarpl::flowable::Subscription> sub) override {
-    sub->cancel();
+  void onSubscribeImpl() override {
+    this->cancel();
   }
 
-  void onNext(T) override {
+  void onNextImpl(T) override {
     throw std::logic_error{"CancelingSubscriber::onNext() can never be called"};
+  }
+  void onCompleteImpl() override {
+    throw std::logic_error{"CancelingSubscriber::onComplete() can never be called"};
+  }
+  void onErrorImpl(folly::exception_wrapper) override {
+    throw std::logic_error{"CancelingSubscriber::onError() can never be called"};
   }
 };
 }

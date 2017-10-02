@@ -13,7 +13,7 @@ namespace rsocket {
 /// Implementation of stream stateMachine that represents a Channel responder.
 class ChannelResponder : public ConsumerBase,
                          public PublisherBase,
-                         public yarpl::flowable::InternalSubscriber<Payload> {
+                         public yarpl::flowable::Subscriber<Payload> {
  public:
   ChannelResponder(
       std::shared_ptr<StreamsWriter> writer,

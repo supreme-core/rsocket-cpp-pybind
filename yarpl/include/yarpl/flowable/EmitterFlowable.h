@@ -31,7 +31,7 @@ class EmiterBase : public virtual Refcounted {
  * of a request(n) call.
  */
 template <typename T>
-class EmiterSubscription : public Subscription, public InternalSubscriber<T> {
+class EmiterSubscription : public Subscription, public Subscriber<T> {
   constexpr static auto kCanceled = credits::kCanceled;
   constexpr static auto kNoFlowControl = credits::kNoFlowControl;
 

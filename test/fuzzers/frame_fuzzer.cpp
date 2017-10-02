@@ -30,11 +30,12 @@ struct FuzzerConnectionAcceptor : rsocket::ConnectionAcceptor {
 
 struct FuzzerDuplexConnection : rsocket::DuplexConnection {
   using Subscriber = rsocket::DuplexConnection::Subscriber;
+  using DuplexSubscriber = rsocket::DuplexConnection::DuplexSubscriber;
 
-  struct SinkSubscriber : InternalSubscriber {
+  struct SinkSubscriber : DuplexSubscriber {
     std::vector<std::unique_ptr<folly::IOBuf>> sent_buffers;
 
-    void onNext(std::unique_ptr<folly::IOBuf> buf) {
+    void onNext(std::unique_ptr<folly::IOBuf> buf) override {
       VLOG(1) << "SinkSubscriber::onNext(\""
               << folly::humanify(buf->cloneAsValue().moveToFbString()) << "\")"
               << std::endl;

@@ -20,27 +20,24 @@ namespace {
  * Used in place of TestSubscriber where we have move-only types.
  */
 template <typename T>
-class CollectingSubscriber : public InternalSubscriber<T> {
+class CollectingSubscriber : public BaseSubscriber<T> {
  public:
   explicit CollectingSubscriber(int64_t requestCount = 100)
       : requestCount_(requestCount) {}
 
-  void onSubscribe(Reference<Subscription> subscription) override {
-    InternalSubscriber<T>::onSubscribe(subscription);
-    subscription->request(requestCount_);
+  void onSubscribeImpl() override {
+    this->request(requestCount_);
   }
 
-  void onNext(T next) override {
+  void onNextImpl(T next) override {
     values_.push_back(std::move(next));
   }
 
-  void onComplete() override {
-    InternalSubscriber<T>::onComplete();
+  void onCompleteImpl() override {
     complete_ = true;
   }
 
-  void onError(folly::exception_wrapper ex) override {
-    InternalSubscriber<T>::onError(ex);
+  void onErrorImpl(folly::exception_wrapper ex) override {
     error_ = true;
     errorMsg_ = ex.get_exception()->what();
   }
@@ -62,7 +59,7 @@ class CollectingSubscriber : public InternalSubscriber<T> {
   }
 
   void cancelSubscription() {
-    InternalSubscriber<T>::subscription()->cancel();
+    this->cancel();
   }
 
  private:
@@ -414,27 +411,25 @@ TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   EXPECT_EQ(std::size_t{1}, subscriber->values().size());
 }
 
-class RangeCheckingSubscriber : public InternalSubscriber<int32_t> {
+class RangeCheckingSubscriber : public BaseSubscriber<int32_t> {
  public:
   explicit RangeCheckingSubscriber(int32_t total, folly::Baton<>& b)
       : total_(total), onComplete_(b) {}
 
-  void onSubscribe(Reference<Subscription> subscription) override {
-    InternalSubscriber<int32_t>::onSubscribe(subscription);
-    subscription->request(total_);
+  void onSubscribeImpl() override {
+    this->request(total_);
   }
 
-  void onNext(int32_t val) override {
+  void onNextImpl(int32_t val) override {
     EXPECT_EQ(val, current_);
     current_++;
   }
 
-  void onError(folly::exception_wrapper) override {
+  void onErrorImpl(folly::exception_wrapper) override {
     FAIL() << "shouldn't call onError";
   }
 
-  void onComplete() override {
-    InternalSubscriber<int32_t>::onComplete();
+  void onCompleteImpl() override {
     EXPECT_EQ(total_, current_);
     onComplete_.post();
   }
@@ -473,7 +468,7 @@ TEST(FlowableTest, FlowableFromDifferentThreads) {
 }
 } // namespace
 
-class ErrorRangeCheckingSubscriber : public InternalSubscriber<int32_t> {
+class ErrorRangeCheckingSubscriber : public BaseSubscriber<int32_t> {
  public:
   explicit ErrorRangeCheckingSubscriber(
       int32_t expect,
@@ -485,17 +480,16 @@ class ErrorRangeCheckingSubscriber : public InternalSubscriber<int32_t> {
         onError_(b),
         expectedErr_(expected_err) {}
 
-  void onSubscribe(Reference<Subscription> subscription) override {
-    InternalSubscriber<int32_t>::onSubscribe(subscription);
-    subscription->request(request_);
+  void onSubscribeImpl() override {
+    this->request(request_);
   }
 
-  void onNext(int32_t val) override {
+  void onNextImpl(int32_t val) override {
     EXPECT_EQ(val, current_);
     current_++;
   }
 
-  void onError(folly::exception_wrapper err) override {
+  void onErrorImpl(folly::exception_wrapper err) override {
     EXPECT_EQ(expect_, current_);
     EXPECT_TRUE(err);
     EXPECT_EQ(
@@ -503,8 +497,7 @@ class ErrorRangeCheckingSubscriber : public InternalSubscriber<int32_t> {
     onError_.post();
   }
 
-  void onComplete() override {
-    InternalSubscriber<int32_t>::onComplete();
+  void onCompleteImpl() override {
     FAIL() << "shouldn't ever onComplete";
   }
 
@@ -602,6 +595,22 @@ TEST(FlowableTest, SubscribeMultipleTimes) {
   EXPECT_EQ(results[4], std::vector<int64_t>({1, 2, 3, 4, 5}));
 }
 
+/* following test should probably behave like:
+ *
+TEST(FlowableTest, ConsumerThrows_OnNext) {
+  auto range = Flowables::range(1, 10);
+
+  EXPECT_THROWS({
+    range->subscribe(
+        // onNext
+        [](auto) { throw std::runtime_error("throw at consumption"); },
+        // onError
+        [](auto) { FAIL(); },
+        // onComplete
+        []() { FAIL(); });
+  });
+}
+*/
 TEST(FlowableTest, ConsumerThrows_OnNext) {
   bool onErrorIsCalled{false};
 

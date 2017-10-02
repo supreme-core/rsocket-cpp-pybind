@@ -11,14 +11,17 @@
 using yarpl::Refcounted;
 using yarpl::Reference;
 using yarpl::AtomicReference;
-using yarpl::flowable::InternalSubscriber;
 using yarpl::flowable::Subscriber;
+using yarpl::flowable::BaseSubscriber;
 
 namespace {
 
 template <class T>
-class MySubscriber : public InternalSubscriber<T> {
-  void onNext(T) override {}
+class MySubscriber : public BaseSubscriber<T> {
+  void onSubscribeImpl() override {}
+  void onNextImpl(T) override {}
+  void onCompleteImpl() override {}
+  void onErrorImpl(folly::exception_wrapper) override {}
 };
 }
 

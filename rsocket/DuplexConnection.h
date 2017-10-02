@@ -12,6 +12,31 @@ class IOBuf;
 
 namespace rsocket {
 
+using yarpl::Reference;
+
+class DuplexSubscriber :
+  public yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>
+{
+public:
+  void onSubscribe(Reference<yarpl::flowable::Subscription> sub) override {
+    subscription_ = sub;
+  }
+  void onComplete() override {
+    subscription_.reset();
+  }
+  void onError(folly::exception_wrapper) override {
+    subscription_.reset();
+  }
+
+protected:
+  Reference<yarpl::flowable::Subscription> subscription() {
+    return subscription_;
+  }
+
+private:
+  Reference<yarpl::flowable::Subscription> subscription_;
+};
+
 /// Represents a connection of the underlying protocol, on top of which the
 /// RSocket protocol is layered.  The underlying protocol MUST provide an
 /// ordered, guaranteed, bidirectional transport of frames.  Moreover, frame
@@ -29,9 +54,9 @@ namespace rsocket {
 /// before the connection is destroyed.
 class DuplexConnection {
  public:
-  using InternalSubscriber =
-      yarpl::flowable::InternalSubscriber<std::unique_ptr<folly::IOBuf>>;
-  using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
+  using Subscriber =
+      yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
+  using DuplexSubscriber = rsocket::DuplexSubscriber;
 
   virtual ~DuplexConnection() = default;
 
