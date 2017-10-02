@@ -145,7 +145,8 @@ TEST(ObserveSubscribeTests, BothObserveAndSubscribeOn) {
 }
 
 namespace {
-class EarlyCancelSubscriber : public yarpl::flowable::Subscriber<int64_t> {
+class EarlyCancelSubscriber
+    : public yarpl::flowable::InternalSubscriber<int64_t> {
  public:
   EarlyCancelSubscriber(
       folly::EventBase& on_base,
@@ -153,7 +154,7 @@ class EarlyCancelSubscriber : public yarpl::flowable::Subscriber<int64_t> {
       : on_base_(on_base), subscriber_complete_(subscriber_complete) {}
 
   void onSubscribe(Reference<yarpl::flowable::Subscription> s) override {
-    Subscriber::onSubscribe(s);
+    InternalSubscriber::onSubscribe(s);
     s->request(5);
   }
 

@@ -35,7 +35,7 @@ class MockFlowable : public flowable::Flowable<T> {
 /// For the same reason putting mock instance in a smart pointer is a poor idea.
 /// Can only be instanciated for CopyAssignable E type.
 template <typename T>
-class MockSubscriber : public flowable::Subscriber<T> {
+class MockSubscriber : public flowable::InternalSubscriber<T> {
  public:
   MOCK_METHOD1(
       onSubscribe_,
@@ -135,22 +135,22 @@ class MockSubscription : public flowable::Subscription {
   MOCK_METHOD0(cancel_, void());
 
   void request(int64_t n) override {
-    if (!requested_) {
-      requested_ = true;
-      EXPECT_CALL(checkpoint_, Call()).Times(1);
-    }
-
     request_(n);
   }
 
   void cancel() override {
     cancel_();
-    checkpoint_.Call();
   }
-
- protected:
-  bool requested_{false};
-  testing::MockFunction<void()> checkpoint_;
 };
 }
+
+template <typename T>
+class MockBaseSubscriber : public flowable::BaseSubscriber<T> {
+public:
+  MOCK_METHOD0_T(onSubscribeImpl, void());
+  MOCK_METHOD1_T(onNextImpl, void(T));
+  MOCK_METHOD0_T(onCompleteImpl, void());
+  MOCK_METHOD1_T(onErrorImpl, void(folly::exception_wrapper));
+};
+
 } // namespace yarpl::mocks

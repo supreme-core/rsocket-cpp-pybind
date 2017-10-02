@@ -31,7 +31,7 @@ struct FuzzerConnectionAcceptor : rsocket::ConnectionAcceptor {
 struct FuzzerDuplexConnection : rsocket::DuplexConnection {
   using Subscriber = rsocket::DuplexConnection::Subscriber;
 
-  struct SinkSubscriber : Subscriber {
+  struct SinkSubscriber : InternalSubscriber {
     std::vector<std::unique_ptr<folly::IOBuf>> sent_buffers;
 
     void onNext(std::unique_ptr<folly::IOBuf> buf) {

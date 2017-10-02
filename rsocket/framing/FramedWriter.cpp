@@ -50,7 +50,7 @@ size_t FramedWriter::getPayloadLength(size_t payloadLength) const {
 }
 
 void FramedWriter::onSubscribe(yarpl::Reference<Subscription> subscription) {
-  DuplexConnection::Subscriber::onSubscribe(subscription);
+  DuplexConnection::InternalSubscriber::onSubscribe(subscription);
   stream_->onSubscribe(std::move(subscription));
 }
 
@@ -112,17 +112,17 @@ void FramedWriter::onNextMultiple(
 void FramedWriter::error(std::string errorMsg) {
   VLOG(1) << "error: " << errorMsg;
   onError(std::runtime_error(std::move(errorMsg)));
-  DuplexConnection::Subscriber::subscription()->cancel();
+  DuplexConnection::InternalSubscriber::subscription()->cancel();
 }
 
 void FramedWriter::onComplete() {
-  DuplexConnection::Subscriber::onComplete();
+  DuplexConnection::InternalSubscriber::onComplete();
   stream_->onComplete();
   stream_ = nullptr;
 }
 
 void FramedWriter::onError(folly::exception_wrapper ex) {
-  DuplexConnection::Subscriber::onError(ex);
+  DuplexConnection::InternalSubscriber::onError(ex);
   stream_->onError(std::move(ex));
   stream_ = nullptr;
 }

@@ -26,7 +26,7 @@ namespace flowable {
  * ts->assert...
  */
 template <typename T>
-class TestSubscriber : public Subscriber<T> {
+class TestSubscriber : public InternalSubscriber<T> {
  public:
   static_assert(
       std::is_copy_constructible<T>::value,

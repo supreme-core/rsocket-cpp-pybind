@@ -64,25 +64,25 @@ class Subscribers {
 
  private:
   template <typename T, typename Next>
-  class Base : public Subscriber<T> {
+  class Base : public InternalSubscriber<T> {
    public:
     Base(Next next, int64_t batch)
         : next_(std::move(next)), batch_(batch), pending_(0) {}
 
     void onSubscribe(Reference<Subscription> subscription) override {
-      Subscriber<T>::onSubscribe(subscription);
+      InternalSubscriber<T>::onSubscribe(subscription);
       pending_ += batch_;
       subscription->request(batch_);
     }
 
     void onNext(T value) override {
-      if (!Subscriber<T>::subscription()) {
+      if (!InternalSubscriber<T>::subscription()) {
         return;
       }
       try {
         next_(std::move(value));
       } catch (const std::exception& exn) {
-        Subscriber<T>::subscription()->cancel();
+        InternalSubscriber<T>::subscription()->cancel();
         onError(folly::exception_wrapper{std::current_exception(), exn});
         return;
       }
@@ -90,12 +90,12 @@ class Subscribers {
       if (--pending_ < batch_ / 2) {
         const auto delta = batch_ - pending_;
         pending_ += delta;
-        Subscriber<T>::subscription()->request(delta);
+        InternalSubscriber<T>::subscription()->request(delta);
       }
     }
 
    protected:
-    using Subscriber<T>::onError;
+    using InternalSubscriber<T>::onError;
 
    private:
     Next next_;
@@ -110,7 +110,7 @@ class Subscribers {
         : Base<T, Next>(std::move(next), batch), error_(std::move(error)) {}
 
     void onError(folly::exception_wrapper error) override {
-      Subscriber<T>::onError(error);
+      InternalSubscriber<T>::onError(error);
       try {
         error_(std::move(error));
       } catch (const std::exception& exn) {
@@ -138,8 +138,8 @@ class Subscribers {
           complete_(std::move(complete)) {}
 
     void onComplete() {
-      if (Subscriber<T>::subscription()) { // already errored?
-        Subscriber<T>::onComplete();
+      if (InternalSubscriber<T>::subscription()) { // already errored?
+        InternalSubscriber<T>::onComplete();
         try {
           complete_();
         } catch (const std::exception& exn) {

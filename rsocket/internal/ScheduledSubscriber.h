@@ -18,8 +18,8 @@ namespace rsocket {
 // right EventBase.
 //
 
-template<typename T>
-class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
+template <typename T>
+class ScheduledSubscriber : public yarpl::flowable::InternalSubscriber<T> {
  public:
   ScheduledSubscriber(
       yarpl::Reference<yarpl::flowable::Subscriber<T>> inner,
@@ -87,8 +87,9 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
 // wrapped in the ScheduledSubscription since the application code calls
 // request and cancel from any thread.
 //
-template<typename T>
-class ScheduledSubscriptionSubscriber : public yarpl::flowable::Subscriber<T> {
+template <typename T>
+class ScheduledSubscriptionSubscriber
+    : public yarpl::flowable::InternalSubscriber<T> {
  public:
   ScheduledSubscriptionSubscriber(
       yarpl::Reference<yarpl::flowable::Subscriber<T>> inner,

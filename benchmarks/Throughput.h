@@ -34,15 +34,17 @@ class FixedResponder : public RSocketResponder {
 
 /// Subscriber that requests N items and cancels the subscription once all of
 /// them arrive.  Signals a latch when it terminates.
-class BoundedSubscriber : public yarpl::flowable::Subscriber<Payload> {
+class BoundedSubscriber : public yarpl::flowable::InternalSubscriber<Payload> {
  public:
   BoundedSubscriber(Latch& latch, size_t requested)
       : latch_{latch}, requested_{requested} {}
 
   void onSubscribe(
       yarpl::Reference<yarpl::flowable::Subscription> subscription) override {
-    yarpl::flowable::Subscriber<Payload>::onSubscribe(std::move(subscription));
-    yarpl::flowable::Subscriber<Payload>::subscription()->request(requested_);
+    yarpl::flowable::InternalSubscriber<Payload>::onSubscribe(
+        std::move(subscription));
+    yarpl::flowable::InternalSubscriber<Payload>::subscription()->request(
+        requested_);
   }
 
   void onNext(Payload) override {
@@ -51,19 +53,19 @@ class BoundedSubscriber : public yarpl::flowable::Subscriber<Payload> {
       latch_.post();
 
       // After this cancel we could be destroyed.
-      yarpl::flowable::Subscriber<Payload>::subscription()->cancel();
+      yarpl::flowable::InternalSubscriber<Payload>::subscription()->cancel();
     }
   }
 
   void onComplete() override {
-    yarpl::flowable::Subscriber<Payload>::onComplete();
+    yarpl::flowable::InternalSubscriber<Payload>::onComplete();
     if (!terminated_.exchange(true)) {
       latch_.post();
     }
   }
 
   void onError(folly::exception_wrapper) override {
-    yarpl::flowable::Subscriber<Payload>::onError({});
+    yarpl::flowable::InternalSubscriber<Payload>::onError({});
     if (!terminated_.exchange(true)) {
       latch_.post();
     }

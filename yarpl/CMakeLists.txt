@@ -125,6 +125,7 @@ add_executable(
   test/ReferenceTest.cpp
   test/SubscribeObserveOnTests.cpp
   test/Single_test.cpp
+  test/FlowableSubscriberTest.cpp
   test/credits-test.cpp
   test/yarpl-tests.cpp)
 
