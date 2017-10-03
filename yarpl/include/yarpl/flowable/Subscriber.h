@@ -78,6 +78,7 @@ class BaseSubscriber : public Subscriber<T> {
     }
   }
 
+protected:
   virtual void onSubscribeImpl() = 0;
   virtual void onCompleteImpl() = 0;
   virtual void onNextImpl(T) = 0;
