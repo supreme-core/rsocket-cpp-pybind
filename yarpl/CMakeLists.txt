@@ -6,8 +6,10 @@ set(CMAKE_BUILD_TYPE Debug)
 project (yarpl)
 
 # CMake Config
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/)
 
 add_definitions(-std=c++14)
+option(BUILD_TESTS "BUILD_TESTS" ON)
 
 # Generate compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -36,6 +38,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
 
 find_path(GLOG_INCLUDE_DIR glog/logging.h)
 find_library(GLOG_LIBRARY glog)
+find_package(Folly)
+
+if (NOT FOLLY_FOUND)
+  SET(FOLLY_LIBRARIES folly)
+endif()
 
 message("glog include_dir <${GLOG_INCLUDE_DIR}> lib <${GLOG_LIBRARY}>")
 
@@ -96,48 +103,54 @@ target_include_directories(
 
 target_link_libraries(
   yarpl
-  folly
+  ${FOLLY_LIBRARIES}
   ${GLOG_LIBRARY})
 
-add_library(
-  yarpl-test-utils
-  test/yarpl/test_utils/Tuple.cpp
-  test/yarpl/test_utils/Tuple.h
-  test/yarpl/test_utils/utils.h
-  test/yarpl/test_utils/Mocks.h)
+install(TARGETS yarpl DESTINATION lib)
+install(DIRECTORY include/yarpl DESTINATION include
+  FILES_MATCHING PATTERN "*.h")
 
-# Executable for experimenting.
-add_executable(
-  yarpl-playground
-  examples/yarpl-playground.cpp
-  examples/FlowableExamples.cpp
-  examples/FlowableExamples.h)
+if (BUILD_TESTS)
+  add_library(
+    yarpl-test-utils
+    test/yarpl/test_utils/Tuple.cpp
+    test/yarpl/test_utils/Tuple.h
+    test/yarpl/test_utils/utils.h
+    test/yarpl/test_utils/Mocks.h)
 
-target_link_libraries(yarpl-playground yarpl)
+  # Executable for experimenting.
+  add_executable(
+    yarpl-playground
+    examples/yarpl-playground.cpp
+    examples/FlowableExamples.cpp
+    examples/FlowableExamples.h)
 
-# Unit tests.
-add_executable(
-  yarpl-tests
-  test/MocksTest.cpp
-  test/FlowableTest.cpp
-  test/Observable_test.cpp
-  test/RefcountedTest.cpp
-  test/ReferenceTest.cpp
-  test/SubscribeObserveOnTests.cpp
-  test/Single_test.cpp
-  test/FlowableSubscriberTest.cpp
-  test/credits-test.cpp
-  test/yarpl-tests.cpp)
+  target_link_libraries(yarpl-playground yarpl)
 
-target_link_libraries(
-  yarpl-tests
-  yarpl
-  yarpl-test-utils
-  ${GLOG_LIBRARY}
+  # Unit tests.
+  add_executable(
+    yarpl-tests
+    test/MocksTest.cpp
+    test/FlowableTest.cpp
+    test/Observable_test.cpp
+    test/RefcountedTest.cpp
+    test/ReferenceTest.cpp
+    test/SubscribeObserveOnTests.cpp
+    test/Single_test.cpp
+    test/FlowableSubscriberTest.cpp
+    test/credits-test.cpp
+    test/yarpl-tests.cpp)
 
-  # Inherited from rsocket-cpp CMake.
-  ${GMOCK_LIBS})
+  target_link_libraries(
+    yarpl-tests
+    yarpl
+    yarpl-test-utils
+    ${GLOG_LIBRARY}
 
-add_dependencies(yarpl-tests yarpl-test-utils gmock)
+    # Inherited from rsocket-cpp CMake.
+    ${GMOCK_LIBS})
 
-add_test(NAME yarpl-tests COMMAND yarpl-tests)
+  add_dependencies(yarpl-tests yarpl-test-utils gmock)
+
+  add_test(NAME yarpl-tests COMMAND yarpl-tests)
+endif()
