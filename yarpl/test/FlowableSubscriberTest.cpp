@@ -38,4 +38,40 @@ TEST(FlowableSubscriberTest, TestBasicFunctionality) {
   subscriber->onSubscribe(subscription);
 }
 
+TEST(FlowableSubscriberTest, TestKeepRefToThisIsDisabled) {
+  auto subscriber = yarpl::make_ref<StrictMock<MockBaseSubscriber<int, false>>>();
+  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+
+  // tests that only a single reference exists to the Subscriber; clearing
+  // reference in `auto subscriber` would cause it to deallocate
+  {
+    InSequence s;
+    EXPECT_CALL(*subscriber, onSubscribeImpl())
+      .Times(1)
+      .WillOnce(Invoke([&] {
+        EXPECT_EQ(1UL, subscriber->count());
+      }));
+  }
+
+  subscriber->onSubscribe(subscription);
+}
+TEST(FlowableSubscriberTest, TestKeepRefToThisIsEnabled) {
+  auto subscriber = yarpl::make_ref<StrictMock<MockBaseSubscriber<int>>>();
+  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+
+  // tests that only a reference is held somewhere on the stack, so clearing
+  // references to `BaseSubscriber` while in a signaling method won't
+  // deallocate it (until it's safe to do so)
+  {
+    InSequence s;
+    EXPECT_CALL(*subscriber, onSubscribeImpl())
+      .Times(1)
+      .WillOnce(Invoke([&] {
+        EXPECT_EQ(2UL, subscriber->count());
+      }));
+  }
+
+  subscriber->onSubscribe(subscription);
+}
+
 }
