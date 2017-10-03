@@ -38,11 +38,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
 
 find_path(GLOG_INCLUDE_DIR glog/logging.h)
 find_library(GLOG_LIBRARY glog)
-find_package(Folly)
 
-if (NOT FOLLY_FOUND)
-  SET(FOLLY_LIBRARIES folly)
-endif()
+IF(NOT FOLLY_VERSION)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/InstallFolly.cmake)
+ENDIF()
 
 message("glog include_dir <${GLOG_INCLUDE_DIR}> lib <${GLOG_LIBRARY}>")
 
@@ -103,7 +102,7 @@ target_include_directories(
 
 target_link_libraries(
   yarpl
-  ${FOLLY_LIBRARIES}
+  folly
   ${GLOG_LIBRARY})
 
 install(TARGETS yarpl DESTINATION lib)
