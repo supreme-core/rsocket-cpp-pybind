@@ -10,6 +10,7 @@ class NoopStats : public RSocketStats {
   ~NoopStats() = default;
 
   void socketCreated() override {}
+  void socketConnected() override {}
   void socketDisconnected() override {}
   void socketClosed(StreamCompletionSignal) override {}
 
@@ -23,7 +24,11 @@ class NoopStats : public RSocketStats {
   void bytesRead(size_t) override {}
   void frameWritten(FrameType) override {}
   void frameRead(FrameType) override {}
-
+  virtual void serverResume(
+      folly::Optional<int64_t>,
+      int64_t,
+      int64_t,
+      ResumeOutcome) override {}
   void resumeBufferChanged(int, int) override {}
   void streamBufferChanged(int64_t, int64_t) override {}
 
@@ -45,4 +50,4 @@ class NoopStats : public RSocketStats {
 std::shared_ptr<RSocketStats> RSocketStats::noop() {
   return NoopStats::instance();
 }
-}
+} // namespace rsocket

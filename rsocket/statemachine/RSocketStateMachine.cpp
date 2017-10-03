@@ -75,27 +75,53 @@ void RSocketStateMachine::setResumable(bool resumable) {
 }
 
 void RSocketStateMachine::connectServer(
-    yarpl::Reference<FrameTransport> transport,
-    const SetupParameters& params) {
-  setResumable(params.resumable);
-  connect(std::move(transport), params.protocolVersion);
+    yarpl::Reference<FrameTransport> frameTransport,
+    const SetupParameters& setupParams) {
+  setResumable(setupParams.resumable);
+  connect(std::move(frameTransport), setupParams.protocolVersion);
   sendPendingFrames();
 }
 
 bool RSocketStateMachine::resumeServer(
-    yarpl::Reference<FrameTransport> transport,
-    const ResumeParameters& params) {
+    yarpl::Reference<FrameTransport> frameTransport,
+    const ResumeParameters& resumeParams) {
+
+  folly::Optional<int64_t> clientAvailable =
+      (resumeParams.clientPosition == kUnspecifiedResumePosition)
+      ? folly::none
+      : folly::make_optional(
+            resumeManager_->impliedPosition() - resumeParams.clientPosition);
+
+  int64_t serverAvailable =
+      resumeManager_->lastSentPosition() - resumeManager_->firstSentPosition();
+  int64_t serverDelta =
+      resumeManager_->lastSentPosition() - resumeParams.serverPosition;
+
   if (!isDisconnected()) {
     VLOG(1) << "Old connection (" << frameTransport_.get() << ") exists. "
-            << "Terminating new connection (" << transport.get() << ")";
+            << "Terminating new connection (" << frameTransport.get() << ")";
     std::runtime_error exn{"Old connection still exists"};
-    transport->closeWithError(std::move(exn));
+    frameTransport_->closeWithError(std::move(exn));
+
+    stats_->serverResume(
+        clientAvailable,
+        serverAvailable,
+        serverDelta,
+        RSocketStats::ResumeOutcome::FAILURE);
     return false;
   }
+  connect(std::move(frameTransport), resumeParams.protocolVersion);
 
-  connect(std::move(transport), params.protocolVersion);
-  return resumeFromPositionOrClose(
-      params.serverPosition, params.clientPosition);
+  auto result = resumeFromPositionOrClose(
+      resumeParams.serverPosition, resumeParams.clientPosition);
+
+  stats_->serverResume(
+      clientAvailable,
+      serverAvailable,
+      serverDelta,
+      result ? RSocketStats::ResumeOutcome::SUCCESS : RSocketStats::ResumeOutcome::FAILURE);
+
+  return result;
 }
 
 void RSocketStateMachine::connectClient(
@@ -203,6 +229,7 @@ void RSocketStateMachine::connect(
   // instance.
   auto copyThis = shared_from_this();
   frameTransport_->setFrameProcessor(copyThis);
+  stats_->socketConnected();
 }
 
 void RSocketStateMachine::sendPendingFrames() {
