@@ -13,7 +13,8 @@
 namespace rsocket {
 
 RSocketServer::RSocketServer(
-    std::unique_ptr<ConnectionAcceptor> connectionAcceptor)
+    std::unique_ptr<ConnectionAcceptor> connectionAcceptor,
+    std::shared_ptr<RSocketStats> stats)
     : duplexConnectionAcceptor_(std::move(connectionAcceptor)),
       setupResumeAcceptors_([] {
         return new rsocket::SetupResumeAcceptor{
@@ -21,7 +22,8 @@ RSocketServer::RSocketServer(
             folly::EventBaseManager::get()->getExistingEventBase(),
             std::this_thread::get_id()};
       }),
-      connectionSet_(std::make_shared<ConnectionSet>()) {}
+      connectionSet_(std::make_shared<ConnectionSet>()),
+      stats_(std::move(stats)) {}
 
 RSocketServer::~RSocketServer() {
   shutdownAndWait();
@@ -82,6 +84,7 @@ void RSocketServer::acceptConnection(
     std::unique_ptr<DuplexConnection> connection,
     folly::EventBase&,
     std::shared_ptr<RSocketServiceHandler> serviceHandler) {
+  stats_->serverConnectionAccepted();
   if (isShutdown_) {
     // connection is getting out of scope and terminated
     return;
@@ -159,6 +162,7 @@ void RSocketServer::onRSocketResume(
     ResumeParameters resumeParams) {
   auto result = serviceHandler->onResume(resumeParams.token);
   if (result.hasError()) {
+    stats_->resumeFailedNoState();
     VLOG(3) << "Terminating RESUME attempt from client.  No ServerState found";
     throw result.error();
   }

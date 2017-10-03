@@ -7,10 +7,10 @@
 #include <folly/Baton.h>
 #include <folly/Synchronized.h>
 #include <folly/ThreadLocal.h>
-#include "rsocket/RSocketServiceHandler.h"
 #include "rsocket/ConnectionAcceptor.h"
 #include "rsocket/RSocketParameters.h"
 #include "rsocket/RSocketResponder.h"
+#include "rsocket/RSocketServiceHandler.h"
 #include "rsocket/internal/SetupResumeAcceptor.h"
 
 namespace rsocket {
@@ -24,7 +24,9 @@ namespace rsocket {
  */
 class RSocketServer {
  public:
-  explicit RSocketServer(std::unique_ptr<ConnectionAcceptor>);
+  explicit RSocketServer(
+      std::unique_ptr<ConnectionAcceptor>,
+      std::shared_ptr<RSocketStats> stats = RSocketStats::noop());
   ~RSocketServer();
 
   RSocketServer(const RSocketServer&) = delete;
@@ -94,12 +96,14 @@ class RSocketServer {
   std::unique_ptr<ConnectionAcceptor> duplexConnectionAcceptor_;
   bool started{false};
 
-  class SetupResumeAcceptorTag{};
-  folly::ThreadLocal<rsocket::SetupResumeAcceptor, SetupResumeAcceptorTag> setupResumeAcceptors_;
+  class SetupResumeAcceptorTag {};
+  folly::ThreadLocal<rsocket::SetupResumeAcceptor, SetupResumeAcceptorTag>
+      setupResumeAcceptors_;
 
   folly::Baton<> waiting_;
   std::atomic<bool> isShutdown_{false};
 
   std::shared_ptr<ConnectionSet> connectionSet_;
+  std::shared_ptr<RSocketStats> stats_;
 };
 } // namespace rsocket

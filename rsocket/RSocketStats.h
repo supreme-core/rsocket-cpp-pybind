@@ -27,6 +27,8 @@ class RSocketStats {
   virtual void socketDisconnected() = 0;
   virtual void socketClosed(StreamCompletionSignal signal) = 0;
 
+  virtual void serverConnectionAccepted() = 0;
+
   virtual void duplexConnectionCreated(
       const std::string& type,
       DuplexConnection* connection) = 0;
@@ -46,7 +48,7 @@ class RSocketStats {
   virtual void streamBufferChanged(
       int64_t framesCountDelta,
       int64_t dataSizeDelta) = 0;
-
+  virtual void resumeFailedNoState() = 0;
   virtual void keepaliveSent() = 0;
   virtual void keepaliveReceived() = 0;
 };
