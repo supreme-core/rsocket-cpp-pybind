@@ -144,8 +144,8 @@ class MockSubscription : public flowable::Subscription {
 };
 }
 
-template <typename T>
-class MockBaseSubscriber : public flowable::BaseSubscriber<T> {
+template <typename T, bool keep_reference_to_this = true>
+class MockBaseSubscriber : public flowable::BaseSubscriber<T, keep_reference_to_this> {
 public:
   MOCK_METHOD0_T(onSubscribeImpl, void());
   MOCK_METHOD1_T(onNextImpl, void(T));

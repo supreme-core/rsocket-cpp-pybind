@@ -21,6 +21,12 @@ class Subscriber : public virtual Refcounted, public yarpl::enable_get_ref {
   virtual void onNext(T) = 0;
 };
 
+#define KEEP_REF_TO_THIS() \
+  Reference<BaseSubscriber> self; \
+  if (keep_reference_to_this) { \
+    self = this->ref_from_this(this); \
+  }
+
 // T : Type of Flowable that this Subscriber operates on
 //
 // keep_reference_to_this : BaseSubscriber will keep a live reference to
@@ -30,7 +36,7 @@ class Subscriber : public virtual Refcounted, public yarpl::enable_get_ref {
 // Classes that ensure that at least one reference will stay live can
 // use `keep_reference_to_this = false` as an optimization to
 // prevent an atomic inc/dec pair
-template <typename T>
+template <typename T, bool keep_reference_to_this = true>
 class BaseSubscriber : public Subscriber<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
@@ -40,12 +46,14 @@ class BaseSubscriber : public Subscriber<T> {
     CHECK(!subscription_);
 
     subscription_ = std::move(subscription);
+    KEEP_REF_TO_THIS();
     onSubscribeImpl();
   }
 
   // No further calls to the subscription after this method is invoked.
   void onComplete() final override {
     if(auto sub = subscription_.exchange(nullptr)) {
+      KEEP_REF_TO_THIS();
       onCompleteImpl();
       onTerminateImpl();
     }
@@ -54,6 +62,7 @@ class BaseSubscriber : public Subscriber<T> {
   // No further calls to the subscription after this method is invoked.
   void onError(folly::exception_wrapper e) final override {
     if(auto sub = subscription_.exchange(nullptr)) {
+      KEEP_REF_TO_THIS();
       onErrorImpl(std::move(e));
       onTerminateImpl();
     }
@@ -61,12 +70,14 @@ class BaseSubscriber : public Subscriber<T> {
 
   void onNext(T t) final override {
     if(auto sub = subscription_.load()) {
+      KEEP_REF_TO_THIS();
       onNextImpl(std::move(t));
     }
   }
 
   void cancel() {
     if(auto sub = subscription_.exchange(nullptr)) {
+      KEEP_REF_TO_THIS();
       sub->cancel();
       onTerminateImpl();
     }
@@ -74,6 +85,7 @@ class BaseSubscriber : public Subscriber<T> {
 
   void request(int64_t n) {
     if(auto sub = subscription_.load()) {
+      KEEP_REF_TO_THIS();
       sub->request(n);
     }
   }
