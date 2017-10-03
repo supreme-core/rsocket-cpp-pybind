@@ -69,8 +69,8 @@ TEST(RSocketClientServer, ConnectManyAsync) {
 }
 
 TEST(RSocketClientServer, ConnectOnDifferentEvb) {
-  folly::ScopedEventBaseThread transportWorker;
-  folly::ScopedEventBaseThread stateMachineWorker;
+  folly::ScopedEventBaseThread transportWorker{"transportWorker"};
+  folly::ScopedEventBaseThread stateMachineWorker{"stateMachineWorker"};
   auto server = makeServer(std::make_shared<HelloStreamRequestHandler>());
   auto client = makeClient(
       transportWorker.getEventBase(),
