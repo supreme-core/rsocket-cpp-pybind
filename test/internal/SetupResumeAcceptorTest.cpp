@@ -256,8 +256,7 @@ TEST(SetupResumeAcceptor, EventBaseDisappear) {
   auto evb = std::make_unique<folly::EventBase>();
 
   SetupResumeAcceptor acceptor{
-      ProtocolVersion::Unknown, evb.get(), std::this_thread::get_id()};
-  evb.reset();
+      ProtocolVersion::Unknown, evb.get()};
 }
 
 // TODO: Test for whether changing FrameProcessor in on{Resume,Setup} breaks

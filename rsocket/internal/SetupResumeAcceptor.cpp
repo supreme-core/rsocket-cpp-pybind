@@ -44,7 +44,7 @@ void closeWithError(
 
 /// Subscriber that owns a connection, sets itself as that connection's input,
 /// and reads out a single frame before cancelling.
-class OneFrameSubscriber : public DuplexConnection::DuplexSubscriber {
+class OneFrameSubscriber : public yarpl::flowable::BaseSubscriber<std::unique_ptr<folly::IOBuf>> {
  public:
   OneFrameSubscriber(
       SetupResumeAcceptor& acceptor,
@@ -58,26 +58,24 @@ class OneFrameSubscriber : public DuplexConnection::DuplexSubscriber {
     DCHECK(connection_);
     DCHECK(onSetup_);
     DCHECK(onResume_);
+    DCHECK(acceptor_.inOwnerThread());
   }
 
   void setInput() {
+    DCHECK(acceptor_.inOwnerThread());
     connection_->setInput(ref_from_this(this));
   }
 
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription> sub) override {
-    DuplexConnection::DuplexSubscriber::onSubscribe(sub);
-    sub->request(std::numeric_limits<int32_t>::max());
+  void onSubscribeImpl() override {
+    DCHECK(acceptor_.inOwnerThread());
+    this->request(std::numeric_limits<int32_t>::max());
   }
 
-  void onNext(std::unique_ptr<folly::IOBuf> buf) override {
+  void onNextImpl(std::unique_ptr<folly::IOBuf> buf) override {
     DCHECK(connection_) << "OneFrameSubscriber received more than one frame";
+    DCHECK(acceptor_.inOwnerThread());
 
-    auto self = ref_from_this(this);
-    acceptor_.remove(self);
-
-    if (auto sub = DuplexConnection::DuplexSubscriber::subscription()) {
-      sub->cancel();
-    }
+    this->cancel(); // calls onTerminateImpl
 
     acceptor_.processFrame(
         std::move(connection_),
@@ -86,16 +84,12 @@ class OneFrameSubscriber : public DuplexConnection::DuplexSubscriber {
         std::move(onResume_));
   }
 
-  void onComplete() override {
-    auto self = ref_from_this(this);
-    DuplexConnection::DuplexSubscriber::onComplete();
-    acceptor_.remove(self);
-  }
+  void onCompleteImpl() override {}
+  void onErrorImpl(folly::exception_wrapper) override {}
 
-  void onError(folly::exception_wrapper ew) override {
-    auto self = ref_from_this(this);
-    DuplexConnection::DuplexSubscriber::onError(std::move(ew));
-    acceptor_.remove(self);
+  void onTerminateImpl() override {
+    DCHECK(acceptor_.inOwnerThread());
+    acceptor_.remove(ref_from_this(this));
   }
 
  private:
@@ -107,9 +101,8 @@ class OneFrameSubscriber : public DuplexConnection::DuplexSubscriber {
 
 SetupResumeAcceptor::SetupResumeAcceptor(
     ProtocolVersion version,
-    folly::EventBase* eventBase,
-    std::thread::id owner)
-    : eventBase_{eventBase}, owner_{owner} {
+    folly::EventBase* eventBase)
+    : eventBase_{eventBase} {
   CHECK(eventBase_);
 
   // If the version is unknown we'll try to autodetect it from the first frame.
@@ -127,7 +120,7 @@ void SetupResumeAcceptor::processFrame(
     std::unique_ptr<folly::IOBuf> buf,
     SetupResumeAcceptor::OnSetup onSetup,
     SetupResumeAcceptor::OnResume onResume) {
-  DCHECK(eventBase_->isInEventBaseThread());
+  DCHECK(inOwnerThread());
   DCHECK(connection);
 
   if (closed_) {
@@ -231,6 +224,12 @@ void SetupResumeAcceptor::accept(
     std::unique_ptr<DuplexConnection> connection,
     OnSetup onSetup,
     OnResume onResume) {
+  DCHECK(inOwnerThread());
+
+  if(closed_) {
+    return;
+  }
+
   auto subscriber = yarpl::make_ref<OneFrameSubscriber>(
       *this, std::move(connection), std::move(onSetup), std::move(onResume));
   connections_.insert(subscriber);
@@ -255,6 +254,7 @@ std::shared_ptr<FrameSerializer> SetupResumeAcceptor::createSerializer(
 
 void SetupResumeAcceptor::remove(
     const yarpl::Reference<DuplexConnection::Subscriber>& subscriber) {
+  DCHECK(inOwnerThread());
   connections_.erase(subscriber);
 }
 
@@ -281,9 +281,6 @@ void SetupResumeAcceptor::closeAll() {
 }
 
 bool SetupResumeAcceptor::inOwnerThread() const {
-  if (owner_ != std::thread::id{}) {
-    return owner_ == std::this_thread::get_id();
-  }
   return eventBase_->isInEventBaseThread();
 }
 }

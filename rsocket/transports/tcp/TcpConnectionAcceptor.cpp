@@ -75,7 +75,7 @@ void TcpConnectionAcceptor::start(OnDuplexConnectionAccept onAccept) {
     callbacks_.push_back(std::make_unique<SocketCallback>(onAccept_));
     callbacks_[i]->eventBase()->runInEventBaseThread([i] {
       folly::EventBaseManager::get()->getEventBase()->setName(
-          folly::sformat("TCPAcceptor.Worker.{}", i));
+          folly::sformat("TCPWrk.{}", i));
     });
   }
 
