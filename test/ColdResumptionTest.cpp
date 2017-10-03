@@ -279,8 +279,9 @@ TEST(ColdResumptionTest, DifferentEvb) {
   auto payload = "InitialPayload";
   size_t latestValue;
 
-  folly::ScopedEventBaseThread transportWorker;
-  folly::ScopedEventBaseThread SMWorker;
+  folly::ScopedEventBaseThread transportWorker{"transportWorker"};
+  folly::ScopedEventBaseThread SMWorker{"SMWorker"};
+
   auto token = ResumeIdentificationToken::generateNew();
   auto resumeManager =
       std::make_shared<ColdResumeManager>(RSocketStats::noop());
@@ -338,4 +339,6 @@ TEST(ColdResumptionTest, DifferentEvb) {
       firstSub->awaitLatestValue(10);
     }
   }
+
+  server->shutdownAndWait();
 }

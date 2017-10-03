@@ -15,7 +15,8 @@ namespace rsocket {
 // original RSocketStateMachine was constructed for the client.  Here the
 // RSocketStateMachine uses this class to schedule events of the Transport in
 // the new EventBase.
-class ScheduledFrameTransport : public FrameTransport {
+class ScheduledFrameTransport : public FrameTransport,
+                                public yarpl::enable_get_ref {
  public:
   ScheduledFrameTransport(
       yarpl::Reference<FrameTransport> frameTransport,
