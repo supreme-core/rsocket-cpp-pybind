@@ -269,53 +269,6 @@ TEST(RequestChannelTest, FlowControl) {
   responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
 }
 
-TEST(RequestChannelTest, DISABLED_CancelFromRequester) {
-  int64_t responderRange = 100;
-  int64_t responderSubscriberInitialRequest = 100;
-
-  auto responder = std::make_shared<TestChannelResponder>(
-      responderRange, responderSubscriberInitialRequest);
-
-  folly::ScopedEventBaseThread worker;
-  auto server = makeServer(responder);
-  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
-  auto requester = client->getRequester();
-
-  auto requestSubscriber = TestSubscriber<std::string>::create(50);
-  auto responderSubscriber = responder->getChannelSubscriber();
-
-  int64_t requesterRangeEnd = 100;
-
-  auto requesterFlowable =
-      Flowables::range(1, requesterRangeEnd)->map([&](int64_t v) {
-        std::stringstream ss;
-        ss << "Requester stream: " << v << " of " << requesterRangeEnd;
-        std::string s = ss.str();
-        return Payload(s, "metadata");
-      });
-
-  requester->requestChannel(requesterFlowable)
-      ->map([](auto p) { return p.moveDataToString(); })
-      ->subscribe(requestSubscriber);
-
-  // make sure a few things have streamed
-  requestSubscriber->awaitValueCount(30);
-
-  worker.getEventBase()->runInEventBaseThread(
-      [=]() {
-        requestSubscriber->cancel();
-        requestSubscriber->request(50);
-      });
-
-  responderSubscriber->awaitTerminalEvent();
-  EXPECT_LT(requestSubscriber->getValueCount(), 100);
-
-  // Responder Subscriber should be at 100
-  // Requester Subscriber should be < 100
-  LOG(INFO) << "Responder Subscriber: " << responderSubscriber->getValueCount();
-  LOG(INFO) << "Requester Subscriber: " << requestSubscriber->getValueCount();
-}
-
 class TestChannelResponderFailure : public rsocket::RSocketResponder {
  public:
   TestChannelResponderFailure()
@@ -375,12 +328,4 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
   responderSubscriber->awaitTerminalEvent();
   responderSubscriber->assertValueAt(0, "Requester stream: 1 of 10");
   responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
-}
-
-TEST(RequestChannelTest, DISABLED_FailureOnRequestRequesterSees) {
-  // ???
-}
-
-TEST(RequestChannelTest, DISABLED_FailureFromRequester) {
-  // ???
 }
