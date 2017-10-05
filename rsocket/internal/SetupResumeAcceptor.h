@@ -39,8 +39,7 @@ class SetupResumeAcceptor final {
 
   SetupResumeAcceptor(
       ProtocolVersion,
-      folly::EventBase*,
-      std::thread::id = std::thread::id{});
+      folly::EventBase*);
 
   ~SetupResumeAcceptor();
 
@@ -87,8 +86,5 @@ class SetupResumeAcceptor final {
 
   std::shared_ptr<FrameSerializer> defaultSerializer_;
   folly::EventBase* eventBase_;
-
-  /// ID of the thread that owns this object.
-  const std::thread::id owner_;
 };
 }

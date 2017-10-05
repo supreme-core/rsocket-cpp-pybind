@@ -19,8 +19,8 @@ RSocketServer::RSocketServer(
       setupResumeAcceptors_([] {
         return new rsocket::SetupResumeAcceptor{
             ProtocolVersion::Unknown,
-            folly::EventBaseManager::get()->getExistingEventBase(),
-            std::this_thread::get_id()};
+            folly::EventBaseManager::get()->getExistingEventBase()
+          };
       }),
       connectionSet_(std::make_shared<ConnectionSet>()),
       stats_(std::move(stats)) {}
