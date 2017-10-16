@@ -28,24 +28,24 @@ DEFINE_int32(
 
 namespace {
 
-class Observer : public yarpl::single::SingleObserver<Payload> {
+class Observer : public yarpl::single::SingleObserverBase<Payload> {
  public:
   explicit Observer(Latch& latch) : latch_{latch} {}
 
   void onSubscribe(yarpl::Reference<yarpl::single::SingleSubscription>
                        subscription) override {
-    yarpl::single::SingleObserver<Payload>::onSubscribe(
+    yarpl::single::SingleObserverBase<Payload>::onSubscribe(
         std::move(subscription));
   }
 
   void onSuccess(Payload) override {
     latch_.post();
-    yarpl::single::SingleObserver<Payload>::onSuccess({});
+    yarpl::single::SingleObserverBase<Payload>::onSuccess({});
   }
 
   void onError(folly::exception_wrapper) override {
     latch_.post();
-    yarpl::single::SingleObserver<Payload>::onError({});
+    yarpl::single::SingleObserverBase<Payload>::onError({});
   }
 
  private:

@@ -14,10 +14,18 @@ namespace single {
 
 template <typename T>
 class SingleObserver : public virtual Refcounted, public yarpl::enable_get_ref {
+public:
+  virtual void onSubscribe(Reference<SingleSubscription>) = 0;
+  virtual void onSuccess(T) = 0;
+  virtual void onError(folly::exception_wrapper) = 0;
+};
+
+template <typename T>
+class SingleObserverBase : public SingleObserver<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
-  virtual void onSubscribe(Reference<SingleSubscription> subscription) {
+  void onSubscribe(Reference<SingleSubscription> subscription) override {
     DCHECK(subscription);
 
     if (subscription_) {
@@ -28,13 +36,13 @@ class SingleObserver : public virtual Refcounted, public yarpl::enable_get_ref {
     subscription_ = std::move(subscription);
   }
 
-  virtual void onSuccess(T) {
+  void onSuccess(T) override {
     DCHECK(subscription_) << "Calling onSuccess() without a subscription";
     subscription_.reset();
   }
 
   // No further calls to the subscription after this method is invoked.
-  virtual void onError(folly::exception_wrapper) {
+  void onError(folly::exception_wrapper) override {
     DCHECK(subscription_) << "Calling onError() without a subscription";
     subscription_.reset();
   }
@@ -48,9 +56,9 @@ class SingleObserver : public virtual Refcounted, public yarpl::enable_get_ref {
   Reference<SingleSubscription> subscription_;
 };
 
-/// Specialization of SingleObserver<void>.
+/// Specialization of SingleObserverBase<void>.
 template <>
-class SingleObserver<void> : public virtual Refcounted {
+class SingleObserverBase<void> : public virtual Refcounted {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
