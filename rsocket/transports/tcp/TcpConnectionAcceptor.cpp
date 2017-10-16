@@ -2,6 +2,7 @@
 
 #include "rsocket/transports/tcp/TcpConnectionAcceptor.h"
 
+#include <folly/Format.h>
 #include <folly/ThreadName.h>
 #include <folly/futures/Future.h>
 #include <folly/io/async/EventBaseManager.h>
