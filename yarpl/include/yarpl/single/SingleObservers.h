@@ -28,7 +28,7 @@ class SingleObservers {
  public:
   template <typename T, typename Next, typename = EnableIfCompatible<T, Next>>
   static auto create(Next next) {
-    return make_ref<Base<T, Next>, SingleObserver<T>>(std::move(next));
+    return make_ref<Base<T, Next>, SingleObserverBase<T>>(std::move(next));
   }
 
   template <
@@ -37,13 +37,13 @@ class SingleObservers {
       typename Error,
       typename = EnableIfCompatible<T, Success, Error>>
   static auto create(Success next, Error error) {
-    return make_ref<WithError<T, Success, Error>, SingleObserver<T>>(
+    return make_ref<WithError<T, Success, Error>, SingleObserverBase<T>>(
         std::move(next), std::move(error));
   }
 
  private:
   template <typename T, typename Next>
-  class Base : public SingleObserver<T> {
+  class Base : public SingleObserverBase<T> {
    public:
     explicit Base(Next next) : next_(std::move(next)) {}
 

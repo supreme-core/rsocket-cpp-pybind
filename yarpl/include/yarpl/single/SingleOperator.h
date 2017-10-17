@@ -209,7 +209,7 @@ class SingleVoidFromPublisherOperator : public Single<void> {
   explicit SingleVoidFromPublisherOperator(OnSubscribe&& function)
       : function_(std::move(function)) {}
 
-  void subscribe(Reference<SingleObserver<void>> observer) override {
+  void subscribe(Reference<SingleObserverBase<void>> observer) override {
     function_(std::move(observer));
   }
 

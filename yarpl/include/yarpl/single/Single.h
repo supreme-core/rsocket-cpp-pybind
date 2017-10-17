@@ -77,7 +77,7 @@ class Single : public virtual Refcounted, public yarpl::enable_get_ref {
 template <>
 class Single<void> : public virtual Refcounted {
  public:
-  virtual void subscribe(Reference<SingleObserver<void>>) = 0;
+  virtual void subscribe(Reference<SingleObserverBase<void>>) = 0;
 
   /**
    * Subscribe overload taking lambda for onSuccess that is called upon writing
@@ -88,22 +88,22 @@ class Single<void> : public virtual Refcounted {
       typename = typename std::enable_if<
           std::is_callable<Success(), void>::value>::type>
   void subscribe(Success s) {
-    class SuccessSingleObserver : public SingleObserver<void> {
+    class SuccessSingleObserver : public SingleObserverBase<void> {
      public:
       SuccessSingleObserver(Success success) : success_{std::move(success)} {}
 
       void onSubscribe(Reference<SingleSubscription> subscription) override {
-        SingleObserver<void>::onSubscribe(std::move(subscription));
+        SingleObserverBase<void>::onSubscribe(std::move(subscription));
       }
 
       void onSuccess() override {
         success_();
-        SingleObserver<void>::onSuccess();
+        SingleObserverBase<void>::onSuccess();
       }
 
       // No further calls to the subscription after this method is invoked.
       void onError(folly::exception_wrapper ex) override {
-        SingleObserver<void>::onError(std::move(ex));
+        SingleObserverBase<void>::onError(std::move(ex));
       }
 
      private:
@@ -116,7 +116,7 @@ class Single<void> : public virtual Refcounted {
   template <
       typename OnSubscribe,
       typename = typename std::enable_if<std::is_callable<
-          OnSubscribe(Reference<SingleObserver<void>>),
+          OnSubscribe(Reference<SingleObserverBase<void>>),
           void>::value>::type>
   static auto create(OnSubscribe);
 };

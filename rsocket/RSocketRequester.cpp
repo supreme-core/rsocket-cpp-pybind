@@ -134,7 +134,7 @@ yarpl::Reference<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
     eb = &eventBase_,
     request = std::move(request),
     srs = stateMachine_
-  ](yarpl::Reference<yarpl::single::SingleObserver<void>> subscriber) mutable {
+  ](yarpl::Reference<yarpl::single::SingleObserverBase<void>> subscriber) mutable {
     auto lambda = [
       request = std::move(request),
       subscriber = std::move(subscriber),
