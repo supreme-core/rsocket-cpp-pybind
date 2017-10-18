@@ -93,8 +93,6 @@ class RSocketRequester {
    */
   virtual void metadataPush(std::unique_ptr<folly::IOBuf> metadata);
 
-  virtual void closeSocket();
-
  private:
   std::shared_ptr<rsocket::RSocketStateMachine> stateMachine_;
   folly::EventBase& eventBase_;
