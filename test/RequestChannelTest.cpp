@@ -101,7 +101,7 @@ class TestChannelResponder : public rsocket::RSocketResponder {
       yarpl::Reference<Flowable<rsocket::Payload>> requestStream,
       rsocket::StreamId) override {
     // add initial payload to testSubscriber values list
-    testSubscriber_->onNext(initialPayload.moveDataToString());
+    testSubscriber_->manuallyPush(initialPayload.moveDataToString());
 
     requestStream->map([](auto p) { return p.moveDataToString(); })
         ->subscribe(testSubscriber_);
@@ -279,7 +279,7 @@ class TestChannelResponderFailure : public rsocket::RSocketResponder {
       yarpl::Reference<Flowable<rsocket::Payload>> requestStream,
       rsocket::StreamId) override {
     // add initial payload to testSubscriber values list
-    testSubscriber_->onNext(initialPayload.moveDataToString());
+    testSubscriber_->manuallyPush(initialPayload.moveDataToString());
 
     requestStream->map([](auto p) { return p.moveDataToString(); })
         ->subscribe(testSubscriber_);

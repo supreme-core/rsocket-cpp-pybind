@@ -26,7 +26,10 @@ namespace flowable {
  * ts->assert...
  */
 template <typename T>
-class TestSubscriber : public Subscriber<T> {
+class TestSubscriber :
+  public BaseSubscriber<T>,
+  public yarpl::flowable::Subscription
+{
  public:
   static_assert(
       std::is_copy_constructible<T>::value,
@@ -63,17 +66,18 @@ class TestSubscriber : public Subscriber<T> {
       int64_t initial = kNoFlowControl)
       : delegate_(std::move(delegate)), initial_{initial} {}
 
-  void onSubscribe(Reference<Subscription> subscription) override {
+  void onSubscribeImpl() override {
     if (delegate_) {
-      subscription_ = subscription; // copy
-      delegate_->onSubscribe(std::move(subscription));
-    } else {
-      subscription_ = std::move(subscription);
+      delegate_->onSubscribe(this->ref_from_this(this));
     }
-    subscription_->request(initial_);
+    this->request(initial_);
   }
 
-  void onNext(T t) override {
+  void onNextImpl(T t) override final {
+    manuallyPush(std::move(t));
+  }
+
+  void manuallyPush(T t) {
     if (delegate_) {
       values_.push_back(t);
       delegate_->onNext(std::move(t));
@@ -83,30 +87,36 @@ class TestSubscriber : public Subscriber<T> {
     terminalEventCV_.notify_all();
   }
 
-  void onComplete() override {
+  void onCompleteImpl() override final {
     if (delegate_) {
       delegate_->onComplete();
     }
-    subscription_.reset();
     terminated_ = true;
     terminalEventCV_.notify_all();
   }
 
-  void onError(folly::exception_wrapper ex) override {
+  void onErrorImpl(folly::exception_wrapper ex) override final {
     if (delegate_) {
       delegate_->onError(ex);
     }
     e_ = std::move(ex);
-    subscription_.reset();
     terminated_ = true;
     terminalEventCV_.notify_all();
+  }
+
+  // flowable::Subscription methods
+  void request(int64_t n) override {
+    this->BaseSubscriber<T>::request(n);
+  }
+  void cancel() override {
+    this->BaseSubscriber<T>::cancel();
   }
 
   /**
    * Block the current thread until either onSuccess or onError is called.
    */
   void awaitTerminalEvent(
-      std::chrono::milliseconds ms = std::chrono::seconds{5}) {
+      std::chrono::milliseconds ms = std::chrono::seconds{1}) {
     // now block this thread
     std::unique_lock<std::mutex> lk(m_);
     // if shutdown gets implemented this would then be released by it
@@ -117,7 +127,7 @@ class TestSubscriber : public Subscriber<T> {
 
   void awaitValueCount(
       int64_t n,
-      std::chrono::milliseconds ms = std::chrono::seconds{5}) {
+      std::chrono::milliseconds ms = std::chrono::seconds{1}) {
     // now block this thread
     std::unique_lock<std::mutex> lk(m_);
 
@@ -206,17 +216,6 @@ class TestSubscriber : public Subscriber<T> {
       ss << "Error is: '" << e_ << "' but expected: '" << msg << "'";
       throw std::runtime_error(ss.str());
     }
-  }
-
-  /**
-   * Submit Subscription->cancel();
-   */
-  void cancel() {
-    subscription_->cancel();
-  }
-
-  void request(int64_t n) {
-    subscription_->request(n);
   }
 
  private:
