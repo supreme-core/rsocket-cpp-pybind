@@ -28,6 +28,10 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
     DCHECK(!inputSubscriber_);
   }
 
+  folly::AsyncSocket* getTransport() {
+    return socket_.get();
+  }
+
   void setInput(
       yarpl::Reference<DuplexConnection::Subscriber> inputSubscriber) {
     if (inputSubscriber && isClosed()) {
@@ -252,6 +256,10 @@ TcpDuplexConnection::~TcpDuplexConnection() {
     stats_->duplexConnectionClosed("tcp", this);
   }
   tcpReaderWriter_->close();
+}
+
+folly::AsyncSocket* TcpDuplexConnection::getTransport() {
+  return tcpReaderWriter_ ? tcpReaderWriter_->getTransport() : nullptr;
 }
 
 yarpl::Reference<DuplexConnection::Subscriber>

@@ -34,6 +34,15 @@ class ScheduledFrameTransport : public FrameTransport,
   void closeWithError(folly::exception_wrapper ex) override;
 
  private:
+  DuplexConnection* getConnection() override {
+    DLOG(FATAL)
+        << "ScheduledFrameTransport doesn't support getConnection method, "
+            "because it can create safe usage issues when EventBase of the "
+            "transport and the RSocketClient is not the same.";
+    return nullptr;
+  }
+
+ private:
   folly::EventBase* transportEvb_;
   folly::EventBase* stateMachineEvb_;
   yarpl::Reference<FrameTransport> frameTransport_;

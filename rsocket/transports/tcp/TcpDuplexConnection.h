@@ -24,6 +24,9 @@ class TcpDuplexConnection : public DuplexConnection {
 
   void setInput(yarpl::Reference<DuplexConnection::Subscriber>) override;
 
+  // Only to be used for observation purposes.
+  folly::AsyncSocket* getTransport();
+
  private:
   boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter_;
   std::shared_ptr<RSocketStats> stats_;

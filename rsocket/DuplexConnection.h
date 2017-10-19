@@ -54,8 +54,7 @@ private:
 /// before the connection is destroyed.
 class DuplexConnection {
  public:
-  using Subscriber =
-      yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
+  using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
   using DuplexSubscriber = rsocket::DuplexSubscriber;
 
   virtual ~DuplexConnection() = default;
