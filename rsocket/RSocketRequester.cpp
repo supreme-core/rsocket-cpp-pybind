@@ -155,4 +155,8 @@ void RSocketRequester::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
         srs->metadataPush(std::move(metadata));
       });
 }
+
+DuplexConnection* RSocketRequester::getConnection() {
+  return stateMachine_? stateMachine_->getConnection() : nullptr;
+}
 } // namespace rsocket

@@ -41,6 +41,10 @@ class FrameTransportImpl final
     return !connection_;
   }
 
+  DuplexConnection* getConnection() override {
+    return connection_.get();
+  }
+
  private:
   void connect();
 

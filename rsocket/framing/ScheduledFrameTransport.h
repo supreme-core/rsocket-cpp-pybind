@@ -33,7 +33,11 @@ class ScheduledFrameTransport : public FrameTransport,
   void close() override;
   void closeWithError(folly::exception_wrapper ex) override;
 
- private:
+  DuplexConnection* getConnection() override {
+    return frameTransport_ ? frameTransport_->getConnection() : nullptr;
+  }
+
+private:
   folly::EventBase* transportEvb_;
   folly::EventBase* stateMachineEvb_;
   yarpl::Reference<FrameTransport> frameTransport_;

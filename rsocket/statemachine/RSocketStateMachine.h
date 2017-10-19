@@ -157,6 +157,8 @@ class RSocketStateMachine final
     return streamsFactory_;
   }
 
+  DuplexConnection* getConnection();
+
  private:
   void connect(yarpl::Reference<FrameTransport>, ProtocolVersion);
 

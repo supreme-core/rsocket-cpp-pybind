@@ -27,6 +27,10 @@ class FramedDuplexConnection : public virtual DuplexConnection {
     return true;
   }
 
+  DuplexConnection* getConnection() {
+    return inner_.get();
+  }
+
  private:
   std::unique_ptr<DuplexConnection> inner_;
   yarpl::Reference<FramedReader> inputReader_;

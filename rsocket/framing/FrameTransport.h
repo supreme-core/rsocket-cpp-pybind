@@ -13,5 +13,7 @@ class FrameTransport : public virtual yarpl::Refcounted {
   virtual void outputFrameOrDrop(std::unique_ptr<folly::IOBuf>) = 0;
   virtual void close() = 0;
   virtual void closeWithError(folly::exception_wrapper) = 0;
+  // Just for observation purposes!
+  virtual DuplexConnection* getConnection() = 0;
 };
 }

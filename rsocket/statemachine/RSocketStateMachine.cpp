@@ -119,7 +119,8 @@ bool RSocketStateMachine::resumeServer(
       clientAvailable,
       serverAvailable,
       serverDelta,
-      result ? RSocketStats::ResumeOutcome::SUCCESS : RSocketStats::ResumeOutcome::FAILURE);
+      result ? RSocketStats::ResumeOutcome::SUCCESS
+             : RSocketStats::ResumeOutcome::FAILURE);
 
   return result;
 }
@@ -1012,4 +1013,7 @@ void RSocketStateMachine::registerSet(std::shared_ptr<ConnectionSet> set) {
   connectionSet_ = std::move(set);
 }
 
+DuplexConnection* RSocketStateMachine::getConnection() {
+  return frameTransport_ ? frameTransport_->getConnection() : nullptr;
+}
 } // namespace rsocket
