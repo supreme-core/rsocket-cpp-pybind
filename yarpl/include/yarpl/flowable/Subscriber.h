@@ -45,6 +45,11 @@ class BaseSubscriber : public Subscriber<T> {
     DCHECK(subscription);
     CHECK(!subscription_);
 
+#ifdef DEBUG
+    DCHECK(!gotOnSubscribe_.exchange(true))
+        << "Already subscribed to BaseSubscriber";
+#endif
+
     subscription_ = std::move(subscription);
     KEEP_REF_TO_THIS();
     onSubscribeImpl();
@@ -52,6 +57,12 @@ class BaseSubscriber : public Subscriber<T> {
 
   // No further calls to the subscription after this method is invoked.
   void onComplete() final override {
+#ifdef DEBUG
+    DCHECK(gotOnSubscribe_.load()) << "Not subscribed to BaseSubscriber";
+    DCHECK(!gotTerminating_.exchange(true))
+        << "Already got terminating signal method";
+#endif
+
     if(auto sub = subscription_.exchange(nullptr)) {
       KEEP_REF_TO_THIS();
       onCompleteImpl();
@@ -61,6 +72,12 @@ class BaseSubscriber : public Subscriber<T> {
 
   // No further calls to the subscription after this method is invoked.
   void onError(folly::exception_wrapper e) final override {
+#ifdef DEBUG
+    DCHECK(gotOnSubscribe_.load()) << "Not subscribed to BaseSubscriber";
+    DCHECK(!gotTerminating_.exchange(true))
+        << "Already got terminating signal method";
+#endif
+
     if(auto sub = subscription_.exchange(nullptr)) {
       KEEP_REF_TO_THIS();
       onErrorImpl(std::move(e));
@@ -69,6 +86,13 @@ class BaseSubscriber : public Subscriber<T> {
   }
 
   void onNext(T t) final override {
+#ifdef DEBUG
+    DCHECK(gotOnSubscribe_.load()) << "Not subscibed to BaseSubscriber";
+    if (gotTerminating_.load()) {
+      VLOG(2) << "BaseSubscriber already got terminating signal method";
+    }
+#endif
+
     if(auto sub = subscription_.load()) {
       KEEP_REF_TO_THIS();
       onNextImpl(std::move(t));
@@ -81,6 +105,11 @@ class BaseSubscriber : public Subscriber<T> {
       sub->cancel();
       onTerminateImpl();
     }
+#ifdef DEBUG
+    else {
+      VLOG(2) << "cancel() on BaseSubscriber with no subscription_";
+    }
+#endif
   }
 
   void request(int64_t n) {
@@ -88,6 +117,11 @@ class BaseSubscriber : public Subscriber<T> {
       KEEP_REF_TO_THIS();
       sub->request(n);
     }
+#ifdef DEBUG
+    else {
+      VLOG(2) << "request() on BaseSubscriber with no subscription_";
+    }
+#endif
   }
 
 protected:
@@ -101,6 +135,11 @@ protected:
  private:
   // keeps a reference alive to the subscription
   AtomicReference<Subscription> subscription_;
+
+#ifdef DEBUG
+  std::atomic<bool> gotOnSubscribe_{false};
+  std::atomic<bool> gotTerminating_{false};
+#endif
 };
 
 }

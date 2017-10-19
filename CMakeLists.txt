@@ -48,6 +48,10 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_LOWER)
 
+if (BUILD_TYPE_LOWER MATCHES "debug")
+  add_definitions(-DDEBUG)
+endif ()
+
 # Enable ASAN by default on debug macOS builds.
 if (APPLE)
   set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
