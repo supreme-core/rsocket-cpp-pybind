@@ -4,6 +4,7 @@
 
 #include <boost/smart_ptr/intrusive_ptr.hpp>
 #include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncTransport.h>
 
 #include "rsocket/DuplexConnection.h"
 #include "rsocket/RSocketStats.h"
@@ -16,7 +17,7 @@ class TcpReaderWriter;
 class TcpDuplexConnection : public DuplexConnection {
  public:
   explicit TcpDuplexConnection(
-      folly::AsyncSocket::UniquePtr&& socket,
+      folly::AsyncTransportWrapper::UniquePtr&& socket,
       std::shared_ptr<RSocketStats> stats = RSocketStats::noop());
   ~TcpDuplexConnection();
 
@@ -25,7 +26,7 @@ class TcpDuplexConnection : public DuplexConnection {
   void setInput(yarpl::Reference<DuplexConnection::Subscriber>) override;
 
   // Only to be used for observation purposes.
-  folly::AsyncSocket* getTransport();
+  folly::AsyncTransportWrapper* getTransport();
 
  private:
   boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter_;

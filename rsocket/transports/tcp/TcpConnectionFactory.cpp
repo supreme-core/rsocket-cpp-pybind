@@ -3,6 +3,7 @@
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
 #include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBaseManager.h>
 #include <glog/logging.h>
 
@@ -90,7 +91,7 @@ TcpConnectionFactory::connect() {
 
 std::unique_ptr<DuplexConnection>
 TcpConnectionFactory::createDuplexConnectionFromSocket(
-    folly::AsyncSocket::UniquePtr socket,
+    folly::AsyncTransportWrapper::UniquePtr socket,
     std::shared_ptr<RSocketStats> stats) {
   return std::make_unique<TcpDuplexConnection>(
       std::move(socket), std::move(stats));

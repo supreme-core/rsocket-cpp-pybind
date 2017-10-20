@@ -5,6 +5,7 @@
 #include <folly/Format.h>
 #include <folly/ThreadName.h>
 #include <folly/futures/Future.h>
+#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBaseManager.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 
@@ -24,7 +25,7 @@ class TcpConnectionAcceptor::SocketCallback
       const folly::SocketAddress& address) noexcept override {
     VLOG(2) << "Accepting TCP connection from " << address << " on FD " << fd;
 
-    folly::AsyncSocket::UniquePtr socket(
+    folly::AsyncTransportWrapper::UniquePtr socket(
         new folly::AsyncSocket(eventBase(), fd));
 
     auto connection = std::make_unique<TcpDuplexConnection>(std::move(socket));

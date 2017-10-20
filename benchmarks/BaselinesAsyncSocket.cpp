@@ -3,7 +3,6 @@
 #include <folly/Benchmark.h>
 #include <folly/io/IOBufQueue.h>
 #include <folly/io/async/AsyncServerSocket.h>
-#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 
@@ -16,7 +15,7 @@ using namespace folly;
 // class TcpReader : public ::folly::AsyncTransportWrapper::ReadCallback {
 // public:
 //  TcpReader(
-//      folly::AsyncSocket::UniquePtr&& socket,
+//      folly::AsyncTransportWrapper::UniquePtr&& socket,
 //      EventBase& eventBase,
 //      size_t loadSize,
 //      size_t recvBufferLength)
@@ -80,7 +79,7 @@ using namespace folly;
 //    }
 //  }
 //
-//  folly::AsyncSocket::UniquePtr socket_;
+//  folly::AsyncTransportWrapper::UniquePtr socket_;
 //  folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
 //  EventBase& eventBase_;
 //  const size_t loadSize_;
@@ -103,7 +102,8 @@ using namespace folly;
 //      int fd,
 //      const SocketAddress&) noexcept override {
 //    auto socket =
-//        folly::AsyncSocket::UniquePtr(new AsyncSocket(&eventBase_, fd));
+//        folly::AsyncTransportWrapper::UniquePtr(new AsyncSocket(&eventBase_,
+//        fd));
 //
 //    new TcpReader(
 //        std::move(socket), eventBase_, loadSize_, recvBufferLength_);
@@ -191,7 +191,7 @@ using namespace folly;
 //    delete this;
 //  }
 //
-//  AsyncSocket::UniquePtr socket_;
+//  AsyncTransportWrapper::UniquePtr socket_;
 //  EventBase& eventBase_;
 //  const size_t loadSize_;
 //  const size_t msgLength_;

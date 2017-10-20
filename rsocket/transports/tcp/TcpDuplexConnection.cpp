@@ -19,7 +19,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
 
  public:
   explicit TcpReaderWriter(
-      folly::AsyncSocket::UniquePtr&& socket,
+      folly::AsyncTransportWrapper::UniquePtr&& socket,
       std::shared_ptr<RSocketStats> stats)
       : socket_(std::move(socket)), stats_(std::move(stats)) {}
 
@@ -28,7 +28,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
     DCHECK(!inputSubscriber_);
   }
 
-  folly::AsyncSocket* getTransport() {
+  folly::AsyncTransportWrapper* getTransport() {
     return socket_.get();
   }
 
@@ -122,7 +122,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
   void writeErr(
       size_t,
       const folly::AsyncSocketException& exn) noexcept override {
-    closeErr(exn);
+    closeErr(folly::exception_wrapper{exn});
     intrusive_ptr_release(this);
   }
 
@@ -162,7 +162,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
   }
 
   folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
-  folly::AsyncSocket::UniquePtr socket_;
+  folly::AsyncTransportWrapper::UniquePtr socket_;
   const std::shared_ptr<RSocketStats> stats_;
 
   yarpl::Reference<DuplexConnection::Subscriber> inputSubscriber_;
@@ -242,7 +242,7 @@ class TcpInputSubscription : public Subscription {
 }
 
 TcpDuplexConnection::TcpDuplexConnection(
-    folly::AsyncSocket::UniquePtr&& socket,
+    folly::AsyncTransportWrapper::UniquePtr&& socket,
     std::shared_ptr<RSocketStats> stats)
     : tcpReaderWriter_(new TcpReaderWriter(std::move(socket), stats)),
       stats_(stats) {
@@ -258,7 +258,7 @@ TcpDuplexConnection::~TcpDuplexConnection() {
   tcpReaderWriter_->close();
 }
 
-folly::AsyncSocket* TcpDuplexConnection::getTransport() {
+folly::AsyncTransportWrapper* TcpDuplexConnection::getTransport() {
   return tcpReaderWriter_ ? tcpReaderWriter_->getTransport() : nullptr;
 }
 
