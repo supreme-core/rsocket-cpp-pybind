@@ -1,7 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <folly/futures/Future.h>
-#include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gtest/gtest.h>
 

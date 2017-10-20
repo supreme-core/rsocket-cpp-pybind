@@ -3,7 +3,7 @@
 #pragma once
 
 #include <folly/SocketAddress.h>
-#include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncTransport.h>
 
 #include "rsocket/ConnectionFactory.h"
 #include "rsocket/DuplexConnection.h"
@@ -30,7 +30,7 @@ class TcpConnectionFactory : public ConnectionFactory {
   folly::Future<ConnectedDuplexConnection> connect() override;
 
   static std::unique_ptr<DuplexConnection> createDuplexConnectionFromSocket(
-      folly::AsyncSocket::UniquePtr socket,
+      folly::AsyncTransportWrapper::UniquePtr socket,
       std::shared_ptr<RSocketStats> stats = std::shared_ptr<RSocketStats>());
 
  private:

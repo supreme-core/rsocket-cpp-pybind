@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <folly/Conv.h>
+#include <folly/Format.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/portability/GFlags.h>
 
