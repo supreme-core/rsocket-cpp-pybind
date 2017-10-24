@@ -97,6 +97,9 @@ class RSocketRequester {
    * To be used only temporarily to check the transport's status.
    */
   DuplexConnection* getConnection();
+
+  virtual void closeSocket();
+
  private:
   std::shared_ptr<rsocket::RSocketStateMachine> stateMachine_;
   folly::EventBase& eventBase_;
