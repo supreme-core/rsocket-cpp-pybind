@@ -92,7 +92,7 @@ TEST(RSocketClientServer, ClientClosesOnWorker) {
 /// Test that sending garbage to the server doesn't crash it.
 TEST(RSocketClientServer, ServerGetsGarbage) {
   auto server = makeServer(std::make_shared<HelloStreamRequestHandler>());
-  folly::SocketAddress address{"::1", *server->listeningPort()};
+  folly::SocketAddress address{"127.0.0.1", *server->listeningPort()};
 
   folly::ScopedEventBaseThread worker;
   auto factory =

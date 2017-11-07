@@ -12,7 +12,7 @@ namespace client_server {
 std::unique_ptr<TcpConnectionFactory> getConnFactory(
     folly::EventBase* eventBase,
     uint16_t port) {
-  folly::SocketAddress address{"::1", port};
+  folly::SocketAddress address{"127.0.0.1", port};
   return std::make_unique<TcpConnectionFactory>(*eventBase, std::move(address));
 }
 
@@ -20,7 +20,7 @@ std::unique_ptr<RSocketServer> makeServer(
     std::shared_ptr<rsocket::RSocketResponder> responder) {
   TcpConnectionAcceptor::Options opts;
   opts.threads = 2;
-  opts.address = folly::SocketAddress("::", 0);
+  opts.address = folly::SocketAddress("0.0.0.0", 0);
 
   // RSocket server accepting on TCP.
   auto rs = RSocket::createServer(
@@ -35,7 +35,7 @@ std::unique_ptr<RSocketServer> makeResumableServer(
   TcpConnectionAcceptor::Options opts;
   opts.threads = 10;
   opts.backlog = 200;
-  opts.address = folly::SocketAddress("::", 0);
+  opts.address = folly::SocketAddress("0.0.0.0", 0);
   auto rs = RSocket::createServer(
       std::make_unique<TcpConnectionAcceptor>(std::move(opts)));
   rs->start(std::move(serviceHandler));
