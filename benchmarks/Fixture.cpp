@@ -24,7 +24,7 @@ Fixture::Fixture(
     std::shared_ptr<RSocketResponder> responder)
     : options{std::move(fixtureOpts)} {
   TcpConnectionAcceptor::Options opts;
-  opts.address = folly::SocketAddress{"::1", 0};
+  opts.address = folly::SocketAddress{"0.0.0.0", 0};
   opts.threads = options.serverThreads;
 
   auto acceptor = std::make_unique<TcpConnectionAcceptor>(std::move(opts));
@@ -38,7 +38,7 @@ Fixture::Fixture(
         "rsocket-client-thread"));
   }
 
-  const folly::SocketAddress actual{"::1", *server->listeningPort()};
+  const folly::SocketAddress actual{"127.0.0.1", *server->listeningPort()};
 
   for (size_t i = 0; i < options.clients; ++i) {
     auto worker = std::move(workers.front());
