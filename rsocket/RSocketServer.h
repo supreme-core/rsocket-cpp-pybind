@@ -83,6 +83,12 @@ class RSocketServer {
    */
   folly::Optional<uint16_t> listeningPort() const;
 
+  /**
+   * Use the same EventBase that is provided to acceptConnection function for
+   * internal operations. Don't schedule to another event base.
+   */
+  void setSingleThreadedResponder();
+
  private:
   void onRSocketSetup(
       std::shared_ptr<RSocketServiceHandler> serviceHandler,
@@ -105,5 +111,12 @@ class RSocketServer {
 
   std::shared_ptr<ConnectionSet> connectionSet_;
   std::shared_ptr<RSocketStats> stats_;
+
+  /**
+   * If this field is false, acceptConnection() function will assume that there
+   * will be a single thread for each connected client. The execution will not
+   * be scheduled to another event base.
+   */
+  bool useScheduledResponder_{true};
 };
 } // namespace rsocket

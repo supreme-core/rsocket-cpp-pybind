@@ -80,6 +80,10 @@ void RSocketServer::startAndPark(OnNewSetupFn onNewSetupFn) {
   startAndPark(RSocketServiceHandler::create(std::move(onNewSetupFn)));
 }
 
+void RSocketServer::setSingleThreadedResponder() {
+  useScheduledResponder_ = false;
+}
+
 void RSocketServer::acceptConnection(
     std::unique_ptr<DuplexConnection> connection,
     folly::EventBase&,
@@ -130,15 +134,16 @@ void RSocketServer::onRSocketSetup(
     VLOG(3) << "Terminating SETUP attempt from client.  No Responder";
     throw result.error();
   }
-  auto connectionParams = result.value();
+  auto connectionParams = std::move(result.value());
   if (!connectionParams.responder) {
     LOG(ERROR) << "Received invalid Responder. Dropping connection";
     throw RSocketException("Received invalid Responder from server");
   }
-  auto responder = std::make_shared<ScheduledRSocketResponder>(
-      std::move(connectionParams.responder), *eventBase);
   auto rs = std::make_shared<RSocketStateMachine>(
-      std::move(responder),
+      useScheduledResponder_
+          ? std::make_shared<ScheduledRSocketResponder>(
+              std::move(connectionParams.responder), *eventBase)
+          : std::move(connectionParams.responder),
       nullptr,
       RSocketMode::SERVER,
       std::move(connectionParams.stats),
