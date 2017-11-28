@@ -100,7 +100,7 @@ class RSocketRequester {
 
   virtual void closeSocket();
 
- private:
+ protected:
   std::shared_ptr<rsocket::RSocketStateMachine> stateMachine_;
   folly::EventBase& eventBase_;
 };
