@@ -102,6 +102,6 @@ class RSocketRequester {
 
  protected:
   std::shared_ptr<rsocket::RSocketStateMachine> stateMachine_;
-  folly::EventBase& eventBase_;
+  folly::EventBase* eventBase_;
 };
 }
