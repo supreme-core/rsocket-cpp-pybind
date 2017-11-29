@@ -17,14 +17,14 @@ namespace rsocket {
 RSocketRequester::RSocketRequester(
     std::shared_ptr<RSocketStateMachine> srs,
     EventBase& eventBase)
-    : stateMachine_(std::move(srs)), eventBase_(eventBase) {}
+    : stateMachine_(std::move(srs)), eventBase_(&eventBase) {}
 
 RSocketRequester::~RSocketRequester() {
   VLOG(1) << "Destroying RSocketRequester";
 }
 
 void RSocketRequester::closeSocket() {
-  eventBase_.add([stateMachine = std::move(stateMachine_)] {
+  eventBase_->add([stateMachine = std::move(stateMachine_)] {
     VLOG(2) << "Closing RSocketStateMachine on EventBase";
     stateMachine->close(
         folly::exception_wrapper(), StreamCompletionSignal::SOCKET_CLOSED);
@@ -38,7 +38,7 @@ RSocketRequester::requestChannel(
   CHECK(stateMachine_); // verify the socket was not closed
 
   return yarpl::flowable::Flowables::fromPublisher<Payload>([
-    eb = &eventBase_,
+    eb = eventBase_,
     requestStream = std::move(requestStream),
     srs = stateMachine_
   ](yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
@@ -75,7 +75,7 @@ RSocketRequester::requestStream(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
   return yarpl::flowable::Flowables::fromPublisher<Payload>([
-    eb = &eventBase_,
+    eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_
   ](yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
@@ -103,7 +103,7 @@ RSocketRequester::requestResponse(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
   return yarpl::single::Single<Payload>::create([
-    eb = &eventBase_,
+    eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_
   ](yarpl::Reference<yarpl::single::SingleObserver<Payload>> observer) mutable {
@@ -131,7 +131,7 @@ yarpl::Reference<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
   CHECK(stateMachine_); // verify the socket was not closed
 
   return yarpl::single::Single<void>::create([
-    eb = &eventBase_,
+    eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_
   ](yarpl::Reference<yarpl::single::SingleObserverBase<void>> subscriber) mutable {
@@ -158,7 +158,7 @@ yarpl::Reference<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
 void RSocketRequester::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  eventBase_.runInEventBaseThread(
+  eventBase_->runInEventBaseThread(
       [ srs = stateMachine_, metadata = std::move(metadata) ]() mutable {
         srs->metadataPush(std::move(metadata));
       });
