@@ -96,7 +96,7 @@ class RSocketRequester {
   /**
    * To be used only temporarily to check the transport's status.
    */
-  DuplexConnection* getConnection();
+  virtual DuplexConnection* getConnection();
 
   virtual void closeSocket();
 
