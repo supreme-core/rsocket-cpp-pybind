@@ -66,7 +66,13 @@ void ConsumerBase::processPayload(Payload&& payload, bool onNext) {
     // figuring out flow control allowance.
     if (allowance_.tryConsume(1)) {
       sendRequests();
-      consumingSubscriber_->onNext(std::move(payload));
+      if (consumingSubscriber_) {
+        consumingSubscriber_->onNext(std::move(payload));
+      } else {
+        LOG(ERROR)
+            << "consuming subscriber is missing, might be a race condition on "
+                " cancel/onNext.";
+      }
     } else {
       handleFlowControlError();
       return;
