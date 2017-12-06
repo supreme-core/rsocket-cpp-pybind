@@ -35,6 +35,11 @@ void ConsumerBase::cancelConsumer() {
   consumingSubscriber_ = nullptr;
 }
 
+void ConsumerBase::addImplicitAllowance(size_t n) {
+  allowance_.add(n);
+  activeRequests_.add(n);
+}
+
 void ConsumerBase::generateRequest(size_t n) {
   allowance_.add(n);
   pendingAllowance_.add(n);
@@ -64,14 +69,14 @@ void ConsumerBase::processPayload(Payload&& payload, bool onNext) {
   if (payload || onNext) {
     // Frames carry application-level payloads are taken into account when
     // figuring out flow control allowance.
-    if (allowance_.tryConsume(1)) {
+    if (allowance_.tryConsume(1) && activeRequests_.tryConsume(1)) {
       sendRequests();
       if (consumingSubscriber_) {
         consumingSubscriber_->onNext(std::move(payload));
       } else {
         LOG(ERROR)
             << "consuming subscriber is missing, might be a race condition on "
-                " cancel/onNext.";
+               " cancel/onNext.";
       }
     } else {
       handleFlowControlError();
@@ -97,12 +102,16 @@ void ConsumerBase::errorConsumer(folly::exception_wrapper ex) {
 }
 
 void ConsumerBase::sendRequests() {
-  // TODO(stupaq): batch if remote end has some spare allowance
-  // TODO(stupaq): limit how much is synced to the other end
-  size_t toSync = Frame_REQUEST_N::kMaxRequestN;
-  toSync = pendingAllowance_.consumeUpTo(toSync);
-  if (toSync > 0) {
-    writeRequestN(static_cast<uint32_t>(toSync));
+  auto toSync =
+      std::min<size_t>(pendingAllowance_.get(), Frame_REQUEST_N::kMaxRequestN);
+  auto actives = activeRequests_.get();
+  if (actives < (toSync + 1) / 2) {
+    toSync = toSync - actives;
+    toSync = pendingAllowance_.consumeUpTo(toSync);
+    if (toSync > 0) {
+      writeRequestN(static_cast<uint32_t>(toSync));
+      activeRequests_.add(toSync);
+    }
   }
 }
 

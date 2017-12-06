@@ -27,9 +27,7 @@ class ConsumerBase : public StreamStateMachineBase,
   ///
   /// This portion of allowance will not be synced to the remote end, but will
   /// count towards the limit of allowance the remote PublisherBase may use.
-  void addImplicitAllowance(size_t n) {
-    allowance_.add(n);
-  }
+  void addImplicitAllowance(size_t n);
 
   void subscribe(
       yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber);
@@ -67,6 +65,10 @@ class ConsumerBase : public StreamStateMachineBase,
   /// An allowance that have yet to be synced to the other end by sending
   /// REQUEST_N frames.
   Allowance pendingAllowance_;
+
+  /// The number of already requested payload count.
+  /// Prevent excessive requestN calls.
+  Allowance activeRequests_;
 
   enum class State : uint8_t {
     RESPONDING,
