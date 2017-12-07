@@ -61,6 +61,36 @@ TEST(RequestChannelTest, Hello) {
   ts->assertValueAt(1, "[/hello] Hello Jane!");
 }
 
+TEST(RequestChannelTest, HelloNoFlowControl) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestHandlerHello>());
+  auto stats = std::make_shared<RSocketStatsFlowControl>();
+  auto client = makeClient(
+      worker.getEventBase(), *server->listeningPort(), nullptr, stats);
+  auto requester = client->getRequester();
+
+  auto ts = TestSubscriber<std::string>::create();
+  requester
+      ->requestChannel(
+          Flowables::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
+            return Payload(v);
+          }))
+      ->map([](auto p) { return p.moveDataToString(); })
+      ->subscribe(ts);
+
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+  ts->assertValueCount(2);
+  // assert that we echo back the 2nd and 3rd request values
+  // with the 1st initial payload prepended to each
+  ts->assertValueAt(0, "[/hello] Hello Bob!");
+  ts->assertValueAt(1, "[/hello] Hello Jane!");
+
+  // Make sure that the initial requestN in the Stream Request Frame
+  // is already enough and no other requestN messages are sent.
+  EXPECT_EQ(stats->writeRequestN_, 0);
+}
+
 TEST(RequestChannelTest, RequestOnDisconnectedClient) {
   folly::ScopedEventBaseThread worker;
   auto client = makeDisconnectedClient(worker.getEventBase());

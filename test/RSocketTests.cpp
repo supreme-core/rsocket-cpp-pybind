@@ -17,14 +17,16 @@ std::unique_ptr<TcpConnectionFactory> getConnFactory(
 }
 
 std::unique_ptr<RSocketServer> makeServer(
-    std::shared_ptr<rsocket::RSocketResponder> responder) {
+    std::shared_ptr<rsocket::RSocketResponder> responder,
+    std::shared_ptr<RSocketStats> stats) {
   TcpConnectionAcceptor::Options opts;
   opts.threads = 2;
   opts.address = folly::SocketAddress("0.0.0.0", 0);
 
   // RSocket server accepting on TCP.
   auto rs = RSocket::createServer(
-      std::make_unique<TcpConnectionAcceptor>(std::move(opts)));
+      std::make_unique<TcpConnectionAcceptor>(std::move(opts)),
+      std::move(stats));
 
   rs->start([r = std::move(responder)](const SetupParameters&) { return r; });
   return rs;
@@ -45,14 +47,15 @@ std::unique_ptr<RSocketServer> makeResumableServer(
 folly::Future<std::unique_ptr<RSocketClient>> makeClientAsync(
     folly::EventBase* eventBase,
     uint16_t port,
-    folly::EventBase* stateMachineEvb) {
+    folly::EventBase* stateMachineEvb,
+    std::shared_ptr<RSocketStats> stats) {
   CHECK(eventBase);
   return RSocket::createConnectedClient(
       getConnFactory(eventBase, port),
       SetupParameters(),
       std::make_shared<RSocketResponder>(),
       kDefaultKeepaliveInterval,
-      RSocketStats::noop(),
+      std::move(stats),
       std::shared_ptr<RSocketConnectionEvents>(),
       std::shared_ptr<ResumeManager>(),
       std::shared_ptr<ColdResumeHandler>(),
@@ -62,8 +65,10 @@ folly::Future<std::unique_ptr<RSocketClient>> makeClientAsync(
 std::unique_ptr<RSocketClient> makeClient(
     folly::EventBase* eventBase,
     uint16_t port,
-    folly::EventBase* stateMachineEvb) {
-  return makeClientAsync(eventBase, port, stateMachineEvb).get();
+    folly::EventBase* stateMachineEvb,
+    std::shared_ptr<RSocketStats> stats) {
+  return makeClientAsync(
+      eventBase, port, stateMachineEvb, std::move(stats)).get();
 }
 
 namespace {

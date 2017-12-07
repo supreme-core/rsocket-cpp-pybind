@@ -76,6 +76,28 @@ TEST(RequestStreamTest, HelloFlowControl) {
   ts->assertSuccess();
 }
 
+TEST(RequestStreamTest, HelloNoFlowControl) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestHandlerSync>());
+  auto stats = std::make_shared<RSocketStatsFlowControl>();
+  auto client = makeClient(
+      worker.getEventBase(), *server->listeningPort(), nullptr, stats);
+  auto requester = client->getRequester();
+  auto ts = TestSubscriber<std::string>::create();
+  requester->requestStream(Payload("Bob"))
+      ->map([](auto p) { return p.moveDataToString(); })
+      ->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+  ts->assertValueCount(10);
+  ts->assertValueAt(0, "Hello Bob 1!");
+  ts->assertValueAt(9, "Hello Bob 10!");
+
+  // Make sure that the initial requestN in the Stream Request Frame
+  // is already enough and no other requestN messages are sent.
+  EXPECT_EQ(stats->writeRequestN_, 0);
+}
+
 class TestHandlerAsync : public rsocket::RSocketResponder {
  public:
   Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
@@ -98,7 +120,8 @@ class TestHandlerAsync : public rsocket::RSocketResponder {
               return Payload(s, "metadata");
             })
             ->subscribe(subscriber);
-      }).detach();
+      })
+          .detach();
     });
   }
 };
