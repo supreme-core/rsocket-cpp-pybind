@@ -1,17 +1,15 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <thread>
 #include <type_traits>
 #include <vector>
 
-#include <folly/Baton.h>
-
-#include "yarpl/test_utils/utils.h"
-
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/TestSubscriber.h"
+#include "yarpl/test_utils/utils.h"
 
 namespace yarpl {
 namespace flowable {
@@ -68,7 +66,7 @@ TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedSuccess) {
           },
 
           1 /* initial request(n) */
-          );
+      );
 
   CHECK_WAIT(subscriber_complete);
 }
@@ -98,7 +96,7 @@ TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedError) {
           [&] { FAIL(); },
 
           1 /* initial request(n) */
-          );
+      );
 
   CHECK_WAIT(subscriber_complete);
 }
@@ -139,7 +137,7 @@ TEST(ObserveSubscribeTests, BothObserveAndSubscribeOn) {
       },
 
       1 /* initial request(n) */
-      );
+  );
 
   CHECK_WAIT(subscriber_complete);
 }
@@ -180,7 +178,7 @@ class EarlyCancelSubscriber : public yarpl::flowable::BaseSubscriber<int64_t> {
   folly::EventBase& on_base_;
   folly::Baton<>& subscriber_complete_;
 };
-}
+} // namespace
 
 TEST(ObserveSubscribeTests, EarlyCancelObserveOn) {
   folly::ScopedEventBaseThread worker;
@@ -194,6 +192,6 @@ TEST(ObserveSubscribeTests, EarlyCancelObserveOn) {
 
   CHECK_WAIT(subscriber_complete);
 }
-}
-}
-} /* namespace yarpl::flowable::<anon> */
+} // namespace
+} // namespace flowable
+} // namespace yarpl

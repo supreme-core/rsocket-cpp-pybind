@@ -1,7 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include <folly/Baton.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <thread>
 
@@ -56,7 +56,8 @@ class TestHandlerCancel : public rsocket::RSocketResponder {
             } else {
               // if not cancelled would do work and emit here
             }
-          }).detach();
+          })
+              .detach();
         });
   }
 
@@ -64,7 +65,7 @@ class TestHandlerCancel : public rsocket::RSocketResponder {
   std::shared_ptr<folly::Baton<>> onCancel_;
   std::shared_ptr<folly::Baton<>> onSubscribe_;
 };
-}
+} // namespace
 
 TEST(RequestResponseTest, Cancel) {
   folly::ScopedEventBaseThread worker;

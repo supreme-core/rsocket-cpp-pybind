@@ -3,9 +3,9 @@
 #include "benchmarks/Fixture.h"
 #include "benchmarks/Throughput.h"
 
-#include <folly/Baton.h>
 #include <folly/Benchmark.h>
 #include <folly/portability/GFlags.h>
+#include <folly/synchronization/Baton.h>
 
 #include "rsocket/RSocket.h"
 
@@ -46,8 +46,8 @@ BENCHMARK(StreamThroughput, n) {
     LOG(INFO) << "  Server with " << opts.serverThreads << " threads.";
     LOG(INFO) << "  " << opts.clients << " clients across "
               << fixture->workers.size() << " threads.";
-    LOG(INFO) << "  Running " << FLAGS_streams
-              << " streams of " << FLAGS_items << " items each.";
+    LOG(INFO) << "  Running " << FLAGS_streams << " streams of " << FLAGS_items
+              << " items each.";
   }
 
   for (size_t i = 0; i < FLAGS_streams; ++i) {
