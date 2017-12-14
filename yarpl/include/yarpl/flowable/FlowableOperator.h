@@ -47,8 +47,8 @@ class FlowableOperator : public Flowable<D> {
         Reference<Subscriber<D>> subscriber)
         : flowableOperator_(std::move(flowable)),
           subscriber_(std::move(subscriber)) {
-      assert(flowableOperator_);
-      assert(subscriber_);
+      CHECK(flowableOperator_);
+      CHECK(subscriber_);
     }
 
     const Reference<Operator>& getFlowableOperator() {
@@ -499,9 +499,6 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
     void onSubscribeImpl() final {
       liveSubscribers_++;
       SuperSubscription::onSubscribeImpl();
-      // TODO: make max parallelism configurable a-la RxJava 2.x's
-      // FlowableFlatMapOperator
-      SuperSubscription::request(std::numeric_limits<int64_t>::max());
     }
 
     void onNextImpl(T value) final {
@@ -537,26 +534,36 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
 
       liveSubscribers_++;
       mappedStream->subscribe(mappedSubscriber);
+      drainLoop();
     }
 
     void drainImpl() {
       // phase 1: clear out terminated subscribers
       {
-        auto clearList = [](auto& list) {
+        auto clearList = [](auto& list, SubscriberList& t) {
           while (!list.empty()) {
             auto& elem = list.front();
-            elem.explicitlyCanceled = true;
-            elem.cancel();
+            auto r = elem.sync.wlock();
+            r->freeze = true;
             elem.unlink();
-            elem.fmReference_ = nullptr;
+            t.push_back(elem);
           }
         };
 
+        SubscriberList clearTrash;
         if (clearAllSubscribers_.load()) {
           auto l = lists.wlock();
-          clearList(l->withValue);
-          clearList(l->withoutValue);
-          clearList(l->pendingValue);
+          clearList(l->withValue, clearTrash);
+          clearList(l->withoutValue, clearTrash);
+          clearList(l->pendingValue, clearTrash);
+        }
+
+        // clear elements while no locks are held
+        while (!clearTrash.empty()) {
+          auto& elem = clearTrash.front();
+          elem.unlink();
+          elem.cancel();
+          elem.fmReference_ = nullptr;
         }
       }
 
@@ -606,29 +613,63 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       }
 
       // phase 4: ask any upstream flowables which don't have pending
-      // requests for their next element kick off any more requests
-      while (true) {
-        MappedStreamSubscriber* elem;
-        {
-          auto l = lists.wlock();
-          if (l->withoutValue.empty()) {
-            break;
+      // requests for their next element kick off any more requests.
+      // Put subscribers which have terminated into the trash.
+      {
+        SubscriberList terminatedTrash;
+
+        while (true) {
+          MappedStreamSubscriber* elem;
+          {
+            auto l = lists.wlock();
+            if (l->withoutValue.empty()) {
+              break;
+            }
+            elem = &l->withoutValue.front();
+
+            auto r = elem->sync.wlock();
+            CHECK(!r->hasValue) << "failed for elem=" << elem; // sanity
+
+            elem->unlink();
+
+            // Subscribers might call onNext and then terminate; delay
+            // removing its liveSubscriber reference until we've delivered
+            // its element to the downstream subscriber and dropped its
+            // synchronized reference to `r`, as dropping the flatMapSubscription_
+            // reference may invoke its destructor
+            if (r->isTerminated) {
+              r->freeze = true;
+              terminatedTrash.push_back(*elem);
+              continue; // skips the next elem->request(1)
+            }
+
+            // else, the stream hasn't terminated, request another
+            // element
+            l->pendingValue.push_back(*elem);
           }
-          elem = &l->withoutValue.front();
-
-          auto r = elem->sync.wlock();
-          CHECK(!r->hasValue) << "failed for elem=" << elem; // sanity
-
-          elem->unlink();
-          l->pendingValue.push_back(*elem);
+          elem->request(1);
         }
-        elem->request(1);
+
+        // phase 5: destroy any mapped subscribers which have terminated, enqueue
+        // another drain loop run if we do end up discarding any subscribers, as
+        // our live subscriber count may have gone to zero
+        if (!terminatedTrash.empty()) {
+          drainLoopMutex_++;
+        }
+        while (!terminatedTrash.empty()) {
+          auto& elem = terminatedTrash.front();
+          CHECK(elem.sync.wlock()->isTerminated);
+          elem.unlink();
+          elem.fmReference_ = nullptr;
+          liveSubscribers_--;
+        }
       }
     }
 
     // called from MappedStreamSubscriber, recieves the R and the
     // subscriber which generated the R
     void drainLoop() {
+      auto self = this->ref_from_this(this);
       if (drainLoopMutex_++ == 0) {
         do {
           drainImpl();
@@ -638,10 +679,14 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
 
     void onMappedSubscriberNext(MappedStreamSubscriber* elem, R value) {
       {
-        // `elem` may not be in a list; it may have been canceled. Push it
+        // `elem` may not be in a list, as it may have been canceled. Push it
         // on the withValue list and let drainLoop clear it if that's the case.
         auto l = lists.wlock();
         auto r = elem->sync.wlock();
+
+        if(r->freeze) {
+          return;
+        }
 
         CHECK(!r->hasValue) << "failed for elem=" << elem;
         r->hasValue = true;
@@ -654,25 +699,37 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       drainLoop();
     }
     void onMappedSubscriberTerminate(MappedStreamSubscriber* elem) {
-      liveSubscribers_--;
-
       {
         auto r = elem->sync.wlock();
+
+        r->isTerminated = true;
         if (r->onErrorEx) {
           std::lock_guard<std::mutex> exg(onErrorExGuard_);
           onErrorEx_ = std::move(r->onErrorEx);
         }
 
-        if (elem->explicitlyCanceled) {
+        if (r->freeze) {
           return;
         }
       }
 
       {
         auto l = lists.wlock();
+        auto r = elem->sync.wlock();
+
+        if (r->freeze) {
+          return;
+        }
+
         CHECK(elem->is_linked());
         elem->unlink();
-        elem->fmReference_ = nullptr;
+
+        if (r->hasValue) {
+          l->withValue.push_back(*elem);
+        } else {
+          liveSubscribers_--;
+          elem->fmReference_ = nullptr;
+        }
       }
 
       drainLoop();
@@ -700,6 +757,13 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       else {
         requested_ += n;
       }
+
+      if (n > 0) {
+        // TODO: make max parallelism configurable a-la RxJava 2.x's
+        // FlowableFlatMapOperator
+        SuperSubscription::request(std::numeric_limits<int64_t>::max());
+      }
+
       drainLoop();
     }
 
@@ -718,18 +782,28 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
           : flatMapSubscription_(std::move(subscription)) {}
 
       void onSubscribeImpl() final {
-        {
-          auto l = flatMapSubscription_->lists.wlock();
-          DCHECK(is_in_list(*this, l->pendingValue, l)) << " this=" << this;
+#ifdef DEBUG
+        if (auto fms = flatMapSubscription_.load()) {
+          auto l = fms->lists.wlock();
           auto r = sync.wlock();
-          CHECK(!r->hasValue);
+          if (!is_in_list(*this, l->pendingValue, l)) {
+            LOG(INFO) << "failed: this=" << this;
+            LOG(INFO) << "in list: ";
+            debug_is_in_list(*this, l);
+            DCHECK(r->freeze);
+          } else {
+          }
+          DCHECK(!r->hasValue);
         }
+#endif
 
         BaseSubscriber<R>::request(1);
       };
 
       void onNextImpl(R value) final {
-        flatMapSubscription_->onMappedSubscriberNext(this, std::move(value));
+        if (auto fms = flatMapSubscription_.load()) {
+          fms->onMappedSubscriberNext(this, std::move(value));
+        }
       }
 
       // noop
@@ -742,17 +816,20 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       }
 
       void onTerminateImpl() override {
-        flatMapSubscription_->onMappedSubscriberTerminate(this);
+        if (auto fms = flatMapSubscription_.exchange(nullptr)) {
+          fms->onMappedSubscriberTerminate(this);
+        }
       }
 
       struct SyncData {
         R value;
         bool hasValue{false};
+        bool isTerminated{false};
+        bool freeze{false};
         folly::exception_wrapper onErrorEx{nullptr};
       };
       folly::Synchronized<SyncData> sync;
 
-      bool explicitlyCanceled{false};
 
       // FMSubscription's 'reference' to this object. FMSubscription
       // clears this reference when it drops the MappedStreamSubscriber
@@ -760,7 +837,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       Reference<MappedStreamSubscriber> fmReference_{nullptr};
 
       // this is both a Subscriber and a Subscription<T>
-      Reference<FMSubscription> flatMapSubscription_{nullptr};
+      AtomicReference<FMSubscription> flatMapSubscription_{nullptr};
     };
 
     // used to make sure only one thread at a time is calling subscriberOnNext
@@ -804,16 +881,21 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
         L const& lists,
         bool should) {
       if (is_in_list(elem, list) != should) {
-#ifdef NDEBUG
-        LOG(INFO) << "in without: " << is_in_list(elem, lists->withoutValue);
-        LOG(INFO) << "in pending: " << is_in_list(elem, lists->pendingValue);
-        LOG(INFO) << "in withval: " << is_in_list(elem, lists->withValue);
+#ifdef DEBUG
+        debug_is_in_list(elem, lists);
 #else
         (void) lists;
 #endif
         return false;
       }
       return true;
+    }
+
+    template <typename L>
+    static void debug_is_in_list(MappedStreamSubscriber const& elem, L const& lists) {
+      LOG(INFO) << "in without: " << is_in_list(elem, lists->withoutValue);
+      LOG(INFO) << "in pending: " << is_in_list(elem, lists->pendingValue);
+      LOG(INFO) << "in withval: " << is_in_list(elem, lists->withValue);
     }
 
     static bool is_in_list(
