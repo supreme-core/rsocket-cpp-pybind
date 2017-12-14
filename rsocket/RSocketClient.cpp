@@ -61,7 +61,7 @@ folly::Future<folly::Unit> RSocketClient::resume() {
 
         if (!evb_) {
           // cold-resumption.  EventBase hasn't been explicitly set for SM by
-          // the application.  Use the transport's eventBase.
+          // the application.  Use the transports eventBase.
           evb_ = &connection.eventBase;
         }
 
