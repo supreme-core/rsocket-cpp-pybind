@@ -1,16 +1,14 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <thread>
 #include <type_traits>
 #include <vector>
 
-#include <folly/Baton.h>
-
-#include "yarpl/test_utils/Mocks.h"
-
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/TestSubscriber.h"
+#include "yarpl/test_utils/Mocks.h"
 
 namespace yarpl {
 namespace flowable {
@@ -395,13 +393,14 @@ TEST(FlowableTest, SubscribersError) {
 
 TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   auto flowable =
-      Flowable<int>::create([](Reference<Subscriber<int>> subscriber,
-                               int64_t requested) {
-        EXPECT_GT(requested, 1);
-        subscriber->onNext(123);
-        subscriber->onComplete();
-        return std::make_tuple(int64_t(1), true);
-      })->map([](int v) { return std::to_string(v); });
+      Flowable<int>::create(
+          [](Reference<Subscriber<int>> subscriber, int64_t requested) {
+            EXPECT_GT(requested, 1);
+            subscriber->onNext(123);
+            subscriber->onComplete();
+            return std::make_tuple(int64_t(1), true);
+          })
+          ->map([](int v) { return std::to_string(v); });
 
   auto subscriber = make_ref<TestSubscriber<std::string>>(10);
   flowable->subscribe(subscriber);

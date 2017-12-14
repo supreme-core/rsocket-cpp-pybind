@@ -2,12 +2,12 @@
 
 #include "benchmarks/Throughput.h"
 
-#include <folly/Baton.h>
 #include <folly/Benchmark.h>
 #include <folly/Synchronized.h>
 #include <folly/init/Init.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/portability/GFlags.h>
+#include <folly/synchronization/Baton.h>
 
 #include "rsocket/RSocket.h"
 #include "yarpl/Flowable.h"

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <folly/Baton.h>
+#include <folly/synchronization/Baton.h>
 
 /// Simple implementation of a latch synchronization primitive, for testing.
 class Latch {

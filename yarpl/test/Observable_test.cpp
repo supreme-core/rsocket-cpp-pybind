@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include <folly/Baton.h>
+#include <folly/synchronization/Baton.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <atomic>
@@ -9,7 +9,6 @@
 #include "yarpl/Observable.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscribers.h"
-
 #include "yarpl/test_utils/Mocks.h"
 #include "yarpl/test_utils/Tuple.h"
 
@@ -657,19 +656,19 @@ TEST(Observable, DISABLED_CancelSubscriptionChain) {
 }
 
 TEST(Observable, DoOnSubscribeTest) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
-    obs->onComplete();
-  });
+  auto a = Observable<int>::create(
+      [](Reference<Observer<int>> obs) { obs->onComplete(); });
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
 
-  a->doOnSubscribe([&]{checkpoint.Call();})->subscribe();
+  a->doOnSubscribe([&] { checkpoint.Call(); })->subscribe();
 }
 
 TEST(Observable, DoOnNextTest) {
   std::vector<int64_t> values;
-  auto observable = Observables::range(10, 14)->doOnNext([&](int64_t v) { values.push_back(v);});
+  auto observable = Observables::range(10, 14)->doOnNext(
+      [&](int64_t v) { values.push_back(v); });
   auto values2 = run(std::move(observable));
   EXPECT_EQ(values, values2);
 }
@@ -682,18 +681,17 @@ TEST(Observable, DoOnErrorTest) {
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
 
-  a->doOnError([&](const auto&){checkpoint.Call();})->subscribe();
+  a->doOnError([&](const auto&) { checkpoint.Call(); })->subscribe();
 }
 
 TEST(Observable, DoOnTerminateTest) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
-    obs->onComplete();
-  });
+  auto a = Observable<int>::create(
+      [](Reference<Observer<int>> obs) { obs->onComplete(); });
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
 
-  a->doOnTerminate([&](){checkpoint.Call();})->subscribe();
+  a->doOnTerminate([&]() { checkpoint.Call(); })->subscribe();
 }
 
 TEST(Observable, DoOnTerminate2Test) {
@@ -704,7 +702,7 @@ TEST(Observable, DoOnTerminate2Test) {
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
 
-  a->doOnTerminate([&](){checkpoint.Call();})->subscribe();
+  a->doOnTerminate([&]() { checkpoint.Call(); })->subscribe();
 }
 
 TEST(Observable, DoOnEachTest) {
@@ -715,7 +713,7 @@ TEST(Observable, DoOnEachTest) {
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call()).Times(2);
-  a->doOnEach([&](){checkpoint.Call();})->subscribe();
+  a->doOnEach([&]() { checkpoint.Call(); })->subscribe();
 }
 
 TEST(Observable, DoOnTest) {
@@ -729,6 +727,12 @@ TEST(Observable, DoOnTest) {
   MockFunction<void()> checkpoint2;
   EXPECT_CALL(checkpoint2, Call());
 
-  a->doOn([&](int value) { checkpoint1.Call();
-  EXPECT_EQ(value, 5); }, []{FAIL();}, [&](const auto&){checkpoint2.Call();})->subscribe();
+  a->doOn(
+       [&](int value) {
+         checkpoint1.Call();
+         EXPECT_EQ(value, 5);
+       },
+       [] { FAIL(); },
+       [&](const auto&) { checkpoint2.Call(); })
+      ->subscribe();
 }

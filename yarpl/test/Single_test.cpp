@@ -1,13 +1,12 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include <folly/Baton.h>
+#include <folly/ExceptionWrapper.h>
+#include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <atomic>
-#include <folly/ExceptionWrapper.h>
 
 #include "yarpl/Single.h"
 #include "yarpl/single/SingleTestObserver.h"
-
 #include "yarpl/test_utils/Tuple.h"
 
 // TODO can we eliminate need to import both of these?

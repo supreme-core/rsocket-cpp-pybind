@@ -6,9 +6,9 @@
 #include <type_traits>
 #include <vector>
 
-#include <folly/Baton.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/EventBaseThread.h>
+#include <folly/synchronization/Baton.h>
 
 #include "yarpl/test_utils/Mocks.h"
 
@@ -199,14 +199,10 @@ std::shared_ptr<FlowableEvbPair> make_range_flowable(int start, int end) {
               /* request */
               CHECK_EQ(req, 1);
               if (start >= end) {
-                evb->runInEventBaseThread([=] {
-                  s->onComplete();
-                });
+                evb->runInEventBaseThread([=] { s->onComplete(); });
               } else {
                 auto n = start++;
-                evb->runInEventBaseThread([=] {
-                  s->onNext(n);
-                });
+                evb->runInEventBaseThread([=] { s->onNext(n); });
               }
             },
             /* onCancel: do nothing */

@@ -4,9 +4,10 @@
 
 #include <mutex>
 
-#include <folly/Baton.h>
 #include <folly/Synchronized.h>
 #include <folly/ThreadLocal.h>
+#include <folly/synchronization/Baton.h>
+
 #include "rsocket/ConnectionAcceptor.h"
 #include "rsocket/RSocketParameters.h"
 #include "rsocket/RSocketResponder.h"
