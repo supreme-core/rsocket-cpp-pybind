@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "benchmarks/Latch.h"
+#include "rsocket/benchmarks/Latch.h"
 #include "rsocket/RSocketResponder.h"
 
 namespace rsocket {

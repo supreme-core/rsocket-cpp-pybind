@@ -1,8 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "benchmarks/Fixture.h"
-#include "benchmarks/Latch.h"
-#include "benchmarks/Throughput.h"
+#include "rsocket/benchmarks/Fixture.h"
+#include "rsocket/benchmarks/Latch.h"
+#include "rsocket/benchmarks/Throughput.h"
 
 #include <folly/Benchmark.h>
 #include <folly/init/Init.h>
