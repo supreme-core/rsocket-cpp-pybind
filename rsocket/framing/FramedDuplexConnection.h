@@ -8,7 +8,6 @@
 namespace rsocket {
 
 class FramedReader;
-class FramedWriter;
 struct ProtocolVersion;
 
 class FramedDuplexConnection : public virtual DuplexConnection {

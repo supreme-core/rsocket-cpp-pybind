@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "rsocket/framing/FramedReader.h"
-#include "test/test_utils/MockDuplexConnection.h"
+#include "rsocket/test/test_utils/MockDuplexConnection.h"
 
 using namespace rsocket;
 using namespace testing;

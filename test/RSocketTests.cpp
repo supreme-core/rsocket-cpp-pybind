@@ -1,9 +1,9 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "test/RSocketTests.h"
+#include "rsocket/test/RSocketTests.h"
 
 #include "rsocket/transports/tcp/TcpConnectionAcceptor.h"
-#include "test/test_utils/GenericRequestResponseHandler.h"
+#include "rsocket/test/test_utils/GenericRequestResponseHandler.h"
 
 namespace rsocket {
 namespace tests {

@@ -9,8 +9,8 @@
 
 #include "RSocketTests.h"
 
-#include "test/handlers/HelloServiceHandler.h"
-#include "test/test_utils/ColdResumeManager.h"
+#include "rsocket/test/handlers/HelloServiceHandler.h"
+#include "rsocket/test/test_utils/ColdResumeManager.h"
 
 DEFINE_int32(num_clients, 5, "Number of clients to parallely cold-resume");
 

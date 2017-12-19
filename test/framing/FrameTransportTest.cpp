@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "rsocket/framing/FrameTransportImpl.h"
-#include "test/test_utils/MockDuplexConnection.h"
-#include "test/test_utils/MockFrameProcessor.h"
+#include "rsocket/test/test_utils/MockDuplexConnection.h"
+#include "rsocket/test/test_utils/MockFrameProcessor.h"
 
 using namespace rsocket;
 using namespace testing;

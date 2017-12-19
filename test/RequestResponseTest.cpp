@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "RSocketTests.h"
-#include "test/test_utils/GenericRequestResponseHandler.h"
+#include "rsocket/test/test_utils/GenericRequestResponseHandler.h"
 #include "yarpl/Single.h"
 #include "yarpl/single/SingleTestObserver.h"
 

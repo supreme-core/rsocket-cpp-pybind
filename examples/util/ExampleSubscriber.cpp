@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "examples/util/ExampleSubscriber.h"
+#include "rsocket/examples/util/ExampleSubscriber.h"
 #include <iostream>
 
 using namespace ::rsocket;

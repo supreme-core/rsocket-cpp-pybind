@@ -6,8 +6,8 @@
 
 #include "RSocketTests.h"
 
-#include "test/handlers/HelloServiceHandler.h"
-#include "test/handlers/HelloStreamRequestHandler.h"
+#include "rsocket/test/handlers/HelloServiceHandler.h"
+#include "rsocket/test/handlers/HelloStreamRequestHandler.h"
 
 #include "yarpl/flowable/TestSubscriber.h"
 

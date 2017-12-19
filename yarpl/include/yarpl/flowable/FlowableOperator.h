@@ -798,7 +798,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
 #endif
 
         BaseSubscriber<R>::request(1);
-      };
+      }
 
       void onNextImpl(R value) final {
         if (auto fms = flatMapSubscription_.load()) {

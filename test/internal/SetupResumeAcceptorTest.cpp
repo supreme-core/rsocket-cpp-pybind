@@ -6,8 +6,8 @@
 
 #include "rsocket/framing/FrameTransportImpl.h"
 #include "rsocket/internal/SetupResumeAcceptor.h"
-#include "test/test_utils/MockDuplexConnection.h"
-#include "test/test_utils/MockFrameProcessor.h"
+#include "rsocket/test/test_utils/MockDuplexConnection.h"
+#include "rsocket/test/test_utils/MockFrameProcessor.h"
 #include "yarpl/test_utils/Mocks.h"
 
 using namespace rsocket;

@@ -1,7 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "test/handlers/HelloServiceHandler.h"
-#include "test/handlers/HelloStreamRequestHandler.h"
+#include "rsocket/test/handlers/HelloServiceHandler.h"
+#include "rsocket/test/handlers/HelloStreamRequestHandler.h"
 
 namespace rsocket {
 namespace tests {

@@ -8,8 +8,8 @@
 #include "rsocket/framing/FrameSerializer.h"
 #include "rsocket/framing/FrameTransportImpl.h"
 #include "rsocket/internal/WarmResumeManager.h"
-#include "test/test_utils/MockDuplexConnection.h"
-#include "test/test_utils/MockStats.h"
+#include "rsocket/test/test_utils/MockDuplexConnection.h"
+#include "rsocket/test/test_utils/MockStats.h"
 
 using namespace ::testing;
 using namespace ::rsocket;

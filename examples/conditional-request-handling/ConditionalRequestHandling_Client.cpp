@@ -5,7 +5,7 @@
 #include <folly/portability/GFlags.h>
 #include <iostream>
 
-#include "examples/util/ExampleSubscriber.h"
+#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/RSocket.h"
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 #include "yarpl/Flowable.h"

@@ -5,7 +5,7 @@
 #include <folly/Random.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gtest/gtest.h>
-#include "test/handlers/HelloStreamRequestHandler.h"
+#include "rsocket/test/handlers/HelloStreamRequestHandler.h"
 
 using namespace rsocket;
 using namespace rsocket::tests;
