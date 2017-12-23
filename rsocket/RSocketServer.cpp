@@ -142,7 +142,7 @@ void RSocketServer::onRSocketSetup(
   auto rs = std::make_shared<RSocketStateMachine>(
       useScheduledResponder_
           ? std::make_shared<ScheduledRSocketResponder>(
-              std::move(connectionParams.responder), *eventBase)
+                std::move(connectionParams.responder), *eventBase)
           : std::move(connectionParams.responder),
       nullptr,
       RSocketMode::SERVER,
@@ -184,14 +184,13 @@ void RSocketServer::onRSocketResume(
         std::move(frameTransport),
         eventBase, /* Transport EventBase */
         &serverState->eventBase_); /* StateMachine EventBase */
-    serverState->eventBase_.runInEventBaseThread([
-      serverState,
-      scheduledFT = std::move(scheduledFT),
-      resumeParams = std::move(resumeParams)
-    ]() {
-      serverState->rSocketStateMachine_->resumeServer(
-          std::move(scheduledFT), resumeParams);
-    });
+    serverState->eventBase_.runInEventBaseThread(
+        [serverState,
+         scheduledFT = std::move(scheduledFT),
+         resumeParams = std::move(resumeParams)]() mutable {
+          serverState->rSocketStateMachine_->resumeServer(
+              std::move(scheduledFT), resumeParams);
+        });
   } else {
     // If the resumed connection is on the same EventBase, then the
     // RSocketStateMachine and Transport can continue living in the same
@@ -214,6 +213,10 @@ void RSocketServer::unpark() {
 folly::Optional<uint16_t> RSocketServer::listeningPort() const {
   return duplexConnectionAcceptor_ ? duplexConnectionAcceptor_->listeningPort()
                                    : folly::none;
+}
+
+size_t RSocketServer::getNumConnections() {
+  return connectionSet_ ? connectionSet_->size() : 0;
 }
 
 } // namespace rsocket

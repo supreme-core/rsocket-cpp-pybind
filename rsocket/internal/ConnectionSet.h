@@ -30,6 +30,8 @@ class ConnectionSet {
 
   void remove(const std::shared_ptr<RSocketStateMachine>&);
 
+  size_t size();
+
  private:
   using StateMachineMap = std::
       unordered_map<std::shared_ptr<RSocketStateMachine>, folly::EventBase*>;

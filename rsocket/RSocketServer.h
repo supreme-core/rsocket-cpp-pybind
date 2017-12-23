@@ -90,6 +90,11 @@ class RSocketServer {
    */
   void setSingleThreadedResponder();
 
+  /**
+   * Number of active connections to this server.
+   */
+  size_t getNumConnections();
+
  private:
   void onRSocketSetup(
       std::shared_ptr<RSocketServiceHandler> serviceHandler,

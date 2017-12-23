@@ -62,4 +62,9 @@ void ConnectionSet::remove(
   auto const result = locked->erase(machine);
   DCHECK_LE(result, 1);
 }
+
+size_t ConnectionSet::size() {
+  return machines_.lock()->size();
+}
+
 }
