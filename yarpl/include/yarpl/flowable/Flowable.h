@@ -38,6 +38,8 @@ struct IsFlowable<Reference<Flowable<R>>> : std::true_type {
 template <typename T>
 class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
+   virtual ~Flowable() = default;
+
   virtual void subscribe(Reference<Subscriber<T>>) = 0;
 
   /**
