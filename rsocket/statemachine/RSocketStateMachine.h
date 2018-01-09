@@ -160,7 +160,7 @@ class RSocketStateMachine final
   DuplexConnection* getConnection();
 
  private:
-  void connect(yarpl::Reference<FrameTransport>, ProtocolVersion);
+  void connect(yarpl::Reference<FrameTransport>);
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
@@ -179,8 +179,6 @@ class RSocketStateMachine final
   bool isClosed() const;
 
   uint32_t getKeepaliveTime() const;
-
-  void setFrameSerializer(std::unique_ptr<FrameSerializer>);
 
   void sendPendingFrames();
 
@@ -258,6 +256,10 @@ class RSocketStateMachine final
   bool ensureOrAutodetectFrameSerializer(const folly::IOBuf& firstFrame);
 
   size_t getConsumerAllowance(StreamId) const;
+
+  void setProtocolVersionOrThrow(
+      ProtocolVersion version,
+      const yarpl::Reference<FrameTransport>& transport);
 
   /// Client/server mode this state machine is operating in.
   const RSocketMode mode_;

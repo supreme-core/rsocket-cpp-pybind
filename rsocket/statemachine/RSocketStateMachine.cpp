@@ -78,7 +78,8 @@ void RSocketStateMachine::connectServer(
     yarpl::Reference<FrameTransport> frameTransport,
     const SetupParameters& setupParams) {
   setResumable(setupParams.resumable);
-  connect(std::move(frameTransport), setupParams.protocolVersion);
+  setProtocolVersionOrThrow(setupParams.protocolVersion, frameTransport);
+  connect(std::move(frameTransport));
   sendPendingFrames();
 }
 
@@ -98,8 +99,8 @@ bool RSocketStateMachine::resumeServer(
 
   std::runtime_error exn{"Connection being resumed, dropping old connection"};
   disconnect(std::move(exn));
-
-  connect(std::move(frameTransport), resumeParams.protocolVersion);
+  setProtocolVersionOrThrow(resumeParams.protocolVersion, frameTransport);
+  connect(std::move(frameTransport));
 
   auto result = resumeFromPositionOrClose(
       resumeParams.serverPosition, resumeParams.clientPosition);
@@ -120,8 +121,8 @@ void RSocketStateMachine::connectClient(
   auto const version = params.protocolVersion == ProtocolVersion::Unknown
       ? ProtocolVersion::Current()
       : params.protocolVersion;
-  setFrameSerializer(FrameSerializer::createFrameSerializer(version));
 
+  setProtocolVersionOrThrow(version, transport);
   setResumable(params.resumable);
 
   Frame_SETUP frame(
@@ -140,7 +141,7 @@ void RSocketStateMachine::connectClient(
 
   VLOG(3) << "Out: " << frame;
 
-  connect(std::move(transport), ProtocolVersion::Unknown);
+  connect(std::move(transport));
   // making sure we send setup frame first
   outputFrame(frameSerializer_->serializeOut(std::move(frame)));
   // then the rest of the cached frames will be sent
@@ -152,20 +153,16 @@ void RSocketStateMachine::resumeClient(
     yarpl::Reference<FrameTransport> transport,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
     ProtocolVersion version) {
-  // Verify warm-resumption using the same version.
-  if (frameSerializer_ && frameSerializer_->protocolVersion() != version) {
-    throw std::invalid_argument{"Client resuming with different version"};
-  }
-
   // Cold-resumption.  Set the serializer.
   if (!frameSerializer_) {
     CHECK(coldResumeHandler_);
     coldResumeInProgress_ = true;
-    if (version == ProtocolVersion::Unknown) {
-      version = ProtocolVersion::Current();
-    }
-    setFrameSerializer(FrameSerializer::createFrameSerializer(version));
   }
+
+  setProtocolVersionOrThrow(
+      version == ProtocolVersion::Unknown ? ProtocolVersion::Current()
+                                          : version,
+      transport);
 
   Frame_RESUME resumeFrame(
       std::move(token),
@@ -183,26 +180,11 @@ void RSocketStateMachine::resumeClient(
 }
 
 void RSocketStateMachine::connect(
-    yarpl::Reference<FrameTransport> transport,
-    ProtocolVersion version) {
+    yarpl::Reference<FrameTransport> transport) {
   VLOG(2) << "Connecting to transport " << transport.get();
 
   CHECK(isDisconnected());
   CHECK(transport);
-  if (version != ProtocolVersion::Unknown) {
-    if (frameSerializer_) {
-      if (frameSerializer_->protocolVersion() != version) {
-        transport->close();
-        throw std::runtime_error{"Protocol version mismatch"};
-      }
-    } else {
-      frameSerializer_ = FrameSerializer::createFrameSerializer(version);
-      if (!frameSerializer_) {
-        transport->close();
-        throw std::runtime_error{"Invalid protocol version"};
-      }
-    }
-  }
 
   // Keep a reference to the argument, make sure the instance survives until
   // setFrameProcessor() returns.  There can be terminating signals processed in
@@ -368,7 +350,7 @@ void RSocketStateMachine::reconnect(
   // TODO: output frame buffer should not be written to the new connection until
   // we receive resume ok
   resumeCallback_ = std::move(resumeCallback);
-  connect(std::move(newFrameTransport), ProtocolVersion::Unknown);
+  connect(std::move(newFrameTransport));
 }
 
 void RSocketStateMachine::addStream(
@@ -884,14 +866,6 @@ bool RSocketStateMachine::isClosed() const {
   return isClosed_;
 }
 
-void RSocketStateMachine::setFrameSerializer(
-    std::unique_ptr<FrameSerializer> frameSerializer) {
-  CHECK(frameSerializer);
-  // serializer is not interchangeable, it would screw up resumability
-  // CHECK(!frameSerializer_);
-  frameSerializer_ = std::move(frameSerializer);
-}
-
 void RSocketStateMachine::writeNewStream(
     StreamId streamId,
     StreamType streamType,
@@ -996,4 +970,33 @@ void RSocketStateMachine::registerSet(std::shared_ptr<ConnectionSet> set) {
 DuplexConnection* RSocketStateMachine::getConnection() {
   return frameTransport_ ? frameTransport_->getConnection() : nullptr;
 }
+
+void RSocketStateMachine::setProtocolVersionOrThrow(
+    ProtocolVersion version,
+    const yarpl::Reference<FrameTransport>& transport) {
+  CHECK(version != ProtocolVersion::Unknown);
+
+  // TODO(lehecka): this is a temporary guard to make sure the transport is
+  // explicitly closed when exceptions are thrown. The right solution is to
+  // automatically close duplex connection in the destructor when unique_ptr
+  // is released
+  auto transportGuard = folly::makeGuard([&] { transport->close(); });
+
+  if (frameSerializer_) {
+    if (frameSerializer_->protocolVersion() != version) {
+      // serializer is not interchangeable, it would screw up resumability
+      throw std::runtime_error{"Protocol version mismatch"};
+    }
+  } else {
+    auto frameSerializer = FrameSerializer::createFrameSerializer(version);
+    if (!frameSerializer) {
+      throw std::runtime_error{"Invalid protocol version"};
+    }
+
+    frameSerializer_ = std::move(frameSerializer);
+  }
+
+  transportGuard.dismiss();
+}
+
 } // namespace rsocket
