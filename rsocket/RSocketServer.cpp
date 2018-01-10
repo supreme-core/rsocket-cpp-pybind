@@ -124,7 +124,7 @@ void RSocketServer::acceptConnection(
 
 void RSocketServer::onRSocketSetup(
     std::shared_ptr<RSocketServiceHandler> serviceHandler,
-    yarpl::Reference<FrameTransport> frameTransport,
+    std::shared_ptr<FrameTransport> frameTransport,
     SetupParameters setupParams) {
   auto eventBase = folly::EventBaseManager::get()->getExistingEventBase();
   VLOG(2) << "Received new setup payload on " << eventBase->getName();
@@ -163,7 +163,7 @@ void RSocketServer::onRSocketSetup(
 
 void RSocketServer::onRSocketResume(
     std::shared_ptr<RSocketServiceHandler> serviceHandler,
-    yarpl::Reference<FrameTransport> frameTransport,
+    std::shared_ptr<FrameTransport> frameTransport,
     ResumeParameters resumeParams) {
   auto result = serviceHandler->onResume(resumeParams.token);
   if (result.hasError()) {

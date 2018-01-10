@@ -14,8 +14,8 @@ namespace observable {
 
 class Observables {
  public:
-  static Reference<Observable<int64_t>> range(int64_t start, int64_t end) {
-    auto lambda = [start, end](Reference<Observer<int64_t>> observer) {
+  static std::shared_ptr<Observable<int64_t>> range(int64_t start, int64_t end) {
+    auto lambda = [start, end](std::shared_ptr<Observer<int64_t>> observer) {
       for (int64_t i = start; i < end; ++i) {
         observer->onNext(i);
       }
@@ -26,8 +26,8 @@ class Observables {
   }
 
   template <typename T>
-  static Reference<Observable<T>> just(const T& value) {
-    auto lambda = [value](Reference<Observer<T>> observer) {
+  static std::shared_ptr<Observable<T>> just(const T& value) {
+    auto lambda = [value](std::shared_ptr<Observer<T>> observer) {
       observer->onNext(value);
       observer->onComplete();
     };
@@ -36,10 +36,10 @@ class Observables {
   }
 
   template <typename T>
-  static Reference<Observable<T>> justN(std::initializer_list<T> list) {
+  static std::shared_ptr<Observable<T>> justN(std::initializer_list<T> list) {
     std::vector<T> vec(list);
 
-    auto lambda = [v = std::move(vec)](Reference<Observer<T>> observer) {
+    auto lambda = [v = std::move(vec)](std::shared_ptr<Observer<T>> observer) {
       for (auto const& elem : v) {
         observer->onNext(elem);
       }
@@ -51,9 +51,9 @@ class Observables {
 
   // this will generate an observable which can be subscribed to only once
   template <typename T>
-  static Reference<Observable<T>> justOnce(T value) {
+  static std::shared_ptr<Observable<T>> justOnce(T value) {
     auto lambda = [ value = std::move(value), used = false ](
-        Reference<Observer<T>> observer) mutable {
+        std::shared_ptr<Observer<T>> observer) mutable {
       if (used) {
         observer->onError(
             std::runtime_error("justOnce value was already used"));
@@ -72,31 +72,31 @@ class Observables {
       typename T,
       typename OnSubscribe,
       typename = typename std::enable_if<
-          folly::is_invocable<OnSubscribe, Reference<Observer<T>>>::value>::
+          folly::is_invocable<OnSubscribe, std::shared_ptr<Observer<T>>>::value>::
           type>
-  static Reference<Observable<T>> create(OnSubscribe function) {
+  static std::shared_ptr<Observable<T>> create(OnSubscribe function) {
     return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>
-  static Reference<Observable<T>> empty() {
-    auto lambda = [](Reference<Observer<T>> observer) {
+  static std::shared_ptr<Observable<T>> empty() {
+    auto lambda = [](std::shared_ptr<Observer<T>> observer) {
       observer->onComplete();
     };
     return Observable<T>::create(std::move(lambda));
   }
 
   template <typename T>
-  static Reference<Observable<T>> error(folly::exception_wrapper ex) {
-    auto lambda = [ex = std::move(ex)](Reference<Observer<T>> observer) {
+  static std::shared_ptr<Observable<T>> error(folly::exception_wrapper ex) {
+    auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
       observer->onError(std::move(ex));
     };
     return Observable<T>::create(std::move(lambda));
   }
 
   template <typename T, typename ExceptionType>
-  static Reference<Observable<T>> error(const ExceptionType& ex) {
-    auto lambda = [ex = std::move(ex)](Reference<Observer<T>> observer) {
+  static std::shared_ptr<Observable<T>> error(const ExceptionType& ex) {
+    auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
       observer->onError(std::move(ex));
     };
     return Observable<T>::create(std::move(lambda));

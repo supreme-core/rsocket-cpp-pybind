@@ -20,7 +20,7 @@ using namespace rsocket::tests::client_server;
 using namespace yarpl;
 using namespace yarpl::flowable;
 
-typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
+typedef std::map<std::string, std::shared_ptr<Subscriber<Payload>>> HelloSubscribers;
 
 namespace {
 class HelloSubscriber : public BaseSubscriber<Payload> {
@@ -85,7 +85,7 @@ class HelloResumeHandler : public ColdResumeHandler {
     return streamToken;
   }
 
-  Reference<Subscriber<Payload>> handleRequesterResumeStream(
+  std::shared_ptr<Subscriber<Payload>> handleRequesterResumeStream(
       std::string streamToken,
       size_t consumerAllowance) override {
     CHECK(subscribers_.find(streamToken) != subscribers_.end());

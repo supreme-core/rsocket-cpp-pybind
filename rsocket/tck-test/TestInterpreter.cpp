@@ -185,7 +185,7 @@ void TestInterpreter::handleAssert(const AssertCommand& command) {
   }
 }
 
-yarpl::Reference<BaseSubscriber> TestInterpreter::getSubscriber(
+std::shared_ptr<BaseSubscriber> TestInterpreter::getSubscriber(
     const std::string& id) {
   auto found = testSubscribers_.find(id);
   if (found == testSubscribers_.end()) {

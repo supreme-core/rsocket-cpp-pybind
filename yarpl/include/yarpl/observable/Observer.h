@@ -17,7 +17,7 @@ class Observer : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
-  virtual void onSubscribe(Reference<Subscription> subscription) {
+  virtual void onSubscribe(std::shared_ptr<Subscription> subscription) {
     DCHECK(subscription);
 
     if (subscription_) {
@@ -52,7 +52,7 @@ class Observer : public virtual Refcounted, public yarpl::enable_get_ref {
   // subscription has been cancelled.
   // Note that calling cancel on the tied subscription is not going to cancel
   // this subscriber
-  void addSubscription(Reference<Subscription> subscription) {
+  void addSubscription(std::shared_ptr<Subscription> subscription) {
     if(!subscription_) {
       subscription->cancel();
       return;
@@ -80,7 +80,7 @@ class Observer : public virtual Refcounted, public yarpl::enable_get_ref {
   }
 
  private:
-  Reference<Subscription> subscription_;
+  std::shared_ptr<Subscription> subscription_;
 };
 }
 }

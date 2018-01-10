@@ -113,7 +113,7 @@ void FramedDuplexConnection::send(std::unique_ptr<folly::IOBuf> buf) {
 }
 
 void FramedDuplexConnection::setInput(
-    yarpl::Reference<DuplexConnection::Subscriber> framesSink) {
+    std::shared_ptr<DuplexConnection::Subscriber> framesSink) {
   if (!inputReader_) {
     inputReader_ = yarpl::make_ref<FramedReader>(protocolVersion_);
     inner_->setInput(inputReader_);

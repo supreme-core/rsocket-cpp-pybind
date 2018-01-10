@@ -11,7 +11,7 @@ using namespace yarpl;
 using namespace yarpl::flowable;
 
 void RequestResponseRequester::subscribe(
-    yarpl::Reference<yarpl::single::SingleObserver<Payload>> subscriber) {
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> subscriber) {
   DCHECK(!isTerminated());
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_ = std::move(subscriber);

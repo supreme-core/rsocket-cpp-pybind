@@ -75,7 +75,7 @@ void RSocketStateMachine::setResumable(bool resumable) {
 }
 
 void RSocketStateMachine::connectServer(
-    yarpl::Reference<FrameTransport> frameTransport,
+    std::shared_ptr<FrameTransport> frameTransport,
     const SetupParameters& setupParams) {
   setResumable(setupParams.resumable);
   setProtocolVersionOrThrow(setupParams.protocolVersion, frameTransport);
@@ -84,7 +84,7 @@ void RSocketStateMachine::connectServer(
 }
 
 bool RSocketStateMachine::resumeServer(
-    yarpl::Reference<FrameTransport> frameTransport,
+    std::shared_ptr<FrameTransport> frameTransport,
     const ResumeParameters& resumeParams) {
   folly::Optional<int64_t> clientAvailable =
       (resumeParams.clientPosition == kUnspecifiedResumePosition)
@@ -116,7 +116,7 @@ bool RSocketStateMachine::resumeServer(
 }
 
 void RSocketStateMachine::connectClient(
-    yarpl::Reference<FrameTransport> transport,
+    std::shared_ptr<FrameTransport> transport,
     SetupParameters params) {
   auto const version = params.protocolVersion == ProtocolVersion::Unknown
       ? ProtocolVersion::Current()
@@ -150,7 +150,7 @@ void RSocketStateMachine::connectClient(
 
 void RSocketStateMachine::resumeClient(
     ResumeIdentificationToken token,
-    yarpl::Reference<FrameTransport> transport,
+    std::shared_ptr<FrameTransport> transport,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback,
     ProtocolVersion version) {
   // Cold-resumption.  Set the serializer.
@@ -180,7 +180,7 @@ void RSocketStateMachine::resumeClient(
 }
 
 void RSocketStateMachine::connect(
-    yarpl::Reference<FrameTransport> transport) {
+    std::shared_ptr<FrameTransport> transport) {
   VLOG(2) << "Connecting to transport " << transport.get();
 
   CHECK(isDisconnected());
@@ -338,7 +338,7 @@ void RSocketStateMachine::closeWithError(Frame_ERROR&& error) {
 }
 
 void RSocketStateMachine::reconnect(
-    yarpl::Reference<FrameTransport> newFrameTransport,
+    std::shared_ptr<FrameTransport> newFrameTransport,
     std::unique_ptr<ClientResumeStatusCallback> resumeCallback) {
   CHECK(newFrameTransport);
   CHECK(resumeCallback);
@@ -355,7 +355,7 @@ void RSocketStateMachine::reconnect(
 
 void RSocketStateMachine::addStream(
     StreamId streamId,
-    yarpl::Reference<StreamStateMachineBase> stateMachine) {
+    std::shared_ptr<StreamStateMachineBase> stateMachine) {
   auto result =
       streamState_.streams_.emplace(streamId, std::move(stateMachine));
   DCHECK(result.second);
@@ -973,7 +973,7 @@ DuplexConnection* RSocketStateMachine::getConnection() {
 
 void RSocketStateMachine::setProtocolVersionOrThrow(
     ProtocolVersion version,
-    const yarpl::Reference<FrameTransport>& transport) {
+    const std::shared_ptr<FrameTransport>& transport) {
   CHECK(version != ProtocolVersion::Unknown);
 
   // TODO(lehecka): this is a temporary guard to make sure the transport is

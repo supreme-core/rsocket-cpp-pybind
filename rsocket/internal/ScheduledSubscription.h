@@ -17,7 +17,7 @@ namespace rsocket {
 class ScheduledSubscription : public yarpl::flowable::Subscription {
  public:
   ScheduledSubscription(
-      yarpl::Reference<yarpl::flowable::Subscription> inner,
+      std::shared_ptr<yarpl::flowable::Subscription> inner,
       folly::EventBase& eventBase);
 
   void request(int64_t n) noexcept override;
@@ -25,7 +25,7 @@ class ScheduledSubscription : public yarpl::flowable::Subscription {
   void cancel() noexcept override;
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscription> inner_;
+  std::shared_ptr<yarpl::flowable::Subscription> inner_;
   folly::EventBase& eventBase_;
 };
 

@@ -22,7 +22,7 @@ class RequestResponseResponder : public StreamStateMachineBase,
       : StreamStateMachineBase(std::move(writer), streamId) {}
 
  private:
-  void onSubscribe(yarpl::Reference<yarpl::single::SingleSubscription>
+  void onSubscribe(std::shared_ptr<yarpl::single::SingleSubscription>
                        subscription) noexcept override;
   void onSuccess(Payload) noexcept override;
   void onError(folly::exception_wrapper) noexcept override;
@@ -37,7 +37,7 @@ class RequestResponseResponder : public StreamStateMachineBase,
     CLOSED,
   } state_{State::RESPONDING};
 
-  yarpl::Reference<yarpl::single::SingleSubscription> producingSubscription_;
+  std::shared_ptr<yarpl::single::SingleSubscription> producingSubscription_;
 #ifdef DEBUG
   std::atomic<bool> gotOnSubscribe_{false};
   std::atomic<bool> gotTerminating_{false};

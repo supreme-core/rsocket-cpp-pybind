@@ -20,14 +20,14 @@ class FlowableSubscriber : public BaseSubscriber,
 
  protected:
   // Inherited from flowable::Subscriber
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
                        subscription) noexcept override;
   void onNext(Payload element) noexcept override;
   void onComplete() noexcept override;
   void onError(folly::exception_wrapper ex) noexcept override;
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscription> subscription_;
+  std::shared_ptr<yarpl::flowable::Subscription> subscription_;
   int initialRequestN_{0};
 };
 

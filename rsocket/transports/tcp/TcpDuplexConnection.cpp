@@ -33,7 +33,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
   }
 
   void setInput(
-      yarpl::Reference<DuplexConnection::Subscriber> inputSubscriber) {
+      std::shared_ptr<DuplexConnection::Subscriber> inputSubscriber) {
     if (inputSubscriber && isClosed()) {
       inputSubscriber->onComplete();
       return;
@@ -142,7 +142,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
   folly::AsyncTransportWrapper::UniquePtr socket_;
   const std::shared_ptr<RSocketStats> stats_;
 
-  yarpl::Reference<DuplexConnection::Subscriber> inputSubscriber_;
+  std::shared_ptr<DuplexConnection::Subscriber> inputSubscriber_;
   int refCount_{0};
 };
 
@@ -213,7 +213,7 @@ void TcpDuplexConnection::send(std::unique_ptr<folly::IOBuf> buf) {
 }
 
 void TcpDuplexConnection::setInput(
-    yarpl::Reference<DuplexConnection::Subscriber> inputSubscriber) {
+    std::shared_ptr<DuplexConnection::Subscriber> inputSubscriber) {
   // we don't care if the subscriber will call request synchronously
   inputSubscriber->onSubscribe(
       yarpl::make_ref<TcpInputSubscription>(tcpReaderWriter_));

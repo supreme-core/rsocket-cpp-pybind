@@ -31,9 +31,9 @@ class FrameTransport;
 class SetupResumeAcceptor final {
  public:
   using OnSetup =
-      folly::Function<void(yarpl::Reference<FrameTransport>, SetupParameters)>;
+      folly::Function<void(std::shared_ptr<FrameTransport>, SetupParameters)>;
   using OnResume =
-      folly::Function<void(yarpl::Reference<FrameTransport>, ResumeParameters)>;
+      folly::Function<void(std::shared_ptr<FrameTransport>, ResumeParameters)>;
 
   explicit SetupResumeAcceptor(folly::EventBase*);
   ~SetupResumeAcceptor();
@@ -87,7 +87,7 @@ class SetupResumeAcceptor final {
       OnResume);
 
   /// Remove a OneFrameSubscriber from the set.
-  void remove(const yarpl::Reference<OneFrameSubscriber>&);
+  void remove(const std::shared_ptr<OneFrameSubscriber>&);
 
   /// Close all open connections.
   void closeAll();
@@ -100,7 +100,7 @@ class SetupResumeAcceptor final {
   /// work within the owner thread.
   bool inOwnerThread() const;
 
-  std::unordered_set<yarpl::Reference<OneFrameSubscriber>> connections_;
+  std::unordered_set<std::shared_ptr<OneFrameSubscriber>> connections_;
 
   bool closed_{false};
 

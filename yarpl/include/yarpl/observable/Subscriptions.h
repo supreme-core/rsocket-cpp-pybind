@@ -27,9 +27,9 @@ class CallbackSubscription : public Subscription {
 
 class Subscriptions {
  public:
-  static Reference<Subscription> create(std::function<void()> onCancel);
-  static Reference<Subscription> create(std::atomic_bool& cancelled);
-  static Reference<Subscription> create();
+  static std::shared_ptr<Subscription> create(std::function<void()> onCancel);
+  static std::shared_ptr<Subscription> create(std::atomic_bool& cancelled);
+  static std::shared_ptr<Subscription> create();
 };
 
 } // observable namespace

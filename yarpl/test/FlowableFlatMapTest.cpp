@@ -25,7 +25,7 @@ namespace {
 /// exception was sent, the exception is thrown.
 template <typename T>
 std::vector<T> run(
-    Reference<Flowable<T>> flowable,
+    std::shared_ptr<Flowable<T>> flowable,
     int64_t requestCount = 100) {
   auto subscriber = make_ref<TestSubscriber<T>>(requestCount);
   flowable->subscribe(subscriber);
@@ -49,7 +49,7 @@ filter_range(std::vector<int64_t> in, int64_t startat, int64_t endat) {
 }
 
 auto make_flowable_mapper_func() {
-  return folly::Function<Reference<Flowable<int64_t>>(int)>([](int n) {
+  return folly::Function<std::shared_ptr<Flowable<int64_t>>(int)>([](int n) {
     switch (n) {
       case 10:
         return Flowables::range(n, 2);
@@ -121,7 +121,7 @@ TEST(FlowableFlatMapTest, FiniteRequested) {
 }
 
 TEST(FlowableFlatMapTest, MappingLambdaThrowsErrorOnFirstCall) {
-  folly::Function<Reference<Flowable<int64_t>>(int)> func = [](int n) {
+  folly::Function<std::shared_ptr<Flowable<int64_t>>(int)> func = [](int n) {
     CHECK_EQ(1, n);
     throw std::runtime_error{"throwing in mapper!"};
     return Flowables::empty<int64_t>();
@@ -138,7 +138,7 @@ TEST(FlowableFlatMapTest, MappingLambdaThrowsErrorOnFirstCall) {
 }
 
 TEST(FlowableFlatMapTest, MappedStreamThrows) {
-  folly::Function<Reference<Flowable<int64_t>>(int)> func = [](int n) {
+  folly::Function<std::shared_ptr<Flowable<int64_t>>(int)> func = [](int n) {
     CHECK_EQ(1, n);
 
     // flowable which emits an onNext, then the next iteration, emits an error
@@ -183,7 +183,7 @@ struct CBSubscription : yarpl::flowable::Subscription {
 
 struct FlowableEvbPair {
   FlowableEvbPair() = default;
-  Reference<Flowable<int>> flowable{nullptr};
+  std::shared_ptr<Flowable<int>> flowable{nullptr};
   folly::EventBaseThread evb{};
 };
 
@@ -192,7 +192,7 @@ std::shared_ptr<FlowableEvbPair> make_range_flowable(int start, int end) {
   ret->evb.start("MRF_Worker");
 
   ret->flowable = Flowables::fromPublisher<int>(
-      [&ret, start, end](Reference<Subscriber<int>> s) mutable {
+      [&ret, start, end](std::shared_ptr<Subscriber<int>> s) mutable {
         auto evb = ret->evb.getEventBase();
         auto subscription = yarpl::make_ref<CBSubscription>(
             [=](int64_t req) mutable {
@@ -268,10 +268,10 @@ TEST(FlowableFlatMapTest, MergeOperator) {
 
   auto p1 = Flowables::justN<std::string>({"foo", "bar"});
   auto p2 = Flowables::justN<std::string>({"baz", "quxx"});
-  Reference<Flowable<Reference<Flowable<std::string>>>> p3 =
-      Flowables::justN<Reference<Flowable<std::string>>>({p1, p2});
+  std::shared_ptr<Flowable<std::shared_ptr<Flowable<std::string>>>> p3 =
+      Flowables::justN<std::shared_ptr<Flowable<std::string>>>({p1, p2});
 
-  Reference<Flowable<std::string>> p4 = p3->merge();
+  std::shared_ptr<Flowable<std::string>> p4 = p3->merge();
   p4->subscribe(sub);
 
   EXPECT_EQ(0, sub->getValueCount());

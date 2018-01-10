@@ -16,7 +16,7 @@ class DoOperator : public ObservableOperator<U, U, DoOperator<U, OnSubscribeFunc
   using Super = ObservableOperator<U, U, ThisOperatorT>;
 
  public:
-  DoOperator(Reference<Observable<U>> upstream,
+  DoOperator(std::shared_ptr<Observable<U>> upstream,
              OnSubscribeFunc onSubscribeFunc,
              OnNextFunc onNextFunc,
              OnErrorFunc onErrorFunc,
@@ -27,7 +27,7 @@ class DoOperator : public ObservableOperator<U, U, DoOperator<U, OnSubscribeFunc
         onErrorFunc_(std::move(onErrorFunc)),
         onCompleteFunc_(std::move(onCompleteFunc)) {}
 
-  Reference<Subscription> subscribe(Reference<Observer<U>> observer) override {
+  std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<U>> observer) override {
     auto subscription =
         make_ref<DoSubscription>(this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(
@@ -42,12 +42,12 @@ class DoOperator : public ObservableOperator<U, U, DoOperator<U, OnSubscribeFunc
 
    public:
     DoSubscription(
-        Reference<ThisOperatorT> observable,
-        Reference<Observer<U>> observer)
+        std::shared_ptr<ThisOperatorT> observable,
+        std::shared_ptr<Observer<U>> observer)
         : SuperSub(std::move(observable), std::move(observer)) {}
 
     void onSubscribe(
-        Reference<yarpl::observable::Subscription> subscription) override {
+        std::shared_ptr<yarpl::observable::Subscription> subscription) override {
       auto&& op = SuperSub::getObservableOperator();
       op->onSubscribeFunc_();
       SuperSub::onSubscribe(std::move(subscription));
@@ -88,7 +88,7 @@ template <
     typename OnNextFunc,
     typename OnErrorFunc,
     typename OnCompleteFunc>
-inline auto createDoOperator(Reference<Observable<U>> upstream,
+inline auto createDoOperator(std::shared_ptr<Observable<U>> upstream,
                              OnSubscribeFunc onSubscribeFunc,
                              OnNextFunc onNextFunc,
                              OnErrorFunc onErrorFunc,

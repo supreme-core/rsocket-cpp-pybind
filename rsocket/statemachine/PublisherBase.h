@@ -16,7 +16,7 @@ class PublisherBase {
   explicit PublisherBase(uint32_t initialRequestN);
 
   void publisherSubscribe(
-      yarpl::Reference<yarpl::flowable::Subscription> subscription);
+      std::shared_ptr<yarpl::flowable::Subscription> subscription);
 
   void checkPublisherOnNext();
 
@@ -31,7 +31,7 @@ class PublisherBase {
   /// A Subscription that constrols production of payloads.
   /// This is responsible for delivering a terminal signal to the
   /// Subscription once the stream ends.
-  yarpl::Reference<yarpl::flowable::Subscription> producingSubscription_;
+  std::shared_ptr<yarpl::flowable::Subscription> producingSubscription_;
   Allowance initialRequestN_;
 
   enum class State : uint8_t {

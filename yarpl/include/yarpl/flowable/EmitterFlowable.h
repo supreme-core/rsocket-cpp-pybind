@@ -21,7 +21,7 @@ class EmiterBase : public virtual Refcounted {
  public:
   ~EmiterBase() = default;
 
-  virtual std::tuple<int64_t, bool> emit(Reference<Subscriber<T>>, int64_t) = 0;
+  virtual std::tuple<int64_t, bool> emit(std::shared_ptr<Subscriber<T>>, int64_t) = 0;
 };
 
 /**
@@ -39,8 +39,8 @@ class EmiterSubscription final : public Subscription,
 
  public:
   EmiterSubscription(
-      Reference<EmiterBase<T>> emiter,
-      Reference<Subscriber<T>> subscriber)
+      std::shared_ptr<EmiterBase<T>> emiter,
+      std::shared_ptr<Subscriber<T>> subscriber)
       : emiter_(std::move(emiter)), subscriber_(std::move(subscriber)) {}
 
   void init() {
@@ -92,7 +92,7 @@ class EmiterSubscription final : public Subscription,
   }
 
   // Subscriber methods.
-  void onSubscribe(Reference<Subscription>) override {
+  void onSubscribe(std::shared_ptr<Subscription>) override {
     LOG(FATAL) << "Do not call this method";
   }
 
@@ -188,8 +188,8 @@ class EmiterSubscription final : public Subscription,
   // We don't want to recursively invoke process(); one loop should do.
   std::atomic_bool processing_{false};
 
-  Reference<EmiterBase<T>> emiter_;
-  Reference<Subscriber<T>> subscriber_;
+  std::shared_ptr<EmiterBase<T>> emiter_;
+  std::shared_ptr<Subscriber<T>> subscriber_;
 };
 
 template <typename T, typename Emitter>
@@ -197,14 +197,14 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
  public:
   explicit EmitterWrapper(Emitter emitter) : emitter_(std::move(emitter)) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     auto ef = make_ref<EmiterSubscription<T>>(
         this->ref_from_this(this), std::move(subscriber));
     ef->init();
   }
 
   std::tuple<int64_t, bool> emit(
-      Reference<Subscriber<T>> subscriber,
+      std::shared_ptr<Subscriber<T>> subscriber,
       int64_t requested) override {
     return emitter_(std::move(subscriber), requested);
   }

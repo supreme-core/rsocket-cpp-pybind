@@ -16,14 +16,14 @@ template <typename T>
 class Subscriber : public virtual Refcounted {
  public:
   virtual ~Subscriber() = default;
-  virtual void onSubscribe(Reference<Subscription>) = 0;
+  virtual void onSubscribe(std::shared_ptr<Subscription>) = 0;
   virtual void onComplete() = 0;
   virtual void onError(folly::exception_wrapper) = 0;
   virtual void onNext(T) = 0;
 };
 
 #define KEEP_REF_TO_THIS() \
-  Reference<BaseSubscriber> self; \
+  std::shared_ptr<BaseSubscriber> self; \
   if (keep_reference_to_this) { \
     self = this->ref_from_this(this); \
   }
@@ -42,7 +42,7 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
-  void onSubscribe(Reference<Subscription> subscription) final override {
+  void onSubscribe(std::shared_ptr<Subscription> subscription) final override {
     CHECK(subscription);
     CHECK(!yarpl::atomic_load(&subscription_));
 
@@ -64,7 +64,7 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
         << "Already got terminating signal method";
 #endif
 
-    Reference<Subscription> null;
+    std::shared_ptr<Subscription> null;
     if (auto sub = yarpl::atomic_exchange(&subscription_, null)) {
       KEEP_REF_TO_THIS();
       onCompleteImpl();
@@ -80,7 +80,7 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
         << "Already got terminating signal method";
 #endif
 
-    Reference<Subscription> null;
+    std::shared_ptr<Subscription> null;
     if (auto sub = yarpl::atomic_exchange(&subscription_, null)) {
       KEEP_REF_TO_THIS();
       onErrorImpl(std::move(e));
@@ -103,7 +103,7 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
   }
 
   void cancel() {
-    Reference<Subscription> null;
+    std::shared_ptr<Subscription> null;
     if (auto sub = yarpl::atomic_exchange(&subscription_, null)) {
       KEEP_REF_TO_THIS();
       sub->cancel();

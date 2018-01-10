@@ -23,7 +23,7 @@ auto printer() {
       2 /* low [optional] batch size for demo */);
 }
 
-Reference<Flowable<int64_t>> getData() {
+std::shared_ptr<Flowable<int64_t>> getData() {
   return Flowables::range(2, 5);
 }
 
@@ -34,7 +34,7 @@ std::string getThreadId() {
 }
 
 void fromPublisherExample() {
-  auto onSubscribe = [](Reference<Subscriber<int>> subscriber) {
+  auto onSubscribe = [](std::shared_ptr<Subscriber<int>> subscriber) {
     class Subscription : public ::yarpl::flowable::Subscription {
      public:
       virtual void request(int64_t delta) override {
@@ -97,7 +97,7 @@ void FlowableExamples::run() {
   Flowables::range(1, 11)->take(3)->subscribe(printer<int64_t>());
 
   auto flowable = Flowable<int>::create([total = 0](
-      Reference<Subscriber<int>> subscriber, int64_t requested) mutable {
+      std::shared_ptr<Subscriber<int>> subscriber, int64_t requested) mutable {
     subscriber->onNext(12345678);
     subscriber->onError(std::runtime_error("error"));
     return std::make_tuple(int64_t{1}, false);

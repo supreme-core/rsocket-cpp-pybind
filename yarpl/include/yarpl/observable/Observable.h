@@ -32,7 +32,7 @@ enum class BackpressureStrategy { BUFFER, DROP, ERROR, LATEST, MISSING };
 template <typename T>
 class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
-  virtual Reference<Subscription> subscribe(Reference<Observer<T>>) = 0;
+  virtual std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>>) = 0;
 
   /**
    * Subscribe overload that accepts lambdas.
@@ -41,7 +41,7 @@ class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
       typename Next,
       typename =
           typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
-  Reference<Subscription> subscribe(Next next) {
+  std::shared_ptr<Subscription> subscribe(Next next) {
     return subscribe(Observers::create<T>(std::move(next)));
   }
 
@@ -54,7 +54,7 @@ class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
       typename = typename std::enable_if<
           folly::is_invocable<Next, T>::value &&
           folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
-  Reference<Subscription> subscribe(Next next, Error error) {
+  std::shared_ptr<Subscription> subscribe(Next next, Error error) {
     return subscribe(Observers::create<T>(
         std::move(next), std::move(error)));
   }
@@ -70,72 +70,72 @@ class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
           folly::is_invocable<Next, T>::value &&
           folly::is_invocable<Error, folly::exception_wrapper>::value &&
           folly::is_invocable<Complete>::value>::type>
-  Reference<Subscription> subscribe(Next next, Error error, Complete complete) {
+  std::shared_ptr<Subscription> subscribe(Next next, Error error, Complete complete) {
     return subscribe(Observers::create<T>(
         std::move(next),
         std::move(error),
         std::move(complete)));
   }
 
-  Reference<Subscription> subscribe() {
+  std::shared_ptr<Subscription> subscribe() {
     return subscribe(Observers::createNull<T>());
   }
 
   template <typename OnSubscribe>
-  static Reference<Observable<T>> create(OnSubscribe);
+  static std::shared_ptr<Observable<T>> create(OnSubscribe);
 
   template <
       typename Function,
       typename R = typename std::result_of<Function(T)>::type>
-  Reference<Observable<R>> map(Function function);
+  std::shared_ptr<Observable<R>> map(Function function);
 
   template <typename Function>
-  Reference<Observable<T>> filter(Function function);
+  std::shared_ptr<Observable<T>> filter(Function function);
 
   template <
       typename Function,
       typename R = typename std::result_of<Function(T, T)>::type>
-  Reference<Observable<R>> reduce(Function function);
+  std::shared_ptr<Observable<R>> reduce(Function function);
 
-  Reference<Observable<T>> take(int64_t);
+  std::shared_ptr<Observable<T>> take(int64_t);
 
-  Reference<Observable<T>> skip(int64_t);
+  std::shared_ptr<Observable<T>> skip(int64_t);
 
-  Reference<Observable<T>> ignoreElements();
+  std::shared_ptr<Observable<T>> ignoreElements();
 
-  Reference<Observable<T>> subscribeOn(folly::Executor&);
+  std::shared_ptr<Observable<T>> subscribeOn(folly::Executor&);
 
   // function is invoked when onComplete occurs.
   template <typename Function>
-  Reference<Observable<T>> doOnSubscribe(Function function);
+  std::shared_ptr<Observable<T>> doOnSubscribe(Function function);
 
   // function is invoked when onNext occurs.
   template <typename Function>
-  Reference<Observable<T>> doOnNext(Function function);
+  std::shared_ptr<Observable<T>> doOnNext(Function function);
 
   // function is invoked when onError occurs.
   template <typename Function>
-  Reference<Observable<T>> doOnError(Function function);
+  std::shared_ptr<Observable<T>> doOnError(Function function);
 
   // function is invoked when onComplete occurs.
   template <typename Function>
-  Reference<Observable<T>> doOnComplete(Function function);
+  std::shared_ptr<Observable<T>> doOnComplete(Function function);
 
   // function is invoked when either onComplete or onError occurs.
   template <typename Function>
-  Reference<Observable<T>> doOnTerminate(Function function);
+  std::shared_ptr<Observable<T>> doOnTerminate(Function function);
 
   // the function is invoked for each of onNext, onCompleted, onError
   template <typename Function>
-  Reference<Observable<T>> doOnEach(Function function);
+  std::shared_ptr<Observable<T>> doOnEach(Function function);
 
   // the callbacks will be invoked of each of the signals
   template <typename OnNextFunc, typename OnCompleteFunc>
-  Reference<Observable<T>> doOn(OnNextFunc onNext, OnCompleteFunc onComplete);
+  std::shared_ptr<Observable<T>> doOn(OnNextFunc onNext, OnCompleteFunc onComplete);
 
   // the callbacks will be invoked of each of the signals
   template <typename OnNextFunc, typename OnCompleteFunc, typename OnErrorFunc>
-  Reference<Observable<T>> doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
+  std::shared_ptr<Observable<T>> doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
 
   /**
   * Convert from Observable to Flowable with a given BackpressureStrategy.
@@ -154,10 +154,10 @@ namespace observable {
 
 template <typename T>
 template <typename OnSubscribe>
-Reference<Observable<T>> Observable<T>::create(OnSubscribe function) {
+std::shared_ptr<Observable<T>> Observable<T>::create(OnSubscribe function) {
   static_assert(
-      folly::is_invocable<OnSubscribe, Reference<Observer<T>>>::value,
-      "OnSubscribe must have type `void(Reference<Observer<T>>)`");
+      folly::is_invocable<OnSubscribe, std::shared_ptr<Observer<T>>>::value,
+      "OnSubscribe must have type `void(std::shared_ptr<Observer<T>>)`");
 
   return make_ref<FromPublisherOperator<T, OnSubscribe>>(
       std::move(function));
@@ -165,72 +165,72 @@ Reference<Observable<T>> Observable<T>::create(OnSubscribe function) {
 
 template <typename T>
 template <typename Function, typename R>
-Reference<Observable<R>> Observable<T>::map(Function function) {
+std::shared_ptr<Observable<R>> Observable<T>::map(Function function) {
   return make_ref<MapOperator<T, R, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::filter(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::filter(Function function) {
   return make_ref<FilterOperator<T, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function, typename R>
-Reference<Observable<R>> Observable<T>::reduce(Function function) {
+std::shared_ptr<Observable<R>> Observable<T>::reduce(Function function) {
   return make_ref<ReduceOperator<T, R, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
-Reference<Observable<T>> Observable<T>::take(int64_t limit) {
+std::shared_ptr<Observable<T>> Observable<T>::take(int64_t limit) {
   return make_ref<TakeOperator<T>>(this->ref_from_this(this), limit);
 }
 
 template <typename T>
-Reference<Observable<T>> Observable<T>::skip(int64_t offset) {
+std::shared_ptr<Observable<T>> Observable<T>::skip(int64_t offset) {
   return make_ref<SkipOperator<T>>(this->ref_from_this(this), offset);
 }
 
 template <typename T>
-Reference<Observable<T>> Observable<T>::ignoreElements() {
+std::shared_ptr<Observable<T>> Observable<T>::ignoreElements() {
   return make_ref<IgnoreElementsOperator<T>>(this->ref_from_this(this));
 }
 
 template <typename T>
-Reference<Observable<T>> Observable<T>::subscribeOn(folly::Executor& executor) {
+std::shared_ptr<Observable<T>> Observable<T>::subscribeOn(folly::Executor& executor) {
   return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
 }
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::doOnSubscribe(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnSubscribe(Function function) {
   return details::createDoOperator(ref_from_this(this), std::move(function), [](const T&){}, [](const auto&){}, []{});
 }
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::doOnNext(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnNext(Function function) {
   return details::createDoOperator(ref_from_this(this), []{}, std::move(function), [](const auto&){}, []{});
 }
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::doOnError(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnError(Function function) {
   return details::createDoOperator(ref_from_this(this), []{}, [](const T&){}, std::move(function), []{});
 }
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::doOnComplete(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnComplete(Function function) {
   return details::createDoOperator(ref_from_this(this), []{}, [](const T&){}, [](const auto&){}, std::move(function));
 }
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::doOnTerminate(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnTerminate(Function function) {
   auto sharedFunction = std::make_shared<Function>(std::move(function));
   return details::createDoOperator(ref_from_this(this), []{}, [](const T&){}, [sharedFunction](const auto&){(*sharedFunction)();}, [sharedFunction](){(*sharedFunction)();});
 
@@ -238,20 +238,20 @@ Reference<Observable<T>> Observable<T>::doOnTerminate(Function function) {
 
 template <typename T>
 template <typename Function>
-Reference<Observable<T>> Observable<T>::doOnEach(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnEach(Function function) {
   auto sharedFunction = std::make_shared<Function>(std::move(function));
   return details::createDoOperator(ref_from_this(this), []{}, [sharedFunction](const T&){(*sharedFunction)();}, [sharedFunction](const auto&){(*sharedFunction)();}, [sharedFunction](){(*sharedFunction)();});
 }
 
 template <typename T>
 template <typename OnNextFunc, typename OnCompleteFunc>
-Reference<Observable<T>> Observable<T>::doOn(OnNextFunc onNext, OnCompleteFunc onComplete) {
+std::shared_ptr<Observable<T>> Observable<T>::doOn(OnNextFunc onNext, OnCompleteFunc onComplete) {
   return details::createDoOperator(ref_from_this(this), []{}, std::move(onNext), [](const auto&){}, std::move(onComplete));
 }
 
 template <typename T>
 template <typename OnNextFunc, typename OnCompleteFunc, typename OnErrorFunc>
-Reference<Observable<T>> Observable<T>::doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError) {
+std::shared_ptr<Observable<T>> Observable<T>::doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError) {
   return details::createDoOperator(ref_from_this(this), []{}, std::move(onNext), std::move(onError), std::move(onComplete));
 }
 
@@ -262,8 +262,8 @@ auto Observable<T>::toFlowable(BackpressureStrategy strategy) {
   return yarpl::flowable::Flowables::fromPublisher<T>([
     thisObservable = this->ref_from_this(this),
     strategy
-  ](Reference<flowable::Subscriber<T>> subscriber) {
-    Reference<flowable::Subscription> subscription;
+  ](std::shared_ptr<flowable::Subscriber<T>> subscriber) {
+    std::shared_ptr<flowable::Subscription> subscription;
     switch (strategy) {
       case BackpressureStrategy::DROP:
         subscription =

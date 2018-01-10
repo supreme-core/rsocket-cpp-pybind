@@ -10,7 +10,7 @@ using namespace yarpl;
 using namespace yarpl::flowable;
 
 void RequestResponseResponder::onSubscribe(
-    Reference<yarpl::single::SingleSubscription> subscription) noexcept {
+    std::shared_ptr<yarpl::single::SingleSubscription> subscription) noexcept {
 #ifdef DEBUG
   DCHECK(!gotOnSubscribe_.exchange(true)) << "Already called onSubscribe()";
 #endif

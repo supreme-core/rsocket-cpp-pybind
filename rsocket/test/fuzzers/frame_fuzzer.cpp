@@ -34,7 +34,7 @@ struct FuzzerDuplexConnection : rsocket::DuplexConnection {
 
   FuzzerDuplexConnection() {}
 
-  void setInput(yarpl::Reference<Subscriber> sub) override {
+  void setInput(std::shared_ptr<Subscriber> sub) override {
     VLOG(1) << "FuzzerDuplexConnection::setInput()" << std::endl;
     input_sub = sub;
   }
@@ -44,7 +44,7 @@ struct FuzzerDuplexConnection : rsocket::DuplexConnection {
             << folly::humanify(buf->moveToFbString()) << "\")" << std::endl;
   }
 
-  yarpl::Reference<Subscriber> input_sub;
+  std::shared_ptr<Subscriber> input_sub;
 };
 
 struct NoopSubscription : yarpl::flowable::Subscription {

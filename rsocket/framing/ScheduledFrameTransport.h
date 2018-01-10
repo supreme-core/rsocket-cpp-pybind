@@ -19,7 +19,7 @@ class ScheduledFrameTransport : public FrameTransport,
                                 public yarpl::enable_get_ref {
  public:
   ScheduledFrameTransport(
-      yarpl::Reference<FrameTransport> frameTransport,
+      std::shared_ptr<FrameTransport> frameTransport,
       folly::EventBase* transportEvb,
       folly::EventBase* stateMachineEvb)
       : transportEvb_(transportEvb),
@@ -44,6 +44,6 @@ class ScheduledFrameTransport : public FrameTransport,
  private:
   folly::EventBase* transportEvb_;
   folly::EventBase* stateMachineEvb_;
-  yarpl::Reference<FrameTransport> frameTransport_;
+  std::shared_ptr<FrameTransport> frameTransport_;
 };
 }

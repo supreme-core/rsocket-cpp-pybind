@@ -80,7 +80,7 @@ class DelegateSingleSubscription : public SingleSubscription {
   /**
    * This can be called once.
    */
-  void setDelegate(Reference<SingleSubscription> d) {
+  void setDelegate(std::shared_ptr<SingleSubscription> d) {
     bool shouldCancelDelegate = false;
     {
       std::lock_guard<std::mutex> g(m_);
@@ -102,23 +102,23 @@ class DelegateSingleSubscription : public SingleSubscription {
   // all must be protected by a mutex
   mutable std::mutex m_;
   bool cancelled_{false};
-  Reference<SingleSubscription> delegate_;
+  std::shared_ptr<SingleSubscription> delegate_;
 };
 
 class SingleSubscriptions {
  public:
-  static Reference<CallbackSingleSubscription> create(
+  static std::shared_ptr<CallbackSingleSubscription> create(
       std::function<void()> onCancel) {
     return make_ref<CallbackSingleSubscription>(std::move(onCancel));
   }
-  static Reference<CallbackSingleSubscription> create(
+  static std::shared_ptr<CallbackSingleSubscription> create(
       std::atomic_bool& cancelled) {
     return create([&cancelled]() { cancelled = true; });
   }
-  static Reference<SingleSubscription> empty() {
+  static std::shared_ptr<SingleSubscription> empty() {
     return make_ref<AtomicBoolSingleSubscription>();
   }
-  static Reference<AtomicBoolSingleSubscription> atomicBoolSubscription() {
+  static std::shared_ptr<AtomicBoolSingleSubscription> atomicBoolSubscription() {
     return make_ref<AtomicBoolSingleSubscription>();
   }
 };

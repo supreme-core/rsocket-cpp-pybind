@@ -65,7 +65,7 @@ void FrameTransportImpl::close() {
 }
 
 void FrameTransportImpl::onSubscribe(
-    yarpl::Reference<Subscription> subscription) {
+    std::shared_ptr<Subscription> subscription) {
   if (!connection_) {
     return;
   }

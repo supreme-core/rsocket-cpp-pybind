@@ -15,7 +15,7 @@ namespace single {
 template <typename T>
 class SingleObserver : public virtual Refcounted, public yarpl::enable_get_ref {
 public:
-  virtual void onSubscribe(Reference<SingleSubscription>) = 0;
+  virtual void onSubscribe(std::shared_ptr<SingleSubscription>) = 0;
   virtual void onSuccess(T) = 0;
   virtual void onError(folly::exception_wrapper) = 0;
 };
@@ -25,7 +25,7 @@ class SingleObserverBase : public SingleObserver<T> {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
-  void onSubscribe(Reference<SingleSubscription> subscription) override {
+  void onSubscribe(std::shared_ptr<SingleSubscription> subscription) override {
     DCHECK(subscription);
 
     if (subscription_) {
@@ -53,7 +53,7 @@ class SingleObserverBase : public SingleObserver<T> {
   }
 
  private:
-  Reference<SingleSubscription> subscription_;
+  std::shared_ptr<SingleSubscription> subscription_;
 };
 
 /// Specialization of SingleObserverBase<void>.
@@ -62,7 +62,7 @@ class SingleObserverBase<void> : public virtual Refcounted {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
-  virtual void onSubscribe(Reference<SingleSubscription> subscription) {
+  virtual void onSubscribe(std::shared_ptr<SingleSubscription> subscription) {
     DCHECK(subscription);
 
     if (subscription_) {
@@ -90,7 +90,7 @@ class SingleObserverBase<void> : public virtual Refcounted {
   }
 
  private:
-  Reference<SingleSubscription> subscription_;
+  std::shared_ptr<SingleSubscription> subscription_;
 };
 }
 }

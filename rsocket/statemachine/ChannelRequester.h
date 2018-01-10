@@ -19,7 +19,7 @@ class ChannelRequester : public ConsumerBase,
         PublisherBase(1 /*initialRequestN*/) {}
 
  private:
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
                        subscription) noexcept override;
   void onNext(Payload) noexcept override;
   void onComplete() noexcept override;

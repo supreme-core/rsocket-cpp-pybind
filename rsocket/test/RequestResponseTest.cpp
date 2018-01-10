@@ -23,7 +23,7 @@ class TestHandlerCancel : public rsocket::RSocketResponder {
       std::shared_ptr<folly::Baton<>> onCancel,
       std::shared_ptr<folly::Baton<>> onSubscribe)
       : onCancel_(std::move(onCancel)), onSubscribe_(std::move(onSubscribe)) {}
-  Reference<Single<Payload>> handleRequestResponse(Payload request, StreamId)
+  std::shared_ptr<Single<Payload>> handleRequestResponse(Payload request, StreamId)
       override {
     // used to signal to the client when the subscribe is received
     onSubscribe_->post();

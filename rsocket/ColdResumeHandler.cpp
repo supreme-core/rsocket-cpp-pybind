@@ -18,14 +18,14 @@ std::string ColdResumeHandler::generateStreamToken(
   return folly::to<std::string>(streamId);
 }
 
-Reference<Flowable<Payload>> ColdResumeHandler::handleResponderResumeStream(
+std::shared_ptr<Flowable<Payload>> ColdResumeHandler::handleResponderResumeStream(
     std::string /* streamToken */,
     size_t /* publisherAllowance */) {
   return Flowables::error<Payload>(
       std::logic_error("ResumeHandler method not implemented"));
 }
 
-Reference<Subscriber<Payload>> ColdResumeHandler::handleRequesterResumeStream(
+std::shared_ptr<Subscriber<Payload>> ColdResumeHandler::handleRequesterResumeStream(
     std::string /* streamToken */,
     size_t /* consumerAllowance */) {
   return yarpl::make_ref<CancelingSubscriber<Payload>>();

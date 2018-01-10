@@ -14,7 +14,7 @@ using namespace yarpl;
 using namespace yarpl::single;
 
 TEST(Single, SingleOnNext) {
-  auto a = Single<int>::create([](Reference<SingleObserver<int>> obs) {
+  auto a = Single<int>::create([](std::shared_ptr<SingleObserver<int>> obs) {
     obs->onSubscribe(SingleSubscriptions::empty());
     obs->onSuccess(1);
   });
@@ -27,7 +27,7 @@ TEST(Single, SingleOnNext) {
 
 TEST(Single, OnError) {
   std::string errorMessage("DEFAULT->No Error Message");
-  auto a = Single<int>::create([](Reference<SingleObserver<int>> obs) {
+  auto a = Single<int>::create([](std::shared_ptr<SingleObserver<int>> obs) {
     obs->onError(
         folly::exception_wrapper(std::runtime_error("something broke!")));
   });
@@ -58,7 +58,7 @@ TEST(Single, Error) {
 }
 
 TEST(Single, SingleMap) {
-  auto a = Single<int>::create([](Reference<SingleObserver<int>> obs) {
+  auto a = Single<int>::create([](std::shared_ptr<SingleObserver<int>> obs) {
     obs->onSubscribe(SingleSubscriptions::empty());
     obs->onSuccess(1);
   });

@@ -9,7 +9,7 @@
 #include "yarpl/Refcounted.h"
 
 using yarpl::Refcounted;
-using yarpl::Reference;
+using std::shared_ptr;
 using yarpl::flowable::Subscriber;
 using yarpl::flowable::BaseSubscriber;
 
@@ -30,27 +30,27 @@ struct MyRefcounted : virtual Refcounted {
 };
 
 TEST(ReferenceTest, Upcast) {
-  Reference<MySubscriber<int>> derived = yarpl::make_ref<MySubscriber<int>>();
-  Reference<Subscriber<int>> base1(derived);
+  std::shared_ptr<MySubscriber<int>> derived = yarpl::make_ref<MySubscriber<int>>();
+  std::shared_ptr<Subscriber<int>> base1(derived);
 
-  Reference<Subscriber<int>> base2;
+  std::shared_ptr<Subscriber<int>> base2;
   base2 = derived;
 
-  Reference<MySubscriber<int>> derivedCopy1(derived);
-  Reference<MySubscriber<int>> derivedCopy2(derived);
+  std::shared_ptr<MySubscriber<int>> derivedCopy1(derived);
+  std::shared_ptr<MySubscriber<int>> derivedCopy2(derived);
 
-  Reference<Subscriber<int>> base3(std::move(derivedCopy1));
+  std::shared_ptr<Subscriber<int>> base3(std::move(derivedCopy1));
 
-  Reference<Subscriber<int>> base4;
+  std::shared_ptr<Subscriber<int>> base4;
   base4 = std::move(derivedCopy2);
 }
 
 TEST(ReferenceTest, CopyAssign) {
   using Sub = MySubscriber<int>;
-  Reference<Sub> a = yarpl::make_ref<Sub>();
-  Reference<Sub> b(a);
+  std::shared_ptr<Sub> a = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> b(a);
   EXPECT_EQ(2u, a.use_count());
-  Reference<Sub> c = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> c = yarpl::make_ref<Sub>();
   b = c;
   EXPECT_EQ(1u, a.use_count());
   EXPECT_EQ(2u, b.use_count());
@@ -60,16 +60,16 @@ TEST(ReferenceTest, CopyAssign) {
 
 TEST(ReferenceTest, MoveAssign) {
   using Sub = MySubscriber<int>;
-  Reference<Sub> a = yarpl::make_ref<Sub>();
-  Reference<Sub> b(std::move(a));
+  std::shared_ptr<Sub> a = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> b(std::move(a));
   EXPECT_EQ(nullptr, a);
   EXPECT_EQ(1u, b.use_count());
 }
 
 TEST(ReferenceTest, MoveAssignTemplate) {
   using Sub = MySubscriber<int>;
-  Reference<Sub> a = yarpl::make_ref<Sub>();
-  Reference<Sub> b(a);
+  std::shared_ptr<Sub> a = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> b(a);
   EXPECT_EQ(2u, a.use_count());
   using Sub2 = MySubscriber<int>;
   b = yarpl::make_ref<Sub2>();
@@ -77,11 +77,11 @@ TEST(ReferenceTest, MoveAssignTemplate) {
 }
 
 TEST(ReferenceTest, Construction) {
-  Reference<MyRefcounted> a{yarpl::make_ref<MyRefcounted>(1)};
+  std::shared_ptr<MyRefcounted> a{yarpl::make_ref<MyRefcounted>(1)};
   EXPECT_EQ(1u, a.use_count());
   EXPECT_EQ(1, a->i);
 
-  Reference<MyRefcounted> b = yarpl::make_ref<MyRefcounted>(2);
+  std::shared_ptr<MyRefcounted> b = yarpl::make_ref<MyRefcounted>(2);
   EXPECT_EQ(1u, b.use_count());
   EXPECT_EQ(2, b->i);
 }

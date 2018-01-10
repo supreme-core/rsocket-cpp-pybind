@@ -29,7 +29,7 @@ void FlowableSubscriber::cancel() {
 }
 
 void FlowableSubscriber::onSubscribe(
-    yarpl::Reference<yarpl::flowable::Subscription> subscription) noexcept {
+    std::shared_ptr<yarpl::flowable::Subscription> subscription) noexcept {
   VLOG(4) << "OnSubscribe in FlowableSubscriber";
   subscription_ = subscription;
   if (initialRequestN_ > 0) {

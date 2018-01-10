@@ -29,7 +29,7 @@ template <typename T>
 struct IsFlowable : std::false_type {};
 
 template <typename R>
-struct IsFlowable<Reference<Flowable<R>>> : std::true_type {
+struct IsFlowable<std::shared_ptr<Flowable<R>>> : std::true_type {
   using ElemType = R;
 };
 
@@ -40,7 +40,7 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
    virtual ~Flowable() = default;
 
-  virtual void subscribe(Reference<Subscriber<T>>) = 0;
+  virtual void subscribe(std::shared_ptr<Subscriber<T>>) = 0;
 
   /**
    * Subscribe overload that accepts lambdas.
@@ -94,31 +94,31 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
   template <
       typename Function,
       typename R = typename std::result_of<Function(T)>::type>
-  Reference<Flowable<R>> map(Function function);
+  std::shared_ptr<Flowable<R>> map(Function function);
 
   template <
       typename Function,
       typename R = typename detail::IsFlowable<
           typename std::result_of<Function(T)>::type>::ElemType>
-  Reference<Flowable<R>> flatMap(Function func);
+  std::shared_ptr<Flowable<R>> flatMap(Function func);
 
   template <typename Function>
-  Reference<Flowable<T>> filter(Function function);
+  std::shared_ptr<Flowable<T>> filter(Function function);
 
   template <
       typename Function,
       typename R = typename std::result_of<Function(T, T)>::type>
-  Reference<Flowable<R>> reduce(Function function);
+  std::shared_ptr<Flowable<R>> reduce(Function function);
 
-  Reference<Flowable<T>> take(int64_t);
+  std::shared_ptr<Flowable<T>> take(int64_t);
 
-  Reference<Flowable<T>> skip(int64_t);
+  std::shared_ptr<Flowable<T>> skip(int64_t);
 
-  Reference<Flowable<T>> ignoreElements();
+  std::shared_ptr<Flowable<T>> ignoreElements();
 
-  Reference<Flowable<T>> subscribeOn(folly::Executor&);
+  std::shared_ptr<Flowable<T>> subscribeOn(folly::Executor&);
 
-  Reference<Flowable<T>> observeOn(folly::Executor&);
+  std::shared_ptr<Flowable<T>> observeOn(folly::Executor&);
 
   template <typename Q>
   using enableWrapRef =
@@ -133,9 +133,9 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
       typename Emitter,
       typename = typename std::enable_if<folly::is_invocable_r<
           std::tuple<int64_t, bool>,
-          Emitter, Reference<Subscriber<T>>, int64_t
+          Emitter, std::shared_ptr<Subscriber<T>>, int64_t
           >::value>::type>
-  static Reference<Flowable<T>> create(Emitter emitter);
+  static std::shared_ptr<Flowable<T>> create(Emitter emitter);
 };
 
 } // flowable
@@ -149,60 +149,60 @@ namespace flowable {
 
 template <typename T>
 template <typename Emitter, typename>
-Reference<Flowable<T>> Flowable<T>::create(Emitter emitter) {
+std::shared_ptr<Flowable<T>> Flowable<T>::create(Emitter emitter) {
   return make_ref<details::EmitterWrapper<T, Emitter>>(std::move(emitter));
 }
 
 template <typename T>
 template <typename Function, typename R>
-Reference<Flowable<R>> Flowable<T>::map(Function function) {
+std::shared_ptr<Flowable<R>> Flowable<T>::map(Function function) {
   return make_ref<MapOperator<T, R, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function>
-Reference<Flowable<T>> Flowable<T>::filter(Function function) {
+std::shared_ptr<Flowable<T>> Flowable<T>::filter(Function function) {
   return make_ref<FilterOperator<T, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function, typename R>
-Reference<Flowable<R>> Flowable<T>::reduce(Function function) {
+std::shared_ptr<Flowable<R>> Flowable<T>::reduce(Function function) {
   return make_ref<ReduceOperator<T, R, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
-Reference<Flowable<T>> Flowable<T>::take(int64_t limit) {
+std::shared_ptr<Flowable<T>> Flowable<T>::take(int64_t limit) {
   return make_ref<TakeOperator<T>>(this->ref_from_this(this), limit);
 }
 
 template <typename T>
-Reference<Flowable<T>> Flowable<T>::skip(int64_t offset) {
+std::shared_ptr<Flowable<T>> Flowable<T>::skip(int64_t offset) {
   return make_ref<SkipOperator<T>>(this->ref_from_this(this), offset);
 }
 
 template <typename T>
-Reference<Flowable<T>> Flowable<T>::ignoreElements() {
+std::shared_ptr<Flowable<T>> Flowable<T>::ignoreElements() {
   return make_ref<IgnoreElementsOperator<T>>(this->ref_from_this(this));
 }
 
 template <typename T>
-Reference<Flowable<T>> Flowable<T>::subscribeOn(folly::Executor& executor) {
+std::shared_ptr<Flowable<T>> Flowable<T>::subscribeOn(folly::Executor& executor) {
   return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
 }
 
 template <typename T>
-Reference<Flowable<T>> Flowable<T>::observeOn(folly::Executor& executor) {
+std::shared_ptr<Flowable<T>> Flowable<T>::observeOn(folly::Executor& executor) {
   return make_ref<yarpl::flowable::detail::ObserveOnOperator<T>>(
       this->ref_from_this(this), executor);
 }
 
 template <typename T>
 template <typename Function, typename R>
-Reference<Flowable<R>> Flowable<T>::flatMap(Function function) {
+std::shared_ptr<Flowable<R>> Flowable<T>::flatMap(Function function) {
   return make_ref<FlatMapOperator<T, R>>(
       this->ref_from_this(this), std::move(function));
 }

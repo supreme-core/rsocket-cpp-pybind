@@ -24,7 +24,7 @@ class MockDuplexConnection : public DuplexConnection {
 
   // DuplexConnection.
 
-  void setInput(yarpl::Reference<Subscriber> in) override {
+  void setInput(std::shared_ptr<Subscriber> in) override {
     setInput_(std::move(in));
   }
 
@@ -34,7 +34,7 @@ class MockDuplexConnection : public DuplexConnection {
 
   // Mocks.
 
-  MOCK_METHOD1(setInput_, void(yarpl::Reference<Subscriber>));
+  MOCK_METHOD1(setInput_, void(std::shared_ptr<Subscriber>));
   MOCK_METHOD1(send_, void(std::unique_ptr<folly::IOBuf>&));
 };
 

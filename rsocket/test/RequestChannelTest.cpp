@@ -20,9 +20,9 @@ using namespace rsocket::tests::client_server;
 class TestHandlerHello : public rsocket::RSocketResponder {
  public:
   /// Handles a new inbound Stream requested by the other end.
-  yarpl::Reference<Flowable<rsocket::Payload>> handleRequestChannel(
+  std::shared_ptr<Flowable<rsocket::Payload>> handleRequestChannel(
       rsocket::Payload initialPayload,
-      yarpl::Reference<Flowable<rsocket::Payload>> request,
+      std::shared_ptr<Flowable<rsocket::Payload>> request,
       rsocket::StreamId) override {
     // say "Hello" to each name on the input stream
     return request->map([initialPayload = std::move(initialPayload)](
@@ -126,9 +126,9 @@ class TestChannelResponder : public rsocket::RSocketResponder {
       : rangeEnd_{rangeEnd},
         testSubscriber_{TestSubscriber<std::string>::create(initialSubReq)} {}
 
-  yarpl::Reference<Flowable<rsocket::Payload>> handleRequestChannel(
+  std::shared_ptr<Flowable<rsocket::Payload>> handleRequestChannel(
       rsocket::Payload initialPayload,
-      yarpl::Reference<Flowable<rsocket::Payload>> requestStream,
+      std::shared_ptr<Flowable<rsocket::Payload>> requestStream,
       rsocket::StreamId) override {
     // add initial payload to testSubscriber values list
     testSubscriber_->manuallyPush(initialPayload.moveDataToString());
@@ -144,13 +144,13 @@ class TestChannelResponder : public rsocket::RSocketResponder {
     });
   }
 
-  Reference<TestSubscriber<std::string>> getChannelSubscriber() {
+  std::shared_ptr<TestSubscriber<std::string>> getChannelSubscriber() {
     return testSubscriber_;
   }
 
  private:
   int64_t rangeEnd_;
-  Reference<TestSubscriber<std::string>> testSubscriber_;
+  std::shared_ptr<TestSubscriber<std::string>> testSubscriber_;
 };
 
 TEST(RequestChannelTest, CompleteRequesterResponderContinues) {
@@ -304,9 +304,9 @@ class TestChannelResponderFailure : public rsocket::RSocketResponder {
   TestChannelResponderFailure()
       : testSubscriber_{TestSubscriber<std::string>::create()} {}
 
-  yarpl::Reference<Flowable<rsocket::Payload>> handleRequestChannel(
+  std::shared_ptr<Flowable<rsocket::Payload>> handleRequestChannel(
       rsocket::Payload initialPayload,
-      yarpl::Reference<Flowable<rsocket::Payload>> requestStream,
+      std::shared_ptr<Flowable<rsocket::Payload>> requestStream,
       rsocket::StreamId) override {
     // add initial payload to testSubscriber values list
     testSubscriber_->manuallyPush(initialPayload.moveDataToString());
@@ -318,12 +318,12 @@ class TestChannelResponderFailure : public rsocket::RSocketResponder {
         std::runtime_error("A wild Error appeared!"));
   }
 
-  Reference<TestSubscriber<std::string>> getChannelSubscriber() {
+  std::shared_ptr<TestSubscriber<std::string>> getChannelSubscriber() {
     return testSubscriber_;
   }
 
  private:
-  Reference<TestSubscriber<std::string>> testSubscriber_;
+  std::shared_ptr<TestSubscriber<std::string>> testSubscriber_;
 };
 
 TEST(RequestChannelTest, FailureOnResponderRequesterSees) {

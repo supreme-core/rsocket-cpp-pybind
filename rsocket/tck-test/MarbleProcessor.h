@@ -15,11 +15,11 @@ class MarbleProcessor {
   explicit MarbleProcessor(const std::string /* marble */);
 
   std::tuple<int64_t, bool> run(
-      yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>>
+      std::shared_ptr<yarpl::flowable::Subscriber<rsocket::Payload>>
           subscriber,
       int64_t requested);
 
-  void run(yarpl::Reference<yarpl::single::SingleObserver<rsocket::Payload>>
+  void run(std::shared_ptr<yarpl::single::SingleObserver<rsocket::Payload>>
                subscriber);
 
  private:

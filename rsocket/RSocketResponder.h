@@ -37,7 +37,7 @@ class RSocketResponder {
    *
    * Returns a Single with the response.
    */
-  virtual yarpl::Reference<yarpl::single::Single<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::single::Single<rsocket::Payload>>
   handleRequestResponse(rsocket::Payload request, rsocket::StreamId streamId);
 
   /**
@@ -45,7 +45,7 @@ class RSocketResponder {
    *
    * Returns a Flowable with the response stream.
    */
-  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   handleRequestStream(rsocket::Payload request, rsocket::StreamId streamId);
 
   /**
@@ -53,10 +53,10 @@ class RSocketResponder {
    *
    * Returns a Flowable with the response stream.
    */
-  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   handleRequestChannel(
       rsocket::Payload request,
-      yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+      std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
           requestStream,
       rsocket::StreamId streamId);
 
@@ -78,11 +78,11 @@ class RSocketResponder {
 
   /// Internal method for handling channel requests, not intended to be used by
   /// application code.
-  yarpl::Reference<yarpl::flowable::Subscriber<Payload>>
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
   handleRequestChannelCore(
       Payload request,
       StreamId streamId,
-      const yarpl::Reference<yarpl::flowable::Subscriber<Payload>>&
+      const std::shared_ptr<yarpl::flowable::Subscriber<Payload>>&
           response) noexcept;
 
   /// Internal method for handling stream requests, not intended to be used
@@ -90,7 +90,7 @@ class RSocketResponder {
   void handleRequestStreamCore(
       Payload request,
       StreamId streamId,
-      const yarpl::Reference<yarpl::flowable::Subscriber<Payload>>&
+      const std::shared_ptr<yarpl::flowable::Subscriber<Payload>>&
           response) noexcept;
 
   /// Internal method for handling request-response requests, not intended to be
@@ -98,7 +98,7 @@ class RSocketResponder {
   void handleRequestResponseCore(
       Payload request,
       StreamId streamId,
-      const yarpl::Reference<yarpl::single::SingleObserver<Payload>>&
+      const std::shared_ptr<yarpl::single::SingleObserver<Payload>>&
           response) noexcept;
 };
 }

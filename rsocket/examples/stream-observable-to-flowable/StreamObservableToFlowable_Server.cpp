@@ -21,7 +21,7 @@ DEFINE_int32(port, 9898, "port to connect to");
 class PushStreamRequestResponder : public rsocket::RSocketResponder {
  public:
   /// Handles a new inbound Stream requested by the other end.
-  yarpl::Reference<Flowable<Payload>> handleRequestStream(
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(
       Payload request,
       rsocket::StreamId) override {
     std::cout << "PushStreamRequestResponder.handleRequestStream " << request
@@ -45,7 +45,7 @@ class PushStreamRequestResponder : public rsocket::RSocketResponder {
     // drops any events emitted from the Observable if the Flowable
     // does not have any credits from the Subscriber.
     return Observable<Payload>::create([name = std::move(requestString)](
-                                           Reference<Observer<Payload>> s) {
+                                           std::shared_ptr<Observer<Payload>> s) {
              // Must make this async since it's an infinite stream
              // and will block the IO thread.
              // Using a raw thread right now since the 'subscribeOn'

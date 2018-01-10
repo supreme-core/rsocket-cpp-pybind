@@ -42,7 +42,7 @@ class DirectDuplexConnection : public DuplexConnection {
     other_->other_ = this;
   }
 
-  void setInput(yarpl::Reference<DuplexConnection::Subscriber> input) override {
+  void setInput(std::shared_ptr<DuplexConnection::Subscriber> input) override {
     input_ = std::move(input);
   }
 
@@ -69,7 +69,7 @@ class DirectDuplexConnection : public DuplexConnection {
 
   DirectDuplexConnection* other_{nullptr};
 
-  yarpl::Reference<DuplexConnection::Subscriber> input_;
+  std::shared_ptr<DuplexConnection::Subscriber> input_;
 };
 
 class Acceptor : public ConnectionAcceptor {
@@ -150,7 +150,7 @@ BENCHMARK(StreamThroughput, n) {
   (void)n;
 
   std::shared_ptr<RSocketClient> client;
-  yarpl::Reference<BoundedSubscriber> subscriber;
+  std::shared_ptr<BoundedSubscriber> subscriber;
 
   folly::ScopedEventBaseThread worker;
 

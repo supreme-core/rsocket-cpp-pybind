@@ -18,7 +18,7 @@ DEFINE_int32(port, 9898, "port to connect to");
 class HelloStreamRequestResponder : public rsocket::RSocketResponder {
  public:
   /// Handles a new inbound Stream requested by the other end.
-  yarpl::Reference<Flowable<rsocket::Payload>> handleRequestStream(
+  std::shared_ptr<Flowable<rsocket::Payload>> handleRequestStream(
       rsocket::Payload request,
       rsocket::StreamId) override {
     std::cout << "HelloStreamRequestResponder.handleRequestStream " << request

@@ -69,7 +69,7 @@ class CollectingObserver : public Observer<T> {
 /// observable.  Return the items that were sent to the observer.  If some
 /// exception was sent, the exception is thrown.
 template <typename T>
-std::vector<T> run(Reference<Observable<T>> observable) {
+std::vector<T> run(std::shared_ptr<Observable<T>> observable) {
   auto collector = make_ref<CollectingObserver<T>>();
   observable->subscribe(collector);
   return std::move(collector->values());
@@ -78,7 +78,7 @@ std::vector<T> run(Reference<Observable<T>> observable) {
 } // namespace
 
 TEST(Observable, SingleOnNext) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(1);
     obs->onComplete();
   });
@@ -90,7 +90,7 @@ TEST(Observable, SingleOnNext) {
 }
 
 TEST(Observable, MultiOnNext) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(1);
     obs->onNext(2);
     obs->onNext(3);
@@ -108,7 +108,7 @@ TEST(Observable, MultiOnNext) {
 
 TEST(Observable, OnError) {
   std::string errorMessage("DEFAULT->No Error Message");
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onError(std::runtime_error("something broke!"));
   });
 
@@ -125,7 +125,7 @@ TEST(Observable, OnError) {
  * Assert that all items passed through the Observable get destroyed
  */
 TEST(Observable, ItemsCollectedSynchronously) {
-  auto a = Observable<Tuple>::create([](Reference<Observer<Tuple>> obs) {
+  auto a = Observable<Tuple>::create([](std::shared_ptr<Observer<Tuple>> obs) {
     obs->onNext(Tuple{1, 2});
     obs->onNext(Tuple{2, 3});
     obs->onNext(Tuple{3, 4});
@@ -145,7 +145,7 @@ TEST(Observable, ItemsCollectedSynchronously) {
  * in a Vector which could then be consumed on another thread.
  */
 TEST(DISABLED_Observable, ItemsCollectedAsynchronously) {
-  auto a = Observable<Tuple>::create([](Reference<Observer<Tuple>> obs) {
+  auto a = Observable<Tuple>::create([](std::shared_ptr<Observer<Tuple>> obs) {
     std::cout << "-----------------------------" << std::endl;
     obs->onNext(Tuple{1, 2});
     std::cout << "-----------------------------" << std::endl;
@@ -179,7 +179,7 @@ class TakeObserver : public Observer<int> {
  private:
   const int limit;
   int count = 0;
-  Reference<yarpl::observable::Subscription> subscription_;
+  std::shared_ptr<yarpl::observable::Subscription> subscription_;
   std::vector<int>& v;
 
  public:
@@ -187,7 +187,7 @@ class TakeObserver : public Observer<int> {
     v.reserve(5);
   }
 
-  void onSubscribe(Reference<yarpl::observable::Subscription> s) override {
+  void onSubscribe(std::shared_ptr<yarpl::observable::Subscription> s) override {
     subscription_ = std::move(s);
   }
 
@@ -207,7 +207,7 @@ class TakeObserver : public Observer<int> {
 // assert behavior of onComplete after subscription.cancel
 TEST(Observable, SubscriptionCancellation) {
   std::atomic_int emitted{0};
-  auto a = Observable<int>::create([&](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([&](std::shared_ptr<Observer<int>> obs) {
     int i = 0;
     while (!obs->isUnsubscribed() && i <= 10) {
       emitted++;
@@ -234,7 +234,7 @@ TEST(Observable, CancelFromDifferentThread) {
   std::atomic<bool> cancelled2{false};
 
   std::thread t;
-  auto a = Observable<int>::create([&](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([&](std::shared_ptr<Observer<int>> obs) {
     t = std::thread([obs, &emitted, &cancelled1]() {
       obs->addSubscription([&]() { cancelled1 = true; });
       while (!obs->isUnsubscribed()) {
@@ -277,7 +277,7 @@ TEST(Observable, toFlowableDrop) {
 }
 
 TEST(Observable, toFlowableDropWithCancel) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     int i = 0;
     while (!obs->isUnsubscribed()) {
       obs->onNext(++i);
@@ -547,7 +547,7 @@ TEST(Observable, ObserversError) {
 }
 
 TEST(Observable, CancelReleasesObjects) {
-  auto lambda = [](Reference<Observer<int>> observer) {
+  auto lambda = [](std::shared_ptr<Observer<int>> observer) {
     // we will send nothing
   };
   auto observable = Observable<int>::create(std::move(lambda));
@@ -562,12 +562,12 @@ class InfiniteAsyncTestOperator
 
  public:
   InfiniteAsyncTestOperator(
-      Reference<Observable<int>> upstream,
+      std::shared_ptr<Observable<int>> upstream,
       MockFunction<void()>& checkpoint)
       : Super(std::move(upstream)), checkpoint_(checkpoint) {}
 
-  Reference<Subscription> subscribe(
-      Reference<Observer<int>> observer) override {
+  std::shared_ptr<Subscription> subscribe(
+      std::shared_ptr<Observer<int>> observer) override {
     auto subscription = make_ref<TestSubscription>(
         this->ref_from_this(this), std::move(observer), checkpoint_);
     Super::upstream_->subscribe(
@@ -591,13 +591,13 @@ class InfiniteAsyncTestOperator
     }
 
     TestSubscription(
-        Reference<InfiniteAsyncTestOperator> observable,
-        Reference<Observer<int>> observer,
+        std::shared_ptr<InfiniteAsyncTestOperator> observable,
+        std::shared_ptr<Observer<int>> observer,
         MockFunction<void()>& checkpoint)
         : SuperSub(std::move(observable), std::move(observer)),
           checkpoint_(checkpoint) {}
 
-    void onSubscribe(yarpl::Reference<Subscription> subscription) override {
+    void onSubscribe(std::shared_ptr<Subscription> subscription) override {
       SuperSub::onSubscribe(std::move(subscription));
       t_ = std::thread([this]() {
         while (!isCancelled()) {
@@ -626,7 +626,7 @@ TEST(Observable, DISABLED_CancelSubscriptionChain) {
   MockFunction<void()> checkpoint2;
   MockFunction<void()> checkpoint3;
   std::thread t;
-  auto infinite1 = Observable<int>::create([&](Reference<Observer<int>> obs) {
+  auto infinite1 = Observable<int>::create([&](std::shared_ptr<Observer<int>> obs) {
     EXPECT_CALL(checkpoint, Call()).Times(1);
     EXPECT_CALL(checkpoint2, Call()).Times(1);
     EXPECT_CALL(checkpoint3, Call()).Times(1);
@@ -657,7 +657,7 @@ TEST(Observable, DISABLED_CancelSubscriptionChain) {
 
 TEST(Observable, DoOnSubscribeTest) {
   auto a = Observable<int>::create(
-      [](Reference<Observer<int>> obs) { obs->onComplete(); });
+      [](std::shared_ptr<Observer<int>> obs) { obs->onComplete(); });
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -674,7 +674,7 @@ TEST(Observable, DoOnNextTest) {
 }
 
 TEST(Observable, DoOnErrorTest) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onError(std::runtime_error("something broke!"));
   });
 
@@ -686,7 +686,7 @@ TEST(Observable, DoOnErrorTest) {
 
 TEST(Observable, DoOnTerminateTest) {
   auto a = Observable<int>::create(
-      [](Reference<Observer<int>> obs) { obs->onComplete(); });
+      [](std::shared_ptr<Observer<int>> obs) { obs->onComplete(); });
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -695,7 +695,7 @@ TEST(Observable, DoOnTerminateTest) {
 }
 
 TEST(Observable, DoOnTerminate2Test) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onError(std::runtime_error("something broke!"));
   });
 
@@ -706,7 +706,7 @@ TEST(Observable, DoOnTerminate2Test) {
 }
 
 TEST(Observable, DoOnEachTest) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(5);
     obs->onError(std::runtime_error("something broke!"));
   });
@@ -717,7 +717,7 @@ TEST(Observable, DoOnEachTest) {
 }
 
 TEST(Observable, DoOnTest) {
-  auto a = Observable<int>::create([](Reference<Observer<int>> obs) {
+  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(5);
     obs->onError(std::runtime_error("something broke!"));
   });

@@ -42,7 +42,7 @@ class TestSubscriber :
    * Create a TestSubscriber that will subscribe and store the value it
    * receives.
    */
-  static Reference<TestSubscriber<T>> create(int64_t initial = kNoFlowControl) {
+  static std::shared_ptr<TestSubscriber<T>> create(int64_t initial = kNoFlowControl) {
     return make_ref<TestSubscriber<T>>(initial);
   }
 
@@ -52,17 +52,17 @@ class TestSubscriber :
    *
    * This will store the value it receives to allow assertions.
    */
-  static Reference<TestSubscriber<T>> create(
-      Reference<Subscriber<T>> delegate,
+  static std::shared_ptr<TestSubscriber<T>> create(
+      std::shared_ptr<Subscriber<T>> delegate,
       int64_t initial = kNoFlowControl) {
     return make_ref<TestSubscriber<T>>(std::move(delegate), initial);
   }
 
   explicit TestSubscriber(int64_t initial = kNoFlowControl)
-      : TestSubscriber(Reference<Subscriber<T>>{}, initial) {}
+      : TestSubscriber(std::shared_ptr<Subscriber<T>>{}, initial) {}
 
   explicit TestSubscriber(
-      Reference<Subscriber<T>> delegate,
+      std::shared_ptr<Subscriber<T>> delegate,
       int64_t initial = kNoFlowControl)
       : delegate_(std::move(delegate)), initial_{initial} {}
 
@@ -238,14 +238,14 @@ class TestSubscriber :
   bool dropValues_{false};
   std::atomic<int> valueCount_{0};
 
-  Reference<Subscriber<T>> delegate_;
+  std::shared_ptr<Subscriber<T>> delegate_;
   std::vector<T> values_;
   folly::exception_wrapper e_;
   int64_t initial_{kNoFlowControl};
   bool terminated_{false};
   std::mutex m_;
   std::condition_variable terminalEventCV_;
-  Reference<Subscription> subscription_;
+  std::shared_ptr<Subscription> subscription_;
 };
 } // namespace flowable
 } // namespace yarpl

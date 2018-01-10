@@ -28,7 +28,7 @@ namespace flowable {
 template <typename U, typename D, typename Operator>
 class FlowableOperator : public Flowable<D> {
  public:
-  explicit FlowableOperator(Reference<Flowable<U>> upstream)
+  explicit FlowableOperator(std::shared_ptr<Flowable<U>> upstream)
       : upstream_(std::move(upstream)) {}
 
  protected:
@@ -43,15 +43,15 @@ class FlowableOperator : public Flowable<D> {
                        public BaseSubscriber<U> {
    protected:
     Subscription(
-        Reference<Operator> flowable,
-        Reference<Subscriber<D>> subscriber)
+        std::shared_ptr<Operator> flowable,
+        std::shared_ptr<Subscriber<D>> subscriber)
         : flowableOperator_(std::move(flowable)),
           subscriber_(std::move(subscriber)) {
       CHECK(flowableOperator_);
       CHECK(yarpl::atomic_load(&subscriber_));
     }
 
-    const Reference<Operator>& getFlowableOperator() {
+    const std::shared_ptr<Operator>& getFlowableOperator() {
       return flowableOperator_;
     }
 
@@ -63,7 +63,7 @@ class FlowableOperator : public Flowable<D> {
 
     /// Terminates both ends of an operator normally.
     void terminate() {
-      Reference<Subscriber<D>> null;
+      std::shared_ptr<Subscriber<D>> null;
       auto subscriber = yarpl::atomic_exchange(&subscriber_, null);
       BaseSubscriber<U>::cancel();
       if (subscriber) {
@@ -73,7 +73,7 @@ class FlowableOperator : public Flowable<D> {
 
     /// Terminates both ends of an operator with an error.
     void terminateErr(folly::exception_wrapper ew) {
-      Reference<Subscriber<D>> null;
+      std::shared_ptr<Subscriber<D>> null;
       auto subscriber = yarpl::atomic_exchange(&subscriber_, null);
       BaseSubscriber<U>::cancel();
       if (subscriber) {
@@ -88,7 +88,7 @@ class FlowableOperator : public Flowable<D> {
     }
 
     void cancel() override {
-      Reference<Subscriber<D>> null;
+      std::shared_ptr<Subscriber<D>> null;
       auto subscriber = yarpl::atomic_exchange(&subscriber_, null);
       BaseSubscriber<U>::cancel();
     }
@@ -100,14 +100,14 @@ class FlowableOperator : public Flowable<D> {
     }
 
     void onCompleteImpl() override {
-      Reference<Subscriber<D>> null;
+      std::shared_ptr<Subscriber<D>> null;
       if (auto subscriber = yarpl::atomic_exchange(&subscriber_, null)) {
         subscriber->onComplete();
       }
     }
 
     void onErrorImpl(folly::exception_wrapper ew) override {
-      Reference<Subscriber<D>> null;
+      std::shared_ptr<Subscriber<D>> null;
       if (auto subscriber = yarpl::atomic_exchange(&subscriber_, null)) {
         subscriber->onError(std::move(ew));
       }
@@ -115,7 +115,7 @@ class FlowableOperator : public Flowable<D> {
 
    private:
     /// The Flowable has the lambda, and other creation parameters.
-    Reference<Operator> flowableOperator_;
+    std::shared_ptr<Operator> flowableOperator_;
 
     /// This subscription controls the life-cycle of the subscriber.  The
     /// subscriber is retained as long as calls on it can be made.  (Note: the
@@ -124,7 +124,7 @@ class FlowableOperator : public Flowable<D> {
     AtomicReference<Subscriber<D>> subscriber_;
   };
 
-  Reference<Flowable<U>> upstream_;
+  std::shared_ptr<Flowable<U>> upstream_;
 };
 
 template <
@@ -137,10 +137,10 @@ class MapOperator : public FlowableOperator<U, D, MapOperator<U, D, F>> {
   using Super = FlowableOperator<U, D, ThisOperatorT>;
 
  public:
-  MapOperator(Reference<Flowable<U>> upstream, F function)
+  MapOperator(std::shared_ptr<Flowable<U>> upstream, F function)
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
-  void subscribe(Reference<Subscriber<D>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<D>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
@@ -150,8 +150,8 @@ class MapOperator : public FlowableOperator<U, D, MapOperator<U, D, F>> {
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
-        Reference<Subscriber<D>> subscriber)
+        std::shared_ptr<ThisOperatorT> flowable,
+        std::shared_ptr<Subscriber<D>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)) {}
 
     void onNextImpl(U value) override {
@@ -179,10 +179,10 @@ class FilterOperator : public FlowableOperator<U, U, FilterOperator<U, F>> {
   using Super = FlowableOperator<U, U, ThisOperatorT>;
 
  public:
-  FilterOperator(Reference<Flowable<U>> upstream, F function)
+  FilterOperator(std::shared_ptr<Flowable<U>> upstream, F function)
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
-  void subscribe(Reference<Subscriber<U>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<U>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
@@ -192,8 +192,8 @@ class FilterOperator : public FlowableOperator<U, U, FilterOperator<U, F>> {
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
-        Reference<Subscriber<U>> subscriber)
+        std::shared_ptr<ThisOperatorT> flowable,
+        std::shared_ptr<Subscriber<U>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)) {}
 
     void onNextImpl(U value) override {
@@ -221,10 +221,10 @@ class ReduceOperator : public FlowableOperator<U, D, ReduceOperator<U, D, F>> {
   using Super = FlowableOperator<U, D, ThisOperatorT>;
 
  public:
-  ReduceOperator(Reference<Flowable<U>> upstream, F function)
+  ReduceOperator(std::shared_ptr<Flowable<U>> upstream, F function)
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
-  void subscribe(Reference<Subscriber<D>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<D>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
@@ -234,8 +234,8 @@ class ReduceOperator : public FlowableOperator<U, D, ReduceOperator<U, D, F>> {
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
-        Reference<Subscriber<D>> subscriber)
+        std::shared_ptr<ThisOperatorT> flowable,
+        std::shared_ptr<Subscriber<D>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)),
           accInitialized_(false) {}
 
@@ -275,10 +275,10 @@ class TakeOperator : public FlowableOperator<T, T, TakeOperator<T>> {
   using Super = FlowableOperator<T, T, ThisOperatorT>;
 
  public:
-  TakeOperator(Reference<Flowable<T>> upstream, int64_t limit)
+  TakeOperator(std::shared_ptr<Flowable<T>> upstream, int64_t limit)
       : Super(std::move(upstream)), limit_(limit) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), limit_, std::move(subscriber)));
   }
@@ -288,9 +288,9 @@ class TakeOperator : public FlowableOperator<T, T, TakeOperator<T>> {
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
+        std::shared_ptr<ThisOperatorT> flowable,
         int64_t limit,
-        Reference<Subscriber<T>> subscriber)
+        std::shared_ptr<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)),
           limit_(limit) {}
 
@@ -328,10 +328,10 @@ class SkipOperator : public FlowableOperator<T, T, SkipOperator<T>> {
   using Super = FlowableOperator<T, T, ThisOperatorT>;
 
  public:
-  SkipOperator(Reference<Flowable<T>> upstream, int64_t offset)
+  SkipOperator(std::shared_ptr<Flowable<T>> upstream, int64_t offset)
       : Super(std::move(upstream)), offset_(offset) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), offset_, std::move(subscriber)));
   }
@@ -341,9 +341,9 @@ class SkipOperator : public FlowableOperator<T, T, SkipOperator<T>> {
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
+        std::shared_ptr<ThisOperatorT> flowable,
         int64_t offset,
-        Reference<Subscriber<T>> subscriber)
+        std::shared_ptr<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)),
           offset_(offset) {}
 
@@ -378,10 +378,10 @@ class IgnoreElementsOperator
   using Super = FlowableOperator<T, T, ThisOperatorT>;
 
  public:
-  explicit IgnoreElementsOperator(Reference<Flowable<T>> upstream)
+  explicit IgnoreElementsOperator(std::shared_ptr<Flowable<T>> upstream)
       : Super(std::move(upstream)) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
@@ -391,8 +391,8 @@ class IgnoreElementsOperator
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
-        Reference<Subscriber<T>> subscriber)
+        std::shared_ptr<ThisOperatorT> flowable,
+        std::shared_ptr<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)) {}
 
     void onNextImpl(T) override {}
@@ -407,11 +407,11 @@ class SubscribeOnOperator
 
  public:
   SubscribeOnOperator(
-      Reference<Flowable<T>> upstream,
+      std::shared_ptr<Flowable<T>> upstream,
       folly::Executor& executor)
       : Super(std::move(upstream)), executor_(executor) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     Super::upstream_->subscribe(make_ref<Subscription>(
         this->ref_from_this(this), executor_, std::move(subscriber)));
   }
@@ -421,9 +421,9 @@ class SubscribeOnOperator
   class Subscription : public SuperSubscription {
    public:
     Subscription(
-        Reference<ThisOperatorT> flowable,
+        std::shared_ptr<ThisOperatorT> flowable,
         folly::Executor& executor,
-        Reference<Subscriber<T>> subscriber)
+        std::shared_ptr<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)),
           executor_(executor) {}
 
@@ -466,7 +466,7 @@ class FromPublisherOperator : public Flowable<T> {
   explicit FromPublisherOperator(OnSubscribe function)
       : function_(std::move(function)) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     function_(std::move(subscriber));
   }
 
@@ -481,11 +481,11 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
 
  public:
   FlatMapOperator(
-      Reference<Flowable<T>> upstream,
-      folly::Function<Reference<Flowable<R>>(T)> func)
+      std::shared_ptr<Flowable<T>> upstream,
+      folly::Function<std::shared_ptr<Flowable<R>>(T)> func)
       : Super(std::move(upstream)), function_(std::move(func)) {}
 
-  void subscribe(Reference<Subscriber<R>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<R>> subscriber) override {
     Super::upstream_->subscribe(make_ref<FMSubscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
@@ -497,8 +497,8 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
 
    public:
     FMSubscription(
-        Reference<ThisOperatorT> flowable,
-        Reference<Subscriber<R>> subscriber)
+        std::shared_ptr<ThisOperatorT> flowable,
+        std::shared_ptr<Subscriber<R>> subscriber)
         : SuperSubscription(std::move(flowable), std::move(subscriber)) {}
 
     void onSubscribeImpl() final {
@@ -508,7 +508,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
 
     void onNextImpl(T value) final {
       auto&& flatMapOp = this->getFlowableOperator();
-      Reference<Flowable<R>> mappedStream;
+      std::shared_ptr<Flowable<R>> mappedStream;
 
       try {
         mappedStream = flatMapOp->function_(std::move(value));
@@ -523,7 +523,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
         return;
       }
 
-      Reference<MappedStreamSubscriber> mappedSubscriber =
+      std::shared_ptr<MappedStreamSubscriber> mappedSubscriber =
           yarpl::make_ref<MappedStreamSubscriber>(this->ref_from_this(this));
       mappedSubscriber->fmReference_ = mappedSubscriber;
 
@@ -783,7 +783,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
         : public BaseSubscriber<R>,
           public boost::intrusive::list_base_hook<
               boost::intrusive::link_mode<boost::intrusive::auto_unlink>> {
-      MappedStreamSubscriber(Reference<FMSubscription> subscription)
+      MappedStreamSubscriber(std::shared_ptr<FMSubscription> subscription)
           : flatMapSubscription_(std::move(subscription)) {}
 
       void onSubscribeImpl() final {
@@ -821,7 +821,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       }
 
       void onTerminateImpl() override {
-        Reference<FMSubscription> null;
+        std::shared_ptr<FMSubscription> null;
         if (auto fms = yarpl::atomic_exchange(&flatMapSubscription_, null)) {
           fms->onMappedSubscriberTerminate(this);
         }
@@ -840,7 +840,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       // FMSubscription's 'reference' to this object. FMSubscription
       // clears this reference when it drops the MappedStreamSubscriber
       // from one of its atomic lists
-      Reference<MappedStreamSubscriber> fmReference_{nullptr};
+      std::shared_ptr<MappedStreamSubscriber> fmReference_{nullptr};
 
       // this is both a Subscriber and a Subscription<T>
       AtomicReference<FMSubscription> flatMapSubscription_{nullptr};
@@ -934,7 +934,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
     std::atomic<int64_t> liveSubscribers_{0};
   };
 
-  folly::Function<Reference<Flowable<R>>(T)> function_;
+  folly::Function<std::shared_ptr<Flowable<R>>(T)> function_;
 };
 
 } // namespace flowable

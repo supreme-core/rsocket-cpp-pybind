@@ -15,7 +15,7 @@ using namespace yarpl::flowable;
 namespace rsocket {
 namespace tests {
 /// Handles a new inbound Stream requested by the other end.
-Reference<Flowable<rsocket::Payload>>
+std::shared_ptr<Flowable<rsocket::Payload>>
 HelloStreamRequestHandler::handleRequestStream(
     rsocket::Payload request,
     rsocket::StreamId) {

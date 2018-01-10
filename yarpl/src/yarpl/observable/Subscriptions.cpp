@@ -25,7 +25,7 @@ bool Subscription::isCancelled() const {
   return cancelled_;
 }
 
-void Subscription::tieSubscription(Reference<Subscription> subscription) {
+void Subscription::tieSubscription(std::shared_ptr<Subscription> subscription) {
   CHECK(subscription);
   if (isCancelled()) {
     subscription->cancel();
@@ -53,15 +53,15 @@ void CallbackSubscription::cancel() {
   }
 }
 
-Reference<Subscription> Subscriptions::create(std::function<void()> onCancel) {
+std::shared_ptr<Subscription> Subscriptions::create(std::function<void()> onCancel) {
   return make_ref<CallbackSubscription>(std::move(onCancel));
 }
 
-Reference<Subscription> Subscriptions::create(std::atomic_bool& cancelled) {
+std::shared_ptr<Subscription> Subscriptions::create(std::atomic_bool& cancelled) {
   return create([&cancelled]() { cancelled = true; });
 }
 
-Reference<Subscription> Subscriptions::create() {
+std::shared_ptr<Subscription> Subscriptions::create() {
   return make_ref<Subscription>();
 }
 

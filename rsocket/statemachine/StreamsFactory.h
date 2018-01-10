@@ -21,33 +21,33 @@ class StreamsFactory {
  public:
   StreamsFactory(RSocketStateMachine& connection, RSocketMode mode);
 
-  yarpl::Reference<yarpl::flowable::Subscriber<Payload>> createChannelRequester(
-      yarpl::Reference<yarpl::flowable::Subscriber<Payload>> responseSink);
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> createChannelRequester(
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink);
 
   void createStreamRequester(
       Payload request,
-      yarpl::Reference<yarpl::flowable::Subscriber<Payload>> responseSink);
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink);
 
   void createStreamRequester(
-      yarpl::Reference<yarpl::flowable::Subscriber<Payload>> responseSink,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink,
       StreamId streamId,
       size_t n);
 
   void createRequestResponseRequester(
       Payload payload,
-      yarpl::Reference<yarpl::single::SingleObserver<Payload>> responseSink);
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink);
 
   // TODO: the return type should not be the stateMachine type, but something
   // generic
-  yarpl::Reference<ChannelResponder> createChannelResponder(
+  std::shared_ptr<ChannelResponder> createChannelResponder(
       uint32_t initialRequestN,
       StreamId streamId);
 
-  yarpl::Reference<yarpl::flowable::Subscriber<Payload>> createStreamResponder(
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> createStreamResponder(
       uint32_t initialRequestN,
       StreamId streamId);
 
-  yarpl::Reference<yarpl::single::SingleObserver<Payload>>
+  std::shared_ptr<yarpl::single::SingleObserver<Payload>>
   createRequestResponseResponder(StreamId streamId);
 
   bool registerNewPeerStreamId(StreamId streamId);

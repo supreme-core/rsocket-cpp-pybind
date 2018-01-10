@@ -12,8 +12,8 @@ class ObserveOnOperatorSubscription : public yarpl::flowable::Subscription,
                                       public yarpl::enable_get_ref {
  public:
   ObserveOnOperatorSubscription(
-      Reference<ObserveOnOperatorSubscriber<T>> subscriber,
-      Reference<Subscription> subscription)
+      std::shared_ptr<ObserveOnOperatorSubscriber<T>> subscriber,
+      std::shared_ptr<Subscription> subscription)
       : subscriber_(std::move(subscriber)),
         subscription_(std::move(subscription)) {}
 
@@ -34,8 +34,8 @@ class ObserveOnOperatorSubscription : public yarpl::flowable::Subscription,
   }
 
  private:
-  Reference<ObserveOnOperatorSubscriber<T>> subscriber_;
-  Reference<Subscription> subscription_;
+  std::shared_ptr<ObserveOnOperatorSubscriber<T>> subscriber_;
+  std::shared_ptr<Subscription> subscription_;
 };
 
 template <typename T>
@@ -43,12 +43,12 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
                                     public yarpl::enable_get_ref {
  public:
   ObserveOnOperatorSubscriber(
-      Reference<Subscriber<T>> inner,
+      std::shared_ptr<Subscriber<T>> inner,
       folly::Executor& executor)
       : inner_(std::move(inner)), executor_(executor) {}
 
   // all signaling methods are called from upstream EB
-  void onSubscribe(Reference<Subscription> subscription) override {
+  void onSubscribe(std::shared_ptr<Subscription> subscription) override {
     executor_.add([
       self = this->ref_from_this(this),
       s = std::move(subscription)
@@ -86,22 +86,22 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
   friend class ObserveOnOperatorSubscription<T>;
   bool isCanceled_{false}; // only accessed in executor_ thread
 
-  Reference<Subscriber<T>> inner_;
+  std::shared_ptr<Subscriber<T>> inner_;
   folly::Executor& executor_;
 };
 
 template <typename T>
 class ObserveOnOperator : public yarpl::flowable::Flowable<T> {
  public:
-  ObserveOnOperator(Reference<Flowable<T>> upstream, folly::Executor& executor)
+  ObserveOnOperator(std::shared_ptr<Flowable<T>> upstream, folly::Executor& executor)
       : upstream_(std::move(upstream)), executor_(executor) {}
 
-  void subscribe(Reference<Subscriber<T>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     upstream_->subscribe(make_ref<ObserveOnOperatorSubscriber<T>>(
         std::move(subscriber), executor_));
   }
 
-  Reference<Flowable<T>> upstream_;
+  std::shared_ptr<Flowable<T>> upstream_;
   folly::Executor& executor_;
 };
 }

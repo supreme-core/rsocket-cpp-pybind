@@ -49,7 +49,7 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
    *
    * @return
    */
-  static Reference<SingleTestObserver<T>> create() {
+  static std::shared_ptr<SingleTestObserver<T>> create() {
     return make_ref<SingleTestObserver<T>>();
   }
 
@@ -60,8 +60,8 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
    * This will store the value it receives to allow assertions.
    * @return
    */
-  static Reference<SingleTestObserver<T>> create(
-      Reference<SingleObserver<T>> delegate) {
+  static std::shared_ptr<SingleTestObserver<T>> create(
+      std::shared_ptr<SingleObserver<T>> delegate) {
     return make_ref<SingleTestObserver<T>>(std::move(delegate));
   }
 
@@ -74,10 +74,10 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
   // and then access them for verification/assertion
   // on the unit test main thread.
 
-  explicit SingleTestObserver(Reference<SingleObserver<T>> delegate)
+  explicit SingleTestObserver(std::shared_ptr<SingleObserver<T>> delegate)
       : delegate_(std::move(delegate)) {}
 
-  void onSubscribe(Reference<SingleSubscription> subscription) override {
+  void onSubscribe(std::shared_ptr<SingleSubscription> subscription) override {
     if (delegate_) {
       delegateSubscription_->setDelegate(subscription); // copy
       delegate_->onSubscribe(std::move(subscription));
@@ -206,14 +206,14 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
  private:
   std::mutex m_;
   std::condition_variable terminalEventCV_;
-  Reference<SingleObserver<T>> delegate_;
+  std::shared_ptr<SingleObserver<T>> delegate_;
   // The following variables must be protected by mutex m_
   T value_;
   folly::exception_wrapper e_;
   bool terminated_{false};
   // allows thread-safe cancellation against a delegate
   // regardless of when it is received
-  Reference<DelegateSingleSubscription> delegateSubscription_{
+  std::shared_ptr<DelegateSingleSubscription> delegateSubscription_{
       make_ref<DelegateSingleSubscription>()};
 };
 }

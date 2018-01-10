@@ -203,7 +203,7 @@ void SetupResumeAcceptor::accept(
 }
 
 void SetupResumeAcceptor::remove(
-    const yarpl::Reference<SetupResumeAcceptor::OneFrameSubscriber>&
+    const std::shared_ptr<SetupResumeAcceptor::OneFrameSubscriber>&
         subscriber) {
   DCHECK(inOwnerThread());
   connections_.erase(subscriber);

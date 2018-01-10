@@ -22,12 +22,12 @@ template <typename T>
 class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
  public:
   ScheduledSubscriber(
-      yarpl::Reference<yarpl::flowable::Subscriber<T>> inner,
+      std::shared_ptr<yarpl::flowable::Subscriber<T>> inner,
       folly::EventBase& eventBase) : inner_(std::move(inner)),
                                      eventBase_(eventBase) {}
 
   void onSubscribe(
-      yarpl::Reference<yarpl::flowable::Subscription> subscription) override {
+      std::shared_ptr<yarpl::flowable::Subscription> subscription) override {
     if (eventBase_.isInEventBaseThread()) {
       inner_->onSubscribe(std::move(subscription));
     } else {
@@ -75,7 +75,7 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
   }
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscriber<T>> inner_;
+  std::shared_ptr<yarpl::flowable::Subscriber<T>> inner_;
   folly::EventBase& eventBase_;
 };
 
@@ -92,12 +92,12 @@ class ScheduledSubscriptionSubscriber
     : public yarpl::flowable::Subscriber<T> {
  public:
   ScheduledSubscriptionSubscriber(
-      yarpl::Reference<yarpl::flowable::Subscriber<T>> inner,
+      std::shared_ptr<yarpl::flowable::Subscriber<T>> inner,
       folly::EventBase& eventBase) : inner_(std::move(inner)),
                                      eventBase_(eventBase) {}
 
   void onSubscribe(
-      yarpl::Reference<yarpl::flowable::Subscription> subscription) override {
+      std::shared_ptr<yarpl::flowable::Subscription> subscription) override {
     inner_->onSubscribe(
         yarpl::make_ref<ScheduledSubscription>(subscription, eventBase_));
   }
@@ -116,7 +116,7 @@ class ScheduledSubscriptionSubscriber
   }
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscriber<T>> inner_;
+  std::shared_ptr<yarpl::flowable::Subscriber<T>> inner_;
   folly::EventBase& eventBase_;
 };
 

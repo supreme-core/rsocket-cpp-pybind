@@ -20,9 +20,9 @@ class Flowables {
   /**
    * Emit the sequence of numbers [start, start + count).
    */
-  static Reference<Flowable<int64_t>> range(int64_t start, int64_t count) {
+  static std::shared_ptr<Flowable<int64_t>> range(int64_t start, int64_t count) {
     auto lambda = [ start, count, i = start ](
-        Reference<Subscriber<int64_t>> subscriber, int64_t requested) mutable {
+        std::shared_ptr<Subscriber<int64_t>> subscriber, int64_t requested) mutable {
       int64_t emitted = 0;
       bool done = false;
       int64_t end = start + count;
@@ -44,8 +44,8 @@ class Flowables {
   }
 
   template <typename T>
-  static Reference<Flowable<T>> just(const T& value) {
-    auto lambda = [value](Reference<Subscriber<T>> subscriber, int64_t) {
+  static std::shared_ptr<Flowable<T>> just(const T& value) {
+    auto lambda = [value](std::shared_ptr<Subscriber<T>> subscriber, int64_t) {
       // # requested should be > 0.  Ignoring the actual parameter.
       subscriber->onNext(value);
       subscriber->onComplete();
@@ -56,11 +56,11 @@ class Flowables {
   }
 
   template <typename T>
-  static Reference<Flowable<T>> justN(std::initializer_list<T> list) {
+  static std::shared_ptr<Flowable<T>> justN(std::initializer_list<T> list) {
     std::vector<T> vec(list);
 
     auto lambda = [ v = std::move(vec), i = size_t{0} ](
-        Reference<Subscriber<T>> subscriber, int64_t requested) mutable {
+        std::shared_ptr<Subscriber<T>> subscriber, int64_t requested) mutable {
       int64_t emitted = 0;
       bool done = false;
 
@@ -82,9 +82,9 @@ class Flowables {
 
   // this will generate a flowable which can be subscribed to only once
   template <typename T>
-  static Reference<Flowable<T>> justOnce(T value) {
+  static std::shared_ptr<Flowable<T>> justOnce(T value) {
     auto lambda = [ value = std::move(value), used = false ](
-        Reference<Subscriber<T>> subscriber, int64_t) mutable {
+        std::shared_ptr<Subscriber<T>> subscriber, int64_t) mutable {
       if (used) {
         subscriber->onError(
             std::runtime_error("justOnce value was already used"));
@@ -105,14 +105,14 @@ class Flowables {
       typename T,
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe, Reference<Subscriber<T>>>::value>::type>
-  static Reference<Flowable<T>> fromPublisher(OnSubscribe function) {
+          OnSubscribe, std::shared_ptr<Subscriber<T>>>::value>::type>
+  static std::shared_ptr<Flowable<T>> fromPublisher(OnSubscribe function) {
     return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>
-  static Reference<Flowable<T>> empty() {
-    auto lambda = [](Reference<Subscriber<T>> subscriber, int64_t) {
+  static std::shared_ptr<Flowable<T>> empty() {
+    auto lambda = [](std::shared_ptr<Subscriber<T>> subscriber, int64_t) {
       subscriber->onComplete();
       return std::make_tuple(static_cast<int64_t>(0), true);
     };
@@ -120,9 +120,9 @@ class Flowables {
   }
 
   template <typename T>
-  static Reference<Flowable<T>> error(folly::exception_wrapper ex) {
+  static std::shared_ptr<Flowable<T>> error(folly::exception_wrapper ex) {
     auto lambda = [ex = std::move(ex)](
-        Reference<Subscriber<T>> subscriber, int64_t) {
+        std::shared_ptr<Subscriber<T>> subscriber, int64_t) {
       subscriber->onError(std::move(ex));
       return std::make_tuple(static_cast<int64_t>(0), true);
     };
@@ -130,9 +130,9 @@ class Flowables {
   }
 
   template <typename T, typename ExceptionType>
-  static Reference<Flowable<T>> error(const ExceptionType& ex) {
+  static std::shared_ptr<Flowable<T>> error(const ExceptionType& ex) {
     auto lambda = [ex = std::move(ex)](
-        Reference<Subscriber<T>> subscriber, int64_t) {
+        std::shared_ptr<Subscriber<T>> subscriber, int64_t) {
       subscriber->onError(std::move(ex));
       return std::make_tuple(static_cast<int64_t>(0), true);
     };
@@ -140,9 +140,9 @@ class Flowables {
   }
 
   template <typename T, typename TGenerator>
-  static Reference<Flowable<T>> fromGenerator(TGenerator generator) {
+  static std::shared_ptr<Flowable<T>> fromGenerator(TGenerator generator) {
     auto lambda = [generator = std::move(generator)](
-        Reference<Subscriber<T>> subscriber, int64_t requested) {
+        std::shared_ptr<Subscriber<T>> subscriber, int64_t requested) {
       int64_t generated = 0;
       try {
         while (generated < requested) {

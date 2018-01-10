@@ -20,7 +20,7 @@ TEST(MocksTest, SelfManagedMocks) {
   {
     InSequence dummy;
     EXPECT_CALL(flowable, subscribe_(_))
-        .WillOnce(Invoke([&](yarpl::Reference<Subscriber<int>> consumer) {
+        .WillOnce(Invoke([&](std::shared_ptr<Subscriber<int>> consumer) {
           consumer->onSubscribe(subscription);
         }));
     EXPECT_CALL(*subscriber, onSubscribe_(_));

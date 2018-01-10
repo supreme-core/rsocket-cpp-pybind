@@ -29,22 +29,22 @@ StreamsFactory::StreamsFactory(
                     even-numbered stream identifiers*/) {}
 
 static void subscribeToErrorFlowable(
-    Reference<yarpl::flowable::Subscriber<Payload>> responseSink) {
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
   yarpl::flowable::Flowables::error<Payload>(
       std::runtime_error("state machine is disconnected/closed"))
       ->subscribe(std::move(responseSink));
 }
 
 static void subscribeToErrorSingle(
-    Reference<yarpl::single::SingleObserver<Payload>> responseSink) {
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink) {
   yarpl::single::Singles::error<Payload>(
       std::runtime_error("state machine is disconnected/closed"))
       ->subscribe(std::move(responseSink));
 }
 
-Reference<yarpl::flowable::Subscriber<Payload>>
+std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
 StreamsFactory::createChannelRequester(
-    Reference<yarpl::flowable::Subscriber<Payload>> responseSink) {
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
   if (connection_.isDisconnected()) {
     subscribeToErrorFlowable(std::move(responseSink));
     return nullptr;
@@ -60,7 +60,7 @@ StreamsFactory::createChannelRequester(
 
 void StreamsFactory::createStreamRequester(
     Payload request,
-    Reference<yarpl::flowable::Subscriber<Payload>> responseSink) {
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
   if (connection_.isDisconnected()) {
     subscribeToErrorFlowable(std::move(responseSink));
     return;
@@ -74,7 +74,7 @@ void StreamsFactory::createStreamRequester(
 }
 
 void StreamsFactory::createStreamRequester(
-    Reference<yarpl::flowable::Subscriber<Payload>> responseSink,
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink,
     StreamId streamId,
     size_t n) {
   if (connection_.isDisconnected()) {
@@ -92,7 +92,7 @@ void StreamsFactory::createStreamRequester(
 
 void StreamsFactory::createRequestResponseRequester(
     Payload payload,
-    Reference<yarpl::single::SingleObserver<Payload>> responseSink) {
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink) {
   if (connection_.isDisconnected()) {
     subscribeToErrorSingle(std::move(responseSink));
     return;
@@ -133,7 +133,7 @@ bool StreamsFactory::registerNewPeerStreamId(StreamId streamId) {
   return true;
 }
 
-Reference<ChannelResponder> StreamsFactory::createChannelResponder(
+std::shared_ptr<ChannelResponder> StreamsFactory::createChannelResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
   auto stateMachine = yarpl::make_ref<ChannelResponder>(
@@ -142,7 +142,7 @@ Reference<ChannelResponder> StreamsFactory::createChannelResponder(
   return stateMachine;
 }
 
-Reference<yarpl::flowable::Subscriber<Payload>>
+std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
 StreamsFactory::createStreamResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
@@ -152,7 +152,7 @@ StreamsFactory::createStreamResponder(
   return stateMachine;
 }
 
-Reference<yarpl::single::SingleObserver<Payload>>
+std::shared_ptr<yarpl::single::SingleObserver<Payload>>
 StreamsFactory::createRequestResponseResponder(StreamId streamId) {
   auto stateMachine = yarpl::make_ref<RequestResponseResponder>(
       connection_.shared_from_this(), streamId);

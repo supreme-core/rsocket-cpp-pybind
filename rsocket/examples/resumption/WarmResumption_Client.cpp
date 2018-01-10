@@ -43,7 +43,7 @@ class HelloSubscriber : public virtual yarpl::Refcounted,
   };
 
  protected:
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
                        subscription) noexcept override {
     subscription_ = subscription;
   }
@@ -62,14 +62,14 @@ class HelloSubscriber : public virtual yarpl::Refcounted,
   }
 
  private:
-  yarpl::Reference<yarpl::flowable::Subscription> subscription_{nullptr};
+  std::shared_ptr<yarpl::flowable::Subscription> subscription_{nullptr};
   std::atomic<int> count_{0};
 };
 }
 
 std::unique_ptr<RSocketClient> getClientAndRequestStream(
     folly::EventBase* eventBase,
-    yarpl::Reference<HelloSubscriber> subscriber) {
+    std::shared_ptr<HelloSubscriber> subscriber) {
   folly::SocketAddress address;
   address.setFromHostPort(FLAGS_host, FLAGS_port);
   SetupParameters setupParameters;

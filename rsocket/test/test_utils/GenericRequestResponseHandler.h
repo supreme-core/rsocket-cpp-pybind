@@ -35,7 +35,7 @@ struct GenericRequestResponseHandler : public rsocket::RSocketResponder {
   explicit GenericRequestResponseHandler(HandlerFunc&& func)
       : handler_(std::make_unique<HandlerFunc>(std::move(func))) {}
 
-  yarpl::Reference<yarpl::single::Single<Payload>> handleRequestResponse(
+  std::shared_ptr<yarpl::single::Single<Payload>> handleRequestResponse(
       Payload request,
       StreamId) override {
     auto data = request.moveDataToString();

@@ -18,9 +18,9 @@ DEFINE_int32(port, 9898, "port to connect to");
 class HelloChannelRequestResponder : public rsocket::RSocketResponder {
  public:
   /// Handles a new inbound Stream requested by the other end.
-  yarpl::Reference<Flowable<rsocket::Payload>> handleRequestChannel(
+  std::shared_ptr<Flowable<rsocket::Payload>> handleRequestChannel(
       rsocket::Payload initialPayload,
-      yarpl::Reference<Flowable<rsocket::Payload>> request,
+      std::shared_ptr<Flowable<rsocket::Payload>> request,
       rsocket::StreamId) override {
     std::cout << "Initial request " << initialPayload.cloneDataToString()
               << std::endl;

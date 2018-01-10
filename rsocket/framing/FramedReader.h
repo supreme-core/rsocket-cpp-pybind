@@ -19,14 +19,14 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
       : version_{std::move(version)} {}
 
   /// Set the inner subscriber which will be getting full frame payloads.
-  void setInput(yarpl::Reference<DuplexConnection::Subscriber>);
+  void setInput(std::shared_ptr<DuplexConnection::Subscriber>);
 
   /// Cancel the subscription and error the inner subscriber.
   void error(std::string);
 
   // Subscriber.
 
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>) override;
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>) override;
   void onNext(std::unique_ptr<folly::IOBuf>) override;
   void onComplete() override;
   void onError(folly::exception_wrapper) override;
@@ -42,7 +42,7 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
 
   size_t readFrameLength() const;
 
-  yarpl::Reference<DuplexConnection::Subscriber> inner_;
+  std::shared_ptr<DuplexConnection::Subscriber> inner_;
 
   Allowance allowance_;
   bool dispatchingFrames_{false};

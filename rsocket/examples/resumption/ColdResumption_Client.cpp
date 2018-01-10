@@ -18,7 +18,7 @@ using namespace yarpl::flowable;
 DEFINE_string(host, "localhost", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");
 
-typedef std::map<std::string, Reference<Subscriber<Payload>>> HelloSubscribers;
+typedef std::map<std::string, std::shared_ptr<Subscriber<Payload>>> HelloSubscribers;
 
 namespace {
 
@@ -37,7 +37,7 @@ class HelloSubscriber : public virtual Refcounted,
   };
 
  protected:
-  void onSubscribe(Reference<Subscription> subscription) override {
+  void onSubscribe(std::shared_ptr<Subscription> subscription) override {
     subscription_ = subscription;
   }
 
@@ -49,7 +49,7 @@ class HelloSubscriber : public virtual Refcounted,
   void onError(folly::exception_wrapper) override {}
 
  private:
-  Reference<Subscription> subscription_;
+  std::shared_ptr<Subscription> subscription_;
   std::atomic<int> count_{0};
 };
 
@@ -66,7 +66,7 @@ class HelloResumeHandler : public ColdResumeHandler {
     return streamToken;
   }
 
-  Reference<Subscriber<Payload>> handleRequesterResumeStream(
+  std::shared_ptr<Subscriber<Payload>> handleRequesterResumeStream(
       std::string streamToken,
       size_t consumerAllowance) override {
     CHECK(subscribers_.find(streamToken) != subscribers_.end());

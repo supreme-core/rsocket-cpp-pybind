@@ -17,13 +17,13 @@ namespace rsocket {
 class ScheduledSingleSubscription : public yarpl::single::SingleSubscription {
  public:
   ScheduledSingleSubscription(
-      yarpl::Reference<yarpl::single::SingleSubscription> inner,
+      std::shared_ptr<yarpl::single::SingleSubscription> inner,
       folly::EventBase& eventBase);
 
   void cancel() override;
 
  private:
-  yarpl::Reference<yarpl::single::SingleSubscription> inner_;
+  std::shared_ptr<yarpl::single::SingleSubscription> inner_;
   folly::EventBase& eventBase_;
 };
 

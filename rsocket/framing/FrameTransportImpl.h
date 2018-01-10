@@ -43,7 +43,7 @@ class FrameTransportImpl : public FrameTransport,
 
   // Subscriber.
 
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>) override;
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>) override;
   void onNext(std::unique_ptr<folly::IOBuf>) override;
   void onComplete() override;
   void onError(folly::exception_wrapper) override;
@@ -55,7 +55,7 @@ class FrameTransportImpl : public FrameTransport,
   std::shared_ptr<FrameProcessor> frameProcessor_;
   std::shared_ptr<DuplexConnection> connection_;
 
-  yarpl::Reference<DuplexConnection::Subscriber> connectionOutput_;
-  yarpl::Reference<yarpl::flowable::Subscription> connectionInputSub_;
+  std::shared_ptr<DuplexConnection::Subscriber> connectionOutput_;
+  std::shared_ptr<yarpl::flowable::Subscription> connectionInputSub_;
 };
 } // namespace rsocket

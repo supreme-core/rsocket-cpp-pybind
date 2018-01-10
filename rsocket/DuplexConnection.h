@@ -12,13 +12,13 @@ class IOBuf;
 
 namespace rsocket {
 
-using yarpl::Reference;
+using std::shared_ptr;
 
 class DuplexSubscriber :
   public yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>
 {
 public:
-  void onSubscribe(Reference<yarpl::flowable::Subscription> sub) override {
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription> sub) override {
     subscription_ = sub;
   }
   void onComplete() override {
@@ -29,12 +29,12 @@ public:
   }
 
 protected:
-  Reference<yarpl::flowable::Subscription> subscription() {
+  std::shared_ptr<yarpl::flowable::Subscription> subscription() {
     return subscription_;
   }
 
 private:
-  Reference<yarpl::flowable::Subscription> subscription_;
+  std::shared_ptr<yarpl::flowable::Subscription> subscription_;
 };
 
 /// Represents a connection of the underlying protocol, on top of which the
@@ -63,7 +63,7 @@ class DuplexConnection {
   ///
   /// If setInput() has already been called, then calling setInput() again will
   /// complete the previous subscriber.
-  virtual void setInput(yarpl::Reference<Subscriber>) = 0;
+  virtual void setInput(std::shared_ptr<Subscriber>) = 0;
 
   /// Write a serialized frame to the connection.
   ///

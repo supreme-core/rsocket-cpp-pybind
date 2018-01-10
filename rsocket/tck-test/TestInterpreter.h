@@ -57,13 +57,13 @@ class TestInterpreter {
   void handleDisconnect(const DisconnectCommand& command);
   void handleResume(const ResumeCommand& command);
 
-  yarpl::Reference<BaseSubscriber> getSubscriber(const std::string& id);
+  std::shared_ptr<BaseSubscriber> getSubscriber(const std::string& id);
 
   folly::ScopedEventBaseThread worker_;
   folly::SocketAddress address_;
   const Test& test_;
   std::map<std::string, std::string> interactionIdToType_;
-  std::map<std::string, yarpl::Reference<BaseSubscriber>> testSubscribers_;
+  std::map<std::string, std::shared_ptr<BaseSubscriber>> testSubscribers_;
   std::map<std::string, std::shared_ptr<TestClient>> testClient_;
 };
 

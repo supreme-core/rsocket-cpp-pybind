@@ -98,11 +98,11 @@ class RSocketServer {
  private:
   void onRSocketSetup(
       std::shared_ptr<RSocketServiceHandler> serviceHandler,
-      yarpl::Reference<rsocket::FrameTransport> frameTransport,
+      std::shared_ptr<rsocket::FrameTransport> frameTransport,
       rsocket::SetupParameters setupPayload);
   void onRSocketResume(
       std::shared_ptr<RSocketServiceHandler> serviceHandler,
-      yarpl::Reference<rsocket::FrameTransport> frameTransport,
+      std::shared_ptr<rsocket::FrameTransport> frameTransport,
       rsocket::ResumeParameters setupPayload);
 
   std::unique_ptr<ConnectionAcceptor> duplexConnectionAcceptor_;

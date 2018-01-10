@@ -44,7 +44,7 @@ class TcpConnectionAcceptor::SocketCallback
   /// The thread running this callback.
   folly::ScopedEventBaseThread thread_;
 
-  /// Reference to the ConnectionAcceptor's callback.
+  /// std::shared_ptr to the ConnectionAcceptor's callback.
   OnDuplexConnectionAccept& onAccept_;
 };
 

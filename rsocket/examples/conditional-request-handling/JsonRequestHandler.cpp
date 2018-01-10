@@ -8,7 +8,7 @@ using namespace rsocket;
 using namespace yarpl::flowable;
 
 /// Handles a new inbound Stream requested by the other end.
-yarpl::Reference<Flowable<rsocket::Payload>>
+std::shared_ptr<Flowable<rsocket::Payload>>
 JsonRequestResponder::handleRequestStream(Payload request, StreamId) {
   LOG(INFO) << "JsonRequestResponder.handleRequestStream " << request;
 

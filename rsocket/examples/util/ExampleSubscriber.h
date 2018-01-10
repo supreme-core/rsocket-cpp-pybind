@@ -21,7 +21,7 @@ class ExampleSubscriber
   ~ExampleSubscriber();
   ExampleSubscriber(int initialRequest, int numToTake);
 
-  void onSubscribe(yarpl::Reference<yarpl::flowable::Subscription>
+  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
                        subscription) noexcept override;
   void onNext(rsocket::Payload) noexcept override;
   void onComplete() noexcept override;
@@ -35,7 +35,7 @@ class ExampleSubscriber
   int numToTake_;
   int requested_;
   int received_;
-  yarpl::Reference<yarpl::flowable::Subscription> subscription_;
+  std::shared_ptr<yarpl::flowable::Subscription> subscription_;
   bool terminated_{false};
   std::mutex m_;
   std::condition_variable terminalEventCV_;

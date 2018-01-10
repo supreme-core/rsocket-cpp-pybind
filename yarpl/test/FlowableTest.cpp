@@ -73,7 +73,7 @@ class CollectingSubscriber : public BaseSubscriber<T> {
 /// exception was sent, the exception is thrown.
 template <typename T>
 std::vector<T> run(
-    Reference<Flowable<T>> flowable,
+    std::shared_ptr<Flowable<T>> flowable,
     int64_t requestCount = 100) {
   auto subscriber = make_ref<TestSubscriber<T>>(requestCount);
   flowable->subscribe(subscriber);
@@ -394,7 +394,7 @@ TEST(FlowableTest, SubscribersError) {
 TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   auto flowable =
       Flowable<int>::create(
-          [](Reference<Subscriber<int>> subscriber, int64_t requested) {
+          [](std::shared_ptr<Subscriber<int>> subscriber, int64_t requested) {
             EXPECT_GT(requested, 1);
             subscriber->onNext(123);
             subscriber->onComplete();

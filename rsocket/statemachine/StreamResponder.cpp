@@ -8,7 +8,7 @@ using namespace yarpl;
 using namespace yarpl::flowable;
 
 void StreamResponder::onSubscribe(
-    Reference<yarpl::flowable::Subscription> subscription) noexcept {
+    std::shared_ptr<yarpl::flowable::Subscription> subscription) noexcept {
   publisherSubscribe(std::move(subscription));
 }
 

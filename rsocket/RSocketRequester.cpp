@@ -31,9 +31,9 @@ void RSocketRequester::closeSocket() {
   });
 }
 
-yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
 RSocketRequester::requestChannel(
-    yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+    std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
         requestStream) {
   CHECK(stateMachine_); // verify the socket was not closed
 
@@ -41,7 +41,7 @@ RSocketRequester::requestChannel(
     eb = eventBase_,
     requestStream = std::move(requestStream),
     srs = stateMachine_
-  ](yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
+  ](std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
     auto lambda = [
       requestStream = std::move(requestStream),
       subscriber = std::move(subscriber),
@@ -70,7 +70,7 @@ RSocketRequester::requestChannel(
   });
 }
 
-yarpl::Reference<yarpl::flowable::Flowable<Payload>>
+std::shared_ptr<yarpl::flowable::Flowable<Payload>>
 RSocketRequester::requestStream(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
@@ -78,7 +78,7 @@ RSocketRequester::requestStream(Payload request) {
     eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_
-  ](yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
+  ](std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
     auto lambda = [
       request = std::move(request),
       subscriber = std::move(subscriber),
@@ -98,7 +98,7 @@ RSocketRequester::requestStream(Payload request) {
   });
 }
 
-yarpl::Reference<yarpl::single::Single<rsocket::Payload>>
+std::shared_ptr<yarpl::single::Single<rsocket::Payload>>
 RSocketRequester::requestResponse(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
@@ -106,7 +106,7 @@ RSocketRequester::requestResponse(Payload request) {
     eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_
-  ](yarpl::Reference<yarpl::single::SingleObserver<Payload>> observer) mutable {
+  ](std::shared_ptr<yarpl::single::SingleObserver<Payload>> observer) mutable {
     auto lambda = [
       request = std::move(request),
       observer = std::move(observer),
@@ -126,7 +126,7 @@ RSocketRequester::requestResponse(Payload request) {
   });
 }
 
-yarpl::Reference<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
+std::shared_ptr<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
     rsocket::Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
@@ -134,7 +134,7 @@ yarpl::Reference<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
     eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_
-  ](yarpl::Reference<yarpl::single::SingleObserverBase<void>> subscriber) mutable {
+  ](std::shared_ptr<yarpl::single::SingleObserverBase<void>> subscriber) mutable {
     auto lambda = [
       request = std::move(request),
       subscriber = std::move(subscriber),

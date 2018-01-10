@@ -12,7 +12,7 @@ PublisherBase::PublisherBase(uint32_t initialRequestN)
     : initialRequestN_(initialRequestN) {}
 
 void PublisherBase::publisherSubscribe(
-    yarpl::Reference<yarpl::flowable::Subscription> subscription) {
+    std::shared_ptr<yarpl::flowable::Subscription> subscription) {
   if (state_ == State::CLOSED) {
     subscription->cancel();
     return;

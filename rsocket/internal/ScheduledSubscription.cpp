@@ -7,7 +7,7 @@
 namespace rsocket {
 
 ScheduledSubscription::ScheduledSubscription(
-    yarpl::Reference<yarpl::flowable::Subscription> inner,
+    std::shared_ptr<yarpl::flowable::Subscription> inner,
     folly::EventBase& eventBase) : inner_(std::move(inner)),
                                    eventBase_(eventBase) {
 }

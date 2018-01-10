@@ -17,7 +17,7 @@ using namespace rsocket::tests::client_server;
 namespace {
 class TestHandlerSync : public rsocket::RSocketResponder {
  public:
-  Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
       override {
     // string from payload data
     auto requestString = request.moveDataToString();
@@ -100,14 +100,14 @@ TEST(RequestStreamTest, HelloNoFlowControl) {
 
 class TestHandlerAsync : public rsocket::RSocketResponder {
  public:
-  Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
       override {
     // string from payload data
     auto requestString = request.moveDataToString();
 
     return Flowables::fromPublisher<
         Payload>([requestString = std::move(requestString)](
-        Reference<flowable::Subscriber<Payload>> subscriber) {
+        std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
       std::thread([
         requestString = std::move(requestString),
         subscriber = std::move(subscriber)
@@ -172,7 +172,7 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
 
 class TestHandlerResponder : public rsocket::RSocketResponder {
  public:
-  Reference<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
     return Flowables::error<Payload>(
         std::runtime_error("A wild Error appeared!"));
   }
@@ -193,13 +193,13 @@ TEST(RequestStreamTest, HandleError) {
 
 class TestErrorAfterOnNextResponder : public rsocket::RSocketResponder {
  public:
-  Reference<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
       override {
     // string from payload data
     auto requestString = request.moveDataToString();
 
     return Flowable<Payload>::create([name = std::move(requestString)](
-        Reference<Subscriber<Payload>> subscriber, int64_t requested) {
+        std::shared_ptr<Subscriber<Payload>> subscriber, int64_t requested) {
       EXPECT_GT(requested, 1);
       subscriber->onNext(Payload(name, "meta"));
       subscriber->onNext(Payload(name, "meta"));

@@ -75,18 +75,18 @@ class RSocketStateMachine final
   ~RSocketStateMachine();
 
   /// Create a new connection as a server.
-  void connectServer(yarpl::Reference<FrameTransport>, const SetupParameters&);
+  void connectServer(std::shared_ptr<FrameTransport>, const SetupParameters&);
 
   /// Resume a connection as a server.
-  bool resumeServer(yarpl::Reference<FrameTransport>, const ResumeParameters&);
+  bool resumeServer(std::shared_ptr<FrameTransport>, const ResumeParameters&);
 
   /// Connect as a client.  Sends a SETUP frame.
-  void connectClient(yarpl::Reference<FrameTransport>, SetupParameters);
+  void connectClient(std::shared_ptr<FrameTransport>, SetupParameters);
 
   /// Resume a connection as a client.  Sends a RESUME frame.
   void resumeClient(
       ResumeIdentificationToken,
-      yarpl::Reference<FrameTransport>,
+      std::shared_ptr<FrameTransport>,
       std::unique_ptr<ClientResumeStatusCallback>,
       ProtocolVersion);
 
@@ -117,7 +117,7 @@ class RSocketStateMachine final
   /// No frames will be issued as a result of this call. Stream stateMachine
   /// must take care of writing appropriate frames to the connection, using
   /// ::writeFrame after calling this method.
-  void addStream(StreamId, yarpl::Reference<StreamStateMachineBase>);
+  void addStream(StreamId, std::shared_ptr<StreamStateMachineBase>);
 
   /// Indicates that the stream should be removed from the connection.
   ///
@@ -160,11 +160,11 @@ class RSocketStateMachine final
   DuplexConnection* getConnection();
 
  private:
-  void connect(yarpl::Reference<FrameTransport>);
+  void connect(std::shared_ptr<FrameTransport>);
 
   /// Terminate underlying connection and connect new connection
   void reconnect(
-      yarpl::Reference<FrameTransport>,
+      std::shared_ptr<FrameTransport>,
       std::unique_ptr<ClientResumeStatusCallback>);
 
   void setResumable(bool);
@@ -259,7 +259,7 @@ class RSocketStateMachine final
 
   void setProtocolVersionOrThrow(
       ProtocolVersion version,
-      const yarpl::Reference<FrameTransport>& transport);
+      const std::shared_ptr<FrameTransport>& transport);
 
   /// Client/server mode this state machine is operating in.
   const RSocketMode mode_;
@@ -282,7 +282,7 @@ class RSocketStateMachine final
   std::shared_ptr<ResumeManager> resumeManager_;
 
   std::shared_ptr<RSocketResponder> requestResponder_;
-  yarpl::Reference<FrameTransport> frameTransport_;
+  std::shared_ptr<FrameTransport> frameTransport_;
   std::unique_ptr<FrameSerializer> frameSerializer_;
 
   const std::unique_ptr<KeepaliveTimer> keepaliveTimer_;

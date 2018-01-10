@@ -23,7 +23,7 @@ namespace single {
 template <typename U, typename D>
 class SingleOperator : public Single<D> {
  public:
-  explicit SingleOperator(Reference<Single<U>> upstream)
+  explicit SingleOperator(std::shared_ptr<Single<U>> upstream)
       : upstream_(std::move(upstream)) {}
 
  protected:
@@ -40,8 +40,8 @@ class SingleOperator : public Single<D> {
                        public SingleObserver<U> {
    protected:
     Subscription(
-        Reference<Operator> single,
-        Reference<SingleObserver<D>> observer)
+        std::shared_ptr<Operator> single,
+        std::shared_ptr<SingleObserver<D>> observer)
         : single_(std::move(single)), observer_(std::move(observer)) {}
 
     ~Subscription() {
@@ -56,7 +56,7 @@ class SingleOperator : public Single<D> {
       terminateImpl(TerminateState::Down(), folly::Try<D>{std::move(ew)});
     }
 
-    Reference<Operator> getOperator() {
+    std::shared_ptr<Operator> getOperator() {
       return single_;
     }
 
@@ -73,7 +73,7 @@ class SingleOperator : public Single<D> {
     // Subscriber.
 
     void onSubscribe(
-        Reference<yarpl::single::SingleSubscription> subscription) override {
+        std::shared_ptr<yarpl::single::SingleSubscription> subscription) override {
       upstream_ = std::move(subscription);
       observer_->onSubscribe(this->ref_from_this(this));
     }
@@ -129,22 +129,22 @@ class SingleOperator : public Single<D> {
     }
 
     /// The Single has the lambda, and other creation parameters.
-    Reference<Operator> single_;
+    std::shared_ptr<Operator> single_;
 
     /// This subscription controls the life-cycle of the observer.  The
     /// observer is retained as long as calls on it can be made.  (Note:
     /// the observer in turn maintains a reference on this subscription
     /// object until cancellation and/or completion.)
-    Reference<SingleObserver<D>> observer_;
+    std::shared_ptr<SingleObserver<D>> observer_;
 
     /// In an active pipeline, cancel and (possibly modified) request(n)
     /// calls should be forwarded upstream.  Note that `this` is also a
     /// observer for the upstream stage: thus, there are cycles; all of
     /// the objects drop their references at cancel/complete.
-    Reference<yarpl::single::SingleSubscription> upstream_;
+    std::shared_ptr<yarpl::single::SingleSubscription> upstream_;
   };
 
-  Reference<Single<U>> upstream_;
+  std::shared_ptr<Single<U>> upstream_;
 };
 
 template <
@@ -159,10 +159,10 @@ class MapOperator : public SingleOperator<U, D> {
       typename Super::template Subscription<ThisOperatorT>;
 
  public:
-  MapOperator(Reference<Single<U>> upstream, F function)
+  MapOperator(std::shared_ptr<Single<U>> upstream, F function)
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
-  void subscribe(Reference<SingleObserver<D>> observer) override {
+  void subscribe(std::shared_ptr<SingleObserver<D>> observer) override {
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         make_ref<MapSubscription>(
@@ -173,8 +173,8 @@ class MapOperator : public SingleOperator<U, D> {
   class MapSubscription : public OperatorSubscription {
    public:
     MapSubscription(
-        Reference<ThisOperatorT> single,
-        Reference<SingleObserver<D>> observer)
+        std::shared_ptr<ThisOperatorT> single,
+        std::shared_ptr<SingleObserver<D>> observer)
         : OperatorSubscription(std::move(single), std::move(observer)) {}
 
     void onSuccess(U value) override {
@@ -197,7 +197,7 @@ class FromPublisherOperator : public Single<T> {
   explicit FromPublisherOperator(OnSubscribe function)
       : function_(std::move(function)) {}
 
-  void subscribe(Reference<SingleObserver<T>> observer) override {
+  void subscribe(std::shared_ptr<SingleObserver<T>> observer) override {
     function_(std::move(observer));
   }
 
@@ -211,7 +211,7 @@ class SingleVoidFromPublisherOperator : public Single<void> {
   explicit SingleVoidFromPublisherOperator(OnSubscribe&& function)
       : function_(std::move(function)) {}
 
-  void subscribe(Reference<SingleObserverBase<void>> observer) override {
+  void subscribe(std::shared_ptr<SingleObserverBase<void>> observer) override {
     function_(std::move(observer));
   }
 

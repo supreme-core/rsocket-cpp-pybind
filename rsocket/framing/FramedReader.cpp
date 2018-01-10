@@ -66,7 +66,7 @@ size_t FramedReader::readFrameLength() const {
   return frameLength;
 }
 
-void FramedReader::onSubscribe(yarpl::Reference<Subscription> subscription) {
+void FramedReader::onSubscribe(std::shared_ptr<Subscription> subscription) {
   DuplexConnection::DuplexSubscriber::onSubscribe(subscription);
   subscription->request(std::numeric_limits<int64_t>::max());
 }
@@ -158,7 +158,7 @@ void FramedReader::cancel() {
 }
 
 void FramedReader::setInput(
-    yarpl::Reference<DuplexConnection::Subscriber> inner) {
+    std::shared_ptr<DuplexConnection::Subscriber> inner) {
   CHECK(!inner_)
       << "Must cancel original input to FramedReader before setting a new one";
   inner_ = std::move(inner);

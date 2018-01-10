@@ -14,7 +14,7 @@
 /**
  * Create a single with code such as this:
  *
- *  auto a = Single<int>::create([](Reference<SingleObserver<int>> obs) {
+ *  auto a = Single<int>::create([](std::shared_ptr<SingleObserver<int>> obs) {
  *    obs->onSubscribe(SingleSubscriptions::empty());
  *    obs->onSuccess(1);
  *  });

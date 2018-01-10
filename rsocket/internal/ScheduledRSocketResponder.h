@@ -20,20 +20,20 @@ class ScheduledRSocketResponder : public RSocketResponder {
       std::shared_ptr<RSocketResponder> inner,
       folly::EventBase& eventBase);
 
-  yarpl::Reference<yarpl::single::Single<Payload>>
+  std::shared_ptr<yarpl::single::Single<Payload>>
   handleRequestResponse(
       Payload request,
       StreamId streamId) override;
 
-  yarpl::Reference<yarpl::flowable::Flowable<Payload>>
+  std::shared_ptr<yarpl::flowable::Flowable<Payload>>
   handleRequestStream(
       Payload request,
       StreamId streamId) override;
 
-  yarpl::Reference<yarpl::flowable::Flowable<Payload>>
+  std::shared_ptr<yarpl::flowable::Flowable<Payload>>
   handleRequestChannel(
       Payload request,
-      yarpl::Reference<yarpl::flowable::Flowable<Payload>>
+      std::shared_ptr<yarpl::flowable::Flowable<Payload>>
       requestStream,
       StreamId streamId) override;
 

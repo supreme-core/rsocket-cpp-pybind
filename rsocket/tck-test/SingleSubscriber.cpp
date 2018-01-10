@@ -24,7 +24,7 @@ void SingleSubscriber::cancel() {
 }
 
 void SingleSubscriber::onSubscribe(
-    yarpl::Reference<yarpl::single::SingleSubscription> subscription) noexcept {
+    std::shared_ptr<yarpl::single::SingleSubscription> subscription) noexcept {
   VLOG(4) << "OnSubscribe in SingleSubscriber";
   subscription_ = subscription;
 }

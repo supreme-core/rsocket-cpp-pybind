@@ -48,12 +48,12 @@ Frame_RESUME makeResume() {
   return frame;
 }
 
-void setupFail(yarpl::Reference<FrameTransport> transport, SetupParameters) {
+void setupFail(std::shared_ptr<FrameTransport> transport, SetupParameters) {
   transport->close();
   FAIL() << "setupFail() was called";
 }
 
-bool resumeFail(yarpl::Reference<FrameTransport> transport, ResumeParameters) {
+bool resumeFail(std::shared_ptr<FrameTransport> transport, ResumeParameters) {
   transport->close();
   ADD_FAILURE() << "resumeFail() was called";
   return false;
@@ -75,7 +75,7 @@ TEST(SetupResumeAcceptor, CloseWithActiveConnection) {
   folly::EventBase evb;
   SetupResumeAcceptor acceptor{&evb};
 
-  yarpl::Reference<DuplexConnection::Subscriber> outerInput;
+  std::shared_ptr<DuplexConnection::Subscriber> outerInput;
 
   auto connection =
       std::make_unique<StrictMock<MockDuplexConnection>>([&](auto input) {

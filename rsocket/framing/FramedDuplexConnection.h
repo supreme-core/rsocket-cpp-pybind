@@ -20,7 +20,7 @@ class FramedDuplexConnection : public virtual DuplexConnection {
 
   void send(std::unique_ptr<folly::IOBuf>) override;
 
-  void setInput(yarpl::Reference<DuplexConnection::Subscriber>) override;
+  void setInput(std::shared_ptr<DuplexConnection::Subscriber>) override;
 
   bool isFramed() const override {
     return true;
@@ -32,7 +32,7 @@ class FramedDuplexConnection : public virtual DuplexConnection {
 
  private:
   std::unique_ptr<DuplexConnection> inner_;
-  yarpl::Reference<FramedReader> inputReader_;
+  std::shared_ptr<FramedReader> inputReader_;
   std::shared_ptr<ProtocolVersion> protocolVersion_;
 };
 }

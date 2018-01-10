@@ -97,7 +97,7 @@ folly::Future<folly::Unit> RSocketClient::resume() {
         auto transport =
             yarpl::make_ref<FrameTransportImpl>(std::move(framedConnection));
 
-        yarpl::Reference<FrameTransport> ft;
+        std::shared_ptr<FrameTransport> ft;
         if (evb_ != &connection.eventBase) {
           // If the StateMachine EventBase is different from the transport
           // EventBase, then use ScheduledFrameTransport and

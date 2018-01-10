@@ -31,8 +31,8 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
                                            public observable::Observer<T> {
  public:
   FlowableFromObservableSubscription(
-      Reference<observable::Observable<T>> observable,
-      Reference<flowable::Subscriber<T>> subscriber)
+      std::shared_ptr<observable::Observable<T>> observable,
+      std::shared_ptr<flowable::Subscriber<T>> subscriber)
       : observable_(std::move(observable)),
         subscriber_(std::move(subscriber)) {}
 
@@ -118,8 +118,8 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     // by default drop anything else received while we don't have credits
   }
 
-  Reference<observable::Observable<T>> observable_;
-  Reference<flowable::Subscriber<T>> subscriber_;
+  std::shared_ptr<observable::Observable<T>> observable_;
+  std::shared_ptr<flowable::Subscriber<T>> subscriber_;
   std::atomic_bool started{false};
   std::atomic<int64_t> requested_{0};
 };

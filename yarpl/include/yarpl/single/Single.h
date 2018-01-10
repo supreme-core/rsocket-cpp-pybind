@@ -17,7 +17,7 @@ namespace single {
 template <typename T>
 class Single : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
-  virtual void subscribe(Reference<SingleObserver<T>>) = 0;
+  virtual void subscribe(std::shared_ptr<SingleObserver<T>>) = 0;
 
   /**
    * Subscribe overload that accepts lambdas.
@@ -67,8 +67,8 @@ class Single : public virtual Refcounted, public yarpl::enable_get_ref {
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
           OnSubscribe,
-          Reference<SingleObserver<T>>>::value>::type>
-  static Reference<Single<T>> create(OnSubscribe);
+          std::shared_ptr<SingleObserver<T>>>::value>::type>
+  static std::shared_ptr<Single<T>> create(OnSubscribe);
 
   template <typename Function>
   auto map(Function function);
@@ -77,7 +77,7 @@ class Single : public virtual Refcounted, public yarpl::enable_get_ref {
 template <>
 class Single<void> : public virtual Refcounted {
  public:
-  virtual void subscribe(Reference<SingleObserverBase<void>>) = 0;
+  virtual void subscribe(std::shared_ptr<SingleObserverBase<void>>) = 0;
 
   /**
    * Subscribe overload taking lambda for onSuccess that is called upon writing
@@ -92,7 +92,7 @@ class Single<void> : public virtual Refcounted {
      public:
       SuccessSingleObserver(Success success) : success_{std::move(success)} {}
 
-      void onSubscribe(Reference<SingleSubscription> subscription) override {
+      void onSubscribe(std::shared_ptr<SingleSubscription> subscription) override {
         SingleObserverBase<void>::onSubscribe(std::move(subscription));
       }
 
@@ -117,7 +117,7 @@ class Single<void> : public virtual Refcounted {
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
           OnSubscribe,
-          Reference<SingleObserverBase<void>>>::value>::type>
+          std::shared_ptr<SingleObserverBase<void>>>::value>::type>
   static auto create(OnSubscribe);
 };
 
@@ -131,7 +131,7 @@ namespace single {
 
 template <typename T>
 template <typename OnSubscribe, typename>
-Reference<Single<T>> Single<T>::create(OnSubscribe function) {
+std::shared_ptr<Single<T>> Single<T>::create(OnSubscribe function) {
   return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
 }
 

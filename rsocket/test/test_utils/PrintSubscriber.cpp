@@ -12,7 +12,7 @@ PrintSubscriber::~PrintSubscriber() {
 }
 
 void PrintSubscriber::onSubscribe(
-    yarpl::Reference<yarpl::flowable::Subscription> subscription) noexcept {
+    std::shared_ptr<yarpl::flowable::Subscription> subscription) noexcept {
   LOG(INFO) << "PrintSubscriber " << this << " onSubscribe";
   subscription->request(std::numeric_limits<int32_t>::max());
 }

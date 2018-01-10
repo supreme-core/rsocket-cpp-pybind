@@ -23,7 +23,7 @@ class ColdResumeHandler {
   // Flowable which errors out immediately.
   // The second parameter is the allowance which the application received
   // before cold-start and hasn't been fulfilled yet.
-  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   handleResponderResumeStream(
       std::string streamToken,
       size_t publisherAllowance);
@@ -33,7 +33,7 @@ class ColdResumeHandler {
   // Subscriber which cancels the stream immediately after getting subscribed.
   // The second parameter is the allowance which the application requested
   // before cold-start and hasn't been fulfilled yet.
-  virtual yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::flowable::Subscriber<rsocket::Payload>>
   handleRequesterResumeStream(
       std::string streamToken,
       size_t consumerAllowance);

@@ -23,7 +23,7 @@ class RequestResponseRequester : public StreamStateMachineBase,
         initialPayload_(std::move(payload)) {}
 
   void subscribe(
-      yarpl::Reference<yarpl::single::SingleObserver<Payload>> subscriber);
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> subscriber);
 
  private:
   void cancel() noexcept override;
@@ -43,7 +43,7 @@ class RequestResponseRequester : public StreamStateMachineBase,
   } state_{State::NEW};
 
   /// The observer that will consume payloads.
-  yarpl::Reference<yarpl::single::SingleObserver<Payload>> consumingSubscriber_;
+  std::shared_ptr<yarpl::single::SingleObserver<Payload>> consumingSubscriber_;
 
   /// Initial payload which has to be sent with 1st request.
   Payload initialPayload_;

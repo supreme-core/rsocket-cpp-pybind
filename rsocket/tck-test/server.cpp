@@ -75,7 +75,7 @@ class ServerResponder : public RSocketResponder {
     marbles_ = parseMarbles(FLAGS_test_file);
   }
 
-  yarpl::Reference<Flowable<Payload>> handleRequestStream(
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(
       Payload request,
       StreamId) override {
     LOG(INFO) << "handleRequestStream " << request;
@@ -88,7 +88,7 @@ class ServerResponder : public RSocketResponder {
     } else {
       auto marbleProcessor = std::make_shared<tck::MarbleProcessor>(it->second);
       auto lambda = [marbleProcessor](
-          Reference<yarpl::flowable::Subscriber<rsocket::Payload>> subscriber,
+          std::shared_ptr<yarpl::flowable::Subscriber<rsocket::Payload>> subscriber,
           int64_t requested) mutable {
         return marbleProcessor->run(subscriber, requested);
       };
@@ -96,7 +96,7 @@ class ServerResponder : public RSocketResponder {
     }
   }
 
-  yarpl::Reference<Single<Payload>> handleRequestResponse(
+  std::shared_ptr<Single<Payload>> handleRequestResponse(
       Payload request,
       StreamId) override {
     LOG(INFO) << "handleRequestResponse " << request;
@@ -110,7 +110,7 @@ class ServerResponder : public RSocketResponder {
       auto marbleProcessor = std::make_shared<tck::MarbleProcessor>(it->second);
       auto lambda =
           [marbleProcessor](
-              yarpl::Reference<yarpl::single::SingleObserver<rsocket::Payload>>
+              std::shared_ptr<yarpl::single::SingleObserver<rsocket::Payload>>
                   subscriber) {
             subscriber->onSubscribe(SingleSubscriptions::empty());
             return marbleProcessor->run(subscriber);

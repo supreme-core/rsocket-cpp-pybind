@@ -22,10 +22,10 @@ class MockFlowable : public flowable::Flowable<T> {
  public:
   MOCK_METHOD1_T(
       subscribe_,
-      void(yarpl::Reference<flowable::Subscriber<T>> subscriber));
+      void(std::shared_ptr<flowable::Subscriber<T>> subscriber));
 
   void subscribe(
-      yarpl::Reference<flowable::Subscriber<T>> subscriber) noexcept override {
+      std::shared_ptr<flowable::Subscriber<T>> subscriber) noexcept override {
     subscribe_(std::move(subscriber));
   }
 };
@@ -40,7 +40,7 @@ class MockSubscriber : public flowable::Subscriber<T>,
  public:
   MOCK_METHOD1(
       onSubscribe_,
-      void(yarpl::Reference<flowable::Subscription> subscription));
+      void(std::shared_ptr<flowable::Subscription> subscription));
   MOCK_METHOD1_T(onNext_, void(const T& value));
   MOCK_METHOD0(onComplete_, void());
   MOCK_METHOD1_T(onError_, void(folly::exception_wrapper ex));
@@ -49,7 +49,7 @@ class MockSubscriber : public flowable::Subscriber<T>,
       : initial_(initial) {}
 
   void onSubscribe(
-      yarpl::Reference<flowable::Subscription> subscription) override {
+      std::shared_ptr<flowable::Subscription> subscription) override {
     subscription_ = subscription;
     auto this_ = this->ref_from_this(this);
     onSubscribe_(subscription);
@@ -117,7 +117,7 @@ class MockSubscriber : public flowable::Subscriber<T>,
  protected:
   // As the 'subscription_' member in the parent class is private,
   // we define it here again.
-  yarpl::Reference<flowable::Subscription> subscription_;
+  std::shared_ptr<flowable::Subscription> subscription_;
 
   int64_t initial_;
 

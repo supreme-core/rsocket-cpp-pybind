@@ -75,22 +75,22 @@ namespace {
 struct DisconnectedResponder : public rsocket::RSocketResponder {
   DisconnectedResponder() {}
 
-  yarpl::Reference<yarpl::single::Single<rsocket::Payload>>
+  std::shared_ptr<yarpl::single::Single<rsocket::Payload>>
   handleRequestResponse(rsocket::Payload, rsocket::StreamId) override {
     CHECK(false);
     return nullptr;
   }
 
-  yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   handleRequestStream(rsocket::Payload, rsocket::StreamId) override {
     CHECK(false);
     return nullptr;
   }
 
-  yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   handleRequestChannel(
       rsocket::Payload,
-      yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>,
+      std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>,
       rsocket::StreamId) override {
     CHECK(false);
     return nullptr;

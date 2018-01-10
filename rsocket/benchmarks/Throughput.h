@@ -14,14 +14,14 @@ class FixedResponder : public RSocketResponder {
       : message_{folly::IOBuf::copyBuffer(message)} {}
 
   /// Infinitely streams back the message.
-  yarpl::Reference<yarpl::flowable::Flowable<Payload>> handleRequestStream(
+  std::shared_ptr<yarpl::flowable::Flowable<Payload>> handleRequestStream(
       Payload,
       StreamId) override {
     return yarpl::flowable::Flowables::fromGenerator<Payload>(
         [msg = message_->clone()] { return Payload(msg->clone()); });
   }
 
-  yarpl::Reference<yarpl::single::Single<Payload>> handleRequestResponse(
+  std::shared_ptr<yarpl::single::Single<Payload>> handleRequestResponse(
       Payload,
       StreamId) override {
     return yarpl::single::Singles::fromGenerator<Payload>(

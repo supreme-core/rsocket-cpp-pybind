@@ -27,7 +27,7 @@ class Subscribers {
       typename Next,
       typename =
           typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
-  static Reference<Subscriber<T>> create(
+  static std::shared_ptr<Subscriber<T>> create(
       Next next,
       int64_t batch = kNoFlowControl) {
     return make_ref<Base<T, Next>>(std::move(next), batch);
@@ -40,7 +40,7 @@ class Subscribers {
       typename = typename std::enable_if<
           folly::is_invocable<Next, T>::value &&
           folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
-  static Reference<Subscriber<T>>
+  static std::shared_ptr<Subscriber<T>>
   create(Next next, Error error, int64_t batch = kNoFlowControl) {
     return make_ref<WithError<T, Next, Error>>(
         std::move(next), std::move(error), batch);
@@ -55,7 +55,7 @@ class Subscribers {
           folly::is_invocable<Next, T>::value &&
           folly::is_invocable<Error, folly::exception_wrapper>::value &&
           folly::is_invocable<Complete>::value>::type>
-  static Reference<Subscriber<T>> create(
+  static std::shared_ptr<Subscriber<T>> create(
       Next next,
       Error error,
       Complete complete,

@@ -32,7 +32,7 @@ class Observer : public yarpl::single::SingleObserverBase<Payload> {
  public:
   explicit Observer(Latch& latch) : latch_{latch} {}
 
-  void onSubscribe(yarpl::Reference<yarpl::single::SingleSubscription>
+  void onSubscribe(std::shared_ptr<yarpl::single::SingleSubscription>
                        subscription) override {
     yarpl::single::SingleObserverBase<Payload>::onSubscribe(
         std::move(subscription));

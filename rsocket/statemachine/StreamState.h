@@ -25,7 +25,7 @@ class StreamState {
 
   std::deque<std::unique_ptr<folly::IOBuf>> moveOutputPendingFrames();
 
-  std::unordered_map<StreamId, yarpl::Reference<StreamStateMachineBase>>
+  std::unordered_map<StreamId, std::shared_ptr<StreamStateMachineBase>>
       streams_;
 
  private:

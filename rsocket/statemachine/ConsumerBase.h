@@ -30,7 +30,7 @@ class ConsumerBase : public StreamStateMachineBase,
   void addImplicitAllowance(size_t n);
 
   void subscribe(
-      yarpl::Reference<yarpl::flowable::Subscriber<Payload>> subscriber);
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber);
 
   void generateRequest(size_t n);
 
@@ -58,7 +58,7 @@ class ConsumerBase : public StreamStateMachineBase,
   /// A Subscriber that will consume payloads.
   /// This is responsible for delivering a terminal signal to the
   /// Subscriber once the stream ends.
-  yarpl::Reference<yarpl::flowable::Subscriber<Payload>> consumingSubscriber_;
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> consumingSubscriber_;
 
   /// A total, net allowance (requested less delivered) by this consumer.
   Allowance allowance_;

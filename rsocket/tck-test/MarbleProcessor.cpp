@@ -68,7 +68,7 @@ MarbleProcessor::MarbleProcessor(const std::string marble)
 }
 
 std::tuple<int64_t, bool> MarbleProcessor::run(
-    yarpl::Reference<yarpl::flowable::Subscriber<rsocket::Payload>> subscriber,
+    std::shared_ptr<yarpl::flowable::Subscriber<rsocket::Payload>> subscriber,
     int64_t requested) {
   canSend_ += requested;
   if (index_ > marble_.size()) {
@@ -114,7 +114,7 @@ std::tuple<int64_t, bool> MarbleProcessor::run(
 }
 
 void MarbleProcessor::run(
-    yarpl::Reference<yarpl::single::SingleObserver<rsocket::Payload>>
+    std::shared_ptr<yarpl::single::SingleObserver<rsocket::Payload>>
         subscriber) {
   while (true) {
     auto c = marble_[index_];

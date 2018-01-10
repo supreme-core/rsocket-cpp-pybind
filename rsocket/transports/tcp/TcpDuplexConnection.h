@@ -23,7 +23,7 @@ class TcpDuplexConnection : public DuplexConnection {
 
   void send(std::unique_ptr<folly::IOBuf>) override;
 
-  void setInput(yarpl::Reference<DuplexConnection::Subscriber>) override;
+  void setInput(std::shared_ptr<DuplexConnection::Subscriber>) override;
 
   // Only to be used for observation purposes.
   folly::AsyncTransportWrapper* getTransport();

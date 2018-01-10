@@ -15,8 +15,8 @@ namespace single {
 class Singles {
  public:
   template <typename T>
-  static Reference<Single<T>> just(const T& value) {
-    auto lambda = [value](Reference<SingleObserver<T>> observer) {
+  static std::shared_ptr<Single<T>> just(const T& value) {
+    auto lambda = [value](std::shared_ptr<SingleObserver<T>> observer) {
       observer->onSubscribe(SingleSubscriptions::empty());
       observer->onSuccess(value);
     };
@@ -28,14 +28,14 @@ class Singles {
       typename T,
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe, Reference<SingleObserver<T>>>::value>::type>
-  static Reference<Single<T>> create(OnSubscribe function) {
+          OnSubscribe, std::shared_ptr<SingleObserver<T>>>::value>::type>
+  static std::shared_ptr<Single<T>> create(OnSubscribe function) {
     return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>
-  static Reference<Single<T>> error(folly::exception_wrapper ex) {
-    auto lambda = [e = std::move(ex)](Reference<SingleObserver<T>> observer) {
+  static std::shared_ptr<Single<T>> error(folly::exception_wrapper ex) {
+    auto lambda = [e = std::move(ex)](std::shared_ptr<SingleObserver<T>> observer) {
       observer->onSubscribe(SingleSubscriptions::empty());
       observer->onError(e);
     };
@@ -43,8 +43,8 @@ class Singles {
   }
 
   template <typename T, typename ExceptionType>
-  static Reference<Single<T>> error(const ExceptionType& ex) {
-    auto lambda = [ex](Reference<SingleObserver<T>> observer) {
+  static std::shared_ptr<Single<T>> error(const ExceptionType& ex) {
+    auto lambda = [ex](std::shared_ptr<SingleObserver<T>> observer) {
       observer->onSubscribe(SingleSubscriptions::empty());
       observer->onError(ex);
     };
@@ -52,9 +52,9 @@ class Singles {
   }
 
   template <typename T, typename TGenerator>
-  static Reference<Single<T>> fromGenerator(TGenerator generator) {
+  static std::shared_ptr<Single<T>> fromGenerator(TGenerator generator) {
     auto lambda = [generator = std::move(generator)](
-        Reference<SingleObserver<T>> observer) mutable {
+        std::shared_ptr<SingleObserver<T>> observer) mutable {
       observer->onSubscribe(SingleSubscriptions::empty());
       observer->onSuccess(generator());
     };

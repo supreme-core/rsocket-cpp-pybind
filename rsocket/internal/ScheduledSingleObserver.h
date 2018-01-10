@@ -21,12 +21,12 @@ template<typename T>
 class ScheduledSingleObserver : public yarpl::single::SingleObserver<T> {
  public:
   ScheduledSingleObserver(
-      yarpl::Reference<yarpl::single::SingleObserver<T>> observer,
+      std::shared_ptr<yarpl::single::SingleObserver<T>> observer,
       folly::EventBase& eventBase) :
       inner_(std::move(observer)), eventBase_(eventBase) {}
 
   void onSubscribe(
-      yarpl::Reference<yarpl::single::SingleSubscription> subscription) override {
+      std::shared_ptr<yarpl::single::SingleSubscription> subscription) override {
     if (eventBase_.isInEventBaseThread()) {
       inner_->onSubscribe(std::move(subscription));
     } else {
@@ -63,7 +63,7 @@ class ScheduledSingleObserver : public yarpl::single::SingleObserver<T> {
   }
 
  private:
-  yarpl::Reference<yarpl::single::SingleObserver<T>> inner_;
+  std::shared_ptr<yarpl::single::SingleObserver<T>> inner_;
   folly::EventBase& eventBase_;
 };
 
@@ -77,12 +77,12 @@ template<typename T>
 class ScheduledSubscriptionSingleObserver : public yarpl::single::SingleObserver<T> {
  public:
   ScheduledSubscriptionSingleObserver(
-      yarpl::Reference<yarpl::single::SingleObserver<T>> observer,
+      std::shared_ptr<yarpl::single::SingleObserver<T>> observer,
       folly::EventBase& eventBase) :
       inner_(std::move(observer)), eventBase_(eventBase) {}
 
   void onSubscribe(
-      yarpl::Reference<yarpl::single::SingleSubscription> subscription) override {
+      std::shared_ptr<yarpl::single::SingleSubscription> subscription) override {
     inner_->onSubscribe(
         yarpl::make_ref<ScheduledSingleSubscription>(std::move(subscription), eventBase_));
   }
@@ -98,7 +98,7 @@ class ScheduledSubscriptionSingleObserver : public yarpl::single::SingleObserver
   }
 
  private:
-  yarpl::Reference<yarpl::single::SingleObserver<T>> inner_;
+  std::shared_ptr<yarpl::single::SingleObserver<T>> inner_;
   folly::EventBase& eventBase_;
 };
 } // rsocket

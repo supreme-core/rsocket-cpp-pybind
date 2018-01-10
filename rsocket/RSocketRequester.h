@@ -51,7 +51,7 @@ class RSocketRequester {
    * Interaction model details can be found at
    * https://github.com/ReactiveSocket/reactivesocket/blob/master/Protocol.md#request-stream
    */
-  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   requestStream(rsocket::Payload request);
 
   /**
@@ -60,9 +60,9 @@ class RSocketRequester {
    * Interaction model details can be found at
    * https://github.com/ReactiveSocket/reactivesocket/blob/master/Protocol.md#request-channel
    */
-  virtual yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
   requestChannel(
-      yarpl::Reference<yarpl::flowable::Flowable<rsocket::Payload>> requests);
+      std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> requests);
 
   /**
    * Send a single request and get a single response.
@@ -70,7 +70,7 @@ class RSocketRequester {
    * Interaction model details can be found at
    * https://github.com/ReactiveSocket/reactivesocket/blob/master/Protocol.md#stream-sequences-request-response
    */
-  virtual yarpl::Reference<yarpl::single::Single<rsocket::Payload>>
+  virtual std::shared_ptr<yarpl::single::Single<rsocket::Payload>>
   requestResponse(rsocket::Payload request);
 
   /**
@@ -85,7 +85,7 @@ class RSocketRequester {
    * Interaction model details can be found at
    * https://github.com/ReactiveSocket/reactivesocket/blob/master/Protocol.md#request-fire-n-forget
    */
-  virtual yarpl::Reference<yarpl::single::Single<void>> fireAndForget(
+  virtual std::shared_ptr<yarpl::single::Single<void>> fireAndForget(
       rsocket::Payload request);
 
   /**
