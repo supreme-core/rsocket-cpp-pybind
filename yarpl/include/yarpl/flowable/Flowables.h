@@ -120,6 +120,14 @@ class Flowables {
   }
 
   template <typename T>
+  static std::shared_ptr<Flowable<T>> never() {
+    auto lambda = [](std::shared_ptr<Subscriber<T>>, int64_t) {
+      return std::make_tuple(static_cast<int64_t>(0), true);
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  template <typename T>
   static std::shared_ptr<Flowable<T>> error(folly::exception_wrapper ex) {
     auto lambda = [ex = std::move(ex)](
         std::shared_ptr<Subscriber<T>> subscriber, int64_t) {

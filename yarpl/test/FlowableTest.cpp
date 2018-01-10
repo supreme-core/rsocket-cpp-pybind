@@ -344,6 +344,17 @@ TEST(FlowableTest, FlowableEmpty) {
   EXPECT_FALSE(subscriber->isError());
 }
 
+TEST(FlowableTest, FlowableNever) {
+  auto flowable = Flowables::never<int>();
+  auto subscriber = make_ref<TestSubscriber<int>>();
+  flowable->subscribe(subscriber);
+
+  EXPECT_FALSE(subscriber->isComplete());
+  EXPECT_FALSE(subscriber->isError());
+
+  subscriber->cancel();
+}
+
 TEST(FlowableTest, FlowableFromGenerator) {
   auto flowable = Flowables::fromGenerator<std::unique_ptr<int>>(
       [] { return std::unique_ptr<int>(); });
