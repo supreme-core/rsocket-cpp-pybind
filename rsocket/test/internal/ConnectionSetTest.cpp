@@ -37,9 +37,9 @@ TEST(ConnectionSet, CloseViaMachine) {
   folly::EventBase evb;
   auto machine = makeStateMachine(&evb);
 
-  auto set = std::make_shared<ConnectionSet>();
-  set->insert(machine, &evb);
-  machine->registerSet(set);
+  ConnectionSet set;
+  set.insert(machine, &evb);
+  machine->registerSet(&set);
 
   machine->close({}, StreamCompletionSignal::CANCEL);
 }
@@ -48,7 +48,7 @@ TEST(ConnectionSet, CloseViaSetDtor) {
   folly::EventBase evb;
   auto machine = makeStateMachine(&evb);
 
-  auto set = std::make_shared<ConnectionSet>();
-  set->insert(machine, &evb);
-  machine->registerSet(set);
+  ConnectionSet set;
+  set.insert(machine, &evb);
+  machine->registerSet(&set);
 }

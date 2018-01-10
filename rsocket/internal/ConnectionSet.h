@@ -3,6 +3,7 @@
 #pragma once
 
 #include <folly/Synchronized.h>
+#include <folly/synchronization/Baton.h>
 
 #include <memory>
 #include <mutex>
@@ -27,7 +28,6 @@ class ConnectionSet {
   ~ConnectionSet();
 
   void insert(std::shared_ptr<RSocketStateMachine>, folly::EventBase*);
-
   void remove(const std::shared_ptr<RSocketStateMachine>&);
 
   size_t size();
@@ -37,5 +37,9 @@ class ConnectionSet {
       unordered_map<std::shared_ptr<RSocketStateMachine>, folly::EventBase*>;
 
   folly::Synchronized<StateMachineMap, std::mutex> machines_;
+  folly::Baton<> shutdownDone_;
+  size_t removes_{0};
+  size_t targetRemoves_{0};
 };
-}
+
+} // namespace rsocket

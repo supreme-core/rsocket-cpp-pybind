@@ -261,8 +261,8 @@ void RSocketStateMachine::close(
     connectionEvents->onClosed(std::move(ex));
   }
 
-  if (auto set = connectionSet_.lock()) {
-    set->remove(shared_from_this());
+  if (connectionSet_) {
+    connectionSet_->remove(shared_from_this());
   }
 }
 
@@ -963,8 +963,8 @@ size_t RSocketStateMachine::getConsumerAllowance(StreamId streamId) const {
   return consumerAllowance;
 }
 
-void RSocketStateMachine::registerSet(std::shared_ptr<ConnectionSet> set) {
-  connectionSet_ = std::move(set);
+void RSocketStateMachine::registerSet(ConnectionSet* set) {
+  connectionSet_ = set;
 }
 
 DuplexConnection* RSocketStateMachine::getConnection() {

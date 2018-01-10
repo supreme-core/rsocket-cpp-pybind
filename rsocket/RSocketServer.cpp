@@ -20,7 +20,7 @@ RSocketServer::RSocketServer(
         return new rsocket::SetupResumeAcceptor{
             folly::EventBaseManager::get()->getExistingEventBase()};
       }),
-      connectionSet_(std::make_shared<ConnectionSet>()),
+      connectionSet_(std::make_unique<ConnectionSet>()),
       stats_(std::move(stats)) {}
 
 RSocketServer::~RSocketServer() {
@@ -152,7 +152,7 @@ void RSocketServer::onRSocketSetup(
       nullptr /* coldResumeHandler */);
 
   connectionSet_->insert(rs, eventBase);
-  rs->registerSet(connectionSet_);
+  rs->registerSet(connectionSet_.get());
 
   auto requester = std::make_shared<RSocketRequester>(rs, *eventBase);
   auto serverState = std::shared_ptr<RSocketServerState>(

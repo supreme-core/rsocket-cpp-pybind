@@ -12,7 +12,9 @@ ConnectionSet::ConnectionSet() {}
 
 ConnectionSet::~ConnectionSet() {
   VLOG(1) << "Started ~ConnectionSet";
-  SCOPE_EXIT { VLOG(1) << "Finished ~ConnectionSet"; };
+  SCOPE_EXIT {
+    VLOG(1) << "Finished ~ConnectionSet";
+  };
 
   StateMachineMap map;
 
@@ -25,6 +27,7 @@ ConnectionSet::~ConnectionSet() {
       return;
     }
 
+    targetRemoves_ = removes_ + locked->size();
     map.swap(*locked);
   }
 
@@ -48,23 +51,35 @@ ConnectionSet::~ConnectionSet() {
       evb->runInEventBaseThread(close);
     }
   }
+
+  VLOG(2) << "Waiting for connections to close";
+  shutdownDone_.wait();
+  VLOG(2) << "Connections have closed";
 }
 
 void ConnectionSet::insert(
     std::shared_ptr<RSocketStateMachine> machine,
     folly::EventBase* evb) {
+  VLOG(4) << "insert(" << machine.get() << ", " << evb << ")";
+
   machines_.lock()->emplace(std::move(machine), evb);
 }
 
 void ConnectionSet::remove(
     const std::shared_ptr<RSocketStateMachine>& machine) {
+  VLOG(4) << "remove(" << machine.get() << ")";
+
   auto locked = machines_.lock();
   auto const result = locked->erase(machine);
   DCHECK_LE(result, 1);
+
+  if (++removes_ == targetRemoves_) {
+    shutdownDone_.post();
+  }
 }
 
 size_t ConnectionSet::size() {
   return machines_.lock()->size();
 }
 
-}
+} // namespace rsocket

@@ -150,8 +150,9 @@ class RSocketStateMachine final
   /// Send a KEEPALIVE frame, with the RESPOND flag set.
   void sendKeepalive(std::unique_ptr<folly::IOBuf>) override;
 
-  /// Register the connection set that's holding this state machine.
-  void registerSet(std::shared_ptr<ConnectionSet>);
+  /// Register the connection set that's holding this state machine.  The set
+  /// must outlive this state machine.
+  void registerSet(ConnectionSet*);
 
   StreamsFactory& streamsFactory() {
     return streamsFactory_;
@@ -295,6 +296,7 @@ class RSocketStateMachine final
   std::shared_ptr<RSocketConnectionEvents> connectionEvents_;
 
   /// Back reference to the set that's holding this state machine.
-  std::weak_ptr<ConnectionSet> connectionSet_;
+  ConnectionSet* connectionSet_{nullptr};
 };
-}
+
+} // namespace rsocket

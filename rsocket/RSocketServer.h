@@ -115,7 +115,7 @@ class RSocketServer {
   folly::Baton<> waiting_;
   std::atomic<bool> isShutdown_{false};
 
-  std::shared_ptr<ConnectionSet> connectionSet_;
+  std::unique_ptr<ConnectionSet> connectionSet_;
   std::shared_ptr<RSocketStats> stats_;
 
   /**
