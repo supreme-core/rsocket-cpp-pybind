@@ -124,20 +124,28 @@ void RSocketServer::acceptConnection(
 
 void RSocketServer::onRSocketSetup(
     std::shared_ptr<RSocketServiceHandler> serviceHandler,
-    std::shared_ptr<FrameTransport> frameTransport,
+    std::unique_ptr<DuplexConnection> connection,
     SetupParameters setupParams) {
   auto eventBase = folly::EventBaseManager::get()->getExistingEventBase();
   VLOG(2) << "Received new setup payload on " << eventBase->getName();
   CHECK(eventBase);
   auto result = serviceHandler->onNewSetup(setupParams);
   if (result.hasError()) {
-    VLOG(3) << "Terminating SETUP attempt from client.  No Responder";
-    throw result.error();
+    VLOG(3) << "Terminating SETUP attempt from client. "
+            << result.error().what();
+    connection->send(
+        FrameSerializer::createFrameSerializer(setupParams.protocolVersion)
+            ->serializeOut(Frame_ERROR::rejectedSetup(result.error().what())));
+    return;
   }
   auto connectionParams = std::move(result.value());
   if (!connectionParams.responder) {
     LOG(ERROR) << "Received invalid Responder. Dropping connection";
-    throw RSocketException("Received invalid Responder from server");
+    connection->send(
+        FrameSerializer::createFrameSerializer(setupParams.protocolVersion)
+            ->serializeOut(Frame_ERROR::rejectedSetup(
+                "Received invalid Responder from server")));
+    return;
   }
   auto rs = std::make_shared<RSocketStateMachine>(
       useScheduledResponder_
@@ -158,18 +166,23 @@ void RSocketServer::onRSocketSetup(
   auto serverState = std::shared_ptr<RSocketServerState>(
       new RSocketServerState(*eventBase, rs, requester));
   serviceHandler->onNewRSocketState(std::move(serverState), setupParams.token);
-  rs->connectServer(std::move(frameTransport), std::move(setupParams));
+  rs->connectServer(
+      std::make_shared<FrameTransportImpl>(std::move(connection)),
+      std::move(setupParams));
 }
 
 void RSocketServer::onRSocketResume(
     std::shared_ptr<RSocketServiceHandler> serviceHandler,
-    std::shared_ptr<FrameTransport> frameTransport,
+    std::unique_ptr<DuplexConnection> connection,
     ResumeParameters resumeParams) {
   auto result = serviceHandler->onResume(resumeParams.token);
   if (result.hasError()) {
     stats_->resumeFailedNoState();
     VLOG(3) << "Terminating RESUME attempt from client.  No ServerState found";
-    throw result.error();
+    connection->send(
+        FrameSerializer::createFrameSerializer(resumeParams.protocolVersion)
+            ->serializeOut(Frame_ERROR::rejectedSetup(result.error().what())));
+    return;
   }
   auto serverState = std::move(result.value());
   CHECK(serverState);
@@ -181,7 +194,7 @@ void RSocketServer::onRSocketResume(
     // RSocketStateMachine continues to live on the same EventBase and the
     // IO happens in the new EventBase
     auto scheduledFT = yarpl::make_ref<ScheduledFrameTransport>(
-        std::move(frameTransport),
+        std::make_shared<FrameTransportImpl>(std::move(connection)),
         eventBase, /* Transport EventBase */
         &serverState->eventBase_); /* StateMachine EventBase */
     serverState->eventBase_.runInEventBaseThread(
@@ -196,7 +209,8 @@ void RSocketServer::onRSocketResume(
     // RSocketStateMachine and Transport can continue living in the same
     // EventBase without any thread hopping between them.
     serverState->rSocketStateMachine_->resumeServer(
-        std::move(frameTransport), resumeParams);
+        std::make_shared<FrameTransportImpl>(std::move(connection)),
+        resumeParams);
   }
 }
 

@@ -48,15 +48,12 @@ Frame_RESUME makeResume() {
   return frame;
 }
 
-void setupFail(std::shared_ptr<FrameTransport> transport, SetupParameters) {
-  transport->close();
+void setupFail(std::unique_ptr<DuplexConnection>, SetupParameters) {
   FAIL() << "setupFail() was called";
 }
 
-bool resumeFail(std::shared_ptr<FrameTransport> transport, ResumeParameters) {
-  transport->close();
-  ADD_FAILURE() << "resumeFail() was called";
-  return false;
+void resumeFail(std::unique_ptr<DuplexConnection>, ResumeParameters) {
+  FAIL() << "resumeFail() was called";
 }
 } // namespace
 
@@ -143,7 +140,6 @@ TEST(SetupResumeAcceptor, SingleSetup) {
   acceptor.accept(
       std::move(connection),
       [&](auto transport, auto) {
-        transport->close();
         setupCalled = true;
       },
       resumeFail);
@@ -188,10 +184,11 @@ TEST(SetupResumeAcceptor, RejectedSetup) {
   folly::EventBase evb;
   SetupResumeAcceptor acceptor{&evb};
 
+  auto serializer =
+      FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
+
   auto connection =
-      std::make_unique<StrictMock<MockDuplexConnection>>([](auto input) {
-        auto serializer =
-            FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
+      std::make_unique<StrictMock<MockDuplexConnection>>([&](auto input) {
         input->onSubscribe(yarpl::flowable::Subscription::empty());
         input->onNext(serializer->serializeOut(makeSetup()));
         input->onComplete();
@@ -209,9 +206,10 @@ TEST(SetupResumeAcceptor, RejectedSetup) {
 
   acceptor.accept(
       std::move(connection),
-      [&](auto, auto) {
+      [&](std::unique_ptr<DuplexConnection> connection, auto) {
         setupCalled = true;
-        throw std::runtime_error("Oops");
+        connection->send(
+            serializer->serializeOut(Frame_ERROR::rejectedSetup("Oops")));
       },
       resumeFail);
 
@@ -224,10 +222,11 @@ TEST(SetupResumeAcceptor, RejectedResume) {
   folly::EventBase evb;
   SetupResumeAcceptor acceptor{&evb};
 
+  auto serializer =
+      FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
+
   auto connection =
-      std::make_unique<StrictMock<MockDuplexConnection>>([](auto input) {
-        auto serializer =
-            FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
+      std::make_unique<StrictMock<MockDuplexConnection>>([&](auto input) {
         input->onSubscribe(yarpl::flowable::Subscription::empty());
         input->onNext(serializer->serializeOut(makeResume()));
         input->onComplete();
@@ -243,10 +242,14 @@ TEST(SetupResumeAcceptor, RejectedResume) {
 
   bool resumeCalled = false;
 
-  acceptor.accept(std::move(connection), setupFail, [&](auto, auto) {
-    resumeCalled = true;
-    throw std::runtime_error("Cant resume");
-  });
+  acceptor.accept(
+      std::move(connection),
+      setupFail,
+      [&](std::unique_ptr<DuplexConnection> connection, auto) {
+        resumeCalled = true;
+        connection->send(serializer->serializeOut(
+            Frame_ERROR::rejectedResume("Cant resume")));
+      });
 
   evb.loop();
 

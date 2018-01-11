@@ -21,8 +21,6 @@ class exception_wrapper;
 
 namespace rsocket {
 
-class FrameTransport;
-
 /// Acceptor of DuplexConnections that lets us decide whether the connection is
 /// trying to setup a new connection or resume an existing one.
 ///
@@ -30,10 +28,10 @@ class FrameTransport;
 /// SetupResumeAcceptor::accept() entry point is not thread-safe.
 class SetupResumeAcceptor final {
  public:
-  using OnSetup =
-      folly::Function<void(std::shared_ptr<FrameTransport>, SetupParameters)>;
-  using OnResume =
-      folly::Function<void(std::shared_ptr<FrameTransport>, ResumeParameters)>;
+  using OnSetup = folly::Function<
+      void(std::unique_ptr<DuplexConnection>, SetupParameters) noexcept>;
+  using OnResume = folly::Function<
+      void(std::unique_ptr<DuplexConnection>, ResumeParameters) noexcept>;
 
   explicit SetupResumeAcceptor(folly::EventBase*);
   ~SetupResumeAcceptor();
@@ -48,37 +46,7 @@ class SetupResumeAcceptor final {
   folly::Future<folly::Unit> close();
 
  private:
-  /// Subscriber that owns a connection, sets itself as that connection's input,
-  /// and reads out a single frame before cancelling.
-  class OneFrameSubscriber final
-      : public yarpl::flowable::BaseSubscriber<std::unique_ptr<folly::IOBuf>> {
-   public:
-    OneFrameSubscriber(
-        SetupResumeAcceptor&,
-        std::unique_ptr<DuplexConnection>,
-        SetupResumeAcceptor::OnSetup,
-        SetupResumeAcceptor::OnResume);
-
-    void setInput();
-
-    /// Shut down the DuplexConnection, breaking the cycle between it and this
-    /// subscriber.  Expects the DuplexConnection's destructor to call
-    /// onComplete/onError on its input subscriber (this).
-    void close();
-
-    // Subscriber.
-    void onSubscribeImpl() override;
-    void onNextImpl(std::unique_ptr<folly::IOBuf>) override;
-    void onCompleteImpl() override;
-    void onErrorImpl(folly::exception_wrapper) override;
-    void onTerminateImpl() override;
-
-   private:
-    SetupResumeAcceptor& acceptor_;
-    std::unique_ptr<DuplexConnection> connection_;
-    SetupResumeAcceptor::OnSetup onSetup_;
-    SetupResumeAcceptor::OnResume onResume_;
-  };
+  class OneFrameSubscriber;
 
   void processFrame(
       std::unique_ptr<DuplexConnection>,
