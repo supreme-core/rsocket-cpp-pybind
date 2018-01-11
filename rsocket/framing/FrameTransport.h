@@ -12,7 +12,11 @@ class FrameTransport : public virtual yarpl::Refcounted {
   virtual void setFrameProcessor(std::shared_ptr<FrameProcessor>) = 0;
   virtual void outputFrameOrDrop(std::unique_ptr<folly::IOBuf>) = 0;
   virtual void close() = 0;
+
   // Just for observation purposes!
+  //TODO(T25011919): remove
   virtual DuplexConnection* getConnection() = 0;
+
+  virtual bool isConnectionFramed() = 0;
 };
 }

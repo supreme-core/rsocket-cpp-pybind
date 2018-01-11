@@ -43,6 +43,11 @@ class SingleObservers {
         std::move(next), std::move(error));
   }
 
+  template <typename T>
+  static auto create() {
+    return make_ref<SingleObserverBase<T>>();
+  }
+
  private:
   template <typename T, typename Next>
   class Base : public SingleObserverBase<T> {

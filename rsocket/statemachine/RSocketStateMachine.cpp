@@ -191,6 +191,10 @@ void RSocketStateMachine::connect(
   // that call which will nullify frameTransport_.
   frameTransport_ = transport;
 
+  CHECK(frameSerializer_);
+  frameSerializer_->preallocateFrameSizeField() =
+      transport->isConnectionFramed();
+
   if (connectionEvents_) {
     connectionEvents_->onConnected();
   }
@@ -951,6 +955,9 @@ bool RSocketStateMachine::ensureOrAutodetectFrameSerializer(
 
   VLOG(2) << "detected protocol version" << serializer->protocolVersion();
   frameSerializer_ = std::move(serializer);
+  frameSerializer_->preallocateFrameSizeField() =
+      frameTransport_ && frameTransport_->isConnectionFramed();
+
   return true;
 }
 
@@ -994,6 +1001,8 @@ void RSocketStateMachine::setProtocolVersionOrThrow(
     }
 
     frameSerializer_ = std::move(frameSerializer);
+    frameSerializer_->preallocateFrameSizeField() =
+        frameTransport_ && frameTransport_->isConnectionFramed();
   }
 
   transportGuard.dismiss();

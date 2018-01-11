@@ -58,13 +58,6 @@ constexpr inline bool operator!(FrameFlags_V0 a) {
 }
 } // namespace
 
-static folly::IOBufQueue createBufferQueue(size_t bufferSize) {
-  auto buf = folly::IOBuf::createCombined(bufferSize);
-  folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
-  queue.append(std::move(buf));
-  return queue;
-}
-
 ProtocolVersion FrameSerializerV0::protocolVersion() {
   return Version;
 }
@@ -258,7 +251,7 @@ static uint32_t payloadFramingSize(const Payload& payload) {
   return (payload.metadata != nullptr ? sizeof(uint32_t) : 0);
 }
 
-static std::unique_ptr<folly::IOBuf> serializeOutInternal(
+std::unique_ptr<folly::IOBuf> FrameSerializerV0::serializeOutInternal(
     Frame_REQUEST_Base&& frame) {
   auto queue = createBufferQueue(
       FrameSerializerV0::kFrameHeaderSize + sizeof(uint32_t) +
@@ -782,4 +775,7 @@ bool FrameSerializerV0::deserializeFrom(
   return true;
 }
 
+size_t FrameSerializerV0::frameLengthFieldSize() {
+    return sizeof(int32_t);
+}
 } // reactivesocket

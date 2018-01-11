@@ -95,6 +95,9 @@ std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
     std::shared_ptr<ResumeManager> resumeManager,
     std::shared_ptr<ColdResumeHandler> coldResumeHandler,
     folly::EventBase* stateMachineEvb) {
+  // TODO: remove this stupid limitation
+  CHECK(transportEvb.isInEventBaseThread());
+
   auto c = std::unique_ptr<RSocketClient>(new RSocketClient(
       std::move(connectionFactory),
       setupParameters.protocolVersion,

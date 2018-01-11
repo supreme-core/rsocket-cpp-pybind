@@ -38,6 +38,8 @@ class FrameTransportImpl : public FrameTransport,
     return connection_.get();
   }
 
+  bool isConnectionFramed() override;
+
  private:
   void connect();
 

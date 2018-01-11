@@ -57,5 +57,11 @@ class FrameSerializerV0 : public FrameSerializer {
   static std::unique_ptr<folly::IOBuf> deserializeMetadataFrom(
       folly::io::Cursor& cur,
       FrameFlags flags);
+
+ private:
+  std::unique_ptr<folly::IOBuf> serializeOutInternal(
+      Frame_REQUEST_Base&& frame);
+
+  size_t frameLengthFieldSize() override;
 };
-} // reactivesocket
+} // namespace rsocket

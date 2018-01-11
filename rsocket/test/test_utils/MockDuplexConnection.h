@@ -32,10 +32,12 @@ class MockDuplexConnection : public DuplexConnection {
     send_(buf);
   }
 
+
   // Mocks.
 
   MOCK_METHOD1(setInput_, void(std::shared_ptr<Subscriber>));
   MOCK_METHOD1(send_, void(std::unique_ptr<folly::IOBuf>&));
+  MOCK_CONST_METHOD0(isFramed, bool());
 };
 
 } // namespace rsocket

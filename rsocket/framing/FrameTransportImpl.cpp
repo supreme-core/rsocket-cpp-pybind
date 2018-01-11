@@ -115,4 +115,9 @@ void FrameTransportImpl::outputFrameOrDrop(
   }
 }
 
+bool FrameTransportImpl::isConnectionFramed() {
+  CHECK(connection_);
+  return connection_->isFramed();
+}
+
 } // namespace rsocket

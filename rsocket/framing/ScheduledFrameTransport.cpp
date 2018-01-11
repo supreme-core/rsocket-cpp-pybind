@@ -30,4 +30,9 @@ void ScheduledFrameTransport::close() {
   });
 }
 
+bool ScheduledFrameTransport::isConnectionFramed() {
+  DCHECK(frameTransport_) << "there should be no way to get null here";
+  return frameTransport_->isConnectionFramed();
+}
+
 } // rsocket

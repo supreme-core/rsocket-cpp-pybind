@@ -65,6 +65,20 @@ std::unique_ptr<FrameSerializer> FrameSerializer::createAutodetectedSerializer(
   return createFrameSerializer(detectedVersion);
 }
 
+bool& FrameSerializer::preallocateFrameSizeField() {
+  return preallocateFrameSizeField_;
+}
+
+folly::IOBufQueue FrameSerializer::createBufferQueue(size_t bufferSize) {
+  auto prependSize = preallocateFrameSizeField_ ? frameLengthFieldSize() : 0;
+  auto buf = folly::IOBuf::createCombined(bufferSize + prependSize);
+  buf->advance(prependSize);
+  folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
+  queue.append(std::move(buf));
+  return queue;
+}
+
+
 std::ostream& operator<<(std::ostream& os, const ProtocolVersion& version) {
   return os << version.major << "." << version.minor;
 }

@@ -19,6 +19,7 @@ Frame reserialize_resume(bool resumable, Args... args) {
   givenFrame = Frame(std::forward<Args>(args)...);
   auto frameSerializer = FrameSerializer::createFrameSerializer(
       ProtocolVersion::Current());
+
   EXPECT_TRUE(frameSerializer->deserializeFrom(
       newFrame,
       frameSerializer->serializeOut(std::move(givenFrame), resumable),
@@ -306,4 +307,18 @@ TEST(FrameTest, Frame_RESUME_OK) {
 
   expectHeader(FrameType::RESUME_OK, flags, 0, frame);
   EXPECT_EQ(position, frame.position_);
+}
+
+TEST(FrameTest, Frame_PreallocatedFrameLengthField) {
+  uint32_t streamId = 42;
+  FrameFlags flags = FrameFlags::COMPLETE;
+  auto data = folly::IOBuf::copyBuffer("424242");
+  auto frameSerializer =
+      FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
+  frameSerializer->preallocateFrameSizeField() = true;
+
+  auto frame = Frame_PAYLOAD(streamId, flags, Payload(data->clone()));
+  auto serializedFrame = frameSerializer->serializeOut(std::move(frame));
+
+  EXPECT_LT(0, serializedFrame->headroom());
 }

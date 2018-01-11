@@ -19,13 +19,6 @@ ProtocolVersion FrameSerializerV1_0::protocolVersion() {
   return Version;
 }
 
-static folly::IOBufQueue createBufferQueue(size_t bufferSize) {
-  auto buf = folly::IOBuf::createCombined(bufferSize);
-  folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
-  queue.append(std::move(buf));
-  return queue;
-}
-
 static FrameType deserializeFrameType(uint16_t frameType) {
   if (frameType > static_cast<uint8_t>(FrameType::RESUME_OK) &&
       frameType != static_cast<uint8_t>(FrameType::EXT)) {
@@ -132,7 +125,7 @@ static uint32_t payloadFramingSize(const Payload& payload) {
   return (payload.metadata != nullptr ? kMedatadaLengthSize : 0);
 }
 
-static std::unique_ptr<folly::IOBuf> serializeOutInternal(
+std::unique_ptr<folly::IOBuf> FrameSerializerV1_0::serializeOutInternal(
     Frame_REQUEST_Base&& frame) {
   auto queue = createBufferQueue(
       FrameSerializerV1_0::kFrameHeaderSize + sizeof(uint32_t) +
@@ -677,5 +670,9 @@ ProtocolVersion FrameSerializerV1_0::detectProtocolVersion(
   } catch (...) {
   }
   return ProtocolVersion::Unknown;
+}
+
+size_t FrameSerializerV1_0::frameLengthFieldSize() {
+    return 3; // bytes
 }
 }

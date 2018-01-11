@@ -83,5 +83,14 @@ class FrameSerializer {
   virtual bool deserializeFrom(
       Frame_RESUME_OK&,
       std::unique_ptr<folly::IOBuf>) = 0;
+
+  virtual size_t frameLengthFieldSize() = 0;
+  bool& preallocateFrameSizeField();
+
+ protected:
+  folly::IOBufQueue createBufferQueue(size_t bufferSize);
+
+ private:
+  bool preallocateFrameSizeField_{false};
 };
 }
