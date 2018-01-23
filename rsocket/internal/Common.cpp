@@ -13,7 +13,7 @@ namespace {
 constexpr const char* HEX_CHARS = {"0123456789abcdef"};
 }
 
-constexpr const ProtocolVersion ProtocolVersion::Unknown = ProtocolVersion(
+const ProtocolVersion ProtocolVersion::Unknown = ProtocolVersion(
     std::numeric_limits<uint16_t>::max(),
     std::numeric_limits<uint16_t>::max());
 
