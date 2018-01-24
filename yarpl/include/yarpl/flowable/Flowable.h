@@ -23,7 +23,7 @@ namespace flowable {
 template <typename T>
 class Flowable;
 
-namespace detail {
+namespace details {
 
 template <typename T>
 struct IsFlowable : std::false_type {};
@@ -33,7 +33,10 @@ struct IsFlowable<std::shared_ptr<Flowable<R>>> : std::true_type {
   using ElemType = R;
 };
 
-} // namespace detail
+template <typename T>
+class TrackingSubscriber;
+
+} // namespace details
 
 template <typename T>
 class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
@@ -98,7 +101,7 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
 
   template <
       typename Function,
-      typename R = typename detail::IsFlowable<
+      typename R = typename details::IsFlowable<
           typename std::result_of<Function(T)>::type>::ElemType>
   std::shared_ptr<Flowable<R>> flatMap(Function func);
 
@@ -122,7 +125,7 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
 
   template <typename Q>
   using enableWrapRef =
-      typename std::enable_if<detail::IsFlowable<Q>::value, Q>::type;
+      typename std::enable_if<details::IsFlowable<Q>::value, Q>::type;
 
   template <typename Q = T>
   enableWrapRef<Q> merge() {
@@ -132,8 +135,8 @@ class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
   template <
       typename Emitter,
       typename = typename std::enable_if<folly::is_invocable_r<
-          std::tuple<int64_t, bool>,
-          Emitter, std::shared_ptr<Subscriber<T>>, int64_t
+          void,
+          Emitter, details::TrackingSubscriber<T>&, int64_t
           >::value>::type>
   static std::shared_ptr<Flowable<T>> create(Emitter emitter);
 };

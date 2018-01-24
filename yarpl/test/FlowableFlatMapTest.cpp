@@ -143,15 +143,14 @@ TEST(FlowableFlatMapTest, MappedStreamThrows) {
 
     // flowable which emits an onNext, then the next iteration, emits an error
     int64_t i = 1;
-    return Flowable<int64_t>::create([i](auto subscriber, int64_t req) mutable {
+    return Flowable<int64_t>::create([i](auto& subscriber, int64_t req) mutable {
       CHECK_EQ(1, req);
       if (i > 0) {
-        subscriber->onNext(i);
+        subscriber.onNext(i);
         i--;
       } else {
-        subscriber->onError(std::runtime_error{"throwing in stream!"});
+        subscriber.onError(std::runtime_error{"throwing in stream!"});
       }
-      return std::tuple<int64_t, bool>(1, false);
     });
   };
 

@@ -199,14 +199,13 @@ class TestErrorAfterOnNextResponder : public rsocket::RSocketResponder {
     auto requestString = request.moveDataToString();
 
     return Flowable<Payload>::create([name = std::move(requestString)](
-        std::shared_ptr<Subscriber<Payload>> subscriber, int64_t requested) {
+        Subscriber<Payload>& subscriber, int64_t requested) {
       EXPECT_GT(requested, 1);
-      subscriber->onNext(Payload(name, "meta"));
-      subscriber->onNext(Payload(name, "meta"));
-      subscriber->onNext(Payload(name, "meta"));
-      subscriber->onNext(Payload(name, "meta"));
-      subscriber->onError(std::runtime_error("A wild Error appeared!"));
-      return std::make_tuple(int64_t(4), true);
+      subscriber.onNext(Payload(name, "meta"));
+      subscriber.onNext(Payload(name, "meta"));
+      subscriber.onNext(Payload(name, "meta"));
+      subscriber.onNext(Payload(name, "meta"));
+      subscriber.onError(std::runtime_error("A wild Error appeared!"));
     });
   }
 };

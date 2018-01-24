@@ -21,7 +21,7 @@ class EmiterBase : public virtual Refcounted {
  public:
   ~EmiterBase() = default;
 
-  virtual std::tuple<int64_t, bool> emit(std::shared_ptr<Subscriber<T>>, int64_t) = 0;
+  virtual std::tuple<int64_t, bool> emit(Subscriber<T>&, int64_t) = 0;
 };
 
 /**
@@ -156,7 +156,7 @@ class EmiterSubscription final : public Subscription,
       int64_t emitted;
       bool done;
 
-      std::tie(emitted, done) = emiter_->emit(this_subscriber, current);
+      std::tie(emitted, done) = emiter_->emit(*this, current);
 
       while (true) {
         current = requested_.load(std::memory_order_relaxed);
@@ -192,6 +192,44 @@ class EmiterSubscription final : public Subscription,
   std::shared_ptr<Subscriber<T>> subscriber_;
 };
 
+template <typename T>
+class TrackingSubscriber : public Subscriber<T> {
+ public:
+  TrackingSubscriber(Subscriber<T>& subscriber) : inner_(&subscriber) {}
+
+  void onSubscribe(std::shared_ptr<Subscription> s) override {
+    inner_->onSubscribe(std::move(s));
+  }
+
+  void onComplete() override {
+    completed_ = true;
+    inner_->onComplete();
+  }
+
+  void onError(folly::exception_wrapper ex) override {
+    completed_ = true;
+    inner_->onError(std::move(ex));
+  }
+
+  void onNext(T value) override {
+    emitted_++;
+    inner_->onNext(std::move(value));
+  }
+
+  void setCompleted() {
+    completed_ = true;
+  }
+
+  auto getResult() {
+    return std::make_tuple(emitted_, completed_);
+  }
+
+ private:
+  int64_t emitted_{0};
+  bool completed_{false};
+  Subscriber<T>* inner_;
+};
+
 template <typename T, typename Emitter>
 class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
  public:
@@ -203,10 +241,11 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
     ef->init();
   }
 
-  std::tuple<int64_t, bool> emit(
-      std::shared_ptr<Subscriber<T>> subscriber,
-      int64_t requested) override {
-    return emitter_(std::move(subscriber), requested);
+  std::tuple<int64_t, bool> emit(Subscriber<T>& subscriber, int64_t requested)
+      override {
+    TrackingSubscriber<T> trackingSubscriber(subscriber);
+    emitter_(trackingSubscriber, requested);
+    return trackingSubscriber.getResult();
   }
 
  private:

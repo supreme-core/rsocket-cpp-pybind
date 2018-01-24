@@ -405,11 +405,10 @@ TEST(FlowableTest, SubscribersError) {
 TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   auto flowable =
       Flowable<int>::create(
-          [](std::shared_ptr<Subscriber<int>> subscriber, int64_t requested) {
+          [](auto& subscriber, int64_t requested) {
             EXPECT_GT(requested, 1);
-            subscriber->onNext(123);
-            subscriber->onComplete();
-            return std::make_tuple(int64_t(1), true);
+            subscriber.onNext(123);
+            subscriber.onComplete();
           })
           ->map([](int v) { return std::to_string(v); });
 
@@ -454,17 +453,15 @@ namespace {
 // workaround for gcc-4.9
 auto const expect_count = 10000;
 TEST(FlowableTest, FlowableFromDifferentThreads) {
-  auto flowable = Flowable<int32_t>::create([&](auto subscriber, int64_t req) {
+  auto flowable = Flowable<int32_t>::create([&](auto& subscriber, int64_t req) {
     EXPECT_EQ(req, expect_count);
     auto t1 = std::thread([&] {
       for (int32_t i = 0; i < req; i++) {
-        subscriber->onNext(i);
+        subscriber.onNext(i);
       }
-
-      subscriber->onComplete();
+      subscriber.onComplete();
     });
     t1.join();
-    return std::make_tuple(req, true);
   });
 
   auto t2 = std::thread([&] {
@@ -526,19 +523,17 @@ auto const expect = 5000;
 auto const the_ex = folly::make_exception_wrapper<std::runtime_error>("wat");
 
 TEST(FlowableTest, FlowableFromDifferentThreadsWithError) {
-  auto flowable = Flowable<int32_t>::create([=](auto subscriber, int64_t req) {
+  auto flowable = Flowable<int32_t>::create([=](auto& subscriber, int64_t req) {
     EXPECT_EQ(req, request);
     EXPECT_LT(expect, request);
 
     auto t1 = std::thread([&] {
       for (int32_t i = 0; i < expect; i++) {
-        subscriber->onNext(i);
+        subscriber.onNext(i);
       }
-
-      subscriber->onError(the_ex);
+      subscriber.onError(the_ex);
     });
     t1.join();
-    return std::make_tuple<int64_t, bool>(expect, true);
   });
 
   auto t2 = std::thread([&] {
@@ -556,13 +551,12 @@ TEST(FlowableTest, SubscribeMultipleTimes) {
   using namespace ::testing;
   using StrictMockSubscriber =
       testing::StrictMock<yarpl::mocks::MockSubscriber<int64_t>>;
-  auto f = Flowable<int64_t>::create([](auto subscriber, int64_t req) {
+  auto f = Flowable<int64_t>::create([](auto& subscriber, int64_t req) {
     for (int64_t i = 0; i < req; i++) {
-      subscriber->onNext(i);
+      subscriber.onNext(i);
     }
 
-    subscriber->onComplete();
-    return std::make_tuple(req, true);
+    subscriber.onComplete();
   });
 
   auto setup_mock = [](auto request_num, auto& resps) {

@@ -2,18 +2,17 @@
 
 #pragma once
 
+#include <boost/noncopyable.hpp>
+#include <folly/ExceptionWrapper.h>
+#include <glog/logging.h>
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscription.h"
-
-#include <folly/ExceptionWrapper.h>
-
-#include <glog/logging.h>
 
 namespace yarpl {
 namespace flowable {
 
 template <typename T>
-class Subscriber : public virtual Refcounted {
+class Subscriber : public virtual Refcounted, boost::noncopyable {
  public:
   virtual ~Subscriber() = default;
   virtual void onSubscribe(std::shared_ptr<Subscription>) = 0;

@@ -18,12 +18,11 @@ namespace {
 TEST(ObserveSubscribeTests, SubscribeOnWorksAsExpected) {
   folly::ScopedEventBaseThread worker;
 
-  auto f = Flowable<std::string>::create([&](auto subscriber, auto req) {
+  auto f = Flowable<std::string>::create([&](auto& subscriber, auto req) {
     EXPECT_TRUE(worker.getEventBase()->isInEventBaseThread());
     EXPECT_EQ(1, req);
-    subscriber->onNext("foo");
-    subscriber->onComplete();
-    return std::tuple<int64_t, bool>(1, true);
+    subscriber.onNext("foo");
+    subscriber.onComplete();
   });
 
   auto subscriber = make_ref<TestSubscriber<std::string>>(1);
@@ -37,11 +36,10 @@ TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedSuccess) {
   folly::ScopedEventBaseThread worker;
   folly::Baton<> subscriber_complete;
 
-  auto f = Flowable<std::string>::create([&](auto subscriber, auto req) {
+  auto f = Flowable<std::string>::create([&](auto& subscriber, auto req) {
     EXPECT_EQ(1, req);
-    subscriber->onNext("foo");
-    subscriber->onComplete();
-    return std::tuple<int64_t, bool>(1, true);
+    subscriber.onNext("foo");
+    subscriber.onComplete();
   });
 
   bool calledOnNext{false};
@@ -75,10 +73,9 @@ TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedError) {
   folly::ScopedEventBaseThread worker;
   folly::Baton<> subscriber_complete;
 
-  auto f = Flowable<std::string>::create([&](auto subscriber, auto req) {
+  auto f = Flowable<std::string>::create([&](auto& subscriber, auto req) {
     EXPECT_EQ(1, req);
-    subscriber->onError(std::runtime_error("oops!"));
-    return std::tuple<int64_t, bool>(0, true);
+    subscriber.onError(std::runtime_error("oops!"));
   });
 
   f->observeOn(*worker.getEventBase())
@@ -106,12 +103,11 @@ TEST(ObserveSubscribeTests, BothObserveAndSubscribeOn) {
   folly::ScopedEventBaseThread producer_eb;
   folly::Baton<> subscriber_complete;
 
-  auto f = Flowable<std::string>::create([&](auto subscriber, auto req) {
+  auto f = Flowable<std::string>::create([&](auto& subscriber, auto req) {
              EXPECT_EQ(1, req);
              EXPECT_TRUE(producer_eb.getEventBase()->isInEventBaseThread());
-             subscriber->onNext("foo");
-             subscriber->onComplete();
-             return std::tuple<int64_t, bool>(1, true);
+             subscriber.onNext("foo");
+             subscriber.onComplete();
            })
                ->subscribeOn(*producer_eb.getEventBase())
                ->observeOn(*subscriber_eb.getEventBase());
