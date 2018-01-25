@@ -141,7 +141,7 @@ class MapOperator : public FlowableOperator<U, D, MapOperator<U, D, F>> {
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
   void subscribe(std::shared_ptr<Subscriber<D>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
 
@@ -183,7 +183,7 @@ class FilterOperator : public FlowableOperator<U, U, FilterOperator<U, F>> {
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
   void subscribe(std::shared_ptr<Subscriber<U>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
 
@@ -225,7 +225,7 @@ class ReduceOperator : public FlowableOperator<U, D, ReduceOperator<U, D, F>> {
       : Super(std::move(upstream)), function_(std::move(function)) {}
 
   void subscribe(std::shared_ptr<Subscriber<D>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
 
@@ -279,7 +279,7 @@ class TakeOperator : public FlowableOperator<T, T, TakeOperator<T>> {
       : Super(std::move(upstream)), limit_(limit) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), limit_, std::move(subscriber)));
   }
 
@@ -332,7 +332,7 @@ class SkipOperator : public FlowableOperator<T, T, SkipOperator<T>> {
       : Super(std::move(upstream)), offset_(offset) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), offset_, std::move(subscriber)));
   }
 
@@ -382,7 +382,7 @@ class IgnoreElementsOperator
       : Super(std::move(upstream)) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
 
@@ -412,7 +412,7 @@ class SubscribeOnOperator
       : Super(std::move(upstream)), executor_(executor) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<Subscription>(
+    Super::upstream_->subscribe(std::make_shared<Subscription>(
         this->ref_from_this(this), executor_, std::move(subscriber)));
   }
 
@@ -486,7 +486,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       : Super(std::move(upstream)), function_(std::move(func)) {}
 
   void subscribe(std::shared_ptr<Subscriber<R>> subscriber) override {
-    Super::upstream_->subscribe(make_ref<FMSubscription>(
+    Super::upstream_->subscribe(std::make_shared<FMSubscription>(
         this->ref_from_this(this), std::move(subscriber)));
   }
 
@@ -524,7 +524,7 @@ class FlatMapOperator : public FlowableOperator<T, R, FlatMapOperator<T, R>> {
       }
 
       std::shared_ptr<MappedStreamSubscriber> mappedSubscriber =
-          yarpl::make_ref<MappedStreamSubscriber>(this->ref_from_this(this));
+          std::make_shared<MappedStreamSubscriber>(this->ref_from_this(this));
       mappedSubscriber->fmReference_ = mappedSubscriber;
 
       {

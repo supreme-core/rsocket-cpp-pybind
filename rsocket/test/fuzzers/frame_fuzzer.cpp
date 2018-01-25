@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
   evb.loopOnce();
 
   CHECK(input_sub);
-  auto input_subscription = yarpl::make_ref<NoopSubscription>();
+  auto input_subscription = std::make_shared<NoopSubscription>();
   input_sub->onSubscribe(input_subscription);
 
   std::string fuzz_input = get_stdin();

@@ -54,7 +54,7 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
       s = std::move(subscription)
     ]() mutable {
       auto subscription =
-          make_ref<ObserveOnOperatorSubscription<T>>(self, std::move(s));
+          std::make_shared<ObserveOnOperatorSubscription<T>>(self, std::move(s));
       self->inner_->onSubscribe(std::move(subscription));
     });
   }
@@ -97,7 +97,7 @@ class ObserveOnOperator : public yarpl::flowable::Flowable<T> {
       : upstream_(std::move(upstream)), executor_(executor) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    upstream_->subscribe(make_ref<ObserveOnOperatorSubscriber<T>>(
+    upstream_->subscribe(std::make_shared<ObserveOnOperatorSubscriber<T>>(
         std::move(subscriber), executor_));
   }
 

@@ -99,7 +99,7 @@ class ScheduledSubscriptionSubscriber
   void onSubscribe(
       std::shared_ptr<yarpl::flowable::Subscription> subscription) override {
     inner_->onSubscribe(
-        yarpl::make_ref<ScheduledSubscription>(subscription, eventBase_));
+        std::make_shared<ScheduledSubscription>(subscription, eventBase_));
   }
 
   // No further calls to the subscription after this method is invoked.

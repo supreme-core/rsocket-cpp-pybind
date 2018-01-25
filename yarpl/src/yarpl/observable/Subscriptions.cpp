@@ -54,7 +54,7 @@ void CallbackSubscription::cancel() {
 }
 
 std::shared_ptr<Subscription> Subscriptions::create(std::function<void()> onCancel) {
-  return make_ref<CallbackSubscription>(std::move(onCancel));
+  return std::make_shared<CallbackSubscription>(std::move(onCancel));
 }
 
 std::shared_ptr<Subscription> Subscriptions::create(std::atomic_bool& cancelled) {
@@ -62,7 +62,7 @@ std::shared_ptr<Subscription> Subscriptions::create(std::atomic_bool& cancelled)
 }
 
 std::shared_ptr<Subscription> Subscriptions::create() {
-  return make_ref<Subscription>();
+  return std::make_shared<Subscription>();
 }
 
 }

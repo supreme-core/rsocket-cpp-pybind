@@ -32,7 +32,7 @@ namespace single {
  *
  * For example:
  *
- * auto to = SingleTestObserver<int>::create(make_ref<MyObserver>());
+ * auto to = SingleTestObserver<int>::create(std::make_shared<MyObserver>());
  * single->subscribe(to);
  *
  * Now when 'single' is subscribed to, the SingleTestObserver behavior
@@ -50,7 +50,7 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
    * @return
    */
   static std::shared_ptr<SingleTestObserver<T>> create() {
-    return make_ref<SingleTestObserver<T>>();
+    return std::make_shared<SingleTestObserver<T>>();
   }
 
   /**
@@ -62,7 +62,7 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
    */
   static std::shared_ptr<SingleTestObserver<T>> create(
       std::shared_ptr<SingleObserver<T>> delegate) {
-    return make_ref<SingleTestObserver<T>>(std::move(delegate));
+    return std::make_shared<SingleTestObserver<T>>(std::move(delegate));
   }
 
   SingleTestObserver() : delegate_(nullptr) {}
@@ -214,7 +214,7 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
   // allows thread-safe cancellation against a delegate
   // regardless of when it is received
   std::shared_ptr<DelegateSingleSubscription> delegateSubscription_{
-      make_ref<DelegateSingleSubscription>()};
+      std::make_shared<DelegateSingleSubscription>()};
 };
 }
 }

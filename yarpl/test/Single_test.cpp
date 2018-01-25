@@ -77,7 +77,7 @@ TEST(Single, MapWithException) {
     return n;
   });
 
-  auto observer = yarpl::make_ref<SingleTestObserver<int>>();
+  auto observer = std::make_shared<SingleTestObserver<int>>();
   single->subscribe(observer);
 
   observer->assertOnErrorMessage("Too big!");

@@ -154,7 +154,7 @@ void coldResumer(uint32_t port, uint32_t client_num) {
   auto resumeManager =
       std::make_shared<ColdResumeManager>(RSocketStats::noop());
   {
-    auto firstSub = make_ref<HelloSubscriber>(0);
+    auto firstSub = std::make_shared<HelloSubscriber>(0);
     {
       auto coldResumeHandler = std::make_shared<HelloResumeHandler>(
           HelloSubscribers({{firstPayload, firstSub}}));
@@ -185,8 +185,8 @@ void coldResumer(uint32_t port, uint32_t client_num) {
   }
 
   {
-    auto firstSub = yarpl::make_ref<HelloSubscriber>(firstLatestValue);
-    auto secondSub = yarpl::make_ref<HelloSubscriber>(0);
+    auto firstSub = std::make_shared<HelloSubscriber>(firstLatestValue);
+    auto secondSub = std::make_shared<HelloSubscriber>(0);
     {
       auto coldResumeHandler = std::make_shared<HelloResumeHandler>(
           HelloSubscribers({{firstPayload, firstSub}}));
@@ -227,9 +227,9 @@ void coldResumer(uint32_t port, uint32_t client_num) {
   }
 
   {
-    auto firstSub = yarpl::make_ref<HelloSubscriber>(firstLatestValue);
-    auto secondSub = yarpl::make_ref<HelloSubscriber>(secondLatestValue);
-    auto thirdSub = yarpl::make_ref<HelloSubscriber>(0);
+    auto firstSub = std::make_shared<HelloSubscriber>(firstLatestValue);
+    auto secondSub = std::make_shared<HelloSubscriber>(secondLatestValue);
+    auto thirdSub = std::make_shared<HelloSubscriber>(0);
     auto coldResumeHandler =
         std::make_shared<HelloResumeHandler>(HelloSubscribers(
             {{firstPayload, firstSub}, {secondPayload, secondSub}}));
@@ -288,7 +288,7 @@ TEST(ColdResumptionTest, DifferentEvb) {
   auto resumeManager =
       std::make_shared<ColdResumeManager>(RSocketStats::noop());
   {
-    auto firstSub = make_ref<HelloSubscriber>(0);
+    auto firstSub = std::make_shared<HelloSubscriber>(0);
     {
       auto coldResumeHandler = std::make_shared<HelloResumeHandler>(
           HelloSubscribers({{payload, firstSub}}));
@@ -319,7 +319,7 @@ TEST(ColdResumptionTest, DifferentEvb) {
   }
 
   {
-    auto firstSub = yarpl::make_ref<HelloSubscriber>(latestValue);
+    auto firstSub = std::make_shared<HelloSubscriber>(latestValue);
     {
       auto coldResumeHandler = std::make_shared<HelloResumeHandler>(
           HelloSubscribers({{payload, firstSub}}));
@@ -359,7 +359,7 @@ TEST(ColdResumptionTest, DisconnectResumption) {
   auto token = ResumeIdentificationToken::generateNew();
   auto resumeManager =
       std::make_shared<ColdResumeManager>(RSocketStats::noop());
-  auto sub = make_ref<HelloSubscriber>(0);
+  auto sub = std::make_shared<HelloSubscriber>(0);
   auto crh =
       std::make_shared<HelloResumeHandler>(HelloSubscribers({{payload, sub}}));
   std::shared_ptr<RSocketClient> client;
@@ -373,7 +373,7 @@ TEST(ColdResumptionTest, DisconnectResumption) {
     std::this_thread::yield();
   }
 
-  auto resumedSub = make_ref<HelloSubscriber>(7);
+  auto resumedSub = std::make_shared<HelloSubscriber>(7);
   auto resumedCrh = std::make_shared<HelloResumeHandler>(
       HelloSubscribers({{payload, resumedSub}}));
 

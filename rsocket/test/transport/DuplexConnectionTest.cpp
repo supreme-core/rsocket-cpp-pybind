@@ -16,7 +16,7 @@ void makeMultipleSetInputGetOutputCalls(
     EventBase* serverEvb,
     std::unique_ptr<DuplexConnection> clientConnection,
     EventBase* clientEvb) {
-  auto serverSubscriber = yarpl::make_ref<
+  auto serverSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*serverSubscriber, onSubscribe_(_));
   EXPECT_CALL(*serverSubscriber, onNext_(_)).Times(10);
@@ -27,7 +27,7 @@ void makeMultipleSetInputGetOutputCalls(
   });
 
   for (int i = 0; i < 10; ++i) {
-    auto clientSubscriber = yarpl::make_ref<
+    auto clientSubscriber = std::make_shared<
         yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
     EXPECT_CALL(*clientSubscriber, onSubscribe_(_));
     EXPECT_CALL(*clientSubscriber, onNext_(_));
@@ -70,7 +70,7 @@ void verifyInputAndOutputIsUntied(
     EventBase* serverEvb,
     std::unique_ptr<DuplexConnection> clientConnection,
     EventBase* clientEvb) {
-  auto serverSubscriber = yarpl::make_ref<
+  auto serverSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*serverSubscriber, onSubscribe_(_));
   EXPECT_CALL(*serverSubscriber, onNext_(_)).Times(3);
@@ -78,7 +78,7 @@ void verifyInputAndOutputIsUntied(
   serverEvb->runInEventBaseThreadAndWait(
       [&] { serverConnection->setInput(serverSubscriber); });
 
-  auto clientSubscriber = yarpl::make_ref<
+  auto clientSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*clientSubscriber, onSubscribe_(_));
 
@@ -100,7 +100,7 @@ void verifyInputAndOutputIsUntied(
   serverSubscriber->awaitFrames(1);
 
   // Another client subscriber
-  clientSubscriber = yarpl::make_ref<
+  clientSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*clientSubscriber, onSubscribe_(_));
   EXPECT_CALL(*clientSubscriber, onNext_(_));
@@ -136,14 +136,14 @@ void verifyClosingInputAndOutputDoesntCloseConnection(
     folly::EventBase* serverEvb,
     std::unique_ptr<rsocket::DuplexConnection> clientConnection,
     folly::EventBase* clientEvb) {
-  auto serverSubscriber = yarpl::make_ref<
+  auto serverSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*serverSubscriber, onSubscribe_(_));
 
   serverEvb->runInEventBaseThreadAndWait(
       [&] { serverConnection->setInput(serverSubscriber); });
 
-  auto clientSubscriber = yarpl::make_ref<
+  auto clientSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*clientSubscriber, onSubscribe_(_));
 
@@ -160,7 +160,7 @@ void verifyClosingInputAndOutputDoesntCloseConnection(
   });
 
   // Set new subscribers as the connection is not closed
-  serverSubscriber = yarpl::make_ref<
+  serverSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*serverSubscriber, onSubscribe_(_));
   EXPECT_CALL(*serverSubscriber, onNext_(_)).Times(1);
@@ -171,7 +171,7 @@ void verifyClosingInputAndOutputDoesntCloseConnection(
   serverEvb->runInEventBaseThreadAndWait(
       [&] { serverConnection->setInput(serverSubscriber); });
 
-  clientSubscriber = yarpl::make_ref<
+  clientSubscriber = std::make_shared<
       yarpl::mocks::MockSubscriber<std::unique_ptr<folly::IOBuf>>>();
   EXPECT_CALL(*clientSubscriber, onSubscribe_(_));
   EXPECT_CALL(*clientSubscriber, onNext_(_)).Times(1);

@@ -30,7 +30,7 @@ class SingleObservers {
  public:
   template <typename T, typename Next, typename = EnableIfCompatible<T, Next>>
   static auto create(Next next) {
-    return make_ref<Base<T, Next>, SingleObserverBase<T>>(std::move(next));
+    return std::make_shared<Base<T, Next>>(std::move(next));
   }
 
   template <
@@ -39,13 +39,13 @@ class SingleObservers {
       typename Error,
       typename = EnableIfCompatible<T, Success, Error>>
   static auto create(Success next, Error error) {
-    return make_ref<WithError<T, Success, Error>, SingleObserverBase<T>>(
+    return std::make_shared<WithError<T, Success, Error>>(
         std::move(next), std::move(error));
   }
 
   template <typename T>
   static auto create() {
-    return make_ref<SingleObserverBase<T>>();
+    return std::make_shared<SingleObserverBase<T>>();
   }
 
  private:

@@ -106,7 +106,7 @@ RSocketResponder::handleRequestChannelCore(
     bool completed_{false};
   };
 
-  auto eagerSubscriber = yarpl::make_ref<EagerSubscriberBridge>();
+  auto eagerSubscriber = std::make_shared<EagerSubscriberBridge>();
   auto flowable = handleRequestChannel(
       std::move(request),
       yarpl::flowable::Flowables::fromPublisher<Payload>(

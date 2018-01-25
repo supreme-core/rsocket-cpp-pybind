@@ -30,7 +30,7 @@ class Subscribers {
   static std::shared_ptr<Subscriber<T>> create(
       Next next,
       int64_t batch = kNoFlowControl) {
-    return make_ref<Base<T, Next>>(std::move(next), batch);
+    return std::make_shared<Base<T, Next>>(std::move(next), batch);
   }
 
   template <
@@ -42,7 +42,7 @@ class Subscribers {
           folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
   static std::shared_ptr<Subscriber<T>>
   create(Next next, Error error, int64_t batch = kNoFlowControl) {
-    return make_ref<WithError<T, Next, Error>>(
+    return std::make_shared<WithError<T, Next, Error>>(
         std::move(next), std::move(error), batch);
   }
 
@@ -60,7 +60,7 @@ class Subscribers {
       Error error,
       Complete complete,
       int64_t batch = kNoFlowControl) {
-    return make_ref<WithErrorAndComplete<T, Next, Error, Complete>>(
+    return std::make_shared<WithErrorAndComplete<T, Next, Error, Complete>>(
         std::move(next), std::move(error), std::move(complete), batch);
   }
 

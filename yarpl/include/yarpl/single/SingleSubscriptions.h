@@ -109,17 +109,17 @@ class SingleSubscriptions {
  public:
   static std::shared_ptr<CallbackSingleSubscription> create(
       std::function<void()> onCancel) {
-    return make_ref<CallbackSingleSubscription>(std::move(onCancel));
+    return std::make_shared<CallbackSingleSubscription>(std::move(onCancel));
   }
   static std::shared_ptr<CallbackSingleSubscription> create(
       std::atomic_bool& cancelled) {
     return create([&cancelled]() { cancelled = true; });
   }
   static std::shared_ptr<SingleSubscription> empty() {
-    return make_ref<AtomicBoolSingleSubscription>();
+    return std::make_shared<AtomicBoolSingleSubscription>();
   }
   static std::shared_ptr<AtomicBoolSingleSubscription> atomicBoolSubscription() {
-    return make_ref<AtomicBoolSingleSubscription>();
+    return std::make_shared<AtomicBoolSingleSubscription>();
   }
 };
 

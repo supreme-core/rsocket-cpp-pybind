@@ -539,7 +539,7 @@ void RSocketStateMachine::handleConnectionFrame(
                 streamResumeInfo.streamToken,
                 streamResumeInfo.consumerAllowance);
             streamsFactory().createStreamRequester(
-                yarpl::make_ref<ScheduledSubscriptionSubscriber<Payload>>(
+                std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
                     std::move(subscriber),
                     *folly::EventBaseManager::get()->getEventBase()),
                 streamId,

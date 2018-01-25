@@ -30,7 +30,7 @@ struct MyRefcounted : virtual Refcounted {
 };
 
 TEST(ReferenceTest, Upcast) {
-  std::shared_ptr<MySubscriber<int>> derived = yarpl::make_ref<MySubscriber<int>>();
+  std::shared_ptr<MySubscriber<int>> derived = std::make_shared<MySubscriber<int>>();
   std::shared_ptr<Subscriber<int>> base1(derived);
 
   std::shared_ptr<Subscriber<int>> base2;
@@ -47,10 +47,10 @@ TEST(ReferenceTest, Upcast) {
 
 TEST(ReferenceTest, CopyAssign) {
   using Sub = MySubscriber<int>;
-  std::shared_ptr<Sub> a = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> a = std::make_shared<Sub>();
   std::shared_ptr<Sub> b(a);
   EXPECT_EQ(2u, a.use_count());
-  std::shared_ptr<Sub> c = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> c = std::make_shared<Sub>();
   b = c;
   EXPECT_EQ(1u, a.use_count());
   EXPECT_EQ(2u, b.use_count());
@@ -60,7 +60,7 @@ TEST(ReferenceTest, CopyAssign) {
 
 TEST(ReferenceTest, MoveAssign) {
   using Sub = MySubscriber<int>;
-  std::shared_ptr<Sub> a = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> a = std::make_shared<Sub>();
   std::shared_ptr<Sub> b(std::move(a));
   EXPECT_EQ(nullptr, a);
   EXPECT_EQ(1u, b.use_count());
@@ -68,20 +68,20 @@ TEST(ReferenceTest, MoveAssign) {
 
 TEST(ReferenceTest, MoveAssignTemplate) {
   using Sub = MySubscriber<int>;
-  std::shared_ptr<Sub> a = yarpl::make_ref<Sub>();
+  std::shared_ptr<Sub> a = std::make_shared<Sub>();
   std::shared_ptr<Sub> b(a);
   EXPECT_EQ(2u, a.use_count());
   using Sub2 = MySubscriber<int>;
-  b = yarpl::make_ref<Sub2>();
+  b = std::make_shared<Sub2>();
   EXPECT_EQ(1u, a.use_count());
 }
 
 TEST(ReferenceTest, Construction) {
-  std::shared_ptr<MyRefcounted> a{yarpl::make_ref<MyRefcounted>(1)};
+  std::shared_ptr<MyRefcounted> a{std::make_shared<MyRefcounted>(1)};
   EXPECT_EQ(1u, a.use_count());
   EXPECT_EQ(1, a->i);
 
-  std::shared_ptr<MyRefcounted> b = yarpl::make_ref<MyRefcounted>(2);
+  std::shared_ptr<MyRefcounted> b = std::make_shared<MyRefcounted>(2);
   EXPECT_EQ(1u, b.use_count());
   EXPECT_EQ(2, b->i);
 }

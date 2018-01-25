@@ -29,7 +29,7 @@ class DoOperator : public ObservableOperator<U, U, DoOperator<U, OnSubscribeFunc
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<U>> observer) override {
     auto subscription =
-        make_ref<DoSubscription>(this->ref_from_this(this), std::move(observer));
+        std::make_shared<DoSubscription>(this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
@@ -93,7 +93,7 @@ inline auto createDoOperator(std::shared_ptr<Observable<U>> upstream,
                              OnNextFunc onNextFunc,
                              OnErrorFunc onErrorFunc,
                              OnCompleteFunc onCompleteFunc) {
-  return make_ref<DoOperator<U, OnSubscribeFunc, OnNextFunc, OnErrorFunc, OnCompleteFunc>>(
+  return std::make_shared<DoOperator<U, OnSubscribeFunc, OnNextFunc, OnErrorFunc, OnCompleteFunc>>(
       std::move(upstream), std::move(onSubscribeFunc), std::move(onNextFunc),
       std::move(onErrorFunc), std::move(onCompleteFunc));
 }

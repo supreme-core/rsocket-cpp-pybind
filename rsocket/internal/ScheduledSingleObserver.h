@@ -81,10 +81,10 @@ class ScheduledSubscriptionSingleObserver : public yarpl::single::SingleObserver
       folly::EventBase& eventBase) :
       inner_(std::move(observer)), eventBase_(eventBase) {}
 
-  void onSubscribe(
-      std::shared_ptr<yarpl::single::SingleSubscription> subscription) override {
-    inner_->onSubscribe(
-        yarpl::make_ref<ScheduledSingleSubscription>(std::move(subscription), eventBase_));
+  void onSubscribe(std::shared_ptr<yarpl::single::SingleSubscription>
+                       subscription) override {
+    inner_->onSubscribe(std::make_shared<ScheduledSingleSubscription>(
+        std::move(subscription), eventBase_));
   }
 
   // No further calls to the subscription after this method is invoked.

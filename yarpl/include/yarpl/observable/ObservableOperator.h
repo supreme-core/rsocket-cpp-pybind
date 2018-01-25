@@ -183,7 +183,7 @@ class MapOperator : public ObservableOperator<U, D, MapOperator<U, D, F>> {
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<D>> observer) override {
     auto subscription =
-        make_ref<MapSubscription>(this->ref_from_this(this), std::move(observer));
+        std::make_shared<MapSubscription>(this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
@@ -229,7 +229,7 @@ class FilterOperator : public ObservableOperator<U, U, FilterOperator<U, F>> {
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<U>> observer) override {
     auto subscription =
-        make_ref<FilterSubscription>(this->ref_from_this(this), std::move(observer));
+        std::make_shared<FilterSubscription>(this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
@@ -275,7 +275,7 @@ class ReduceOperator
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<D>> subscriber) override {
-    auto subscription = make_ref<ReduceSubscription>(
+    auto subscription = std::make_shared<ReduceSubscription>(
         this->ref_from_this(this), std::move(subscriber));
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a subscriber.
@@ -329,7 +329,7 @@ class TakeOperator : public ObservableOperator<T, T, TakeOperator<T>> {
       : Super(std::move(upstream)), limit_(limit) {}
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = make_ref<TakeSubscription>(
+    auto subscription = std::make_shared<TakeSubscription>(
         this->ref_from_this(this), limit_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
@@ -375,7 +375,7 @@ class SkipOperator : public ObservableOperator<T, T, SkipOperator<T>> {
       : Super(std::move(upstream)), offset_(offset) {}
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = make_ref<SkipSubscription>(
+    auto subscription = std::make_shared<SkipSubscription>(
         this->ref_from_this(this), offset_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
@@ -419,7 +419,7 @@ class IgnoreElementsOperator
       : Super(std::move(upstream)) {}
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = make_ref<IgnoreElementsSubscription>(
+    auto subscription = std::make_shared<IgnoreElementsSubscription>(
         this->ref_from_this(this), std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
@@ -452,7 +452,7 @@ class SubscribeOnOperator
       : Super(std::move(upstream)), executor_(executor) {}
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = make_ref<SubscribeOnSubscription>(
+    auto subscription = std::make_shared<SubscribeOnSubscription>(
         this->ref_from_this(this), executor_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
@@ -537,7 +537,7 @@ class FromPublisherOperator : public Observable<T> {
     observer->onSubscribe(subscription);
 
     if (!subscription->isCancelled()) {
-      function_(make_ref<PublisherObserver>(std::move(observer), subscription));
+      function_(std::make_shared<PublisherObserver>(std::move(observer), subscription));
     }
     return subscription;
   }

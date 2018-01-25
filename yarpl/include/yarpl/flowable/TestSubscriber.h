@@ -43,7 +43,7 @@ class TestSubscriber :
    * receives.
    */
   static std::shared_ptr<TestSubscriber<T>> create(int64_t initial = kNoFlowControl) {
-    return make_ref<TestSubscriber<T>>(initial);
+    return std::make_shared<TestSubscriber<T>>(initial);
   }
 
   /**
@@ -55,7 +55,7 @@ class TestSubscriber :
   static std::shared_ptr<TestSubscriber<T>> create(
       std::shared_ptr<Subscriber<T>> delegate,
       int64_t initial = kNoFlowControl) {
-    return make_ref<TestSubscriber<T>>(std::move(delegate), initial);
+    return std::make_shared<TestSubscriber<T>>(std::move(delegate), initial);
   }
 
   explicit TestSubscriber(int64_t initial = kNoFlowControl)

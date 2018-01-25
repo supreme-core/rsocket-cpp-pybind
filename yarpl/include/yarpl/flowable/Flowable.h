@@ -153,60 +153,60 @@ namespace flowable {
 template <typename T>
 template <typename Emitter, typename>
 std::shared_ptr<Flowable<T>> Flowable<T>::create(Emitter emitter) {
-  return make_ref<details::EmitterWrapper<T, Emitter>>(std::move(emitter));
+  return std::make_shared<details::EmitterWrapper<T, Emitter>>(std::move(emitter));
 }
 
 template <typename T>
 template <typename Function, typename R>
 std::shared_ptr<Flowable<R>> Flowable<T>::map(Function function) {
-  return make_ref<MapOperator<T, R, Function>>(
+  return std::make_shared<MapOperator<T, R, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function>
 std::shared_ptr<Flowable<T>> Flowable<T>::filter(Function function) {
-  return make_ref<FilterOperator<T, Function>>(
+  return std::make_shared<FilterOperator<T, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 template <typename Function, typename R>
 std::shared_ptr<Flowable<R>> Flowable<T>::reduce(Function function) {
-  return make_ref<ReduceOperator<T, R, Function>>(
+  return std::make_shared<ReduceOperator<T, R, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 
 template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::take(int64_t limit) {
-  return make_ref<TakeOperator<T>>(this->ref_from_this(this), limit);
+  return std::make_shared<TakeOperator<T>>(this->ref_from_this(this), limit);
 }
 
 template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::skip(int64_t offset) {
-  return make_ref<SkipOperator<T>>(this->ref_from_this(this), offset);
+  return std::make_shared<SkipOperator<T>>(this->ref_from_this(this), offset);
 }
 
 template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::ignoreElements() {
-  return make_ref<IgnoreElementsOperator<T>>(this->ref_from_this(this));
+  return std::make_shared<IgnoreElementsOperator<T>>(this->ref_from_this(this));
 }
 
 template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::subscribeOn(folly::Executor& executor) {
-  return make_ref<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
+  return std::make_shared<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
 }
 
 template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::observeOn(folly::Executor& executor) {
-  return make_ref<yarpl::flowable::detail::ObserveOnOperator<T>>(
+  return std::make_shared<yarpl::flowable::detail::ObserveOnOperator<T>>(
       this->ref_from_this(this), executor);
 }
 
 template <typename T>
 template <typename Function, typename R>
 std::shared_ptr<Flowable<R>> Flowable<T>::flatMap(Function function) {
-  return make_ref<FlatMapOperator<T, R>>(
+  return std::make_shared<FlatMapOperator<T, R>>(
       this->ref_from_this(this), std::move(function));
 }
 

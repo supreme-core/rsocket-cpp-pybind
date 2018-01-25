@@ -51,7 +51,7 @@ StreamsFactory::createChannelRequester(
   }
 
   auto const streamId = getNextStreamId();
-  auto stateMachine = yarpl::make_ref<ChannelRequester>(
+  auto stateMachine = std::make_shared<ChannelRequester>(
       connection_.shared_from_this(), streamId);
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
@@ -67,7 +67,7 @@ void StreamsFactory::createStreamRequester(
   }
 
   auto const streamId = getNextStreamId();
-  auto stateMachine = yarpl::make_ref<StreamRequester>(
+  auto stateMachine = std::make_shared<StreamRequester>(
       connection_.shared_from_this(), streamId, std::move(request));
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
@@ -82,7 +82,7 @@ void StreamsFactory::createStreamRequester(
     return;
   }
 
-  auto stateMachine = yarpl::make_ref<StreamRequester>(
+  auto stateMachine = std::make_shared<StreamRequester>(
       connection_.shared_from_this(), streamId, Payload());
   // Set requested to true (since cold resumption)
   stateMachine->setRequested(n);
@@ -99,7 +99,7 @@ void StreamsFactory::createRequestResponseRequester(
   }
 
   auto const streamId = getNextStreamId();
-  auto stateMachine = yarpl::make_ref<RequestResponseRequester>(
+  auto stateMachine = std::make_shared<RequestResponseRequester>(
       connection_.shared_from_this(), streamId, std::move(payload));
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
@@ -136,7 +136,7 @@ bool StreamsFactory::registerNewPeerStreamId(StreamId streamId) {
 std::shared_ptr<ChannelResponder> StreamsFactory::createChannelResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
-  auto stateMachine = yarpl::make_ref<ChannelResponder>(
+  auto stateMachine = std::make_shared<ChannelResponder>(
       connection_.shared_from_this(), streamId, initialRequestN);
   connection_.addStream(streamId, stateMachine);
   return stateMachine;
@@ -146,7 +146,7 @@ std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
 StreamsFactory::createStreamResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
-  auto stateMachine = yarpl::make_ref<StreamResponder>(
+  auto stateMachine = std::make_shared<StreamResponder>(
       connection_.shared_from_this(), streamId, initialRequestN);
   connection_.addStream(streamId, stateMachine);
   return stateMachine;
@@ -154,7 +154,7 @@ StreamsFactory::createStreamResponder(
 
 std::shared_ptr<yarpl::single::SingleObserver<Payload>>
 StreamsFactory::createRequestResponseResponder(StreamId streamId) {
-  auto stateMachine = yarpl::make_ref<RequestResponseResponder>(
+  auto stateMachine = std::make_shared<RequestResponseResponder>(
       connection_.shared_from_this(), streamId);
   connection_.addStream(streamId, stateMachine);
   return stateMachine;

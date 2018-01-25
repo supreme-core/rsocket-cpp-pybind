@@ -30,7 +30,7 @@ class Singles {
       typename = typename std::enable_if<folly::is_invocable<
           OnSubscribe, std::shared_ptr<SingleObserver<T>>>::value>::type>
   static std::shared_ptr<Single<T>> create(OnSubscribe function) {
-    return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
+    return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>

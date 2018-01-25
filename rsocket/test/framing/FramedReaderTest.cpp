@@ -11,7 +11,7 @@ using namespace yarpl::mocks;
 
 TEST(FramedReader, TinyFrame) {
   auto version = std::make_shared<ProtocolVersion>(ProtocolVersion::Latest);
-  auto reader = yarpl::make_ref<FramedReader>(version);
+  auto reader = std::make_shared<FramedReader>(version);
 
   // Not using hex string-literal as std::string ctor hits '\x00' and stops
   // reading.
@@ -25,7 +25,7 @@ TEST(FramedReader, TinyFrame) {
   reader->onSubscribe(yarpl::flowable::Subscription::empty());
   reader->onNext(std::move(buf));
 
-  auto subscriber = yarpl::make_ref<
+  auto subscriber = std::make_shared<
       StrictMock<MockSubscriber<std::unique_ptr<folly::IOBuf>>>>();
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onError_(_));
@@ -37,14 +37,14 @@ TEST(FramedReader, TinyFrame) {
 
 TEST(FramedReader, CantDetectVersion) {
   auto version = std::make_shared<ProtocolVersion>(ProtocolVersion::Unknown);
-  auto reader = yarpl::make_ref<FramedReader>(version);
+  auto reader = std::make_shared<FramedReader>(version);
 
   auto buf = folly::IOBuf::copyBuffer("ABCDEFGHIJKLMNOP");
 
   reader->onSubscribe(yarpl::flowable::Subscription::empty());
   reader->onNext(std::move(buf));
 
-  auto subscriber = yarpl::make_ref<
+  auto subscriber = std::make_shared<
       StrictMock<MockSubscriber<std::unique_ptr<folly::IOBuf>>>>();
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onError_(_));
@@ -56,15 +56,15 @@ TEST(FramedReader, CantDetectVersion) {
 
 TEST(FramedReader, SubscriberCompleteAfterError) {
   auto version = std::make_shared<ProtocolVersion>(ProtocolVersion::Latest);
-  auto reader = yarpl::make_ref<FramedReader>(version);
+  auto reader = std::make_shared<FramedReader>(version);
 
-  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
   EXPECT_CALL(*subscription, request_(_));
   EXPECT_CALL(*subscription, cancel_());
 
   reader->onSubscribe(subscription);
 
-  auto subscriber = yarpl::make_ref<
+  auto subscriber = std::make_shared<
       StrictMock<MockSubscriber<std::unique_ptr<folly::IOBuf>>>>();
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onError_(_))
@@ -79,15 +79,15 @@ TEST(FramedReader, SubscriberCompleteAfterError) {
 
 TEST(FramedReader, SubscriberErrorAfterError) {
   auto version = std::make_shared<ProtocolVersion>(ProtocolVersion::Latest);
-  auto reader = yarpl::make_ref<FramedReader>(version);
+  auto reader = std::make_shared<FramedReader>(version);
 
-  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
   EXPECT_CALL(*subscription, request_(_));
   EXPECT_CALL(*subscription, cancel_());
 
   reader->onSubscribe(subscription);
 
-  auto subscriber = yarpl::make_ref<
+  auto subscriber = std::make_shared<
       StrictMock<MockSubscriber<std::unique_ptr<folly::IOBuf>>>>();
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onError_(_))

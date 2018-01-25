@@ -107,7 +107,7 @@ void TestInterpreter::handleSubscribe(const SubscribeCommand& command) {
       testSubscribers_.end());
 
   if (command.isRequestResponseType()) {
-    auto testSubscriber = make_ref<SingleSubscriber>();
+    auto testSubscriber = std::make_shared<SingleSubscriber>();
     testSubscribers_[command.clientId() + command.id()] = testSubscriber;
     testClient_[command.clientId()]
         ->requester
@@ -115,7 +115,7 @@ void TestInterpreter::handleSubscribe(const SubscribeCommand& command) {
             Payload(command.payloadData(), command.payloadMetadata()))
         ->subscribe(std::move(testSubscriber));
   } else if (command.isRequestStreamType()) {
-    auto testSubscriber = make_ref<FlowableSubscriber>();
+    auto testSubscriber = std::make_shared<FlowableSubscriber>();
     testSubscribers_[command.clientId() + command.id()] = testSubscriber;
     testClient_[command.clientId()]
         ->requester

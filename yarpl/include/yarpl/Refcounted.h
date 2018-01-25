@@ -82,6 +82,7 @@ public:
   virtual ~enable_get_ref() = default;
 };
 
+//TODO(lehecka): removing
 template <typename T, typename CastTo = T, typename... Args>
 std::shared_ptr<CastTo> make_ref(Args&&... args) {
   static_assert(

@@ -95,7 +95,7 @@ folly::Future<folly::Unit> RSocketClient::resume() {
               std::move(connection.connection), protocolVersion_);
         }
         auto transport =
-            yarpl::make_ref<FrameTransportImpl>(std::move(framedConnection));
+            std::make_shared<FrameTransportImpl>(std::move(framedConnection));
 
         std::shared_ptr<FrameTransport> ft;
         if (evb_ != &connection.eventBase) {
@@ -103,7 +103,7 @@ folly::Future<folly::Unit> RSocketClient::resume() {
           // EventBase, then use ScheduledFrameTransport and
           // ScheduledFrameProcessor to ensure the RSocketStateMachine and
           // Transport live on the desired EventBases
-          ft = yarpl::make_ref<ScheduledFrameTransport>(
+          ft = std::make_shared<ScheduledFrameTransport>(
               std::move(transport),
               &connection.eventBase, /* Transport EventBase */
               evb_); /* StateMachine EventBase */
@@ -172,13 +172,13 @@ void RSocketClient::fromConnection(
         std::move(connection), setupParameters.protocolVersion);
   }
   auto transport =
-      yarpl::make_ref<FrameTransportImpl>(std::move(framedConnection));
+      std::make_shared<FrameTransportImpl>(std::move(framedConnection));
   if (evb_ != &transportEvb) {
     // If the StateMachine EventBase is different from the transport
     // EventBase, then use ScheduledFrameTransport and ScheduledFrameProcessor
     // to ensure the RSocketStateMachine and Transport live on the desired
     // EventBases
-    auto scheduledFT = yarpl::make_ref<ScheduledFrameTransport>(
+    auto scheduledFT = std::make_shared<ScheduledFrameTransport>(
         std::move(transport),
         &transportEvb, /* Transport EventBase */
         evb_); /* StateMachine EventBase */

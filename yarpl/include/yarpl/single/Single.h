@@ -110,7 +110,7 @@ class Single<void> : public virtual Refcounted {
       Success success_;
     };
 
-    subscribe(make_ref<SuccessSingleObserver>(std::move(s)));
+    subscribe(std::make_shared<SuccessSingleObserver>(std::move(s)));
   }
 
   template <
@@ -132,12 +132,12 @@ namespace single {
 template <typename T>
 template <typename OnSubscribe, typename>
 std::shared_ptr<Single<T>> Single<T>::create(OnSubscribe function) {
-  return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
+  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
 }
 
 template <typename OnSubscribe, typename>
 auto Single<void>::create(OnSubscribe function) {
-  return make_ref<SingleVoidFromPublisherOperator<OnSubscribe>, Single<void>>(
+  return std::make_shared<SingleVoidFromPublisherOperator<OnSubscribe>>(
       std::forward<OnSubscribe>(function));
 }
 
@@ -145,7 +145,7 @@ template <typename T>
 template <typename Function>
 auto Single<T>::map(Function function) {
   using D = typename std::result_of<Function(T)>::type;
-  return make_ref<MapOperator<T, D, Function>, Single<D>>(
+  return std::make_shared<MapOperator<T, D, Function>>(
       this->ref_from_this(this), std::move(function));
 }
 

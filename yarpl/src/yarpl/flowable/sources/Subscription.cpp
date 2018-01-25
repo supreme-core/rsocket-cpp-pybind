@@ -10,7 +10,7 @@ std::shared_ptr<Subscription> Subscription::empty() {
     void request(int64_t) override {}
     void cancel() override {}
   };
-  return make_ref<NullSubscription>();
+  return std::make_shared<NullSubscription>();
 }
 
 } // flowable

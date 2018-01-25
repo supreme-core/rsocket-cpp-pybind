@@ -75,7 +75,7 @@ template <typename T>
 std::vector<T> run(
     std::shared_ptr<Flowable<T>> flowable,
     int64_t requestCount = 100) {
-  auto subscriber = make_ref<TestSubscriber<T>>(requestCount);
+  auto subscriber = std::make_shared<TestSubscriber<T>>(requestCount);
   flowable->subscribe(subscriber);
   return std::move(subscriber->values());
 }
@@ -144,7 +144,7 @@ TEST(FlowableTest, MapWithException) {
     return n;
   });
 
-  auto subscriber = yarpl::make_ref<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
   EXPECT_EQ(subscriber->values(), std::vector<int>({1, 2}));
@@ -200,7 +200,7 @@ TEST(FlowableTest, RangeWithReduceOneItem) {
 TEST(FlowableTest, RangeWithReduceNoItem) {
   auto flowable = Flowables::range(0, 0)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
-  auto subscriber = make_ref<TestSubscriber<int64_t>>(100);
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(100);
   flowable->subscribe(subscriber);
 
   EXPECT_TRUE(subscriber->isComplete());
@@ -274,7 +274,7 @@ TEST(FlowableTest, OverflowSkip) {
 }
 
 TEST(FlowableTest, SkipPartial) {
-  auto subscriber = make_ref<TestSubscriber<int64_t>>(2);
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(2);
   auto flowable = Flowables::range(0, 10)->skip(5);
   flowable->subscribe(subscriber);
 
@@ -289,7 +289,7 @@ TEST(FlowableTest, IgnoreElements) {
 }
 
 TEST(FlowableTest, IgnoreElementsPartial) {
-  auto subscriber = make_ref<TestSubscriber<int64_t>>(5);
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(5);
   auto flowable = Flowables::range(0, 10)->ignoreElements();
   flowable->subscribe(subscriber);
 
@@ -303,7 +303,7 @@ TEST(FlowableTest, IgnoreElementsPartial) {
 TEST(FlowableTest, IgnoreElementsError) {
   constexpr auto kMsg = "Failure";
 
-  auto subscriber = make_ref<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
   auto flowable = Flowables::error<int>(std::runtime_error(kMsg));
   flowable->subscribe(subscriber);
 
@@ -315,7 +315,7 @@ TEST(FlowableTest, FlowableError) {
   constexpr auto kMsg = "something broke!";
 
   auto flowable = Flowables::error<int>(std::runtime_error(kMsg));
-  auto subscriber = make_ref<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -327,7 +327,7 @@ TEST(FlowableTest, FlowableErrorPtr) {
   constexpr auto kMsg = "something broke!";
 
   auto flowable = Flowables::error<int>(std::runtime_error(kMsg));
-  auto subscriber = make_ref<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -337,7 +337,7 @@ TEST(FlowableTest, FlowableErrorPtr) {
 
 TEST(FlowableTest, FlowableEmpty) {
   auto flowable = Flowables::empty<int>();
-  auto subscriber = make_ref<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
   EXPECT_TRUE(subscriber->isComplete());
@@ -346,7 +346,7 @@ TEST(FlowableTest, FlowableEmpty) {
 
 TEST(FlowableTest, FlowableNever) {
   auto flowable = Flowables::never<int>();
-  auto subscriber = make_ref<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -359,7 +359,7 @@ TEST(FlowableTest, FlowableFromGenerator) {
   auto flowable = Flowables::fromGenerator<std::unique_ptr<int>>(
       [] { return std::unique_ptr<int>(); });
 
-  auto subscriber = make_ref<CollectingSubscriber<std::unique_ptr<int>>>(10);
+  auto subscriber = std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -379,7 +379,7 @@ TEST(FlowableTest, FlowableFromGeneratorException) {
     throw std::runtime_error(errorMsg);
   });
 
-  auto subscriber = make_ref<CollectingSubscriber<std::unique_ptr<int>>>(10);
+  auto subscriber = std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -412,7 +412,7 @@ TEST(FlowableTest, FlowableCompleteInTheMiddle) {
           })
           ->map([](int v) { return std::to_string(v); });
 
-  auto subscriber = make_ref<TestSubscriber<std::string>>(10);
+  auto subscriber = std::make_shared<TestSubscriber<std::string>>(10);
   flowable->subscribe(subscriber);
 
   EXPECT_TRUE(subscriber->isComplete());
@@ -466,7 +466,7 @@ TEST(FlowableTest, FlowableFromDifferentThreads) {
 
   auto t2 = std::thread([&] {
     folly::Baton<> on_flowable_complete;
-    flowable->subscribe(yarpl::make_ref<RangeCheckingSubscriber>(
+    flowable->subscribe(std::make_shared<RangeCheckingSubscriber>(
         expect_count, on_flowable_complete));
     on_flowable_complete.timed_wait(std::chrono::milliseconds(100));
   });
@@ -538,7 +538,7 @@ TEST(FlowableTest, FlowableFromDifferentThreadsWithError) {
 
   auto t2 = std::thread([&] {
     folly::Baton<> on_flowable_error;
-    flowable->subscribe(yarpl::make_ref<ErrorRangeCheckingSubscriber>(
+    flowable->subscribe(std::make_shared<ErrorRangeCheckingSubscriber>(
         expect, request, on_flowable_error, the_ex));
     on_flowable_error.timed_wait(std::chrono::milliseconds(100));
   });
@@ -560,7 +560,7 @@ TEST(FlowableTest, SubscribeMultipleTimes) {
   });
 
   auto setup_mock = [](auto request_num, auto& resps) {
-    auto mock = make_ref<StrictMockSubscriber>(request_num);
+    auto mock = std::make_shared<StrictMockSubscriber>(request_num);
 
     Sequence seq;
     EXPECT_CALL(*mock, onSubscribe_(_)).InSequence(seq);

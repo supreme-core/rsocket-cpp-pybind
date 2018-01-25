@@ -28,6 +28,6 @@ std::shared_ptr<Flowable<Payload>> ColdResumeHandler::handleResponderResumeStrea
 std::shared_ptr<Subscriber<Payload>> ColdResumeHandler::handleRequesterResumeStream(
     std::string /* streamToken */,
     size_t /* consumerAllowance */) {
-  return yarpl::make_ref<CancelingSubscriber<Payload>>();
+  return std::make_shared<CancelingSubscriber<Payload>>();
 }
 }

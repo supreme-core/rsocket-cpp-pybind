@@ -77,7 +77,7 @@ class Flowables {
       typename = typename std::enable_if<folly::is_invocable<
           OnSubscribe, std::shared_ptr<Subscriber<T>>>::value>::type>
   static std::shared_ptr<Flowable<T>> fromPublisher(OnSubscribe function) {
-    return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
+    return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
   }
 
   template <typename T>

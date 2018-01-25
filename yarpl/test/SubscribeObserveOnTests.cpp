@@ -25,7 +25,7 @@ TEST(ObserveSubscribeTests, SubscribeOnWorksAsExpected) {
     subscriber.onComplete();
   });
 
-  auto subscriber = make_ref<TestSubscriber<std::string>>(1);
+  auto subscriber = std::make_shared<TestSubscriber<std::string>>(1);
   f->subscribeOn(*worker.getEventBase())->subscribe(subscriber);
   subscriber->awaitTerminalEvent(std::chrono::milliseconds(100));
   EXPECT_EQ(1, subscriber->getValueCount());
@@ -183,7 +183,7 @@ TEST(ObserveSubscribeTests, EarlyCancelObserveOn) {
 
   Flowables::range(1, 100)
       ->observeOn(*worker.getEventBase())
-      ->subscribe(make_ref<EarlyCancelSubscriber>(
+      ->subscribe(std::make_shared<EarlyCancelSubscriber>(
           *worker.getEventBase(), subscriber_complete));
 
   CHECK_WAIT(subscriber_complete);

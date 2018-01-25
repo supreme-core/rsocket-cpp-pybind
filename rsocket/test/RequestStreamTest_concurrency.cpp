@@ -45,7 +45,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
     EXPECT_EQ(p.moveDataToString(), "initial");
     return Flowables::fromPublisher<Payload>(
         [this](std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
-          auto subscription = make_ref<StrictMock<MockSubscription>>();
+          auto subscription = std::make_shared<StrictMock<MockSubscription>>();
 
           std::thread([=] {
             CHECK_WAIT(this->batons_.onRequestReceived);
@@ -101,7 +101,7 @@ TEST(RequestStreamTest, OperationsAfterCancel) {
   auto requester = client->getRequester();
 
   auto subscriber_mock =
-      make_ref<testing::StrictMock<yarpl::mocks::MockSubscriber<std::string>>>(
+      std::make_shared<testing::StrictMock<yarpl::mocks::MockSubscriber<std::string>>>(
           0);
 
   std::shared_ptr<Subscription> subscription;

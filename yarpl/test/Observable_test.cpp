@@ -70,7 +70,7 @@ class CollectingObserver : public Observer<T> {
 /// exception was sent, the exception is thrown.
 template <typename T>
 std::vector<T> run(std::shared_ptr<Observable<T>> observable) {
-  auto collector = make_ref<CollectingObserver<T>>();
+  auto collector = std::make_shared<CollectingObserver<T>>();
   observable->subscribe(collector);
   return std::move(collector->values());
 }
@@ -220,7 +220,7 @@ TEST(Observable, SubscriptionCancellation) {
   });
 
   std::vector<int> v;
-  a->subscribe(make_ref<TakeObserver>(2, v));
+  a->subscribe(std::make_shared<TakeObserver>(2, v));
   EXPECT_EQ((unsigned long)2, v.size());
   EXPECT_EQ(2, emitted);
 }
@@ -264,7 +264,7 @@ TEST(Observable, toFlowableDrop) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -299,7 +299,7 @@ TEST(Observable, toFlowableErrorStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -321,7 +321,7 @@ TEST(Observable, toFlowableBufferStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -341,7 +341,7 @@ TEST(Observable, toFlowableLatestStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = make_ref<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -385,7 +385,7 @@ TEST(Observable, MapWithException) {
     return n;
   });
 
-  auto observer = yarpl::make_ref<CollectingObserver<int>>();
+  auto observer = std::make_shared<CollectingObserver<int>>();
   observable->subscribe(observer);
 
   EXPECT_EQ(observer->values(), std::vector<int>({1, 2}));
@@ -434,7 +434,7 @@ TEST(Observable, RangeWithReduceOneItem) {
 TEST(Observable, RangeWithReduceNoItem) {
   auto observable = Observable<>::range(0, 0)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
-  auto collector = make_ref<CollectingObserver<int64_t>>();
+  auto collector = std::make_shared<CollectingObserver<int64_t>>();
   observable->subscribe(collector);
   EXPECT_EQ(collector->error(), false);
   EXPECT_EQ(collector->values(), std::vector<int64_t>({}));
@@ -479,7 +479,7 @@ TEST(Observable, OverflowSkip) {
 }
 
 TEST(Observable, IgnoreElements) {
-  auto collector = make_ref<CollectingObserver<int64_t>>();
+  auto collector = std::make_shared<CollectingObserver<int64_t>>();
   auto observable = Observable<>::range(0, 105)->ignoreElements()->map(
       [](int64_t v) { return v + 1; });
   observable->subscribe(collector);
@@ -492,7 +492,7 @@ TEST(Observable, IgnoreElements) {
 TEST(Observable, Error) {
   auto observable =
       Observable<int>::error(std::runtime_error("something broke!"));
-  auto collector = make_ref<CollectingObserver<int>>();
+  auto collector = std::make_shared<CollectingObserver<int>>();
   observable->subscribe(collector);
 
   EXPECT_EQ(collector->complete(), false);
@@ -503,7 +503,7 @@ TEST(Observable, Error) {
 TEST(Observable, ErrorPtr) {
   auto observable =
       Observable<int>::error(std::runtime_error("something broke!"));
-  auto collector = make_ref<CollectingObserver<int>>();
+  auto collector = std::make_shared<CollectingObserver<int>>();
   observable->subscribe(collector);
 
   EXPECT_EQ(collector->complete(), false);
@@ -513,7 +513,7 @@ TEST(Observable, ErrorPtr) {
 
 TEST(Observable, Empty) {
   auto observable = Observable<int>::empty();
-  auto collector = make_ref<CollectingObserver<int>>();
+  auto collector = std::make_shared<CollectingObserver<int>>();
   observable->subscribe(collector);
 
   EXPECT_EQ(collector->complete(), true);
@@ -552,7 +552,7 @@ TEST(Observable, CancelReleasesObjects) {
   };
   auto observable = Observable<int>::create(std::move(lambda));
 
-  auto collector = make_ref<CollectingObserver<int>>();
+  auto collector = std::make_shared<CollectingObserver<int>>();
   observable->subscribe(collector);
 }
 
@@ -568,7 +568,7 @@ class InfiniteAsyncTestOperator
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<int>> observer) override {
-    auto subscription = make_ref<TestSubscription>(
+    auto subscription = std::make_shared<TestSubscription>(
         this->ref_from_this(this), std::move(observer), checkpoint_);
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
@@ -639,8 +639,8 @@ TEST(Observable, DISABLED_CancelSubscriptionChain) {
     });
   });
   auto infinite2 = infinite1->skip(1)->skip(1);
-  auto test1 = make_ref<InfiniteAsyncTestOperator>(infinite2, checkpoint2);
-  auto test2 = make_ref<InfiniteAsyncTestOperator>(test1->skip(1), checkpoint3);
+  auto test1 = std::make_shared<InfiniteAsyncTestOperator>(infinite2, checkpoint2);
+  auto test2 = std::make_shared<InfiniteAsyncTestOperator>(test1->skip(1), checkpoint3);
   auto skip = test2->skip(8);
 
   auto subscription = skip->subscribe([](int) {});

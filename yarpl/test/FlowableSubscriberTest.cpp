@@ -12,7 +12,7 @@ namespace {
 
 TEST(FlowableSubscriberTest, TestBasicFunctionality) {
   Sequence subscriber_seq;
-  auto subscriber = yarpl::make_ref<StrictMock<MockBaseSubscriber<int>>>();
+  auto subscriber = std::make_shared<StrictMock<MockBaseSubscriber<int>>>();
 
   EXPECT_CALL(*subscriber, onSubscribeImpl())
     .Times(1)
@@ -27,7 +27,7 @@ TEST(FlowableSubscriberTest, TestBasicFunctionality) {
     .Times(1)
     .InSequence(subscriber_seq);
 
-  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
   EXPECT_CALL(*subscription, request_(3))
     .Times(1)
     .WillOnce(InvokeWithoutArgs([&] {
@@ -39,8 +39,8 @@ TEST(FlowableSubscriberTest, TestBasicFunctionality) {
 }
 
 TEST(FlowableSubscriberTest, TestKeepRefToThisIsDisabled) {
-  auto subscriber = yarpl::make_ref<StrictMock<MockBaseSubscriber<int, false>>>();
-  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+  auto subscriber = std::make_shared<StrictMock<MockBaseSubscriber<int, false>>>();
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
 
   // tests that only a single reference exists to the Subscriber; clearing
   // reference in `auto subscriber` would cause it to deallocate
@@ -54,8 +54,8 @@ TEST(FlowableSubscriberTest, TestKeepRefToThisIsDisabled) {
   subscriber->onSubscribe(subscription);
 }
 TEST(FlowableSubscriberTest, TestKeepRefToThisIsEnabled) {
-  auto subscriber = yarpl::make_ref<StrictMock<MockBaseSubscriber<int>>>();
-  auto subscription = yarpl::make_ref<StrictMock<MockSubscription>>();
+  auto subscriber = std::make_shared<StrictMock<MockBaseSubscriber<int>>>();
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
 
   // tests that only a reference is held somewhere on the stack, so clearing
   // references to `BaseSubscriber` while in a signaling method won't

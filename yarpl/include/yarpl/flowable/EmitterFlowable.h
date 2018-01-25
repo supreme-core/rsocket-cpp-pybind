@@ -236,7 +236,7 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
   explicit EmitterWrapper(Emitter emitter) : emitter_(std::move(emitter)) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    auto ef = make_ref<EmiterSubscription<T>>(
+    auto ef = std::make_shared<EmiterSubscription<T>>(
         this->ref_from_this(this), std::move(subscriber));
     ef->init();
   }

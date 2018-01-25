@@ -187,7 +187,7 @@ void SetupResumeAcceptor::accept(
     return;
   }
 
-  auto subscriber = yarpl::make_ref<OneFrameSubscriber>(
+  auto subscriber = std::make_shared<OneFrameSubscriber>(
       *this, std::move(connection), std::move(onSetup), std::move(onResume));
   connections_.insert(subscriber);
   subscriber->setInput();

@@ -165,7 +165,7 @@ class MapOperator : public SingleOperator<U, D> {
   void subscribe(std::shared_ptr<SingleObserver<D>> observer) override {
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
-        make_ref<MapSubscription>(
+        std::make_shared<MapSubscription>(
             this->ref_from_this(this), std::move(observer)));
   }
 

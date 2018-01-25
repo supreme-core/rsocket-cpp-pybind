@@ -49,7 +49,7 @@ RSocketRequester::requestChannel(
       eb
     ]() mutable {
       auto responseSink = srs->streamsFactory().createChannelRequester(
-          yarpl::make_ref<ScheduledSubscriptionSubscriber<Payload>>(
+          std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
               std::move(subscriber), *eb));
       // responseSink is wrapped with thread scheduling
       // so all emissions happen on the right thread
@@ -58,7 +58,7 @@ RSocketRequester::requestChannel(
       // the requesting peer wasn't connected (or similar error)
       // and the Flowable it gets back will immediately call onError
       if (responseSink) {
-        requestStream->subscribe(yarpl::make_ref<ScheduledSubscriber<Payload>>(
+        requestStream->subscribe(std::make_shared<ScheduledSubscriber<Payload>>(
             std::move(responseSink), *eb));
       }
     };
@@ -87,7 +87,7 @@ RSocketRequester::requestStream(Payload request) {
     ]() mutable {
       srs->streamsFactory().createStreamRequester(
           std::move(request),
-          yarpl::make_ref<ScheduledSubscriptionSubscriber<Payload>>(
+          std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
               std::move(subscriber), *eb));
     };
     if (eb->isInEventBaseThread()) {
@@ -115,7 +115,7 @@ RSocketRequester::requestResponse(Payload request) {
     ]() mutable {
       srs->streamsFactory().createRequestResponseRequester(
           std::move(request),
-          yarpl::make_ref<ScheduledSubscriptionSingleObserver<Payload>>(
+          std::make_shared<ScheduledSubscriptionSingleObserver<Payload>>(
               std::move(observer), *eb));
     };
     if (eb->isInEventBaseThread()) {

@@ -193,7 +193,7 @@ void RSocketServer::onRSocketResume(
     // ScheduledFrameTransport and ScheduledFrameProcessor to ensure the
     // RSocketStateMachine continues to live on the same EventBase and the
     // IO happens in the new EventBase
-    auto scheduledFT = yarpl::make_ref<ScheduledFrameTransport>(
+    auto scheduledFT = std::make_shared<ScheduledFrameTransport>(
         std::make_shared<FrameTransportImpl>(std::move(connection)),
         eventBase, /* Transport EventBase */
         &serverState->eventBase_); /* StateMachine EventBase */

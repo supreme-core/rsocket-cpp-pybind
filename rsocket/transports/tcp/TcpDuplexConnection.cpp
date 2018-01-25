@@ -216,7 +216,7 @@ void TcpDuplexConnection::setInput(
     std::shared_ptr<DuplexConnection::Subscriber> inputSubscriber) {
   // we don't care if the subscriber will call request synchronously
   inputSubscriber->onSubscribe(
-      yarpl::make_ref<TcpInputSubscription>(tcpReaderWriter_));
+      std::make_shared<TcpInputSubscription>(tcpReaderWriter_));
   tcpReaderWriter_->setInput(std::move(inputSubscriber));
 }
 } // namespace rsocket
