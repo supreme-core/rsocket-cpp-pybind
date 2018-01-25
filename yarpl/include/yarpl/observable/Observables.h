@@ -12,7 +12,8 @@
 namespace yarpl {
 namespace observable {
 
-class Observables {
+template<>
+class Observable<void> {
  public:
   static std::shared_ptr<Observable<int64_t>> range(int64_t start, int64_t end) {
     auto lambda = [start, end](std::shared_ptr<Observer<int64_t>> observer) {
@@ -68,42 +69,8 @@ class Observables {
     return Observable<T>::create(std::move(lambda));
   }
 
-  template <
-      typename T,
-      typename OnSubscribe,
-      typename = typename std::enable_if<
-          folly::is_invocable<OnSubscribe, std::shared_ptr<Observer<T>>>::value>::
-          type>
-  static std::shared_ptr<Observable<T>> create(OnSubscribe function) {
-    return make_ref<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
-  }
-
-  template <typename T>
-  static std::shared_ptr<Observable<T>> empty() {
-    auto lambda = [](std::shared_ptr<Observer<T>> observer) {
-      observer->onComplete();
-    };
-    return Observable<T>::create(std::move(lambda));
-  }
-
-  template <typename T>
-  static std::shared_ptr<Observable<T>> error(folly::exception_wrapper ex) {
-    auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
-      observer->onError(std::move(ex));
-    };
-    return Observable<T>::create(std::move(lambda));
-  }
-
-  template <typename T, typename ExceptionType>
-  static std::shared_ptr<Observable<T>> error(const ExceptionType& ex) {
-    auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
-      observer->onError(std::move(ex));
-    };
-    return Observable<T>::create(std::move(lambda));
-  }
-
  private:
-  Observables() = delete;
+  Observable() = delete;
 };
 
 } // observable

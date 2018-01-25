@@ -259,7 +259,7 @@ TEST(Observable, CancelFromDifferentThread) {
 }
 
 TEST(Observable, toFlowableDrop) {
-  auto a = Observables::range(1, 10);
+  auto a = Observable<>::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::DROP);
 
   std::vector<int64_t> v;
@@ -294,7 +294,7 @@ TEST(Observable, toFlowableDropWithCancel) {
 }
 
 TEST(Observable, toFlowableErrorStrategy) {
-  auto a = Observables::range(1, 10);
+  auto a = Observable<>::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::ERROR);
 
   std::vector<int64_t> v;
@@ -316,7 +316,7 @@ TEST(Observable, toFlowableErrorStrategy) {
 }
 
 TEST(Observable, toFlowableBufferStrategy) {
-  auto a = Observables::range(1, 10);
+  auto a = Observable<>::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::BUFFER);
 
   std::vector<int64_t> v;
@@ -336,7 +336,7 @@ TEST(Observable, toFlowableBufferStrategy) {
 }
 
 TEST(Observable, toFlowableLatestStrategy) {
-  auto a = Observables::range(1, 10);
+  auto a = Observable<>::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::LATEST);
 
   std::vector<int64_t> v;
@@ -356,19 +356,19 @@ TEST(Observable, toFlowableLatestStrategy) {
 }
 
 TEST(Observable, Just) {
-  EXPECT_EQ(run(Observables::just(22)), std::vector<int>{22});
+  EXPECT_EQ(run(Observable<>::just(22)), std::vector<int>{22});
   EXPECT_EQ(
-      run(Observables::justN({12, 34, 56, 98})),
+      run(Observable<>::justN({12, 34, 56, 98})),
       std::vector<int>({12, 34, 56, 98}));
   EXPECT_EQ(
-      run(Observables::justN({"ab", "pq", "yz"})),
+      run(Observable<>::justN({"ab", "pq", "yz"})),
       std::vector<const char*>({"ab", "pq", "yz"}));
 }
 
 TEST(Observable, SingleMovable) {
   auto value = std::make_unique<int>(123456);
 
-  auto observable = Observables::justOnce(std::move(value));
+  auto observable = Observable<>::justOnce(std::move(value));
   EXPECT_EQ(std::size_t{1}, observable.use_count());
 
   auto values = run(std::move(observable));
@@ -378,7 +378,7 @@ TEST(Observable, SingleMovable) {
 }
 
 TEST(Observable, MapWithException) {
-  auto observable = Observables::justN<int>({1, 2, 3, 4})->map([](int n) {
+  auto observable = Observable<>::justN<int>({1, 2, 3, 4})->map([](int n) {
     if (n > 2) {
       throw std::runtime_error{"Too big!"};
     }
@@ -394,12 +394,12 @@ TEST(Observable, MapWithException) {
 }
 
 TEST(Observable, Range) {
-  auto observable = Observables::range(10, 14);
+  auto observable = Observable<>::range(10, 14);
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({10, 11, 12, 13}));
 }
 
 TEST(Observable, RangeWithMap) {
-  auto observable = Observables::range(1, 4)
+  auto observable = Observable<>::range(1, 4)
                         ->map([](int64_t v) { return v * v; })
                         ->map([](int64_t v) { return v * v; })
                         ->map([](int64_t v) { return std::to_string(v); });
@@ -408,17 +408,17 @@ TEST(Observable, RangeWithMap) {
 }
 
 TEST(Observable, RangeWithReduce) {
-  auto observable = Observables::range(0, 10)->reduce(
+  auto observable = Observable<>::range(0, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({45}));
 }
 
 TEST(Observable, RangeWithReduceByMultiplication) {
-  auto observable = Observables::range(0, 10)->reduce(
+  auto observable = Observable<>::range(0, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc * v; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({0}));
 
-  observable = Observables::range(1, 10)->reduce(
+  observable = Observable<>::range(1, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc * v; });
   EXPECT_EQ(
       run(std::move(observable)),
@@ -426,13 +426,13 @@ TEST(Observable, RangeWithReduceByMultiplication) {
 }
 
 TEST(Observable, RangeWithReduceOneItem) {
-  auto observable = Observables::range(5, 6)->reduce(
+  auto observable = Observable<>::range(5, 6)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({5}));
 }
 
 TEST(Observable, RangeWithReduceNoItem) {
-  auto observable = Observables::range(0, 0)->reduce(
+  auto observable = Observable<>::range(0, 0)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   auto collector = make_ref<CollectingObserver<int64_t>>();
   observable->subscribe(collector);
@@ -442,7 +442,7 @@ TEST(Observable, RangeWithReduceNoItem) {
 
 TEST(Observable, RangeWithReduceToBiggerType) {
   auto observable =
-      Observables::range(5, 6)
+      Observable<>::range(5, 6)
           ->map([](int64_t v) { return (int32_t)v; })
           ->reduce([](int64_t acc, int32_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({5}));
@@ -450,7 +450,7 @@ TEST(Observable, RangeWithReduceToBiggerType) {
 
 TEST(Observable, StringReduce) {
   auto observable =
-      Observables::justN<std::string>(
+      Observable<>::justN<std::string>(
           {"a", "b", "c", "d", "e", "f", "g", "h", "i"})
           ->reduce([](std::string acc, std::string v) { return acc + v; });
   EXPECT_EQ(
@@ -459,28 +459,28 @@ TEST(Observable, StringReduce) {
 
 TEST(Observable, RangeWithFilter) {
   auto observable =
-      Observables::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
+      Observable<>::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({1, 3, 5, 7, 9}));
 }
 
 TEST(Observable, SimpleTake) {
   EXPECT_EQ(
-      run(Observables::range(0, 100)->take(3)),
+      run(Observable<>::range(0, 100)->take(3)),
       std::vector<int64_t>({0, 1, 2}));
 }
 
 TEST(Observable, SimpleSkip) {
   EXPECT_EQ(
-      run(Observables::range(0, 10)->skip(8)), std::vector<int64_t>({8, 9}));
+      run(Observable<>::range(0, 10)->skip(8)), std::vector<int64_t>({8, 9}));
 }
 
 TEST(Observable, OverflowSkip) {
-  EXPECT_EQ(run(Observables::range(0, 10)->skip(12)), std::vector<int64_t>({}));
+  EXPECT_EQ(run(Observable<>::range(0, 10)->skip(12)), std::vector<int64_t>({}));
 }
 
 TEST(Observable, IgnoreElements) {
   auto collector = make_ref<CollectingObserver<int64_t>>();
-  auto observable = Observables::range(0, 105)->ignoreElements()->map(
+  auto observable = Observable<>::range(0, 105)->ignoreElements()->map(
       [](int64_t v) { return v + 1; });
   observable->subscribe(collector);
 
@@ -491,7 +491,7 @@ TEST(Observable, IgnoreElements) {
 
 TEST(Observable, Error) {
   auto observable =
-      Observables::error<int>(std::runtime_error("something broke!"));
+      Observable<int>::error(std::runtime_error("something broke!"));
   auto collector = make_ref<CollectingObserver<int>>();
   observable->subscribe(collector);
 
@@ -502,7 +502,7 @@ TEST(Observable, Error) {
 
 TEST(Observable, ErrorPtr) {
   auto observable =
-      Observables::error<int>(std::runtime_error("something broke!"));
+      Observable<int>::error(std::runtime_error("something broke!"));
   auto collector = make_ref<CollectingObserver<int>>();
   observable->subscribe(collector);
 
@@ -512,7 +512,7 @@ TEST(Observable, ErrorPtr) {
 }
 
 TEST(Observable, Empty) {
-  auto observable = Observables::empty<int>();
+  auto observable = Observable<int>::empty();
   auto collector = make_ref<CollectingObserver<int>>();
   observable->subscribe(collector);
 
@@ -521,7 +521,7 @@ TEST(Observable, Empty) {
 }
 
 TEST(Observable, ObserversComplete) {
-  auto observable = Observables::empty<int>();
+  auto observable = Observable<int>::empty();
   bool completed = false;
 
   auto observer = Observers::create<int>(
@@ -534,7 +534,7 @@ TEST(Observable, ObserversComplete) {
 }
 
 TEST(Observable, ObserversError) {
-  auto observable = Observables::error<int>(std::runtime_error("Whoops"));
+  auto observable = Observable<int>::error(std::runtime_error("Whoops"));
   bool errored = false;
 
   auto observer = Observers::create<int>(
@@ -667,7 +667,7 @@ TEST(Observable, DoOnSubscribeTest) {
 
 TEST(Observable, DoOnNextTest) {
   std::vector<int64_t> values;
-  auto observable = Observables::range(10, 14)->doOnNext(
+  auto observable = Observable<>::range(10, 14)->doOnNext(
       [&](int64_t v) { values.push_back(v); });
   auto values2 = run(std::move(observable));
   EXPECT_EQ(values, values2);

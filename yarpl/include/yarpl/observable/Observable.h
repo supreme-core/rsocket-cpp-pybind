@@ -29,20 +29,43 @@ namespace observable {
 */
 enum class BackpressureStrategy { BUFFER, DROP, ERROR, LATEST, MISSING };
 
-template <typename T>
+template <typename T = void>
 class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
  public:
-  virtual std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>>) = 0;
+   static std::shared_ptr<Observable<T>> empty() {
+     auto lambda = [](std::shared_ptr<Observer<T>> observer) {
+       observer->onComplete();
+     };
+     return Observable<T>::create(std::move(lambda));
+   }
 
-  /**
-   * Subscribe overload that accepts lambdas.
-   */
-  template <
-      typename Next,
-      typename =
-          typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
-  std::shared_ptr<Subscription> subscribe(Next next) {
-    return subscribe(Observers::create<T>(std::move(next)));
+   static std::shared_ptr<Observable<T>> error(folly::exception_wrapper ex) {
+     auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
+       observer->onError(std::move(ex));
+     };
+     return Observable<T>::create(std::move(lambda));
+   }
+
+   template <typename ExceptionType>
+   static std::shared_ptr<Observable<T>> error(const ExceptionType& ex) {
+     auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
+       observer->onError(std::move(ex));
+     };
+     return Observable<T>::create(std::move(lambda));
+   }
+
+   virtual std::shared_ptr<Subscription> subscribe(
+       std::shared_ptr<Observer<T>>) = 0;
+
+   /**
+    * Subscribe overload that accepts lambdas.
+    */
+   template <
+       typename Next,
+       typename =
+           typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
+   std::shared_ptr<Subscription> subscribe(Next next) {
+     return subscribe(Observers::create<T>(std::move(next)));
   }
 
   /**
