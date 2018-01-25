@@ -6,8 +6,6 @@
 #include <functional>
 #include <iostream>
 #include <memory>
-
-#include "yarpl/Refcounted.h"
 #include "yarpl/observable/Subscription.h"
 
 namespace yarpl {

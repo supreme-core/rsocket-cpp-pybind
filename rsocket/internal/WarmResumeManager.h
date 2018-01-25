@@ -3,7 +3,6 @@
 #pragma once
 
 #include <deque>
-
 #include "rsocket/RSocketStats.h"
 #include "rsocket/ResumeManager.h"
 

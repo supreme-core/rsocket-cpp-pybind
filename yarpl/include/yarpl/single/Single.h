@@ -15,8 +15,10 @@ namespace yarpl {
 namespace single {
 
 template <typename T>
-class Single : public virtual Refcounted, public yarpl::enable_get_ref {
+class Single : public yarpl::enable_get_ref {
  public:
+  virtual ~Single() = default;
+
   virtual void subscribe(std::shared_ptr<SingleObserver<T>>) = 0;
 
   /**
@@ -75,8 +77,10 @@ class Single : public virtual Refcounted, public yarpl::enable_get_ref {
 };
 
 template <>
-class Single<void> : public virtual Refcounted {
+class Single<void> {
  public:
+  virtual ~Single() = default;
+
   virtual void subscribe(std::shared_ptr<SingleObserverBase<void>>) = 0;
 
   /**

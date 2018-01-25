@@ -17,9 +17,9 @@ namespace flowable {
 namespace details {
 
 template <typename T>
-class EmiterBase : public virtual Refcounted {
+class EmiterBase {
  public:
-  ~EmiterBase() = default;
+  virtual ~EmiterBase() = default;
 
   virtual std::tuple<int64_t, bool> emit(Subscriber<T>&, int64_t) = 0;
 };

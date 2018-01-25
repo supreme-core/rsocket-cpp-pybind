@@ -4,12 +4,11 @@
 
 #include <vector>
 #include <folly/Synchronized.h>
-#include "yarpl/Refcounted.h"
 
 namespace yarpl {
 namespace observable {
 
-class Subscription : public virtual Refcounted {
+class Subscription {
  public:
   virtual ~Subscription() = default;
   virtual void cancel();

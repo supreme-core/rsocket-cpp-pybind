@@ -39,7 +39,7 @@ class TrackingSubscriber;
 } // namespace details
 
 template <typename T>
-class Flowable : public virtual Refcounted, public yarpl::enable_get_ref {
+class Flowable : public yarpl::enable_get_ref {
  public:
    virtual ~Flowable() = default;
 

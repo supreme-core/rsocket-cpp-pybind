@@ -12,7 +12,7 @@ namespace yarpl {
 namespace flowable {
 
 template <typename T>
-class Subscriber : public virtual Refcounted, boost::noncopyable {
+class Subscriber : boost::noncopyable {
  public:
   virtual ~Subscriber() = default;
   virtual void onSubscribe(std::shared_ptr<Subscription>) = 0;

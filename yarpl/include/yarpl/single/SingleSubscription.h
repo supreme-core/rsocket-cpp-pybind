@@ -7,7 +7,7 @@
 namespace yarpl {
 namespace single {
 
-class SingleSubscription : public virtual Refcounted {
+class SingleSubscription {
  public:
   virtual ~SingleSubscription() = default;
   virtual void cancel() = 0;

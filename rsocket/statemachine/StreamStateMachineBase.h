@@ -3,11 +3,8 @@
 #pragma once
 
 #include <memory>
-
 #include <folly/ExceptionWrapper.h>
-
 #include "rsocket/internal/Common.h"
-#include "yarpl/Refcounted.h"
 
 namespace folly {
 class IOBuf;
@@ -22,7 +19,7 @@ struct Payload;
 ///
 /// The instances might be destroyed on a different thread than they were
 /// created.
-class StreamStateMachineBase : public virtual yarpl::Refcounted {
+class StreamStateMachineBase {
  public:
   StreamStateMachineBase(
       std::shared_ptr<StreamsWriter> writer,

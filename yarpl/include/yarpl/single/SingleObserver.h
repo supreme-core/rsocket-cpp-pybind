@@ -13,8 +13,9 @@ namespace yarpl {
 namespace single {
 
 template <typename T>
-class SingleObserver : public virtual Refcounted, public yarpl::enable_get_ref {
+class SingleObserver : public yarpl::enable_get_ref {
 public:
+  virtual ~SingleObserver() = default;
   virtual void onSubscribe(std::shared_ptr<SingleSubscription>) = 0;
   virtual void onSuccess(T) = 0;
   virtual void onError(folly::exception_wrapper) = 0;
@@ -58,8 +59,10 @@ class SingleObserverBase : public SingleObserver<T> {
 
 /// Specialization of SingleObserverBase<void>.
 template <>
-class SingleObserverBase<void> : public virtual Refcounted {
+class SingleObserverBase<void> {
  public:
+   virtual ~SingleObserverBase() = default;
+
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
   virtual void onSubscribe(std::shared_ptr<SingleSubscription> subscription) {

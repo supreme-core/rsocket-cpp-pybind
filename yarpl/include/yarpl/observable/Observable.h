@@ -30,7 +30,7 @@ namespace observable {
 enum class BackpressureStrategy { BUFFER, DROP, ERROR, LATEST, MISSING };
 
 template <typename T = void>
-class Observable : public virtual Refcounted, public yarpl::enable_get_ref {
+class Observable : public yarpl::enable_get_ref {
  public:
    static std::shared_ptr<Observable<T>> empty() {
      auto lambda = [](std::shared_ptr<Observer<T>> observer) {

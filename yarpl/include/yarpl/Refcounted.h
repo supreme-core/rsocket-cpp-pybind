@@ -51,11 +51,6 @@ void atomic_store(AtomicReference<T>* ar, std::shared_ptr<T> r) {
   *ar->ref.lock() = std::move(r);
 }
 
-class Refcounted {
-public:
-  virtual ~Refcounted() = default;
-};
-
 class enable_get_ref : public std::enable_shared_from_this<enable_get_ref> {
  private:
   virtual void dummy_internal_get_ref() {}
@@ -85,14 +80,6 @@ public:
 //TODO(lehecka): removing
 template <typename T, typename CastTo = T, typename... Args>
 std::shared_ptr<CastTo> make_ref(Args&&... args) {
-  static_assert(
-      std::is_base_of<Refcounted, std::decay_t<T>>::value,
-      "std::shared_ptr can only be constructed with a Refcounted object");
-
-  static_assert(
-      std::is_base_of<std::decay_t<CastTo>, std::decay_t<T>>::value,
-      "Concrete type must be a subclass of casted-to-type");
-
   auto r = std::static_pointer_cast<CastTo>(
       std::make_shared<T>(std::forward<Args>(args)...));
   return std::move(r);

@@ -2,18 +2,16 @@
 
 #pragma once
 
+#include <folly/ExceptionWrapper.h>
+#include <glog/logging.h>
 #include "yarpl/Refcounted.h"
 #include "yarpl/observable/Subscriptions.h"
-
-#include <folly/ExceptionWrapper.h>
-
-#include <glog/logging.h>
 
 namespace yarpl {
 namespace observable {
 
 template <typename T>
-class Observer : public virtual Refcounted, public yarpl::enable_get_ref {
+class Observer : public yarpl::enable_get_ref {
  public:
   // Note: If any of the following methods is overridden in a subclass, the new
   // methods SHOULD ensure that these are invoked as well.
