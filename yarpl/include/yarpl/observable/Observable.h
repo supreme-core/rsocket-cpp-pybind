@@ -54,6 +54,23 @@ class Observable : public yarpl::enable_get_ref {
      return Observable<T>::create(std::move(lambda));
    }
 
+   /**
+    * The Defer operator waits until an observer subscribes to it, and then it
+    * generates an Observable with an ObservableFactory function. It
+    * does this afresh for each subscriber, so although each subscriber may
+    * think it is subscribing to the same Observable, in fact each subscriber
+    * gets its own individual sequence.
+    */
+   template <
+       typename ObservableFactory,
+       typename = typename std::enable_if<folly::is_invocable_r<
+           std::shared_ptr<Observable<T>>,
+           ObservableFactory>::value>::type>
+   static std::shared_ptr<Observable<T>> defer(ObservableFactory);
+
+   template <typename OnSubscribe>
+   static std::shared_ptr<Observable<T>> create(OnSubscribe);
+
    virtual std::shared_ptr<Subscription> subscribe(
        std::shared_ptr<Observer<T>>) = 0;
 
@@ -103,9 +120,6 @@ class Observable : public yarpl::enable_get_ref {
   std::shared_ptr<Subscription> subscribe() {
     return subscribe(Observers::createNull<T>());
   }
-
-  template <typename OnSubscribe>
-  static std::shared_ptr<Observable<T>> create(OnSubscribe);
 
   template <
       typename Function,
@@ -170,6 +184,7 @@ class Observable : public yarpl::enable_get_ref {
 } // observable
 } // yarpl
 
+#include "yarpl/observable/DeferObservable.h"
 #include "yarpl/observable/ObservableOperator.h"
 
 namespace yarpl {
@@ -184,6 +199,13 @@ std::shared_ptr<Observable<T>> Observable<T>::create(OnSubscribe function) {
 
   return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
       std::move(function));
+}
+
+template <typename T>
+template <typename ObservableFactory, typename>
+std::shared_ptr<Observable<T>> Observable<T>::defer(ObservableFactory factory) {
+  return std::make_shared<details::DeferObservable<T, ObservableFactory>>(
+      std::move(factory));
 }
 
 template <typename T>

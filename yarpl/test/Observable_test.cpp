@@ -736,3 +736,32 @@ TEST(Observable, DoOnTest) {
        [&](const auto&) { checkpoint2.Call(); })
       ->subscribe();
 }
+
+TEST(Observable, DeferTest) {
+  int switchValue = 0;
+  auto observable = Observable<int64_t>::defer([&]() {
+    if (switchValue == 0) {
+      return Observable<>::range(1, 2);
+    } else {
+      return Observable<>::range(3, 4);
+    }
+  });
+
+  EXPECT_EQ(run(observable), std::vector<int64_t>({1}));
+  switchValue = 1;
+  EXPECT_EQ(run(observable), std::vector<int64_t>({3}));
+}
+
+TEST(Observable, DeferExceptionTest) {
+  auto observable =
+      Observable<int>::defer([&]() -> std::shared_ptr<Observable<int>> {
+        throw std::runtime_error{"Too big!"};
+      });
+
+  auto observer = std::make_shared<CollectingObserver<int>>();
+  observable->subscribe(observer);
+
+  EXPECT_TRUE(observer->error());
+  //TODO(lehecka): fix slicing!
+  //EXPECT_EQ(observer->errorMsg(), "Too big!");
+}
