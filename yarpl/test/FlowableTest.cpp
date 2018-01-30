@@ -10,8 +10,8 @@
 #include "yarpl/flowable/TestSubscriber.h"
 #include "yarpl/test_utils/Mocks.h"
 
-namespace yarpl {
-namespace flowable {
+using namespace yarpl::flowable;
+
 namespace {
 
 /*
@@ -652,5 +652,31 @@ TEST(FlowableTest, ConsumerThrows_OnComplete) {
   }
 }
 
-} // namespace flowable
-} // namespace yarpl
+TEST(FlowableTest , DeferTest) {
+  int switchValue = 0;
+  auto flowable = Flowable<int64_t>::defer([&]() {
+    if (switchValue == 0) {
+      return Flowable<>::range(1, 1);
+    } else {
+      return Flowable<>::range(3, 1);
+    }
+  });
+
+  EXPECT_EQ(run(flowable), std::vector<int64_t>({1}));
+  switchValue = 1;
+  EXPECT_EQ(run(flowable), std::vector<int64_t>({3}));
+}
+
+TEST(FlowableTest, DeferExceptionTest) {
+  auto flowable =
+      Flowable<int>::defer([&]() -> std::shared_ptr<Flowable<int>> {
+        throw std::runtime_error{"Too big!"};
+      });
+
+  auto subscriber = std::make_shared<TestSubscriber<int>>();
+  flowable->subscribe(subscriber);
+
+  EXPECT_TRUE(subscriber->isError());
+  //TODO(lehecka): fix slicing
+  //EXPECT_EQ(subscriber->getErrorMsg(), "Too big!");
+}

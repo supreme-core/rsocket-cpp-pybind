@@ -131,6 +131,20 @@ class Flowable : public yarpl::enable_get_ref {
   template <typename TGenerator>
   static std::shared_ptr<Flowable<T>> fromGenerator(TGenerator generator);
 
+  /**
+   * The Defer operator waits until a subscriber subscribes to it, and then it
+   * generates a Flowabe with a FlowableFactory function. It
+   * does this afresh for each subscriber, so although each subscriber may
+   * think it is subscribing to the same Flowable, in fact each subscriber
+   * gets its own individual sequence.
+   */
+  template <
+      typename FlowableFactory,
+      typename = typename std::enable_if<folly::is_invocable_r<
+          std::shared_ptr<Flowable<T>>,
+          FlowableFactory>::value>::type>
+  static std::shared_ptr<Flowable<T>> defer(FlowableFactory);
+
   template <
       typename Function,
       typename R = typename std::result_of<Function(T)>::type>
@@ -181,6 +195,7 @@ class Flowable : public yarpl::enable_get_ref {
 } // flowable
 } // yarpl
 
+#include "yarpl/flowable/DeferFlowable.h"
 #include "yarpl/flowable/EmitterFlowable.h"
 #include "yarpl/flowable/FlowableOperator.h"
 
@@ -218,6 +233,13 @@ std::shared_ptr<Flowable<T>> Flowable<T>::fromGenerator(TGenerator generator) {
     }
   };
   return Flowable<T>::create(std::move(lambda));
+}
+
+template <typename T>
+template <typename FlowableFactory, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::defer(FlowableFactory factory) {
+  return std::make_shared<details::DeferFlowable<T, FlowableFactory>>(
+      std::move(factory));
 }
 
 template <typename T>
