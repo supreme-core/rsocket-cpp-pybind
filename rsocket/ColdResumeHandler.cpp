@@ -21,7 +21,7 @@ std::string ColdResumeHandler::generateStreamToken(
 std::shared_ptr<Flowable<Payload>> ColdResumeHandler::handleResponderResumeStream(
     std::string /* streamToken */,
     size_t /* publisherAllowance */) {
-  return Flowables::error<Payload>(
+  return Flowable<Payload>::error(
       std::logic_error("ResumeHandler method not implemented"));
 }
 

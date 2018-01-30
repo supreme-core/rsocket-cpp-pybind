@@ -282,7 +282,7 @@ template <typename T>
 auto Observable<T>::toFlowable(BackpressureStrategy strategy) {
   // we currently ONLY support the DROP strategy
   // so do not use the strategy parameter for anything
-  return yarpl::flowable::Flowables::fromPublisher<T>([
+  return yarpl::flowable::Flowable<T>::fromPublisher([
     thisObservable = this->ref_from_this(this),
     strategy
   ](std::shared_ptr<flowable::Subscriber<T>> subscriber) {

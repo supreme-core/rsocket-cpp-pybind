@@ -14,7 +14,7 @@ RSocketResponder::handleRequestResponse(rsocket::Payload, rsocket::StreamId) {
 
 std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
 RSocketResponder::handleRequestStream(rsocket::Payload, rsocket::StreamId) {
-  return yarpl::flowable::Flowables::error<rsocket::Payload>(
+  return yarpl::flowable::Flowable<rsocket::Payload>::error(
       std::logic_error("handleRequestStream not implemented"));
 }
 
@@ -23,7 +23,7 @@ RSocketResponder::handleRequestChannel(
     rsocket::Payload,
     std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>,
     rsocket::StreamId) {
-  return yarpl::flowable::Flowables::error<rsocket::Payload>(
+  return yarpl::flowable::Flowable<rsocket::Payload>::error(
       std::logic_error("handleRequestChannel not implemented"));
 }
 
@@ -109,7 +109,7 @@ RSocketResponder::handleRequestChannelCore(
   auto eagerSubscriber = std::make_shared<EagerSubscriberBridge>();
   auto flowable = handleRequestChannel(
       std::move(request),
-      yarpl::flowable::Flowables::fromPublisher<Payload>(
+      yarpl::flowable::Flowable<rsocket::Payload>::fromPublisher(
           [eagerSubscriber](
               std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
                   subscriber) { eagerSubscriber->subscribe(subscriber); }),

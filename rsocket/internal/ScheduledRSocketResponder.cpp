@@ -36,7 +36,7 @@ ScheduledRSocketResponder::handleRequestStream(
     StreamId streamId) {
   auto innerFlowable = inner_->handleRequestStream(std::move(request),
                                                    streamId);
-  return yarpl::flowable::Flowables::fromPublisher<Payload>(
+  return yarpl::flowable::Flowable<Payload>::fromPublisher(
   [innerFlowable = std::move(innerFlowable), eventBase = &eventBase_](
       std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
   subscriber) {
@@ -52,7 +52,7 @@ ScheduledRSocketResponder::handleRequestChannel(
     std::shared_ptr<yarpl::flowable::Flowable<Payload>>
     requestStream,
     StreamId streamId) {
-  auto requestStreamFlowable = yarpl::flowable::Flowables::fromPublisher<Payload>(
+  auto requestStreamFlowable = yarpl::flowable::Flowable<Payload>::fromPublisher(
   [requestStream = std::move(requestStream), eventBase = &eventBase_](
       std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
   subscriber) {
@@ -64,7 +64,7 @@ ScheduledRSocketResponder::handleRequestChannel(
                                                     std::move(
                                                         requestStreamFlowable),
                                                     streamId);
-  return yarpl::flowable::Flowables::fromPublisher<Payload>(
+  return yarpl::flowable::Flowable<Payload>::fromPublisher(
   [innerFlowable = std::move(innerFlowable), eventBase = &eventBase_](
       std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
   subscriber) {

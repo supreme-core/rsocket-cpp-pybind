@@ -181,7 +181,7 @@ TEST(ObserveSubscribeTests, EarlyCancelObserveOn) {
 
   folly::Baton<> subscriber_complete;
 
-  Flowables::range(1, 100)
+  Flowable<>::range(1, 100)
       ->observeOn(*worker.getEventBase())
       ->subscribe(std::make_shared<EarlyCancelSubscriber>(
           *worker.getEventBase(), subscriber_complete));

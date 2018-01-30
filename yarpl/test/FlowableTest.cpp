@@ -83,14 +83,14 @@ std::vector<T> run(
 } // namespace
 
 TEST(FlowableTest, SingleFlowable) {
-  auto flowable = Flowables::just(10);
+  auto flowable = Flowable<>::just(10);
   flowable.reset();
 }
 
 TEST(FlowableTest, SingleMovableFlowable) {
   auto value = std::make_unique<int>(123456);
 
-  auto flowable = Flowables::justOnce(std::move(value));
+  auto flowable = Flowable<>::justOnce(std::move(value));
   EXPECT_EQ(1, flowable.use_count());
 
   size_t received = 0;
@@ -105,24 +105,24 @@ TEST(FlowableTest, SingleMovableFlowable) {
 }
 
 TEST(FlowableTest, JustFlowable) {
-  EXPECT_EQ(run(Flowables::just(22)), std::vector<int>{22});
+  EXPECT_EQ(run(Flowable<>::just(22)), std::vector<int>{22});
   EXPECT_EQ(
-      run(Flowables::justN({12, 34, 56, 98})),
+      run(Flowable<>::justN({12, 34, 56, 98})),
       std::vector<int>({12, 34, 56, 98}));
   EXPECT_EQ(
-      run(Flowables::justN({"ab", "pq", "yz"})),
+      run(Flowable<>::justN({"ab", "pq", "yz"})),
       std::vector<const char*>({"ab", "pq", "yz"}));
 }
 
 TEST(FlowableTest, JustIncomplete) {
-  auto flowable = Flowables::justN<std::string>({"a", "b", "c"})->take(2);
+  auto flowable = Flowable<>::justN<std::string>({"a", "b", "c"})->take(2);
   EXPECT_EQ(run(std::move(flowable)), std::vector<std::string>({"a", "b"}));
 
-  flowable = Flowables::justN<std::string>({"a", "b", "c"})->take(2)->take(1);
+  flowable = Flowable<>::justN<std::string>({"a", "b", "c"})->take(2)->take(1);
   EXPECT_EQ(run(std::move(flowable)), std::vector<std::string>({"a"}));
   flowable.reset();
 
-  flowable = Flowables::justN<std::string>(
+  flowable = Flowable<>::justN<std::string>(
                  {"a", "b", "c", "d", "e", "f", "g", "h", "i"})
                  ->map([](std::string s) {
                    s[0] = ::toupper(s[0]);
@@ -137,7 +137,7 @@ TEST(FlowableTest, JustIncomplete) {
 }
 
 TEST(FlowableTest, MapWithException) {
-  auto flowable = Flowables::justN<int>({1, 2, 3, 4})->map([](int n) {
+  auto flowable = Flowable<>::justN<int>({1, 2, 3, 4})->map([](int n) {
     if (n > 2) {
       throw std::runtime_error{"Too big!"};
     }
@@ -154,11 +154,11 @@ TEST(FlowableTest, MapWithException) {
 
 TEST(FlowableTest, Range) {
   EXPECT_EQ(
-      run(Flowables::range(10, 5)), std::vector<int64_t>({10, 11, 12, 13, 14}));
+      run(Flowable<>::range(10, 5)), std::vector<int64_t>({10, 11, 12, 13, 14}));
 }
 
 TEST(FlowableTest, RangeWithMap) {
-  auto flowable = Flowables::range(1, 3)
+  auto flowable = Flowable<>::range(1, 3)
                       ->map([](int64_t v) { return v * v; })
                       ->map([](int64_t v) { return v * v; })
                       ->map([](int64_t v) { return std::to_string(v); });
@@ -167,17 +167,17 @@ TEST(FlowableTest, RangeWithMap) {
 }
 
 TEST(FlowableTest, RangeWithReduceMoreItems) {
-  auto flowable = Flowables::range(0, 10)->reduce(
+  auto flowable = Flowable<>::range(0, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<int64_t>({45}));
 }
 
 TEST(FlowableTest, RangeWithReduceByMultiplication) {
-  auto flowable = Flowables::range(0, 10)->reduce(
+  auto flowable = Flowable<>::range(0, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc * v; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<int64_t>({0}));
 
-  flowable = Flowables::range(1, 10)->reduce(
+  flowable = Flowable<>::range(1, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc * v; });
   EXPECT_EQ(
       run(std::move(flowable)),
@@ -185,20 +185,20 @@ TEST(FlowableTest, RangeWithReduceByMultiplication) {
 }
 
 TEST(FlowableTest, RangeWithReduceLessItems) {
-  auto flowable = Flowables::range(0, 10)->reduce(
+  auto flowable = Flowable<>::range(0, 10)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   // Even if we ask for 1 item only, it will reduce all the items
   EXPECT_EQ(run(std::move(flowable), 5), std::vector<int64_t>({45}));
 }
 
 TEST(FlowableTest, RangeWithReduceOneItem) {
-  auto flowable = Flowables::range(5, 1)->reduce(
+  auto flowable = Flowable<>::range(5, 1)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<int64_t>({5}));
 }
 
 TEST(FlowableTest, RangeWithReduceNoItem) {
-  auto flowable = Flowables::range(0, 0)->reduce(
+  auto flowable = Flowable<>::range(0, 0)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(100);
   flowable->subscribe(subscriber);
@@ -208,7 +208,7 @@ TEST(FlowableTest, RangeWithReduceNoItem) {
 }
 
 TEST(FlowableTest, RangeWithFilterAndReduce) {
-  auto flowable = Flowables::range(0, 10)
+  auto flowable = Flowable<>::range(0, 10)
                       ->filter([](int64_t v) { return v % 2 != 0; })
                       ->reduce([](int64_t acc, int64_t v) { return acc + v; });
   EXPECT_EQ(
@@ -216,7 +216,7 @@ TEST(FlowableTest, RangeWithFilterAndReduce) {
 }
 
 TEST(FlowableTest, RangeWithReduceToBiggerType) {
-  auto flowable = Flowables::range(5, 1)
+  auto flowable = Flowable<>::range(5, 1)
                       ->map([](int64_t v) { return (char)(v + 10); })
                       ->reduce([](int64_t acc, char v) { return acc + v; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<int64_t>({15}));
@@ -224,7 +224,7 @@ TEST(FlowableTest, RangeWithReduceToBiggerType) {
 
 TEST(FlowableTest, StringReduce) {
   auto flowable =
-      Flowables::justN<std::string>(
+      Flowable<>::justN<std::string>(
           {"a", "b", "c", "d", "e", "f", "g", "h", "i"})
           ->reduce([](std::string acc, std::string v) { return acc + v; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<std::string>({"abcdefghi"}));
@@ -232,18 +232,18 @@ TEST(FlowableTest, StringReduce) {
 
 TEST(FlowableTest, RangeWithFilterRequestMoreItems) {
   auto flowable =
-      Flowables::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
+      Flowable<>::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<int64_t>({1, 3, 5, 7, 9}));
 }
 
 TEST(FlowableTest, RangeWithFilterRequestLessItems) {
   auto flowable =
-      Flowables::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
+      Flowable<>::range(0, 10)->filter([](int64_t v) { return v % 2 != 0; });
   EXPECT_EQ(run(std::move(flowable), 5), std::vector<int64_t>({1, 3, 5, 7, 9}));
 }
 
 TEST(FlowableTest, RangeWithFilterAndMap) {
-  auto flowable = Flowables::range(0, 10)
+  auto flowable = Flowable<>::range(0, 10)
                       ->filter([](int64_t v) { return v % 2 != 0; })
                       ->map([](int64_t v) { return v + 10; });
   EXPECT_EQ(
@@ -251,7 +251,7 @@ TEST(FlowableTest, RangeWithFilterAndMap) {
 }
 
 TEST(FlowableTest, RangeWithMapAndFilter) {
-  auto flowable = Flowables::range(0, 10)
+  auto flowable = Flowable<>::range(0, 10)
                       ->map([](int64_t v) { return (char)(v + 10); })
                       ->filter([](char v) { return v % 2 != 0; });
   EXPECT_EQ(run(std::move(flowable)), std::vector<char>({11, 13, 15, 17, 19}));
@@ -259,23 +259,23 @@ TEST(FlowableTest, RangeWithMapAndFilter) {
 
 TEST(FlowableTest, SimpleTake) {
   EXPECT_EQ(
-      run(Flowables::range(0, 100)->take(3)), std::vector<int64_t>({0, 1, 2}));
+      run(Flowable<>::range(0, 100)->take(3)), std::vector<int64_t>({0, 1, 2}));
   EXPECT_EQ(
-      run(Flowables::range(10, 5)), std::vector<int64_t>({10, 11, 12, 13, 14}));
+      run(Flowable<>::range(10, 5)), std::vector<int64_t>({10, 11, 12, 13, 14}));
 }
 
 TEST(FlowableTest, SimpleSkip) {
   EXPECT_EQ(
-      run(Flowables::range(0, 10)->skip(8)), std::vector<int64_t>({8, 9}));
+      run(Flowable<>::range(0, 10)->skip(8)), std::vector<int64_t>({8, 9}));
 }
 
 TEST(FlowableTest, OverflowSkip) {
-  EXPECT_EQ(run(Flowables::range(0, 10)->skip(12)), std::vector<int64_t>({}));
+  EXPECT_EQ(run(Flowable<>::range(0, 10)->skip(12)), std::vector<int64_t>({}));
 }
 
 TEST(FlowableTest, SkipPartial) {
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(2);
-  auto flowable = Flowables::range(0, 10)->skip(5);
+  auto flowable = Flowable<>::range(0, 10)->skip(5);
   flowable->subscribe(subscriber);
 
   EXPECT_EQ(subscriber->values(), std::vector<int64_t>({5, 6}));
@@ -283,14 +283,14 @@ TEST(FlowableTest, SkipPartial) {
 }
 
 TEST(FlowableTest, IgnoreElements) {
-  auto flowable = Flowables::range(0, 100)->ignoreElements()->map(
+  auto flowable = Flowable<>::range(0, 100)->ignoreElements()->map(
       [](int64_t v) { return v * v; });
   EXPECT_EQ(run(flowable), std::vector<int64_t>({}));
 }
 
 TEST(FlowableTest, IgnoreElementsPartial) {
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(5);
-  auto flowable = Flowables::range(0, 10)->ignoreElements();
+  auto flowable = Flowable<>::range(0, 10)->ignoreElements();
   flowable->subscribe(subscriber);
 
   EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
@@ -304,7 +304,7 @@ TEST(FlowableTest, IgnoreElementsError) {
   constexpr auto kMsg = "Failure";
 
   auto subscriber = std::make_shared<TestSubscriber<int>>();
-  auto flowable = Flowables::error<int>(std::runtime_error(kMsg));
+  auto flowable = Flowable<int>::error(std::runtime_error(kMsg));
   flowable->subscribe(subscriber);
 
   EXPECT_TRUE(subscriber->isError());
@@ -314,7 +314,7 @@ TEST(FlowableTest, IgnoreElementsError) {
 TEST(FlowableTest, FlowableError) {
   constexpr auto kMsg = "something broke!";
 
-  auto flowable = Flowables::error<int>(std::runtime_error(kMsg));
+  auto flowable = Flowable<int>::error(std::runtime_error(kMsg));
   auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
@@ -326,7 +326,7 @@ TEST(FlowableTest, FlowableError) {
 TEST(FlowableTest, FlowableErrorPtr) {
   constexpr auto kMsg = "something broke!";
 
-  auto flowable = Flowables::error<int>(std::runtime_error(kMsg));
+  auto flowable = Flowable<int>::error(std::runtime_error(kMsg));
   auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
@@ -336,7 +336,7 @@ TEST(FlowableTest, FlowableErrorPtr) {
 }
 
 TEST(FlowableTest, FlowableEmpty) {
-  auto flowable = Flowables::empty<int>();
+  auto flowable = Flowable<int>::empty();
   auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
@@ -345,7 +345,7 @@ TEST(FlowableTest, FlowableEmpty) {
 }
 
 TEST(FlowableTest, FlowableNever) {
-  auto flowable = Flowables::never<int>();
+  auto flowable = Flowable<int>::never();
   auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
 
@@ -356,7 +356,7 @@ TEST(FlowableTest, FlowableNever) {
 }
 
 TEST(FlowableTest, FlowableFromGenerator) {
-  auto flowable = Flowables::fromGenerator<std::unique_ptr<int>>(
+  auto flowable = Flowable<std::unique_ptr<int>>::fromGenerator(
       [] { return std::unique_ptr<int>(); });
 
   auto subscriber = std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
@@ -372,7 +372,7 @@ TEST(FlowableTest, FlowableFromGenerator) {
 TEST(FlowableTest, FlowableFromGeneratorException) {
   constexpr auto errorMsg = "error from generator";
   int count = 5;
-  auto flowable = Flowables::fromGenerator<std::unique_ptr<int>>([&] {
+  auto flowable = Flowable<std::unique_ptr<int>>::fromGenerator([&] {
     while (count--) {
       return std::unique_ptr<int>();
     }
@@ -389,14 +389,14 @@ TEST(FlowableTest, FlowableFromGeneratorException) {
 }
 
 TEST(FlowableTest, SubscribersComplete) {
-  auto flowable = Flowables::empty<int>();
+  auto flowable = Flowable<int>::empty();
   auto subscriber = Subscribers::create<int>(
       [](int) { FAIL(); }, [](folly::exception_wrapper) { FAIL(); }, [&] {});
   flowable->subscribe(std::move(subscriber));
 }
 
 TEST(FlowableTest, SubscribersError) {
-  auto flowable = Flowables::error<int>(std::runtime_error("Whoops"));
+  auto flowable = Flowable<int>::error(std::runtime_error("Whoops"));
   auto subscriber = Subscribers::create<int>(
       [](int) { FAIL(); }, [&](folly::exception_wrapper) {}, [] { FAIL(); });
   flowable->subscribe(std::move(subscriber));
@@ -602,7 +602,7 @@ TEST(FlowableTest, SubscribeMultipleTimes) {
 /* following test should probably behave like:
  *
 TEST(FlowableTest, ConsumerThrows_OnNext) {
-  auto range = Flowables::range(1, 10);
+  auto range = Flowable<>::range(1, 10);
 
   EXPECT_THROWS({
     range->subscribe(
@@ -618,7 +618,7 @@ TEST(FlowableTest, ConsumerThrows_OnNext) {
 TEST(FlowableTest, ConsumerThrows_OnNext) {
   bool onErrorIsCalled{false};
 
-  Flowables::range(1, 10)->subscribe(
+  Flowable<>::range(1, 10)->subscribe(
       [](auto) { throw std::runtime_error("throw at consumption"); },
       [&onErrorIsCalled](auto ex) { onErrorIsCalled = true; },
       []() { FAIL() << "onError should have been called"; });
@@ -628,7 +628,7 @@ TEST(FlowableTest, ConsumerThrows_OnNext) {
 
 TEST(FlowableTest, ConsumerThrows_OnError) {
   try {
-    Flowables::range(1, 10)->subscribe(
+    Flowable<>::range(1, 10)->subscribe(
         [](auto) { throw std::runtime_error("throw at consumption"); },
         [](auto) { throw std::runtime_error("throw at onError"); },
         []() { FAIL() << "onError should have been called"; });
@@ -641,7 +641,7 @@ TEST(FlowableTest, ConsumerThrows_OnError) {
 
 TEST(FlowableTest, ConsumerThrows_OnComplete) {
   try {
-    Flowables::range(1, 10)->subscribe(
+    Flowable<>::range(1, 10)->subscribe(
         [](auto) {},
         [](auto) { FAIL() << "onComplete should have been called"; },
         []() { throw std::runtime_error("throw at onComplete"); });

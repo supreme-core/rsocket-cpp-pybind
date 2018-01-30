@@ -17,7 +17,7 @@ class FixedResponder : public RSocketResponder {
   std::shared_ptr<yarpl::flowable::Flowable<Payload>> handleRequestStream(
       Payload,
       StreamId) override {
-    return yarpl::flowable::Flowables::fromGenerator<Payload>(
+    return yarpl::flowable::Flowable<Payload>::fromGenerator(
         [msg = message_->clone()] { return Payload(msg->clone()); });
   }
 

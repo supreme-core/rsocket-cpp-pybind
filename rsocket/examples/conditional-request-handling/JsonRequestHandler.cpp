@@ -15,7 +15,7 @@ JsonRequestResponder::handleRequestStream(Payload request, StreamId) {
   // string from payload data
   auto requestString = request.moveDataToString();
 
-  return Flowables::range(1, 100)->map([name = std::move(requestString)](
+  return Flowable<>::range(1, 100)->map([name = std::move(requestString)](
       int64_t v) {
     std::stringstream ss;
     ss << "Hello (should be JSON) " << name << " " << v << "!";

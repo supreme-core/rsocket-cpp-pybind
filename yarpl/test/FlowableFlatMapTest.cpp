@@ -1,19 +1,16 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include <folly/io/async/EventBase.h>
+#include <folly/io/async/EventBaseThread.h>
+#include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <deque>
 #include <thread>
 #include <type_traits>
 #include <vector>
-
-#include <folly/io/async/EventBase.h>
-#include <folly/io/async/EventBaseThread.h>
-#include <folly/synchronization/Baton.h>
-
-#include "yarpl/test_utils/Mocks.h"
-
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/TestSubscriber.h"
+#include "yarpl/test_utils/Mocks.h"
 
 namespace yarpl {
 namespace flowable {
@@ -52,13 +49,13 @@ auto make_flowable_mapper_func() {
   return folly::Function<std::shared_ptr<Flowable<int64_t>>(int)>([](int n) {
     switch (n) {
       case 10:
-        return Flowables::range(n, 2);
+        return Flowable<>::range(n, 2);
       case 20:
-        return Flowables::range(n, 3);
+        return Flowable<>::range(n, 3);
       case 30:
-        return Flowables::range(n, 4);
+        return Flowable<>::range(n, 4);
     }
-    return Flowables::range(n, 3);
+    return Flowable<>::range(n, 3);
   });
 }
 
@@ -92,7 +89,7 @@ bool validate_flatmapped_values(
 
 TEST(FlowableFlatMapTest, AllRequestedTest) {
   auto f =
-      Flowables::justN<int>({10, 20, 30})->flatMap(make_flowable_mapper_func());
+      Flowable<>::justN<int>({10, 20, 30})->flatMap(make_flowable_mapper_func());
 
   std::vector<int64_t> res = run(f);
   EXPECT_EQ(9UL, res.size());
@@ -103,7 +100,7 @@ TEST(FlowableFlatMapTest, AllRequestedTest) {
 
 TEST(FlowableFlatMapTest, FiniteRequested) {
   auto f =
-      Flowables::justN<int>({10, 20, 30})->flatMap(make_flowable_mapper_func());
+      Flowable<>::justN<int>({10, 20, 30})->flatMap(make_flowable_mapper_func());
 
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(1);
   f->subscribe(subscriber);
@@ -124,10 +121,10 @@ TEST(FlowableFlatMapTest, MappingLambdaThrowsErrorOnFirstCall) {
   folly::Function<std::shared_ptr<Flowable<int64_t>>(int)> func = [](int n) {
     CHECK_EQ(1, n);
     throw std::runtime_error{"throwing in mapper!"};
-    return Flowables::empty<int64_t>();
+    return Flowable<int64_t>::empty();
   };
 
-  auto f = Flowables::just<int>(1)->flatMap(std::move(func));
+  auto f = Flowable<>::just<int>(1)->flatMap(std::move(func));
 
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(1);
   f->subscribe(subscriber);
@@ -154,7 +151,7 @@ TEST(FlowableFlatMapTest, MappedStreamThrows) {
     });
   };
 
-  auto f = Flowables::just<int>(1)->flatMap(std::move(func));
+  auto f = Flowable<>::just<int>(1)->flatMap(std::move(func));
 
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(2);
   f->subscribe(subscriber);
@@ -190,7 +187,7 @@ std::shared_ptr<FlowableEvbPair> make_range_flowable(int start, int end) {
   auto ret = std::make_shared<FlowableEvbPair>();
   ret->evb.start("MRF_Worker");
 
-  ret->flowable = Flowables::fromPublisher<int>(
+  ret->flowable = Flowable<int>::fromPublisher(
       [&ret, start, end](std::shared_ptr<Subscriber<int>> s) mutable {
         auto evb = ret->evb.getEventBase();
         auto subscription = std::make_shared<CBSubscription>(
@@ -217,7 +214,7 @@ TEST(FlowableFlatMapTest, Multithreaded) {
   auto p1 = make_range_flowable(10, 12);
   auto p2 = make_range_flowable(20, 25);
 
-  auto f = Flowables::range(0, 2)->flatMap([&](auto i) {
+  auto f = Flowable<>::range(0, 2)->flatMap([&](auto i) {
     if (i == 0) {
       return p1->flowable;
     } else {
@@ -241,7 +238,7 @@ TEST(FlowableFlatMapTest, MultithreadedLargeAmount) {
   auto p1 = make_range_flowable(10000, 40000);
   auto p2 = make_range_flowable(50000, 80000);
 
-  auto f = Flowables::range(0, 2)->flatMap([&](auto i) {
+  auto f = Flowable<>::range(0, 2)->flatMap([&](auto i) {
     if (i == 0) {
       return p1->flowable;
     } else {
@@ -265,10 +262,10 @@ TEST(FlowableFlatMapTest, MultithreadedLargeAmount) {
 TEST(FlowableFlatMapTest, MergeOperator) {
   auto sub = std::make_shared<TestSubscriber<std::string>>(0);
 
-  auto p1 = Flowables::justN<std::string>({"foo", "bar"});
-  auto p2 = Flowables::justN<std::string>({"baz", "quxx"});
+  auto p1 = Flowable<>::justN<std::string>({"foo", "bar"});
+  auto p2 = Flowable<>::justN<std::string>({"baz", "quxx"});
   std::shared_ptr<Flowable<std::shared_ptr<Flowable<std::string>>>> p3 =
-      Flowables::justN<std::shared_ptr<Flowable<std::string>>>({p1, p2});
+      Flowable<>::justN<std::shared_ptr<Flowable<std::string>>>({p1, p2});
 
   std::shared_ptr<Flowable<std::string>> p4 = p3->merge();
   p4->subscribe(sub);

@@ -43,7 +43,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
   std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload p, StreamId)
       override {
     EXPECT_EQ(p.moveDataToString(), "initial");
-    return Flowables::fromPublisher<Payload>(
+    return Flowable<Payload>::fromPublisher(
         [this](std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
           auto subscription = std::make_shared<StrictMock<MockSubscription>>();
 

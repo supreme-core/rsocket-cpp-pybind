@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
       .get();
 
   client->getRequester()
-      ->requestChannel(Flowables::justN({"initialPayload", "Bob", "Jane"})
+      ->requestChannel(Flowable<>::justN({"initialPayload", "Bob", "Jane"})
                            ->map([](std::string v) {
                              std::cout << "Sending: " << v << std::endl;
                              return Payload(v);

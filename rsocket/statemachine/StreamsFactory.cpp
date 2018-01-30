@@ -30,7 +30,7 @@ StreamsFactory::StreamsFactory(
 
 static void subscribeToErrorFlowable(
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
-  yarpl::flowable::Flowables::error<Payload>(
+  yarpl::flowable::Flowable<Payload>::error(
       std::runtime_error("state machine is disconnected/closed"))
       ->subscribe(std::move(responseSink));
 }

@@ -22,7 +22,7 @@ class TestHandlerSync : public rsocket::RSocketResponder {
     // string from payload data
     auto requestString = request.moveDataToString();
 
-    return Flowables::range(1, 10)->map([name = std::move(requestString)](
+    return Flowable<>::range(1, 10)->map([name = std::move(requestString)](
         int64_t v) {
       std::stringstream ss;
       ss << "Hello " << name << " " << v << "!";
@@ -105,24 +105,22 @@ class TestHandlerAsync : public rsocket::RSocketResponder {
     // string from payload data
     auto requestString = request.moveDataToString();
 
-    return Flowables::fromPublisher<
-        Payload>([requestString = std::move(requestString)](
-        std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
-      std::thread([
-        requestString = std::move(requestString),
-        subscriber = std::move(subscriber)
-      ]() {
-        Flowables::range(1, 40)
-            ->map([name = std::move(requestString)](int64_t v) {
-              std::stringstream ss;
-              ss << "Hello " << name << " " << v << "!";
-              std::string s = ss.str();
-              return Payload(s, "metadata");
-            })
-            ->subscribe(subscriber);
-      })
-          .detach();
-    });
+    return Flowable<Payload>::fromPublisher(
+        [requestString = std::move(requestString)](
+            std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
+          std::thread([requestString = std::move(requestString),
+                       subscriber = std::move(subscriber)]() {
+            Flowable<>::range(1, 40)
+                ->map([name = std::move(requestString)](int64_t v) {
+                  std::stringstream ss;
+                  ss << "Hello " << name << " " << v << "!";
+                  std::string s = ss.str();
+                  return Payload(s, "metadata");
+                })
+                ->subscribe(subscriber);
+          })
+              .detach();
+        });
   }
 };
 } // namespace
@@ -173,7 +171,7 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
 class TestHandlerResponder : public rsocket::RSocketResponder {
  public:
   std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
-    return Flowables::error<Payload>(
+    return Flowable<Payload>::error(
         std::runtime_error("A wild Error appeared!"));
   }
 };

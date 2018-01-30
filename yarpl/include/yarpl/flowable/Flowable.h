@@ -2,25 +2,22 @@
 
 #pragma once
 
+#include <folly/Executor.h>
+#include <folly/functional/Invoke.h>
+#include <glog/logging.h>
 #include <memory>
 #include <stdexcept>
 #include <string>
-
-#include <glog/logging.h>
-
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscribers.h"
 #include "yarpl/utils/credits.h"
 #include "yarpl/utils/type_traits.h"
 
-#include <folly/Executor.h>
-#include <folly/functional/Invoke.h>
-
 namespace yarpl {
 namespace flowable {
 
-template <typename T>
+template <typename T = void>
 class Flowable;
 
 namespace details {
@@ -94,6 +91,46 @@ class Flowable : public yarpl::enable_get_ref {
         std::move(next), std::move(error), std::move(complete), batch));
   }
 
+  static std::shared_ptr<Flowable<T>> empty() {
+    auto lambda = [](Subscriber<T>& subscriber, int64_t) {
+      subscriber.onComplete();
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  static std::shared_ptr<Flowable<T>> never() {
+    auto lambda = [](details::TrackingSubscriber<T>& subscriber, int64_t) {
+      subscriber.setCompleted();
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  static std::shared_ptr<Flowable<T>> error(folly::exception_wrapper ex) {
+    auto lambda = [ex = std::move(ex)](
+        Subscriber<T>& subscriber, int64_t) {
+      subscriber.onError(std::move(ex));
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  template <typename ExceptionType>
+  static std::shared_ptr<Flowable<T>> error(const ExceptionType& ex) {
+    auto lambda = [ex = std::move(ex)](
+        Subscriber<T>& subscriber, int64_t) {
+      subscriber.onError(std::move(ex));
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  template <
+      typename OnSubscribe,
+      typename = typename std::enable_if<folly::is_invocable<
+          OnSubscribe, std::shared_ptr<Subscriber<T>>>::value>::type>
+  static std::shared_ptr<Flowable<T>> fromPublisher(OnSubscribe function);
+
+  template <typename TGenerator>
+  static std::shared_ptr<Flowable<T>> fromGenerator(TGenerator generator);
+
   template <
       typename Function,
       typename R = typename std::result_of<Function(T)>::type>
@@ -154,6 +191,33 @@ template <typename T>
 template <typename Emitter, typename>
 std::shared_ptr<Flowable<T>> Flowable<T>::create(Emitter emitter) {
   return std::make_shared<details::EmitterWrapper<T, Emitter>>(std::move(emitter));
+}
+
+template <typename T>
+template <
+    typename OnSubscribe,
+    typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::fromPublisher(OnSubscribe function) {
+  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
+}
+
+template <typename T>
+template <typename TGenerator>
+std::shared_ptr<Flowable<T>> Flowable<T>::fromGenerator(TGenerator generator) {
+  auto lambda = [generator = std::move(generator)](
+      Subscriber<T>& subscriber, int64_t requested) {
+    try {
+      while (requested-- > 0) {
+        subscriber.onNext(generator());
+      }
+    } catch (const std::exception& ex) {
+      subscriber.onError(
+          folly::exception_wrapper(std::current_exception(), ex));
+    } catch (...) {
+      subscriber.onError(std::runtime_error("unknown error"));
+    }
+  };
+  return Flowable<T>::create(std::move(lambda));
 }
 
 template <typename T>

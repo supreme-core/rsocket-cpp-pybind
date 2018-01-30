@@ -1,11 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "HelloStreamRequestHandler.h"
-
-#include <sstream>
-
 #include <folly/Conv.h>
-
+#include <sstream>
 #include "yarpl/Flowable.h"
 
 using namespace ::rsocket;
@@ -24,7 +21,7 @@ HelloStreamRequestHandler::handleRequestStream(
   // string from payload data
   auto requestString = request.moveDataToString();
 
-  return Flowables::range(1, 10)->map([name = std::move(requestString)](
+  return Flowable<>::range(1, 10)->map([name = std::move(requestString)](
       int64_t v) { return Payload(folly::to<std::string>(v), "metadata"); });
 }
 }

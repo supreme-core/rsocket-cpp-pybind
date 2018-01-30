@@ -46,7 +46,7 @@ TEST(RequestChannelTest, Hello) {
   auto ts = TestSubscriber<std::string>::create();
   requester
       ->requestChannel(
-          Flowables::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
+          Flowable<>::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
             return Payload(v);
           }))
       ->map([](auto p) { return p.moveDataToString(); })
@@ -72,7 +72,7 @@ TEST(RequestChannelTest, HelloNoFlowControl) {
   auto ts = TestSubscriber<std::string>::create();
   requester
       ->requestChannel(
-          Flowables::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
+          Flowable<>::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
             return Payload(v);
           }))
       ->map([](auto p) { return p.moveDataToString(); })
@@ -99,7 +99,7 @@ TEST(RequestChannelTest, RequestOnDisconnectedClient) {
   bool did_call_on_error = false;
   folly::Baton<> wait_for_on_error;
 
-  auto instream = Flowables::empty<Payload>();
+  auto instream = Flowable<Payload>::empty();
   requester->requestChannel(instream)->subscribe(
       [](auto /* payload */) {
         // onNext shouldn't be called
@@ -136,7 +136,7 @@ class TestChannelResponder : public rsocket::RSocketResponder {
     requestStream->map([](auto p) { return p.moveDataToString(); })
         ->subscribe(testSubscriber_);
 
-    return Flowables::range(1, rangeEnd_)->map([&](int64_t v) {
+    return Flowable<>::range(1, rangeEnd_)->map([&](int64_t v) {
       std::stringstream ss;
       ss << "Responder stream: " << v << " of " << rangeEnd_;
       std::string s = ss.str();
@@ -171,7 +171,7 @@ TEST(RequestChannelTest, CompleteRequesterResponderContinues) {
   int64_t requesterRangeEnd = 10;
 
   auto requesterFlowable =
-      Flowables::range(1, requesterRangeEnd)->map([=](int64_t v) {
+      Flowable<>::range(1, requesterRangeEnd)->map([=](int64_t v) {
         std::stringstream ss;
         ss << "Requester stream: " << v << " of " << requesterRangeEnd;
         std::string s = ss.str();
@@ -216,7 +216,7 @@ TEST(RequestChannelTest, CompleteResponderRequesterContinues) {
   int64_t requesterRangeEnd = 100;
 
   auto requesterFlowable =
-      Flowables::range(1, requesterRangeEnd)->map([=](int64_t v) {
+      Flowable<>::range(1, requesterRangeEnd)->map([=](int64_t v) {
         std::stringstream ss;
         ss << "Requester stream: " << v << " of " << requesterRangeEnd;
         std::string s = ss.str();
@@ -261,7 +261,7 @@ TEST(RequestChannelTest, FlowControl) {
   int64_t requesterRangeEnd = 10;
 
   auto requesterFlowable =
-      Flowables::range(1, requesterRangeEnd)->map([&](int64_t v) {
+      Flowable<>::range(1, requesterRangeEnd)->map([&](int64_t v) {
         std::stringstream ss;
         ss << "Requester stream: " << v << " of " << requesterRangeEnd;
         std::string s = ss.str();
@@ -314,7 +314,7 @@ class TestChannelResponderFailure : public rsocket::RSocketResponder {
     requestStream->map([](auto p) { return p.moveDataToString(); })
         ->subscribe(testSubscriber_);
 
-    return Flowables::error<Payload>(
+    return Flowable<Payload>::error(
         std::runtime_error("A wild Error appeared!"));
   }
 
@@ -340,7 +340,7 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
   int64_t requesterRangeEnd = 10;
 
   auto requesterFlowable =
-      Flowables::range(1, requesterRangeEnd)->map([&](int64_t v) {
+      Flowable<>::range(1, requesterRangeEnd)->map([&](int64_t v) {
         std::stringstream ss;
         ss << "Requester stream: " << v << " of " << requesterRangeEnd;
         std::string s = ss.str();

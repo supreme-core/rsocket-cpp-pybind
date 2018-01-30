@@ -5,7 +5,7 @@
 namespace yarpl {
 namespace flowable {
 
-std::shared_ptr<Flowable<int64_t>> Flowables::range(
+std::shared_ptr<Flowable<int64_t>> Flowable<>::range(
     int64_t start,
     int64_t count) {
   auto lambda = [start, count, i = start](
