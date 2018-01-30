@@ -91,6 +91,7 @@ add_library(
         include/yarpl/observable/Subscriptions.h
         include/yarpl/observable/TestObserver.h
         src/yarpl/observable/Subscriptions.cpp
+        src/yarpl/observable/Observables.cpp
         # Single
         include/yarpl/Single.h
         include/yarpl/single/Single.h

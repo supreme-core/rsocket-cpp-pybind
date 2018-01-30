@@ -13,16 +13,12 @@ namespace observable {
 template<>
 class Observable<void> {
  public:
-  static std::shared_ptr<Observable<int64_t>> range(int64_t start, int64_t end) {
-    auto lambda = [start, end](std::shared_ptr<Observer<int64_t>> observer) {
-      for (int64_t i = start; i < end; ++i) {
-        observer->onNext(i);
-      }
-      observer->onComplete();
-    };
-
-    return Observable<int64_t>::create(std::move(lambda));
-  }
+  /**
+   * Emit the sequence of numbers [start, start + count).
+   */
+  static std::shared_ptr<Observable<int64_t>> range(
+      int64_t start,
+      int64_t count);
 
   template <typename T>
   static std::shared_ptr<Observable<T>> just(const T& value) {

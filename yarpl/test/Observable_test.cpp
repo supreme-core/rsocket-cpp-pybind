@@ -332,7 +332,7 @@ TEST(Observable, toFlowableBufferStrategy) {
   EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5}));
 
   subscriber->subscription()->request(5);
-  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 }
 
 TEST(Observable, toFlowableLatestStrategy) {
@@ -352,7 +352,7 @@ TEST(Observable, toFlowableLatestStrategy) {
   EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5}));
 
   subscriber->subscription()->request(5);
-  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5, 9}));
+  EXPECT_EQ(v, std::vector<int64_t>({1, 2, 3, 4, 5, 10}));
 }
 
 TEST(Observable, Just) {
@@ -394,12 +394,12 @@ TEST(Observable, MapWithException) {
 }
 
 TEST(Observable, Range) {
-  auto observable = Observable<>::range(10, 14);
+  auto observable = Observable<>::range(10, 4);
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({10, 11, 12, 13}));
 }
 
 TEST(Observable, RangeWithMap) {
-  auto observable = Observable<>::range(1, 4)
+  auto observable = Observable<>::range(1, 3)
                         ->map([](int64_t v) { return v * v; })
                         ->map([](int64_t v) { return v * v; })
                         ->map([](int64_t v) { return std::to_string(v); });
@@ -422,11 +422,11 @@ TEST(Observable, RangeWithReduceByMultiplication) {
       [](int64_t acc, int64_t v) { return acc * v; });
   EXPECT_EQ(
       run(std::move(observable)),
-      std::vector<int64_t>({2 * 3 * 4 * 5 * 6 * 7 * 8 * 9}));
+      std::vector<int64_t>({1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10}));
 }
 
 TEST(Observable, RangeWithReduceOneItem) {
-  auto observable = Observable<>::range(5, 6)->reduce(
+  auto observable = Observable<>::range(5, 1)->reduce(
       [](int64_t acc, int64_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({5}));
 }
@@ -442,7 +442,7 @@ TEST(Observable, RangeWithReduceNoItem) {
 
 TEST(Observable, RangeWithReduceToBiggerType) {
   auto observable =
-      Observable<>::range(5, 6)
+      Observable<>::range(5, 1)
           ->map([](int64_t v) { return (int32_t)v; })
           ->reduce([](int64_t acc, int32_t v) { return acc + v; });
   EXPECT_EQ(run(std::move(observable)), std::vector<int64_t>({5}));
@@ -741,9 +741,9 @@ TEST(Observable, DeferTest) {
   int switchValue = 0;
   auto observable = Observable<int64_t>::defer([&]() {
     if (switchValue == 0) {
-      return Observable<>::range(1, 2);
+      return Observable<>::range(1, 1);
     } else {
-      return Observable<>::range(3, 4);
+      return Observable<>::range(3, 1);
     }
   });
 
