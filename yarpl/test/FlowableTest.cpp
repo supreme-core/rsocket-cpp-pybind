@@ -11,6 +11,7 @@
 #include "yarpl/test_utils/Mocks.h"
 
 using namespace yarpl::flowable;
+using namespace testing;
 
 namespace {
 
@@ -678,4 +679,107 @@ TEST(FlowableTest, DeferExceptionTest) {
 
   EXPECT_TRUE(subscriber->isError());
   EXPECT_EQ(subscriber->getErrorMsg(), "Too big!");
+}
+
+
+
+
+
+
+
+
+TEST(FlowableTest, DoOnSubscribeTest) {
+  auto a = Flowable<int>::empty();
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+
+  a->doOnSubscribe([&] { checkpoint.Call(); })->subscribe();
+}
+
+TEST(FlowableTest, DoOnNextTest) {
+  std::vector<int64_t> values;
+  auto a = Flowable<>::range(10, 14)->doOnNext(
+      [&](int64_t v) { values.push_back(v); });
+  auto values2 = run(std::move(a));
+  EXPECT_EQ(values, values2);
+}
+
+TEST(FlowableTest, DoOnErrorTest) {
+  auto a = Flowable<int>::error(std::runtime_error("something broke!"));
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+
+  a->doOnError([&](const auto&) { checkpoint.Call(); })->subscribe();
+}
+
+TEST(FlowableTest, DoOnTerminateTest) {
+  auto a = Flowable<int>::empty();
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+
+  a->doOnTerminate([&]() { checkpoint.Call(); })->subscribe();
+}
+
+TEST(FlowableTest, DoOnTerminate2Test) {
+  auto a = Flowable<int>::error(std::runtime_error("something broke!"));
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+
+  a->doOnTerminate([&]() { checkpoint.Call(); })->subscribe();
+}
+
+TEST(FlowableTest, DoOnEachTest) {
+  //TODO(lehecka): rewrite with concatWith
+  auto a = Flowable<int>::create([](Subscriber<int>& s, int64_t) {
+    s.onNext(5);
+    s.onError(std::runtime_error("something broke!"));
+  });
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call()).Times(2);
+  a->doOnEach([&]() { checkpoint.Call(); })->subscribe();
+}
+
+TEST(FlowableTest, DoOnTest) {
+  //TODO(lehecka): rewrite with concatWith
+  auto a = Flowable<int>::create([](Subscriber<int>& s, int64_t) {
+    s.onNext(5);
+    s.onError(std::runtime_error("something broke!"));
+  });
+
+  MockFunction<void()> checkpoint1;
+  EXPECT_CALL(checkpoint1, Call());
+  MockFunction<void()> checkpoint2;
+  EXPECT_CALL(checkpoint2, Call());
+
+  a->doOn(
+       [&](int value) {
+         checkpoint1.Call();
+         EXPECT_EQ(value, 5);
+       },
+       [] { FAIL(); },
+       [&](const auto&) { checkpoint2.Call(); })
+      ->subscribe();
+}
+
+TEST(FlowableTest, DoOnCancelTest) {
+  auto a = Flowable<>::range(1,10);
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+
+  a->doOnCancel([&]() { checkpoint.Call(); })->take(1)->subscribe();
+}
+
+TEST(FlowableTest, DoOnRequestTest) {
+  auto a = Flowable<>::range(1,10);
+
+  MockFunction<void(int64_t)> checkpoint;
+  EXPECT_CALL(checkpoint, Call(2));
+
+  a->doOnRequest([&](int64_t n) { checkpoint.Call(n); })->take(2)->subscribe();
 }

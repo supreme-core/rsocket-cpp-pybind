@@ -91,6 +91,14 @@ class Flowable : public yarpl::enable_get_ref {
         std::move(next), std::move(error), std::move(complete), batch));
   }
 
+  void subscribe() {
+    subscribe(Subscribers::createNull<T>());
+  }
+
+  //
+  // creator methods:
+  //
+
   static std::shared_ptr<Flowable<T>> empty() {
     auto lambda = [](Subscriber<T>& subscriber, int64_t) {
       subscriber.onComplete();
@@ -193,6 +201,90 @@ class Flowable : public yarpl::enable_get_ref {
     return this->flatMap([](auto f) { return std::move(f); });
   }
 
+  // function is invoked when onComplete occurs.
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnSubscribe(Function function);
+
+  // function is invoked when onNext occurs.
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function, const T&>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnNext(Function function);
+
+  // function is invoked when onError occurs.
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function, folly::exception_wrapper&>::value>::
+          type>
+  std::shared_ptr<Flowable<T>> doOnError(Function function);
+
+  // function is invoked when onComplete occurs.
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnComplete(Function function);
+
+  // function is invoked when either onComplete or onError occurs.
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnTerminate(Function function);
+
+  // the function is invoked for each of onNext, onCompleted, onError
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnEach(Function function);
+
+  // function is invoked when request(n) is called.
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function, int64_t>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnRequest(Function function);
+
+  // function is invoked when cancel is called.
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function>::value>::type>
+  std::shared_ptr<Flowable<T>> doOnCancel(Function function);
+
+  // the callbacks will be invoked of each of the signals
+  template <
+      typename OnNextFunc,
+      typename OnCompleteFunc,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnNextFunc, const T&>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnCompleteFunc>::value>::type>
+  std::shared_ptr<Flowable<T>> doOn(
+      OnNextFunc onNext,
+      OnCompleteFunc onComplete);
+
+  // the callbacks will be invoked of each of the signals
+  template <
+      typename OnNextFunc,
+      typename OnCompleteFunc,
+      typename OnErrorFunc,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnNextFunc, const T&>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnCompleteFunc>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnErrorFunc, folly::exception_wrapper&>::value>::
+          type>
+  std::shared_ptr<Flowable<T>>
+  doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
+
   template <
       typename Emitter,
       typename = typename std::enable_if<folly::is_invocable_r<
@@ -289,8 +381,10 @@ std::shared_ptr<Flowable<T>> Flowable<T>::ignoreElements() {
 }
 
 template <typename T>
-std::shared_ptr<Flowable<T>> Flowable<T>::subscribeOn(folly::Executor& executor) {
-  return std::make_shared<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
+std::shared_ptr<Flowable<T>> Flowable<T>::subscribeOn(
+    folly::Executor& executor) {
+  return std::make_shared<SubscribeOnOperator<T>>(
+      this->ref_from_this(this), executor);
 }
 
 template <typename T>
@@ -304,6 +398,150 @@ template <typename Function, typename R>
 std::shared_ptr<Flowable<R>> Flowable<T>::flatMap(Function function) {
   return std::make_shared<FlatMapOperator<T, R>>(
       this->ref_from_this(this), std::move(function));
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnSubscribe(Function function) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      std::move(function),
+      [](const T&) {},
+      [](const auto&) {},
+      [] {},
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnNext(Function function) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      std::move(function),
+      [](const auto&) {},
+      [] {},
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnError(Function function) {
+  return details::createDoOperator(
+      ref_from_this(this), [] {}, [](const T&) {}, std::move(function), [] {},
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnComplete(Function function) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [](const T&) {},
+      [](const auto&) {},
+      std::move(function),
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnTerminate(Function function) {
+  auto sharedFunction = std::make_shared<Function>(std::move(function));
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [](const T&) {},
+      [sharedFunction](const auto&) {
+    (*sharedFunction)(); },
+      [sharedFunction]() {
+    (*sharedFunction)(); },
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnEach(Function function) {
+  auto sharedFunction = std::make_shared<Function>(std::move(function));
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [sharedFunction](const T&) {
+    (*sharedFunction)(); },
+      [sharedFunction](const auto&) {
+    (*sharedFunction)(); },
+      [sharedFunction]() {
+    (*sharedFunction)(); },
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename OnNextFunc, typename OnCompleteFunc, typename, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOn(
+    OnNextFunc onNext,
+    OnCompleteFunc onComplete) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      std::move(onNext),
+      [](const auto&) {},
+      std::move(onComplete),
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <
+    typename OnNextFunc,
+    typename OnCompleteFunc,
+    typename OnErrorFunc,
+    typename,
+    typename,
+    typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOn(
+    OnNextFunc onNext,
+    OnCompleteFunc onComplete,
+    OnErrorFunc onError) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      std::move(onNext),
+      std::move(onError),
+      std::move(onComplete),
+      [](const auto&) {}, //onRequest
+      []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnRequest(Function function) {
+  return details::createDoOperator(
+    ref_from_this(this),
+    [] {}, // onSubscribe
+    [](const auto&) {}, // onNext
+    [](const auto&) {}, // onError
+    [] {}, // onComplete
+    std::move(function), //onRequest
+    []{}); //onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Flowable<T>> Flowable<T>::doOnCancel(Function function) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {}, // onSubscribe
+      [](const auto&) {}, // onNext
+      [](const auto&) {}, // onError
+      [] {}, // onComplete
+      [](const auto&) {}, // onRequest
+      std::move(function)); // onCancel
 }
 
 } // flowable

@@ -64,7 +64,23 @@ class Subscribers {
         std::move(next), std::move(error), std::move(complete), batch);
   }
 
+  template <typename T>
+  static std::shared_ptr<Subscriber<T>> createNull() {
+    return std::make_shared<NullSubscriber<T>>();
+  }
+
  private:
+  template <typename T>
+  class NullSubscriber : public Subscriber<T> {
+    void onSubscribe(std::shared_ptr<Subscription> s) override final {
+      s->request(kNoFlowControl);
+    }
+
+    void onNext(T) override final {}
+    void onComplete() override {}
+    void onError(folly::exception_wrapper) override {}
+  };
+
   template <typename T, typename Next>
   class Base : public BaseSubscriber<T> {
    public:

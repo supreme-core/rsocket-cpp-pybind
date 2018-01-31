@@ -925,3 +925,4 @@ class FlatMapOperator : public FlowableOperator<T, R> {
 } // namespace yarpl
 
 #include "yarpl/flowable/FlowableObserveOnOperator.h"
+#include "yarpl/flowable/FlowableDoOperator.h"

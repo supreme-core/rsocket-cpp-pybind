@@ -655,8 +655,7 @@ TEST(Observable, DISABLED_CancelSubscriptionChain) {
 }
 
 TEST(Observable, DoOnSubscribeTest) {
-  auto a = Observable<int>::create(
-      [](std::shared_ptr<Observer<int>> obs) { obs->onComplete(); });
+  auto a = Observable<int>::empty();
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -673,9 +672,7 @@ TEST(Observable, DoOnNextTest) {
 }
 
 TEST(Observable, DoOnErrorTest) {
-  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
-    obs->onError(std::runtime_error("something broke!"));
-  });
+  auto a = Observable<int>::error(std::runtime_error("something broke!"));
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -684,8 +681,7 @@ TEST(Observable, DoOnErrorTest) {
 }
 
 TEST(Observable, DoOnTerminateTest) {
-  auto a = Observable<int>::create(
-      [](std::shared_ptr<Observer<int>> obs) { obs->onComplete(); });
+  auto a = Observable<int>::empty();
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -694,9 +690,7 @@ TEST(Observable, DoOnTerminateTest) {
 }
 
 TEST(Observable, DoOnTerminate2Test) {
-  auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
-    obs->onError(std::runtime_error("something broke!"));
-  });
+  auto a = Observable<int>::error(std::runtime_error("something broke!"));
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -705,6 +699,7 @@ TEST(Observable, DoOnTerminate2Test) {
 }
 
 TEST(Observable, DoOnEachTest) {
+  //TODO(lehecka): rewrite with concatWith
   auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(5);
     obs->onError(std::runtime_error("something broke!"));
@@ -716,6 +711,7 @@ TEST(Observable, DoOnEachTest) {
 }
 
 TEST(Observable, DoOnTest) {
+  //TODO(lehecka): rewrite with concatWith
   auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(5);
     obs->onError(std::runtime_error("something broke!"));
@@ -734,6 +730,15 @@ TEST(Observable, DoOnTest) {
        [] { FAIL(); },
        [&](const auto&) { checkpoint2.Call(); })
       ->subscribe();
+}
+
+TEST(Observable, DoOnCancelTest) {
+  auto a = Observable<>::range(1,10);
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+
+  a->doOnCancel([&]() { checkpoint.Call(); })->take(1)->subscribe();
 }
 
 TEST(Observable, DeferTest) {

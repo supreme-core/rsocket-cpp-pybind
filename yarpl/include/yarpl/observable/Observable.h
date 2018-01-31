@@ -153,36 +153,81 @@ class Observable : public yarpl::enable_get_ref {
   std::shared_ptr<Observable<T>> subscribeOn(folly::Executor&);
 
   // function is invoked when onComplete occurs.
-  template <typename Function>
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
   std::shared_ptr<Observable<T>> doOnSubscribe(Function function);
 
   // function is invoked when onNext occurs.
-  template <typename Function>
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function, const T&>::value>::type>
   std::shared_ptr<Observable<T>> doOnNext(Function function);
 
   // function is invoked when onError occurs.
-  template <typename Function>
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function, folly::exception_wrapper&>::value>::
+          type>
   std::shared_ptr<Observable<T>> doOnError(Function function);
 
   // function is invoked when onComplete occurs.
-  template <typename Function>
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
   std::shared_ptr<Observable<T>> doOnComplete(Function function);
 
   // function is invoked when either onComplete or onError occurs.
-  template <typename Function>
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
   std::shared_ptr<Observable<T>> doOnTerminate(Function function);
 
   // the function is invoked for each of onNext, onCompleted, onError
-  template <typename Function>
+  template <
+      typename Function,
+      typename =
+          typename std::enable_if<folly::is_invocable<Function>::value>::type>
   std::shared_ptr<Observable<T>> doOnEach(Function function);
 
   // the callbacks will be invoked of each of the signals
-  template <typename OnNextFunc, typename OnCompleteFunc>
-  std::shared_ptr<Observable<T>> doOn(OnNextFunc onNext, OnCompleteFunc onComplete);
+  template <
+      typename OnNextFunc,
+      typename OnCompleteFunc,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnNextFunc, const T&>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnCompleteFunc>::value>::type>
+  std::shared_ptr<Observable<T>> doOn(
+      OnNextFunc onNext,
+      OnCompleteFunc onComplete);
 
   // the callbacks will be invoked of each of the signals
-  template <typename OnNextFunc, typename OnCompleteFunc, typename OnErrorFunc>
-  std::shared_ptr<Observable<T>> doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
+  template <
+      typename OnNextFunc,
+      typename OnCompleteFunc,
+      typename OnErrorFunc,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnNextFunc, const T&>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnCompleteFunc>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<OnErrorFunc, folly::exception_wrapper&>::value>::
+          type>
+  std::shared_ptr<Observable<T>>
+  doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
+
+  // function is invoked when cancel is called.
+  template <
+      typename Function,
+      typename = typename std::enable_if<
+          folly::is_invocable<Function>::value>::type>
+  std::shared_ptr<Observable<T>> doOnCancel(Function function);
 
   /**
   * Convert from Observable to Flowable with a given BackpressureStrategy.
@@ -255,59 +300,131 @@ std::shared_ptr<Observable<T>> Observable<T>::ignoreElements() {
 }
 
 template <typename T>
-std::shared_ptr<Observable<T>> Observable<T>::subscribeOn(folly::Executor& executor) {
-  return std::make_shared<SubscribeOnOperator<T>>(this->ref_from_this(this), executor);
+std::shared_ptr<Observable<T>> Observable<T>::subscribeOn(
+    folly::Executor& executor) {
+  return std::make_shared<SubscribeOnOperator<T>>(
+      this->ref_from_this(this), executor);
 }
 
 template <typename T>
-template <typename Function>
+template <typename Function, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOnSubscribe(Function function) {
-  return details::createDoOperator(ref_from_this(this), std::move(function), [](const T&){}, [](const auto&){}, []{});
+  return details::createDoOperator(
+      ref_from_this(this),
+      std::move(function),
+      [](const T&) {},
+      [](const auto&) {},
+      [] {},
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename Function>
+template <typename Function, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOnNext(Function function) {
-  return details::createDoOperator(ref_from_this(this), []{}, std::move(function), [](const auto&){}, []{});
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      std::move(function),
+      [](const auto&) {},
+      [] {},
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename Function>
+template <typename Function, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOnError(Function function) {
-  return details::createDoOperator(ref_from_this(this), []{}, [](const T&){}, std::move(function), []{});
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [](const T&) {},
+      std::move(function),
+      [] {},
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename Function>
+template <typename Function, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOnComplete(Function function) {
-  return details::createDoOperator(ref_from_this(this), []{}, [](const T&){}, [](const auto&){}, std::move(function));
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [](const T&) {},
+      [](const auto&) {},
+      std::move(function),
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename Function>
+template <typename Function, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOnTerminate(Function function) {
   auto sharedFunction = std::make_shared<Function>(std::move(function));
-  return details::createDoOperator(ref_from_this(this), []{}, [](const T&){}, [sharedFunction](const auto&){(*sharedFunction)();}, [sharedFunction](){(*sharedFunction)();});
-
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [](const T&) {},
+      [sharedFunction](const auto&) { (*sharedFunction)(); },
+      [sharedFunction]() { (*sharedFunction)(); },
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename Function>
+template <typename Function, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOnEach(Function function) {
   auto sharedFunction = std::make_shared<Function>(std::move(function));
-  return details::createDoOperator(ref_from_this(this), []{}, [sharedFunction](const T&){(*sharedFunction)();}, [sharedFunction](const auto&){(*sharedFunction)();}, [sharedFunction](){(*sharedFunction)();});
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      [sharedFunction](const T&) { (*sharedFunction)(); },
+      [sharedFunction](const auto&) { (*sharedFunction)(); },
+      [sharedFunction]() { (*sharedFunction)(); },
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename OnNextFunc, typename OnCompleteFunc>
-std::shared_ptr<Observable<T>> Observable<T>::doOn(OnNextFunc onNext, OnCompleteFunc onComplete) {
-  return details::createDoOperator(ref_from_this(this), []{}, std::move(onNext), [](const auto&){}, std::move(onComplete));
+template <typename OnNextFunc, typename OnCompleteFunc, typename, typename>
+std::shared_ptr<Observable<T>> Observable<T>::doOn(
+    OnNextFunc onNext,
+    OnCompleteFunc onComplete) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      std::move(onNext),
+      [](const auto&) {},
+      std::move(onComplete),
+      [] {}); // onCancel
 }
 
 template <typename T>
-template <typename OnNextFunc, typename OnCompleteFunc, typename OnErrorFunc>
-std::shared_ptr<Observable<T>> Observable<T>::doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError) {
-  return details::createDoOperator(ref_from_this(this), []{}, std::move(onNext), std::move(onError), std::move(onComplete));
+template <
+    typename OnNextFunc,
+    typename OnCompleteFunc,
+    typename OnErrorFunc,
+    typename,
+    typename,
+    typename>
+std::shared_ptr<Observable<T>> Observable<T>::doOn(
+    OnNextFunc onNext,
+    OnCompleteFunc onComplete,
+    OnErrorFunc onError) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {},
+      std::move(onNext),
+      std::move(onError),
+      std::move(onComplete),
+      [] {}); // onCancel
+}
+
+template <typename T>
+template <typename Function, typename>
+std::shared_ptr<Observable<T>> Observable<T>::doOnCancel(Function function) {
+  return details::createDoOperator(
+      ref_from_this(this),
+      [] {}, // onSubscribe
+      [](const auto&) {}, // onNext
+      [](const auto&) {}, // onError
+      [] {}, // onComplete
+      std::move(function)); // onCancel
 }
 
 template <typename T>
