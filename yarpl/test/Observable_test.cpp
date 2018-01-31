@@ -557,8 +557,8 @@ TEST(Observable, CancelReleasesObjects) {
 }
 
 class InfiniteAsyncTestOperator
-    : public ObservableOperator<int, int, InfiniteAsyncTestOperator> {
-  using Super = ObservableOperator<int, int, InfiniteAsyncTestOperator>;
+    : public ObservableOperator<int, int> {
+  using Super = ObservableOperator<int, int>;
 
  public:
   InfiniteAsyncTestOperator(
@@ -568,8 +568,8 @@ class InfiniteAsyncTestOperator
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<int>> observer) override {
-    auto subscription = std::make_shared<TestSubscription>(
-        this->ref_from_this(this), std::move(observer), checkpoint_);
+    auto subscription =
+        std::make_shared<TestSubscription>(std::move(observer), checkpoint_);
     Super::upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
@@ -591,10 +591,9 @@ class InfiniteAsyncTestOperator
     }
 
     TestSubscription(
-        std::shared_ptr<InfiniteAsyncTestOperator> observable,
         std::shared_ptr<Observer<int>> observer,
         MockFunction<void()>& checkpoint)
-        : SuperSub(std::move(observable), std::move(observer)),
+        : SuperSub(std::move(observer)),
           checkpoint_(checkpoint) {}
 
     void onSubscribe(std::shared_ptr<Subscription> subscription) override {

@@ -20,12 +20,11 @@ namespace observable {
  * pipelines
  * can be built: a Observable heading a sequence of Operators.
  */
-template <typename U, typename D, typename ThisOp>
+template <typename U, typename D>
 class ObservableOperator : public Observable<D> {
  public:
   explicit ObservableOperator(std::shared_ptr<Observable<U>> upstream)
       : upstream_(std::move(upstream)) {}
-  using ThisOperatorT = ThisOp;
 
  protected:
   /// An Operator's subscription.
@@ -38,19 +37,9 @@ class ObservableOperator : public Observable<D> {
   class OperatorSubscription : public ::yarpl::observable::Subscription,
                                public Observer<U> {
    protected:
-    OperatorSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
-        std::shared_ptr<Observer<D>> observer)
-        : observable_(std::move(observable)), observer_(std::move(observer)) {
-      assert(observable_);
+    explicit OperatorSubscription(std::shared_ptr<Observer<D>> observer)
+        : observer_(std::move(observer)) {
       assert(observer_);
-    }
-
-    std::shared_ptr<ThisOperatorT>& getObservableOperator() {
-      static_assert(
-          std::is_base_of<Observable<D>, ThisOperatorT>::value,
-          "Operator must be a subclass of Observable<D>");
-      return observable_;
     }
 
     void observerOnNext(D value) {
@@ -147,9 +136,6 @@ class ObservableOperator : public Observable<D> {
       }
     }
 
-    /// The Observable has the lambda, and other creation parameters.
-    std::shared_ptr<ThisOperatorT> observable_;
-
     /// This subscription controls the life-cycle of the observer. The
     /// observer is retained as long as calls on it can be made.  (Note:
     /// the observer in turn maintains a reference on this subscription
@@ -173,9 +159,8 @@ template <
     typename D,
     typename F,
     typename = typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
-class MapOperator : public ObservableOperator<U, D, MapOperator<U, D, F>> {
-  using ThisOperatorT = MapOperator<U, D, F>;
-  using Super = ObservableOperator<U, D, ThisOperatorT>;
+class MapOperator : public ObservableOperator<U, D> {
+  using Super = ObservableOperator<U, D>;
 
  public:
   MapOperator(std::shared_ptr<Observable<U>> upstream, F function)
@@ -196,19 +181,21 @@ class MapOperator : public ObservableOperator<U, D, MapOperator<U, D, F>> {
 
    public:
     MapSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
+        std::shared_ptr<MapOperator> observable,
         std::shared_ptr<Observer<D>> observer)
-        : SuperSub(std::move(observable), std::move(observer)) {}
+        : SuperSub(std::move(observer)), observable_(std::move(observable)) {}
 
     void onNext(U value) override {
       try {
-        auto& map = this->getObservableOperator();
-        this->observerOnNext(map->function_(std::move(value)));
+        this->observerOnNext(observable_->function_(std::move(value)));
       } catch (const std::exception& exn) {
         folly::exception_wrapper ew{std::current_exception(), exn};
         this->terminateErr(std::move(ew));
       }
     }
+
+  private:
+    std::shared_ptr<MapOperator> observable_;
   };
 
   F function_;
@@ -219,9 +206,8 @@ template <
     typename F,
     typename =
         typename std::enable_if<folly::is_invocable_r<bool, F, U>::value>::type>
-class FilterOperator : public ObservableOperator<U, U, FilterOperator<U, F>> {
-  using ThisOperatorT = FilterOperator<U, F>;
-  using Super = ObservableOperator<U, U, ThisOperatorT>;
+class FilterOperator : public ObservableOperator<U, U> {
+  using Super = ObservableOperator<U, U>;
 
  public:
   FilterOperator(std::shared_ptr<Observable<U>> upstream, F function)
@@ -242,16 +228,18 @@ class FilterOperator : public ObservableOperator<U, U, FilterOperator<U, F>> {
 
    public:
     FilterSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
+        std::shared_ptr<FilterOperator> observable,
         std::shared_ptr<Observer<U>> observer)
-        : SuperSub(std::move(observable), std::move(observer)) {}
+        : SuperSub(std::move(observer)), observable_(std::move(observable)) {}
 
     void onNext(U value) override {
-      auto& filter = SuperSub::getObservableOperator();
-      if (filter->function_(value)) {
+      if (observable_->function_(value)) {
         SuperSub::observerOnNext(std::move(value));
       }
     }
+
+  private:
+    std::shared_ptr<FilterOperator> observable_;
   };
 
   F function_;
@@ -265,9 +253,8 @@ template <
     typename =
         typename std::enable_if<folly::is_invocable_r<U, F, D, U>::value>::type>
 class ReduceOperator
-    : public ObservableOperator<U, D, ReduceOperator<U, D, F>> {
-  using ThisOperatorT = ReduceOperator<U, D, F>;
-  using Super = ObservableOperator<U, D, ThisOperatorT>;
+    : public ObservableOperator<U, D> {
+  using Super = ObservableOperator<U, D>;
 
  public:
   ReduceOperator(std::shared_ptr<Observable<U>> upstream, F function)
@@ -289,15 +276,15 @@ class ReduceOperator
 
    public:
     ReduceSubscription(
-        std::shared_ptr<ThisOperatorT> flowable,
-        std::shared_ptr<Observer<D>> subscriber)
-        : SuperSub(std::move(flowable), std::move(subscriber)),
+        std::shared_ptr<ReduceOperator> observable,
+        std::shared_ptr<Observer<D>> observer)
+        : SuperSub(std::move(observer)),
+          observable_(std::move(observable)),
           accInitialized_(false) {}
 
     void onNext(U value) override {
-      auto& reduce = SuperSub::getObservableOperator();
       if (accInitialized_) {
-        acc_ = reduce->function_(std::move(acc_), std::move(value));
+        acc_ = observable_->function_(std::move(acc_), std::move(value));
       } else {
         acc_ = std::move(value);
         accInitialized_ = true;
@@ -312,6 +299,7 @@ class ReduceOperator
     }
 
    private:
+     std::shared_ptr<ReduceOperator> observable_;
     bool accInitialized_;
     D acc_;
   };
@@ -320,17 +308,17 @@ class ReduceOperator
 };
 
 template <typename T>
-class TakeOperator : public ObservableOperator<T, T, TakeOperator<T>> {
-  using ThisOperatorT = TakeOperator<T>;
-  using Super = ObservableOperator<T, T, ThisOperatorT>;
+class TakeOperator : public ObservableOperator<T, T> {
+  using Super = ObservableOperator<T, T>;
 
  public:
   TakeOperator(std::shared_ptr<Observable<T>> upstream, int64_t limit)
       : Super(std::move(upstream)), limit_(limit) {}
 
-  std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = std::make_shared<TakeSubscription>(
-        this->ref_from_this(this), limit_, std::move(observer));
+  std::shared_ptr<Subscription> subscribe(
+      std::shared_ptr<Observer<T>> observer) override {
+    auto subscription =
+        std::make_shared<TakeSubscription>(limit_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -341,10 +329,9 @@ class TakeOperator : public ObservableOperator<T, T, TakeOperator<T>> {
 
    public:
     TakeSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
         int64_t limit,
         std::shared_ptr<Observer<T>> observer)
-        : SuperSub(std::move(observable), std::move(observer)), limit_(limit) {}
+        : SuperSub(std::move(observer)), limit_(limit) {}
 
     void onNext(T value) override {
       if (limit_-- > 0) {
@@ -366,17 +353,17 @@ class TakeOperator : public ObservableOperator<T, T, TakeOperator<T>> {
 };
 
 template <typename T>
-class SkipOperator : public ObservableOperator<T, T, SkipOperator<T>> {
-  using ThisOperatorT = SkipOperator<T>;
-  using Super = ObservableOperator<T, T, ThisOperatorT>;
+class SkipOperator : public ObservableOperator<T, T> {
+  using Super = ObservableOperator<T, T>;
 
  public:
   SkipOperator(std::shared_ptr<Observable<T>> upstream, int64_t offset)
       : Super(std::move(upstream)), offset_(offset) {}
 
-  std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = std::make_shared<SkipSubscription>(
-        this->ref_from_this(this), offset_, std::move(observer));
+  std::shared_ptr<Subscription> subscribe(
+      std::shared_ptr<Observer<T>> observer) override {
+    auto subscription =
+        std::make_shared<SkipSubscription>(offset_, std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -387,10 +374,9 @@ class SkipOperator : public ObservableOperator<T, T, SkipOperator<T>> {
 
    public:
     SkipSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
         int64_t offset,
         std::shared_ptr<Observer<T>> observer)
-        : SuperSub(std::move(observable), std::move(observer)),
+        : SuperSub(std::move(observer)),
           offset_(offset) {}
 
     void onNext(T value) override {
@@ -410,17 +396,16 @@ class SkipOperator : public ObservableOperator<T, T, SkipOperator<T>> {
 
 template <typename T>
 class IgnoreElementsOperator
-    : public ObservableOperator<T, T, IgnoreElementsOperator<T>> {
-  using ThisOperatorT = IgnoreElementsOperator<T>;
-  using Super = ObservableOperator<T, T, ThisOperatorT>;
+    : public ObservableOperator<T, T> {
+  using Super = ObservableOperator<T, T>;
 
  public:
   explicit IgnoreElementsOperator(std::shared_ptr<Observable<T>> upstream)
       : Super(std::move(upstream)) {}
 
   std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = std::make_shared<IgnoreElementsSubscription>(
-        this->ref_from_this(this), std::move(observer));
+    auto subscription =
+        std::make_shared<IgnoreElementsSubscription>(std::move(observer));
     Super::upstream_->subscribe(subscription);
     return subscription;
   }
@@ -431,19 +416,16 @@ class IgnoreElementsOperator
 
    public:
     IgnoreElementsSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
         std::shared_ptr<Observer<T>> observer)
-        : SuperSub(std::move(observable), std::move(observer)) {}
+        : SuperSub(std::move(observer)) {}
 
     void onNext(T) override {}
   };
 };
 
 template <typename T>
-class SubscribeOnOperator
-    : public ObservableOperator<T, T, SubscribeOnOperator<T>> {
-  using ThisOperatorT = SubscribeOnOperator<T>;
-  using Super = ObservableOperator<T, T, ThisOperatorT>;
+class SubscribeOnOperator : public ObservableOperator<T, T> {
+  using Super = ObservableOperator<T, T>;
 
  public:
   SubscribeOnOperator(
@@ -454,7 +436,7 @@ class SubscribeOnOperator
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<T>> observer) override {
     auto subscription = std::make_shared<SubscribeOnSubscription>(
-        this->ref_from_this(this), executor_, std::move(observer));
+        executor_, std::move(observer));
     executor_.add([subscription, upstream = Super::upstream_]() mutable {
       upstream->subscribe(std::move(subscription));
     });
@@ -467,10 +449,9 @@ class SubscribeOnOperator
 
    public:
     SubscribeOnSubscription(
-        std::shared_ptr<ThisOperatorT> observable,
         folly::Executor& executor,
         std::shared_ptr<Observer<T>> observer)
-        : SuperSub(std::move(observable), std::move(observer)),
+        : SuperSub(std::move(observer)),
           executor_(executor) {}
 
     void cancel() override {
@@ -535,12 +516,14 @@ class FromPublisherOperator : public Observable<T> {
   };
 
  public:
-  std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
+  std::shared_ptr<Subscription> subscribe(
+      std::shared_ptr<Observer<T>> observer) override {
     auto subscription = Subscriptions::create();
     observer->onSubscribe(subscription);
 
     if (!subscription->isCancelled()) {
-      function_(std::make_shared<PublisherObserver>(std::move(observer), subscription));
+      function_(std::make_shared<PublisherObserver>(
+          std::move(observer), subscription));
     }
     return subscription;
   }
