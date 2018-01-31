@@ -79,8 +79,8 @@ add_library(
         src/yarpl/flowable/sources/Subscription.cpp
         src/yarpl/flowable/sources/Flowables.cpp
         # Observable public API
-        include/yarpl/DeferObservable.h
         include/yarpl/Observable.h
+        include/yarpl/observable/DeferObservable.h
         include/yarpl/observable/Observable.h
         include/yarpl/observable/Observables.h
         include/yarpl/observable/ObservableOperator.h
