@@ -18,7 +18,7 @@ class DeferFlowable : public Flowable<T> {
     try {
       flowable = factory_();
     } catch (const std::exception& ex) {
-      flowable = Flowable<T>::error(ex);
+      flowable = Flowable<T>::error(ex, std::current_exception());
     }
     return flowable->subscribe(std::move(subscriber));
   }

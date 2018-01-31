@@ -762,6 +762,5 @@ TEST(Observable, DeferExceptionTest) {
   observable->subscribe(observer);
 
   EXPECT_TRUE(observer->error());
-  //TODO(lehecka): fix slicing!
-  //EXPECT_EQ(observer->errorMsg(), "Too big!");
+  EXPECT_EQ(observer->errorMsg(), "Too big!");
 }

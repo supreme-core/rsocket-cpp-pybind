@@ -19,7 +19,7 @@ class DeferObservable : public Observable<T> {
     try {
       observable = factory_();
     } catch (const std::exception& ex) {
-      observable = Observable<T>::error(ex);
+      observable = Observable<T>::error(ex, std::current_exception());
     }
     return observable->subscribe(std::move(observer));
   }

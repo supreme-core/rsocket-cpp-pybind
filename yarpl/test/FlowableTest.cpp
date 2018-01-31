@@ -677,6 +677,5 @@ TEST(FlowableTest, DeferExceptionTest) {
   flowable->subscribe(subscriber);
 
   EXPECT_TRUE(subscriber->isError());
-  //TODO(lehecka): fix slicing
-  //EXPECT_EQ(subscriber->getErrorMsg(), "Too big!");
+  EXPECT_EQ(subscriber->getErrorMsg(), "Too big!");
 }

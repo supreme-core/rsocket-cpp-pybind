@@ -46,10 +46,20 @@ class Observable : public yarpl::enable_get_ref {
      return Observable<T>::create(std::move(lambda));
    }
 
-   template <typename ExceptionType>
-   static std::shared_ptr<Observable<T>> error(const ExceptionType& ex) {
-     auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
-       observer->onError(std::move(ex));
+   template <typename Ex>
+   static std::shared_ptr<Observable<T>> error(Ex&) {
+     static_assert(
+         std::is_lvalue_reference<Ex>::value,
+         "use variant of error() method accepting also exception_ptr");
+   }
+
+   template <typename Ex>
+   static std::shared_ptr<Observable<T>> error(
+       Ex& ex,
+       std::exception_ptr ptr) {
+     auto lambda = [ew = folly::exception_wrapper(std::move(ptr), ex)](
+                       std::shared_ptr<Observer<T>> observer) {
+       observer->onError(std::move(ew));
      };
      return Observable<T>::create(std::move(lambda));
    }
