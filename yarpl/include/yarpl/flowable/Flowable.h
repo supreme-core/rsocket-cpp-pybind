@@ -177,6 +177,9 @@ class Flowable : public yarpl::enable_get_ref {
 
   std::shared_ptr<Flowable<T>> ignoreElements();
 
+  /*
+   * To instruct a Flowable to do its work on a particular Executor.
+   */
   std::shared_ptr<Flowable<T>> subscribeOn(folly::Executor&);
 
   std::shared_ptr<Flowable<T>> observeOn(folly::Executor&);

@@ -6,16 +6,16 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
-
 #include "yarpl/Flowable.h"
+#include "yarpl/Observable.h"
 #include "yarpl/flowable/TestSubscriber.h"
+#include "yarpl/observable/TestObserver.h"
 #include "yarpl/test_utils/utils.h"
 
-namespace yarpl {
-namespace flowable {
-namespace {
+using namespace yarpl::flowable;
+using namespace yarpl::observable;
 
-TEST(ObserveSubscribeTests, SubscribeOnWorksAsExpected) {
+TEST(FlowableTests, SubscribeOnWorksAsExpected) {
   folly::ScopedEventBaseThread worker;
 
   auto f = Flowable<std::string>::create([&](auto& subscriber, auto req) {
@@ -32,7 +32,23 @@ TEST(ObserveSubscribeTests, SubscribeOnWorksAsExpected) {
   EXPECT_TRUE(subscriber->isComplete());
 }
 
-TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedSuccess) {
+TEST(ObservableTests, SubscribeOnWorksAsExpected) {
+  folly::ScopedEventBaseThread worker;
+
+  auto f = Observable<std::string>::create([&](auto observer) {
+    EXPECT_TRUE(worker.getEventBase()->isInEventBaseThread());
+    observer->onNext("foo");
+    observer->onComplete();
+  });
+
+  auto observer = std::make_shared<TestObserver<std::string>>();
+  f->subscribeOn(*worker.getEventBase())->subscribe(observer);
+  observer->awaitTerminalEvent(std::chrono::milliseconds(100));
+  EXPECT_EQ(1, observer->getValueCount());
+  EXPECT_TRUE(observer->isComplete());
+}
+
+TEST(FlowableTests, ObserveOnWorksAsExpectedSuccess) {
   folly::ScopedEventBaseThread worker;
   folly::Baton<> subscriber_complete;
 
@@ -69,7 +85,7 @@ TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedSuccess) {
   CHECK_WAIT(subscriber_complete);
 }
 
-TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedError) {
+TEST(FlowableTests, ObserveOnWorksAsExpectedError) {
   folly::ScopedEventBaseThread worker;
   folly::Baton<> subscriber_complete;
 
@@ -98,7 +114,7 @@ TEST(ObserveSubscribeTests, ObserveOnWorksAsExpectedError) {
   CHECK_WAIT(subscriber_complete);
 }
 
-TEST(ObserveSubscribeTests, BothObserveAndSubscribeOn) {
+TEST(FlowableTests, BothObserveAndSubscribeOn) {
   folly::ScopedEventBaseThread subscriber_eb;
   folly::ScopedEventBaseThread producer_eb;
   folly::Baton<> subscriber_complete;
@@ -176,7 +192,7 @@ class EarlyCancelSubscriber : public yarpl::flowable::BaseSubscriber<int64_t> {
 };
 } // namespace
 
-TEST(ObserveSubscribeTests, EarlyCancelObserveOn) {
+TEST(FlowableTests, EarlyCancelObserveOn) {
   folly::ScopedEventBaseThread worker;
 
   folly::Baton<> subscriber_complete;
@@ -188,6 +204,3 @@ TEST(ObserveSubscribeTests, EarlyCancelObserveOn) {
 
   CHECK_WAIT(subscriber_complete);
 }
-} // namespace
-} // namespace flowable
-} // namespace yarpl

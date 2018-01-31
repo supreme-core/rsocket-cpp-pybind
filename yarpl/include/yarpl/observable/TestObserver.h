@@ -18,7 +18,7 @@ namespace observable {
  * Example usage:
  *
  * auto observable = ...
- * auto ts = TestObserver<int>::create();
+ * auto ts = std::make_shared<TestObserver<int>>();
  * observable->subscribe(ts->unique_observer());
  * ts->awaitTerminalEvent();
  * ts->assert...
@@ -29,7 +29,7 @@ namespace observable {
  *
  * For example:
  *
- * auto ts = TestObserver<int>::create(std::make_unique<MyObserver>());
+ * auto ts = std::make_shared<TestObserver<int>>(std::make_unique<MyObserver>());
  * observable->subscribe(ts->unique_observer());
  *
  * Now when 'observable' is subscribed to, the TestObserver behavior
@@ -44,27 +44,11 @@ class TestObserver : public yarpl::observable::Observer<T>,
   using Observer = yarpl::observable::Observer<T>;
 
  public:
-  /**
-   * Create a TestObserver that will subscribe upwards
-   * with no flow control (max value) and store all values it receives.
-   * @return
-   */
-  static std::shared_ptr<TestObserver<T>> create();
-
-  /**
-   * Create a TestObserver that will delegate all on* method calls
-   * to the provided Observer.
-   *
-   * This will store all values it receives to allow assertions.
-   * @return
-   */
-  static std::shared_ptr<TestObserver<T>> create(std::unique_ptr<Observer>);
-
   TestObserver();
   explicit TestObserver(std::unique_ptr<Observer> delegate);
 
-  void onSubscribe(Subscription* s) override;
-  void onNext(const T& t) override;
+  void onSubscribe(std::shared_ptr<Subscription> s) override;
+  void onNext(T t) override;
   void onComplete() override;
   void onError(folly::exception_wrapper ex) override;
 
@@ -84,7 +68,7 @@ class TestObserver : public yarpl::observable::Observer<T>,
   /**
    * Block the current thread until either onComplete or onError is called.
    */
-  void awaitTerminalEvent();
+  void awaitTerminalEvent(std::chrono::milliseconds ms = std::chrono::seconds{1});
 
   /**
    * If the onNext values received does not match the given count,
@@ -116,14 +100,24 @@ class TestObserver : public yarpl::observable::Observer<T>,
    */
   void cancel();
 
+  bool isComplete() const {
+    return complete_;
+  }
+
+  bool isError() const {
+    return error_;
+  }
+
  private:
   std::unique_ptr<Observer> delegate_;
   std::vector<T> values_;
   folly::exception_wrapper e_;
   bool terminated_{false};
+  bool complete_{false};
+  bool error_{false};
   std::mutex m_;
   std::condition_variable terminalEventCV_;
-  Subscription* subscription_;
+  std::shared_ptr<Subscription> subscription_;
 };
 
 template <typename T>
@@ -134,18 +128,7 @@ TestObserver<T>::TestObserver(std::unique_ptr<Observer> delegate)
     : delegate_(std::move(delegate)){};
 
 template <typename T>
-std::shared_ptr<TestObserver<T>> TestObserver<T>::create() {
-  return std::make_shared<TestObserver<T>>();
-}
-
-template <typename T>
-std::shared_ptr<TestObserver<T>> TestObserver<T>::create(
-    std::unique_ptr<Observer> s) {
-  return std::make_shared<TestObserver<T>>(std::move(s));
-}
-
-template <typename T>
-void TestObserver<T>::onSubscribe(Subscription* s) {
+void TestObserver<T>::onSubscribe(std::shared_ptr<Subscription> s) {
   subscription_ = s;
   if (delegate_) {
     delegate_->onSubscribe(s);
@@ -153,7 +136,7 @@ void TestObserver<T>::onSubscribe(Subscription* s) {
 }
 
 template <typename T>
-void TestObserver<T>::onNext(const T& t) {
+void TestObserver<T>::onNext(T t) {
   if (delegate_) {
     //    std::cout << "TestObserver onNext& => copy then delegate" <<
     //    std::endl;
@@ -171,6 +154,7 @@ void TestObserver<T>::onComplete() {
     delegate_->onComplete();
   }
   terminated_ = true;
+  complete_ = true;
   terminalEventCV_.notify_all();
 }
 
@@ -181,15 +165,18 @@ void TestObserver<T>::onError(folly::exception_wrapper ex) {
   }
   e_ = std::move(ex);
   terminated_ = true;
+  error_ = true;
   terminalEventCV_.notify_all();
 }
 
 template <typename T>
-void TestObserver<T>::awaitTerminalEvent() {
+void TestObserver<T>::awaitTerminalEvent(std::chrono::milliseconds ms) {
   // now block this thread
   std::unique_lock<std::mutex> lk(m_);
   // if shutdown gets implemented this would then be released by it
-  terminalEventCV_.wait(lk, [this] { return terminated_; });
+  if (!terminalEventCV_.wait_for(lk, ms, [this] { return terminated_; })) {
+    throw std::runtime_error("timeout in awaitTerminalEvent");
+  }
 }
 
 template <typename T>

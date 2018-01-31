@@ -451,10 +451,13 @@ class SubscribeOnOperator
       folly::Executor& executor)
       : Super(std::move(upstream)), executor_(executor) {}
 
-  std::shared_ptr<Subscription> subscribe(std::shared_ptr<Observer<T>> observer) override {
+  std::shared_ptr<Subscription> subscribe(
+      std::shared_ptr<Observer<T>> observer) override {
     auto subscription = std::make_shared<SubscribeOnSubscription>(
         this->ref_from_this(this), executor_, std::move(observer));
-    Super::upstream_->subscribe(subscription);
+    executor_.add([subscription, upstream = Super::upstream_]() mutable {
+      upstream->subscribe(std::move(subscription));
+    });
     return subscription;
   }
 
