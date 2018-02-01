@@ -770,7 +770,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
           : flatMapSubscription_(std::move(subscription)) {}
 
       void onSubscribeImpl() final {
-#ifdef DEBUG
+#ifndef NDEBUG
         if (auto fms = yarpl::atomic_load(&flatMapSubscription_)) {
           auto l = fms->lists.wlock();
           auto r = sync.wlock();
@@ -869,7 +869,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
         L const& lists,
         bool should) {
       if (is_in_list(elem, list) != should) {
-#ifdef DEBUG
+#ifndef NDEBUG
         debug_is_in_list(elem, lists);
 #else
         (void) lists;
