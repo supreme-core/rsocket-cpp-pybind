@@ -21,10 +21,10 @@ class Subscriber : boost::noncopyable {
   virtual void onNext(T) = 0;
 };
 
-#define KEEP_REF_TO_THIS() \
+#define KEEP_REF_TO_THIS()              \
   std::shared_ptr<BaseSubscriber> self; \
-  if (keep_reference_to_this) { \
-    self = this->ref_from_this(this); \
+  if (keep_reference_to_this) {         \
+    self = this->ref_from_this(this);   \
   }
 
 // T : Type of Flowable that this Subscriber operates on
@@ -127,7 +127,7 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
 #endif
   }
 
-protected:
+ protected:
   virtual void onSubscribeImpl() = 0;
   virtual void onCompleteImpl() = 0;
   virtual void onNextImpl(T) = 0;
@@ -145,5 +145,5 @@ protected:
 #endif
 };
 
-}
-} /* namespace yarpl::flowable */
+} // namespace flowable
+} // namespace yarpl

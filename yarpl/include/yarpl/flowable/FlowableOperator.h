@@ -120,7 +120,8 @@ template <
     typename U,
     typename D,
     typename F,
-    typename = typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
+    typename =
+        typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
 class MapOperator : public FlowableOperator<U, D> {
   using Super = FlowableOperator<U, D>;
 
@@ -194,6 +195,7 @@ class FilterOperator : public FlowableOperator<U, U> {
         SuperSubscription::request(1);
       }
     }
+
    private:
     std::shared_ptr<FilterOperator> flowable_;
   };
@@ -278,11 +280,8 @@ class TakeOperator : public FlowableOperator<T, T> {
   using SuperSubscription = typename Super::Subscription;
   class Subscription : public SuperSubscription {
    public:
-    Subscription(
-        int64_t limit,
-        std::shared_ptr<Subscriber<T>> subscriber)
-        : SuperSubscription(std::move(subscriber)),
-          limit_(limit) {}
+    Subscription(int64_t limit, std::shared_ptr<Subscriber<T>> subscriber)
+        : SuperSubscription(std::move(subscriber)), limit_(limit) {}
 
     void onNextImpl(T value) override {
       if (limit_-- > 0) {
@@ -329,11 +328,8 @@ class SkipOperator : public FlowableOperator<T, T> {
   using SuperSubscription = typename Super::Subscription;
   class Subscription : public SuperSubscription {
    public:
-    Subscription(
-        int64_t offset,
-        std::shared_ptr<Subscriber<T>> subscriber)
-        : SuperSubscription(std::move(subscriber)),
-          offset_(offset) {}
+    Subscription(int64_t offset, std::shared_ptr<Subscriber<T>> subscriber)
+        : SuperSubscription(std::move(subscriber)), offset_(offset) {}
 
     void onNextImpl(T value) override {
       if (offset_ > 0) {
@@ -360,8 +356,7 @@ class SkipOperator : public FlowableOperator<T, T> {
 };
 
 template <typename T>
-class IgnoreElementsOperator
-    : public FlowableOperator<T, T> {
+class IgnoreElementsOperator : public FlowableOperator<T, T> {
   using Super = FlowableOperator<T, T>;
 
  public:
@@ -377,8 +372,7 @@ class IgnoreElementsOperator
   using SuperSubscription = typename Super::Subscription;
   class Subscription : public SuperSubscription {
    public:
-    Subscription(
-        std::shared_ptr<Subscriber<T>> subscriber)
+    Subscription(std::shared_ptr<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(subscriber)) {}
 
     void onNextImpl(T) override {}
@@ -386,8 +380,7 @@ class IgnoreElementsOperator
 };
 
 template <typename T>
-class SubscribeOnOperator
-    : public FlowableOperator<T, T> {
+class SubscribeOnOperator : public FlowableOperator<T, T> {
   using Super = FlowableOperator<T, T>;
 
  public:
@@ -397,8 +390,8 @@ class SubscribeOnOperator
       : Super(std::move(upstream)), executor_(executor) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    Super::upstream_->subscribe(std::make_shared<Subscription>(
-        executor_, std::move(subscriber)));
+    Super::upstream_->subscribe(
+        std::make_shared<Subscription>(executor_, std::move(subscriber)));
   }
 
  private:
@@ -408,17 +401,16 @@ class SubscribeOnOperator
     Subscription(
         folly::Executor& executor,
         std::shared_ptr<Subscriber<T>> subscriber)
-        : SuperSubscription(std::move(subscriber)),
-          executor_(executor) {}
+        : SuperSubscription(std::move(subscriber)), executor_(executor) {}
 
     void request(int64_t delta) override {
-      executor_.add([ delta, this, self = this->ref_from_this(this) ] {
+      executor_.add([delta, this, self = this->ref_from_this(this)] {
         this->callSuperRequest(delta);
       });
     }
 
     void cancel() override {
-      executor_.add([ this, self = this->ref_from_this(this) ] {
+      executor_.add([this, self = this->ref_from_this(this)] {
         this->callSuperCancel();
       });
     }
@@ -623,8 +615,8 @@ class FlatMapOperator : public FlowableOperator<T, R> {
             // Subscribers might call onNext and then terminate; delay
             // removing its liveSubscriber reference until we've delivered
             // its element to the downstream subscriber and dropped its
-            // synchronized reference to `r`, as dropping the flatMapSubscription_
-            // reference may invoke its destructor
+            // synchronized reference to `r`, as dropping the
+            // flatMapSubscription_ reference may invoke its destructor
             if (r->isTerminated) {
               r->freeze = true;
               terminatedTrash.push_back(*elem);
@@ -638,9 +630,9 @@ class FlatMapOperator : public FlowableOperator<T, R> {
           elem->request(1);
         }
 
-        // phase 5: destroy any mapped subscribers which have terminated, enqueue
-        // another drain loop run if we do end up discarding any subscribers, as
-        // our live subscriber count may have gone to zero
+        // phase 5: destroy any mapped subscribers which have terminated,
+        // enqueue another drain loop run if we do end up discarding any
+        // subscribers, as our live subscriber count may have gone to zero
         if (!terminatedTrash.empty()) {
           drainLoopMutex_++;
         }
@@ -672,7 +664,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
         auto l = lists.wlock();
         auto r = elem->sync.wlock();
 
-        if(r->freeze) {
+        if (r->freeze) {
           return;
         }
 
@@ -725,8 +717,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
 
     // onComplete/onError fall through to onTerminateImpl, which
     // will call drainLoop and update the liveSubscribers_ count
-    void onCompleteImpl() final {
-    }
+    void onCompleteImpl() final {}
     void onErrorImpl(folly::exception_wrapper ex) final {
       std::lock_guard<std::mutex> g(onErrorExGuard_);
       onErrorEx_ = std::move(ex);
@@ -739,10 +730,9 @@ class FlatMapOperator : public FlowableOperator<T, R> {
     }
 
     void request(int64_t n) override {
-      if((n + requested_) < requested_) {
+      if ((n + requested_) < requested_) {
         requested_ = std::numeric_limits<int64_t>::max();
-      }
-      else {
+      } else {
         requested_ += n;
       }
 
@@ -795,8 +785,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
       }
 
       // noop
-      void onCompleteImpl() final {
-      }
+      void onCompleteImpl() final {}
 
       void onErrorImpl(folly::exception_wrapper ex) final {
         auto r = sync.wlock();
@@ -872,7 +861,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
 #ifndef NDEBUG
         debug_is_in_list(elem, lists);
 #else
-        (void) lists;
+        (void)lists;
 #endif
         return false;
       }
@@ -880,7 +869,9 @@ class FlatMapOperator : public FlowableOperator<T, R> {
     }
 
     template <typename L>
-    static void debug_is_in_list(MappedStreamSubscriber const& elem, L const& lists) {
+    static void debug_is_in_list(
+        MappedStreamSubscriber const& elem,
+        L const& lists) {
       LOG(INFO) << "in without: " << is_in_list(elem, lists->withoutValue);
       LOG(INFO) << "in pending: " << is_in_list(elem, lists->pendingValue);
       LOG(INFO) << "in withval: " << is_in_list(elem, lists->withValue);
@@ -924,5 +915,5 @@ class FlatMapOperator : public FlowableOperator<T, R> {
 } // namespace flowable
 } // namespace yarpl
 
-#include "yarpl/flowable/FlowableObserveOnOperator.h"
 #include "yarpl/flowable/FlowableDoOperator.h"
+#include "yarpl/flowable/FlowableObserveOnOperator.h"

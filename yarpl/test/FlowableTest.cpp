@@ -155,7 +155,8 @@ TEST(FlowableTest, MapWithException) {
 
 TEST(FlowableTest, Range) {
   EXPECT_EQ(
-      run(Flowable<>::range(10, 5)), std::vector<int64_t>({10, 11, 12, 13, 14}));
+      run(Flowable<>::range(10, 5)),
+      std::vector<int64_t>({10, 11, 12, 13, 14}));
 }
 
 TEST(FlowableTest, RangeWithMap) {
@@ -262,7 +263,8 @@ TEST(FlowableTest, SimpleTake) {
   EXPECT_EQ(
       run(Flowable<>::range(0, 100)->take(3)), std::vector<int64_t>({0, 1, 2}));
   EXPECT_EQ(
-      run(Flowable<>::range(10, 5)), std::vector<int64_t>({10, 11, 12, 13, 14}));
+      run(Flowable<>::range(10, 5)),
+      std::vector<int64_t>({10, 11, 12, 13, 14}));
 }
 
 TEST(FlowableTest, SimpleSkip) {
@@ -360,7 +362,8 @@ TEST(FlowableTest, FlowableFromGenerator) {
   auto flowable = Flowable<std::unique_ptr<int>>::fromGenerator(
       [] { return std::unique_ptr<int>(); });
 
-  auto subscriber = std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
+  auto subscriber =
+      std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -380,7 +383,8 @@ TEST(FlowableTest, FlowableFromGeneratorException) {
     throw std::runtime_error(errorMsg);
   });
 
-  auto subscriber = std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
+  auto subscriber =
+      std::make_shared<CollectingSubscriber<std::unique_ptr<int>>>(10);
   flowable->subscribe(subscriber);
 
   EXPECT_FALSE(subscriber->isComplete());
@@ -405,12 +409,11 @@ TEST(FlowableTest, SubscribersError) {
 
 TEST(FlowableTest, FlowableCompleteInTheMiddle) {
   auto flowable =
-      Flowable<int>::create(
-          [](auto& subscriber, int64_t requested) {
-            EXPECT_GT(requested, 1);
-            subscriber.onNext(123);
-            subscriber.onComplete();
-          })
+      Flowable<int>::create([](auto& subscriber, int64_t requested) {
+        EXPECT_GT(requested, 1);
+        subscriber.onNext(123);
+        subscriber.onComplete();
+      })
           ->map([](int v) { return std::to_string(v); });
 
   auto subscriber = std::make_shared<TestSubscriber<std::string>>(10);
@@ -653,7 +656,7 @@ TEST(FlowableTest, ConsumerThrows_OnComplete) {
   }
 }
 
-TEST(FlowableTest , DeferTest) {
+TEST(FlowableTest, DeferTest) {
   int switchValue = 0;
   auto flowable = Flowable<int64_t>::defer([&]() {
     if (switchValue == 0) {
@@ -669,10 +672,9 @@ TEST(FlowableTest , DeferTest) {
 }
 
 TEST(FlowableTest, DeferExceptionTest) {
-  auto flowable =
-      Flowable<int>::defer([&]() -> std::shared_ptr<Flowable<int>> {
-        throw std::runtime_error{"Too big!"};
-      });
+  auto flowable = Flowable<int>::defer([&]() -> std::shared_ptr<Flowable<int>> {
+    throw std::runtime_error{"Too big!"};
+  });
 
   auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
@@ -680,13 +682,6 @@ TEST(FlowableTest, DeferExceptionTest) {
   EXPECT_TRUE(subscriber->isError());
   EXPECT_EQ(subscriber->getErrorMsg(), "Too big!");
 }
-
-
-
-
-
-
-
 
 TEST(FlowableTest, DoOnSubscribeTest) {
   auto a = Flowable<int>::empty();
@@ -733,7 +728,7 @@ TEST(FlowableTest, DoOnTerminate2Test) {
 }
 
 TEST(FlowableTest, DoOnEachTest) {
-  //TODO(lehecka): rewrite with concatWith
+  // TODO(lehecka): rewrite with concatWith
   auto a = Flowable<int>::create([](Subscriber<int>& s, int64_t) {
     s.onNext(5);
     s.onError(std::runtime_error("something broke!"));
@@ -745,7 +740,7 @@ TEST(FlowableTest, DoOnEachTest) {
 }
 
 TEST(FlowableTest, DoOnTest) {
-  //TODO(lehecka): rewrite with concatWith
+  // TODO(lehecka): rewrite with concatWith
   auto a = Flowable<int>::create([](Subscriber<int>& s, int64_t) {
     s.onNext(5);
     s.onError(std::runtime_error("something broke!"));
@@ -767,7 +762,7 @@ TEST(FlowableTest, DoOnTest) {
 }
 
 TEST(FlowableTest, DoOnCancelTest) {
-  auto a = Flowable<>::range(1,10);
+  auto a = Flowable<>::range(1, 10);
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
@@ -776,7 +771,7 @@ TEST(FlowableTest, DoOnCancelTest) {
 }
 
 TEST(FlowableTest, DoOnRequestTest) {
-  auto a = Flowable<>::range(1,10);
+  auto a = Flowable<>::range(1, 10);
 
   MockFunction<void(int64_t)> checkpoint;
   EXPECT_CALL(checkpoint, Call(2));

@@ -187,7 +187,8 @@ class TakeObserver : public Observer<int> {
     v.reserve(5);
   }
 
-  void onSubscribe(std::shared_ptr<yarpl::observable::Subscription> s) override {
+  void onSubscribe(
+      std::shared_ptr<yarpl::observable::Subscription> s) override {
     subscription_ = std::move(s);
   }
 
@@ -264,7 +265,8 @@ TEST(Observable, toFlowableDrop) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber =
+      std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -299,7 +301,8 @@ TEST(Observable, toFlowableErrorStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber =
+      std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -321,7 +324,8 @@ TEST(Observable, toFlowableBufferStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber =
+      std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -341,7 +345,8 @@ TEST(Observable, toFlowableLatestStrategy) {
 
   std::vector<int64_t> v;
 
-  auto subscriber = std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
+  auto subscriber =
+      std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(5);
 
   EXPECT_CALL(*subscriber, onSubscribe_(_));
   EXPECT_CALL(*subscriber, onNext_(_))
@@ -475,7 +480,8 @@ TEST(Observable, SimpleSkip) {
 }
 
 TEST(Observable, OverflowSkip) {
-  EXPECT_EQ(run(Observable<>::range(0, 10)->skip(12)), std::vector<int64_t>({}));
+  EXPECT_EQ(
+      run(Observable<>::range(0, 10)->skip(12)), std::vector<int64_t>({}));
 }
 
 TEST(Observable, IgnoreElements) {
@@ -556,8 +562,7 @@ TEST(Observable, CancelReleasesObjects) {
   observable->subscribe(collector);
 }
 
-class InfiniteAsyncTestOperator
-    : public ObservableOperator<int, int> {
+class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
   using Super = ObservableOperator<int, int>;
 
  public:
@@ -593,8 +598,7 @@ class InfiniteAsyncTestOperator
     TestSubscription(
         std::shared_ptr<Observer<int>> observer,
         MockFunction<void()>& checkpoint)
-        : SuperSub(std::move(observer)),
-          checkpoint_(checkpoint) {}
+        : SuperSub(std::move(observer)), checkpoint_(checkpoint) {}
 
     void onSubscribe(std::shared_ptr<Subscription> subscription) override {
       SuperSub::onSubscribe(std::move(subscription));
@@ -625,21 +629,24 @@ TEST(Observable, DISABLED_CancelSubscriptionChain) {
   MockFunction<void()> checkpoint2;
   MockFunction<void()> checkpoint3;
   std::thread t;
-  auto infinite1 = Observable<int>::create([&](std::shared_ptr<Observer<int>> obs) {
-    EXPECT_CALL(checkpoint, Call()).Times(1);
-    EXPECT_CALL(checkpoint2, Call()).Times(1);
-    EXPECT_CALL(checkpoint3, Call()).Times(1);
-    t = std::thread([obs, &emitted, &checkpoint]() {
-      while (!obs->isUnsubscribed()) {
-        ++emitted;
-        obs->onNext(0);
-      }
-      checkpoint.Call();
-    });
-  });
+  auto infinite1 =
+      Observable<int>::create([&](std::shared_ptr<Observer<int>> obs) {
+        EXPECT_CALL(checkpoint, Call()).Times(1);
+        EXPECT_CALL(checkpoint2, Call()).Times(1);
+        EXPECT_CALL(checkpoint3, Call()).Times(1);
+        t = std::thread([obs, &emitted, &checkpoint]() {
+          while (!obs->isUnsubscribed()) {
+            ++emitted;
+            obs->onNext(0);
+          }
+          checkpoint.Call();
+        });
+      });
   auto infinite2 = infinite1->skip(1)->skip(1);
-  auto test1 = std::make_shared<InfiniteAsyncTestOperator>(infinite2, checkpoint2);
-  auto test2 = std::make_shared<InfiniteAsyncTestOperator>(test1->skip(1), checkpoint3);
+  auto test1 =
+      std::make_shared<InfiniteAsyncTestOperator>(infinite2, checkpoint2);
+  auto test2 =
+      std::make_shared<InfiniteAsyncTestOperator>(test1->skip(1), checkpoint3);
   auto skip = test2->skip(8);
 
   auto subscription = skip->subscribe([](int) {});
@@ -699,7 +706,7 @@ TEST(Observable, DoOnTerminate2Test) {
 }
 
 TEST(Observable, DoOnEachTest) {
-  //TODO(lehecka): rewrite with concatWith
+  // TODO(lehecka): rewrite with concatWith
   auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(5);
     obs->onError(std::runtime_error("something broke!"));
@@ -711,7 +718,7 @@ TEST(Observable, DoOnEachTest) {
 }
 
 TEST(Observable, DoOnTest) {
-  //TODO(lehecka): rewrite with concatWith
+  // TODO(lehecka): rewrite with concatWith
   auto a = Observable<int>::create([](std::shared_ptr<Observer<int>> obs) {
     obs->onNext(5);
     obs->onError(std::runtime_error("something broke!"));
@@ -733,7 +740,7 @@ TEST(Observable, DoOnTest) {
 }
 
 TEST(Observable, DoOnCancelTest) {
-  auto a = Observable<>::range(1,10);
+  auto a = Observable<>::range(1, 10);
 
   MockFunction<void()> checkpoint;
   EXPECT_CALL(checkpoint, Call());
