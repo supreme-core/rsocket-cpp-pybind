@@ -78,6 +78,7 @@ std::vector<T> run(
     int64_t requestCount = 100) {
   auto subscriber = std::make_shared<TestSubscriber<T>>(requestCount);
   flowable->subscribe(subscriber);
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
   return std::move(subscriber->values());
 }
 
@@ -265,6 +266,21 @@ TEST(FlowableTest, SimpleTake) {
   EXPECT_EQ(
       run(Flowable<>::range(10, 5)),
       std::vector<int64_t>({10, 11, 12, 13, 14}));
+
+  EXPECT_EQ(run(Flowable<>::range(0, 100)->take(0)), std::vector<int64_t>({}));
+}
+
+TEST(FlowableTest, TakeError) {
+  auto take0 =
+      Flowable<int64_t>::error(std::runtime_error("something broke!"))
+          ->take(0);
+
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>();
+  take0->subscribe(subscriber);
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(subscriber->isComplete());
+  EXPECT_FALSE(subscriber->isError());
 }
 
 TEST(FlowableTest, SimpleSkip) {

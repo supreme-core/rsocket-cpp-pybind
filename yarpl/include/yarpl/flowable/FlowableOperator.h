@@ -283,6 +283,14 @@ class TakeOperator : public FlowableOperator<T, T> {
     Subscription(int64_t limit, std::shared_ptr<Subscriber<T>> subscriber)
         : SuperSubscription(std::move(subscriber)), limit_(limit) {}
 
+    void onSubscribeImpl() override {
+      SuperSubscription::onSubscribeImpl();
+
+      if (limit_ <= 0) {
+        SuperSubscription::terminate();
+      }
+    }
+
     void onNextImpl(T value) override {
       if (limit_-- > 0) {
         if (pending_ > 0) {

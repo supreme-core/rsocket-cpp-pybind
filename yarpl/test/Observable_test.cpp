@@ -34,12 +34,14 @@ class CollectingObserver : public Observer<T> {
   void onComplete() override {
     Observer<T>::onComplete();
     complete_ = true;
+    terminated_ = true;
   }
 
   void onError(folly::exception_wrapper ex) override {
     Observer<T>::onError(ex);
     error_ = true;
     errorMsg_ = ex.get_exception()->what();
+    terminated_ = true;
   }
 
   std::vector<T>& values() {
@@ -58,11 +60,28 @@ class CollectingObserver : public Observer<T> {
     return errorMsg_;
   }
 
+  /**
+   * Block the current thread until either onSuccess or onError is called.
+   */
+  void awaitTerminalEvent(
+      std::chrono::milliseconds ms = std::chrono::seconds{1}) {
+    // now block this thread
+    std::unique_lock<std::mutex> lk(m_);
+    // if shutdown gets implemented this would then be released by it
+    if (!terminalEventCV_.wait_for(lk, ms, [this] { return terminated_; })) {
+      throw std::runtime_error("timeout in awaitTerminalEvent");
+    }
+  }
+
  private:
   std::vector<T> values_;
   std::string errorMsg_;
   bool complete_{false};
   bool error_{false};
+
+  bool terminated_{false};
+  std::mutex m_;
+  std::condition_variable terminalEventCV_;
 };
 
 /// Construct a pipeline with a collecting observer against the supplied
@@ -72,6 +91,7 @@ template <typename T>
 std::vector<T> run(std::shared_ptr<Observable<T>> observable) {
   auto collector = std::make_shared<CollectingObserver<T>>();
   observable->subscribe(collector);
+  collector->awaitTerminalEvent(std::chrono::seconds(1));
   return std::move(collector->values());
 }
 
@@ -472,6 +492,22 @@ TEST(Observable, SimpleTake) {
   EXPECT_EQ(
       run(Observable<>::range(0, 100)->take(3)),
       std::vector<int64_t>({0, 1, 2}));
+
+  EXPECT_EQ(
+      run(Observable<>::range(0, 100)->take(0)), std::vector<int64_t>({}));
+}
+
+TEST(Observable, TakeError) {
+  auto take0 =
+      Observable<int64_t>::error(std::runtime_error("something broke!"))
+          ->take(0);
+
+  auto collector = std::make_shared<CollectingObserver<int64_t>>();
+  take0->subscribe(collector);
+
+  EXPECT_EQ(collector->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(collector->complete());
+  EXPECT_FALSE(collector->error());
 }
 
 TEST(Observable, SimpleSkip) {

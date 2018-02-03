@@ -333,10 +333,17 @@ class TakeOperator : public ObservableOperator<T, T> {
     TakeSubscription(int64_t limit, std::shared_ptr<Observer<T>> observer)
         : SuperSub(std::move(observer)), limit_(limit) {}
 
+    void onSubscribe(std::shared_ptr<yarpl::observable::Subscription>
+                         subscription) override {
+      SuperSub::onSubscribe(std::move(subscription));
+
+      if (limit_ <= 0) {
+        SuperSub::terminate();
+      }
+    }
+
     void onNext(T value) override {
       if (limit_-- > 0) {
-        if (pending_ > 0)
-          --pending_;
         SuperSub::observerOnNext(std::move(value));
         if (limit_ == 0) {
           SuperSub::terminate();
@@ -345,7 +352,6 @@ class TakeOperator : public ObservableOperator<T, T> {
     }
 
    private:
-    int64_t pending_{0};
     int64_t limit_;
   };
 
