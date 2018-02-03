@@ -272,8 +272,18 @@ TEST(FlowableTest, SimpleTake) {
 
 TEST(FlowableTest, TakeError) {
   auto take0 =
-      Flowable<int64_t>::error(std::runtime_error("something broke!"))
-          ->take(0);
+      Flowable<int64_t>::error(std::runtime_error("something broke!"))->take(0);
+
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>();
+  take0->subscribe(subscriber);
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(subscriber->isComplete());
+  EXPECT_FALSE(subscriber->isError());
+}
+
+TEST(FlowableTes, NeverTake) {
+  auto take0 = Flowable<int64_t>::never()->take(0);
 
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>();
   take0->subscribe(subscriber);
@@ -367,6 +377,9 @@ TEST(FlowableTest, FlowableNever) {
   auto flowable = Flowable<int>::never();
   auto subscriber = std::make_shared<TestSubscriber<int>>();
   flowable->subscribe(subscriber);
+  EXPECT_THROW(
+      subscriber->awaitTerminalEvent(std::chrono::milliseconds(100)),
+      std::runtime_error);
 
   EXPECT_FALSE(subscriber->isComplete());
   EXPECT_FALSE(subscriber->isError());
