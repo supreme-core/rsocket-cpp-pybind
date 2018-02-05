@@ -36,7 +36,7 @@ void RequestResponseResponder::onSuccess(Payload response) noexcept {
       state_ = State::CLOSED;
       writePayload(std::move(response), true);
       producingSubscription_ = nullptr;
-      closeStream(StreamCompletionSignal::COMPLETE);
+      removeFromWriter();
       break;
     }
     case State::CLOSED:
@@ -55,7 +55,7 @@ void RequestResponseResponder::onError(folly::exception_wrapper ex) noexcept {
     case State::RESPONDING: {
       state_ = State::CLOSED;
       applicationError(ex.get_exception()->what());
-      closeStream(StreamCompletionSignal::APPLICATION_ERROR);
+      removeFromWriter();
     } break;
     case State::CLOSED:
       break;
@@ -83,7 +83,7 @@ void RequestResponseResponder::handleCancel() {
   switch (state_) {
     case State::RESPONDING:
       state_ = State::CLOSED;
-      closeStream(StreamCompletionSignal::CANCEL);
+      removeFromWriter();
       break;
     case State::CLOSED:
       break;
