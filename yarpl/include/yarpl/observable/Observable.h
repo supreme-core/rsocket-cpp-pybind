@@ -150,6 +150,20 @@ class Observable : public yarpl::enable_get_ref {
 
   std::shared_ptr<Observable<T>> concatWith(std::shared_ptr<Observable<T>>);
 
+  template <typename... Args>
+  std::shared_ptr<Observable<T>> concatWith(
+      std::shared_ptr<Observable<T>> first,
+      Args... args) {
+    return concatWith(first)->concatWith(args...);
+  }
+
+  template <typename... Args>
+  static std::shared_ptr<Observable<T>> concat(
+      std::shared_ptr<Observable<T>> first,
+      Args... args) {
+    return first->concatWith(args...);
+  }
+
   // function is invoked when onComplete occurs.
   template <
       typename Function,

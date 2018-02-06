@@ -867,3 +867,36 @@ TEST(Observable, ConcatWithCompleteAtSubscription) {
   auto combined = first->concatWith(second)->take(0);
   EXPECT_EQ(run(combined), std::vector<int64_t>({}));
 }
+
+TEST(Observable, ConcatWithVarArgsTest) {
+  auto first = Observable<>::range(1, 2);
+  auto second = Observable<>::range(5, 2);
+  auto third = Observable<>::range(10, 2);
+  auto fourth = Observable<>::range(15, 2);
+
+  auto combined = first->concatWith(second, third, fourth);
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}
+
+TEST(Observable, ConcatTest) {
+  auto combined = Observable<int64_t>::concat(
+      Observable<>::range(1, 2), Observable<>::range(5, 2));
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6}));
+
+  // Observable::concat shoud not accept one parameter!
+  // Next line should cause compiler failure: OK!
+  // combined = Observable<int64_t>::concat(Observable<>::range(1, 2));
+
+  combined = Observable<int64_t>::concat(
+      Observable<>::range(1, 2),
+      Observable<>::range(5, 2),
+      Observable<>::range(10, 2));
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11}));
+
+  combined = Observable<int64_t>::concat(
+      Observable<>::range(1, 2),
+      Observable<>::range(5, 2),
+      Observable<>::range(10, 2),
+      Observable<>::range(15, 2));
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}
