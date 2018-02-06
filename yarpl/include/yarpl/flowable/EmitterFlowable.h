@@ -52,11 +52,6 @@ class EmiterSubscription final : public Subscription,
   }
 
   void request(int64_t delta) override {
-    if (delta <= 0) {
-      auto message = "request(n): " + folly::to<std::string>(delta) + " <= 0";
-      throw std::logic_error(message);
-    }
-
     while (true) {
       auto current = requested_.load(std::memory_order_relaxed);
 

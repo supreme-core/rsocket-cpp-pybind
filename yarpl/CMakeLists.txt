@@ -69,6 +69,7 @@ add_library(
         include/yarpl/flowable/EmitterFlowable.h
         include/yarpl/flowable/Flowable.h
         include/yarpl/flowable/FlowableOperator.h
+        include/yarpl/flowable/FlowableConcatOperators.h
         include/yarpl/flowable/FlowableDoOperator.h
         include/yarpl/flowable/FlowableObserveOnOperator.h
         include/yarpl/flowable/Flowable_FromObservable.h

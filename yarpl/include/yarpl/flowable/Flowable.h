@@ -192,6 +192,8 @@ class Flowable : public yarpl::enable_get_ref {
 
   std::shared_ptr<Flowable<T>> observeOn(folly::Executor&);
 
+  std::shared_ptr<Flowable<T>> concatWith(std::shared_ptr<Flowable<T>>);
+
   template <typename Q>
   using enableWrapRef =
       typename std::enable_if<details::IsFlowable<Q>::value, Q>::type;
@@ -399,6 +401,13 @@ template <typename Function, typename R>
 std::shared_ptr<Flowable<R>> Flowable<T>::flatMap(Function function) {
   return std::make_shared<FlatMapOperator<T, R>>(
       this->ref_from_this(this), std::move(function));
+}
+
+template <typename T>
+std::shared_ptr<Flowable<T>> Flowable<T>::concatWith(
+    std::shared_ptr<Flowable<T>> next) {
+  return std::make_shared<details::ConcatWithOperator<T>>(
+      this->ref_from_this(this), std::move(next));
 }
 
 template <typename T>

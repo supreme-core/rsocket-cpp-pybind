@@ -26,7 +26,7 @@ class DoOperator : public FlowableOperator<U, U> {
       OnCompleteFunc onCompleteFunc,
       OnRequestFunc onRequestFunc,
       OnCancelFunc onCancelFunc)
-      : Super(std::move(upstream)),
+      : upstream_(std::move(upstream)),
         onSubscribeFunc_(std::move(onSubscribeFunc)),
         onNextFunc_(std::move(onNextFunc)),
         onErrorFunc_(std::move(onErrorFunc)),
@@ -37,7 +37,7 @@ class DoOperator : public FlowableOperator<U, U> {
   void subscribe(std::shared_ptr<Subscriber<U>> subscriber) override {
     auto subscription = std::make_shared<DoSubscription>(
         this->ref_from_this(this), std::move(subscriber));
-    Super::upstream_->subscribe(
+    upstream_->subscribe(
         // Note: implicit cast to a reference to a subscriber.
         subscription);
   }
@@ -88,6 +88,7 @@ class DoOperator : public FlowableOperator<U, U> {
     std::shared_ptr<DoOperator> flowable_;
   };
 
+  std::shared_ptr<Flowable<U>> upstream_;
   OnSubscribeFunc onSubscribeFunc_;
   OnNextFunc onNextFunc_;
   OnErrorFunc onErrorFunc_;

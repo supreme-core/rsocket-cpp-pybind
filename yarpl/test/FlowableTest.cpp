@@ -807,3 +807,87 @@ TEST(FlowableTest, DoOnRequestTest) {
 
   a->doOnRequest([&](int64_t n) { checkpoint.Call(n); })->take(2)->subscribe();
 }
+
+TEST(FlowableTest, ConcatWithTest) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+  auto combined = first->concatWith(second);
+
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6}));
+}
+
+TEST(FlowableTest, ConcatWithMultipleTest) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+  auto third = Flowable<>::range(10, 2);
+  auto fourth = Flowable<>::range(15, 2);
+  auto firstSecond = first->concatWith(second);
+  auto thirdFourth = third->concatWith(fourth);
+  auto combined = firstSecond->concatWith(thirdFourth);
+
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}
+
+TEST(FlowableTest, ConcatWithExceptionTest) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+  auto third = Flowable<long>::error(std::runtime_error("error"));
+
+  auto combined = first->concatWith(second)->concatWith(third);
+
+  auto subscriber = std::make_shared<TestSubscriber<long>>();
+  combined->subscribe(subscriber);
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1, 2, 5, 6}));
+  EXPECT_TRUE(subscriber->isError());
+  EXPECT_EQ(subscriber->getErrorMsg(), "error");
+}
+
+TEST(FlowableTest, ConcatWithFlowControlTest) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+  auto third = Flowable<>::range(10, 2);
+  auto fourth = Flowable<>::range(15, 2);
+  auto firstSecond = first->concatWith(second);
+  auto thirdFourth = third->concatWith(fourth);
+  auto combined = firstSecond->concatWith(thirdFourth);
+
+  auto subscriber = std::make_shared<TestSubscriber<long>>(0);
+  combined->subscribe(subscriber);
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>{});
+
+  const std::vector<int64_t> allResults{1, 2, 5, 6, 10, 11, 15, 16};
+  for (int i = 1; i <= 8; ++i) {
+    subscriber->request(1);
+    subscriber->awaitValueCount(1, std::chrono::seconds(1));
+    EXPECT_EQ(
+        subscriber->values(),
+        std::vector<int64_t>(allResults.begin(), allResults.begin() + i));
+  }
+}
+
+TEST(FlowableTest, ConcatWithCancel) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+
+  auto combined = first->concatWith(second);
+  auto subscriber = std::make_shared<TestSubscriber<long>>(0);
+
+  MockFunction<void()> checkpoint;
+  EXPECT_CALL(checkpoint, Call());
+  combined->doOnCancel([&]() { checkpoint.Call(); })->subscribe(subscriber);
+
+  subscriber->request(3);
+  subscriber->awaitValueCount(3, std::chrono::seconds(1));
+
+  subscriber->cancel();
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1, 2, 5}));
+}
+
+TEST(FlowableTest, ConcatWithCompleteAtSubscription) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+
+  auto combined = first->concatWith(second)->take(0);
+  EXPECT_EQ(run(combined), std::vector<int64_t>({}));
+}
