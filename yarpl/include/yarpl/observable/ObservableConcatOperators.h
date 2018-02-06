@@ -1,0 +1,127 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
+#pragma once
+
+namespace yarpl {
+namespace observable {
+namespace details {
+
+template <typename T>
+class ConcatWithOperator : public ObservableOperator<T, T> {
+  using Super = ObservableOperator<T, T>;
+
+ public:
+  ConcatWithOperator(
+      std::shared_ptr<Observable<T>> first,
+      std::shared_ptr<Observable<T>> second)
+      : first_(std::move(first)), second_(std::move(second)) {
+    CHECK(first_);
+    CHECK(second_);
+  }
+
+  std::shared_ptr<Subscription> subscribe(
+      std::shared_ptr<Observer<T>> observer) override {
+    auto subscription =
+        std::make_shared<ConcatWithSubscription>(observer, first_, second_);
+    subscription->init();
+
+    return subscription;
+  }
+
+ private:
+  class ForwardObserver;
+
+  // Downstream will always point to this subscription
+  class ConcatWithSubscription
+      : public yarpl::observable::Subscription,
+        public std::enable_shared_from_this<ConcatWithSubscription> {
+   public:
+    ConcatWithSubscription(
+        std::shared_ptr<Observer<T>> observer,
+        std::shared_ptr<Observable<T>> first,
+        std::shared_ptr<Observable<T>> second)
+        : downObserver_(std::move(observer)),
+          first_(std::move(first)),
+          second_(std::move(second)) {}
+
+    void init() {
+      upObserver_ = std::make_shared<ForwardObserver>(this->shared_from_this());
+      downObserver_->onSubscribe(this->shared_from_this());
+      if (upObserver_) {
+        first_->subscribe(upObserver_);
+      }
+    }
+
+    void cancel() override {
+      if (auto observer = std::move(upObserver_)) {
+        observer->cancel();
+      }
+    }
+
+    void onNext(T value) {
+      downObserver_->onNext(std::move(value));
+    }
+
+    void onComplete() {
+      if (auto first = std::move(first_)) {
+        upObserver_ =
+            std::make_shared<ForwardObserver>(this->shared_from_this());
+        second_->subscribe(upObserver_);
+      } else {
+        downObserver_->onComplete();
+      }
+    }
+
+    void onError(folly::exception_wrapper ew) {
+      downObserver_->onError(std::move(ew));
+    }
+
+   private:
+    std::shared_ptr<Observer<T>> downObserver_;
+    std::shared_ptr<Observable<T>> first_;
+    std::shared_ptr<Observable<T>> second_;
+    std::shared_ptr<ForwardObserver> upObserver_;
+  };
+
+  class ForwardObserver : public yarpl::observable::Observer<T>,
+                          public yarpl::observable::Subscription {
+   public:
+    ForwardObserver(
+        std::shared_ptr<ConcatWithSubscription> concatWithSubscription)
+        : concatWithSubscription_(std::move(concatWithSubscription)) {}
+
+    void cancel() override {
+      if (auto subs = std::move(subscription_)) {
+        subs->cancel();
+      }
+    }
+
+    void onSubscribe(std::shared_ptr<Subscription> subscription) override {
+      // Don't forward the subscription to downstream observer
+      subscription_ = std::move(subscription);
+    }
+
+    void onComplete() override {
+      concatWithSubscription_->onComplete();
+    }
+
+    void onError(folly::exception_wrapper ew) override {
+      concatWithSubscription_->onError(std::move(ew));
+    }
+    void onNext(T value) override {
+      concatWithSubscription_->onNext(std::move(value));
+    }
+
+   private:
+    std::shared_ptr<ConcatWithSubscription> concatWithSubscription_;
+    std::shared_ptr<observable::Subscription> subscription_;
+  };
+
+ private:
+  const std::shared_ptr<Observable<T>> first_;
+  const std::shared_ptr<Observable<T>> second_;
+};
+
+} // namespace details
+} // namespace observable
+} // namespace yarpl

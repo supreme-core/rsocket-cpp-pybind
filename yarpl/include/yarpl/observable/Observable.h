@@ -148,6 +148,8 @@ class Observable : public yarpl::enable_get_ref {
 
   std::shared_ptr<Observable<T>> subscribeOn(folly::Executor&);
 
+  std::shared_ptr<Observable<T>> concatWith(std::shared_ptr<Observable<T>>);
+
   // function is invoked when onComplete occurs.
   template <
       typename Function,
@@ -312,6 +314,13 @@ std::shared_ptr<Observable<T>> Observable<T>::doOnSubscribe(Function function) {
       [](const auto&) {},
       [] {},
       [] {}); // onCancel
+}
+
+template <typename T>
+std::shared_ptr<Observable<T>> Observable<T>::concatWith(
+    std::shared_ptr<Observable<T>> next) {
+  return std::make_shared<details::ConcatWithOperator<T>>(
+      this->ref_from_this(this), std::move(next));
 }
 
 template <typename T>

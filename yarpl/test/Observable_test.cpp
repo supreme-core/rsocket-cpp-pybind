@@ -605,13 +605,13 @@ class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
   InfiniteAsyncTestOperator(
       std::shared_ptr<Observable<int>> upstream,
       MockFunction<void()>& checkpoint)
-      : Super(std::move(upstream)), checkpoint_(checkpoint) {}
+      : upstream_(std::move(upstream)), checkpoint_(checkpoint) {}
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<int>> observer) override {
     auto subscription =
         std::make_shared<TestSubscription>(std::move(observer), checkpoint_);
-    Super::upstream_->subscribe(
+    upstream_->subscribe(
         // Note: implicit cast to a reference to a observer.
         subscription);
     return subscription;
@@ -651,6 +651,7 @@ class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
     MockFunction<void()>& checkpoint_;
   };
 
+  std::shared_ptr<Observable<int>> upstream_;
   MockFunction<void()>& checkpoint_;
 };
 
@@ -810,4 +811,59 @@ TEST(Observable, DeferExceptionTest) {
 
   EXPECT_TRUE(observer->error());
   EXPECT_EQ(observer->errorMsg(), "Too big!");
+}
+
+TEST(Observable, ConcatWithTest) {
+  auto first = Observable<>::range(1, 2);
+  auto second = Observable<>::range(5, 2);
+  auto combined = first->concatWith(second);
+
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6}));
+  // Subscribe again
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6}));
+}
+
+TEST(Observable, ConcatWithMultipleTest) {
+  auto first = Observable<>::range(1, 2);
+  auto second = Observable<>::range(5, 2);
+  auto third = Observable<>::range(10, 2);
+  auto fourth = Observable<>::range(15, 2);
+  auto firstSecond = first->concatWith(second);
+  auto thirdFourth = third->concatWith(fourth);
+  auto combined = firstSecond->concatWith(thirdFourth);
+
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}
+
+TEST(Observable, ConcatWithExceptionTest) {
+  auto first = Observable<>::range(1, 2);
+  auto second = Observable<>::range(5, 2);
+  auto third = Observable<long>::error(std::runtime_error("error"));
+
+  auto combined = first->concatWith(second)->concatWith(third);
+
+  auto observer = std::make_shared<CollectingObserver<long>>();
+  combined->subscribe(observer);
+
+  EXPECT_EQ(observer->values(), std::vector<int64_t>({1, 2, 5, 6}));
+  EXPECT_TRUE(observer->error());
+  EXPECT_EQ(observer->errorMsg(), "error");
+}
+
+TEST(Observable, ConcatWithCancelTest) {
+  auto first = Observable<>::range(1, 2);
+  auto second = Observable<>::range(5, 2);
+  auto combined = first->concatWith(second);
+  auto take0 = combined->take(0);
+
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6}));
+  EXPECT_EQ(run(take0), std::vector<int64_t>({}));
+}
+
+TEST(Observable, ConcatWithCompleteAtSubscription) {
+  auto first = Observable<>::range(1, 2);
+  auto second = Observable<>::range(5, 2);
+
+  auto combined = first->concatWith(second)->take(0);
+  EXPECT_EQ(run(combined), std::vector<int64_t>({}));
 }
