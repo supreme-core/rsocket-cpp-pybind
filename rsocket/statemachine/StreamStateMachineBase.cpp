@@ -42,6 +42,14 @@ void StreamStateMachineBase::newStream(
       streamId_, streamType, initialRequestN, std::move(payload));
 }
 
+void StreamStateMachineBase::writeRequestN(uint32_t n) {
+  writer_->writeRequestN(Frame_REQUEST_N{streamId_, n});
+}
+
+void StreamStateMachineBase::writeCancel() {
+  writer_->writeCancel(Frame_CANCEL{streamId_});
+}
+
 void StreamStateMachineBase::writePayload(Payload&& payload, bool complete) {
   auto const flags =
       FrameFlags::NEXT | (complete ? FrameFlags::COMPLETE : FrameFlags::EMPTY);
@@ -49,26 +57,16 @@ void StreamStateMachineBase::writePayload(Payload&& payload, bool complete) {
   writer_->writePayload(std::move(frame));
 }
 
-void StreamStateMachineBase::writeRequestN(uint32_t n) {
-  writer_->writeRequestN(Frame_REQUEST_N{streamId_, n});
+void StreamStateMachineBase::writeComplete() {
+  writer_->writePayload(Frame_PAYLOAD::complete(streamId_));
 }
 
-void StreamStateMachineBase::applicationError(std::string msg) {
+void StreamStateMachineBase::writeApplicationError(std::string msg) {
   writer_->writeError(Frame_ERROR::applicationError(streamId_, std::move(msg)));
 }
 
-void StreamStateMachineBase::errorStream(std::string msg) {
+void StreamStateMachineBase::writeInvalidError(std::string msg) {
   writer_->writeError(Frame_ERROR::invalid(streamId_, std::move(msg)));
-  endStream(StreamCompletionSignal::ERROR);
-  removeFromWriter();
-}
-
-void StreamStateMachineBase::cancelStream() {
-  writer_->writeCancel(Frame_CANCEL{streamId_});
-}
-
-void StreamStateMachineBase::completeStream() {
-  writer_->writePayload(Frame_PAYLOAD::complete(streamId_));
 }
 
 void StreamStateMachineBase::removeFromWriter() {

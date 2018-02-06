@@ -50,7 +50,7 @@ void StreamRequester::cancel() noexcept {
   VLOG(5) << "StreamRequester::cancel(requested_=" << requested_ << ")";
   cancelConsumer();
   if (requested_) {
-    cancelStream();
+    writeCancel();
   }
   removeFromWriter();
 }

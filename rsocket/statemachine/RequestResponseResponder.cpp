@@ -34,7 +34,7 @@ void RequestResponseResponder::onSuccess(Payload response) noexcept {
   switch (state_) {
     case State::RESPONDING: {
       state_ = State::CLOSED;
-      writePayload(std::move(response), true);
+      writePayload(std::move(response), true /* complete */);
       producingSubscription_ = nullptr;
       removeFromWriter();
       break;
@@ -54,7 +54,7 @@ void RequestResponseResponder::onError(folly::exception_wrapper ex) noexcept {
   switch (state_) {
     case State::RESPONDING: {
       state_ = State::CLOSED;
-      applicationError(ex.get_exception()->what());
+      writeApplicationError(ex.get_exception()->what());
       removeFromWriter();
     } break;
     case State::CLOSED:
@@ -89,4 +89,5 @@ void RequestResponseResponder::handleCancel() {
       break;
   }
 }
-}
+
+} // namespace rsocket

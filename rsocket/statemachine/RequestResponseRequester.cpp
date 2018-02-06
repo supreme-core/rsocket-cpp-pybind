@@ -38,7 +38,7 @@ void RequestResponseRequester::cancel() noexcept {
       break;
     case State::REQUESTED: {
       state_ = State::CLOSED;
-      cancelStream();
+      writeCancel();
       removeFromWriter();
     } break;
     case State::CLOSED:
@@ -108,8 +108,8 @@ void RequestResponseRequester::handlePayload(
     consumingSubscriber_->onSuccess(std::move(payload));
     consumingSubscriber_ = nullptr;
   } else if (!complete) {
-    errorStream("Payload, NEXT or COMPLETE flag expected");
-    return;
+    writeInvalidError("Payload, NEXT or COMPLETE flag expected");
+    endStream(StreamCompletionSignal::ERROR);
   }
   removeFromWriter();
 }

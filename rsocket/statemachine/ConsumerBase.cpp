@@ -117,8 +117,11 @@ void ConsumerBase::sendRequests() {
 
 void ConsumerBase::handleFlowControlError() {
   if (auto subscriber = std::move(consumingSubscriber_)) {
-    subscriber->onError(std::runtime_error("surplus response"));
+    subscriber->onError(std::runtime_error("Surplus response"));
   }
-  errorStream("flow control error");
+  writeInvalidError("Flow control error");
+  endStream(StreamCompletionSignal::ERROR);
+  removeFromWriter();
 }
+
 } // namespace rsocket

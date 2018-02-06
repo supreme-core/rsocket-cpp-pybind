@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <memory>
 #include <folly/ExceptionWrapper.h>
+#include <memory>
 #include "rsocket/internal/Common.h"
 
 namespace folly {
@@ -52,16 +52,16 @@ class StreamStateMachineBase {
     return isTerminated_;
   }
 
-  void newStream(
-      StreamType streamType,
-      uint32_t initialRequestN,
-      Payload payload);
-  void writePayload(Payload&& payload, bool complete);
-  void writeRequestN(uint32_t n);
-  void applicationError(std::string errorPayload);
-  void errorStream(std::string errorPayload);
-  void cancelStream();
-  void completeStream();
+  void
+  newStream(StreamType streamType, uint32_t initialRequestN, Payload payload);
+
+  void writeRequestN(uint32_t);
+  void writeCancel();
+
+  void writePayload(Payload&& payload, bool complete = false);
+  void writeComplete();
+  void writeApplicationError(std::string);
+  void writeInvalidError(std::string);
 
   void removeFromWriter();
 
@@ -73,4 +73,5 @@ class StreamStateMachineBase {
   // TODO: remove and nulify the writer_ instead
   bool isTerminated_{false};
 };
-}
+
+} // namespace rsocket

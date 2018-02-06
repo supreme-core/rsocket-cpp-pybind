@@ -59,4 +59,5 @@ void PublisherBase::terminatePublisher() {
     subscription->cancel();
   }
 }
-}
+
+} // namespace rsocket

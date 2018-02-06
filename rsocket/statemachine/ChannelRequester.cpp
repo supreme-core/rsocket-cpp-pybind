@@ -39,7 +39,7 @@ void ChannelRequester::onNext(Payload request) noexcept {
 
   checkPublisherOnNext();
   if (!publisherClosed()) {
-    writePayload(std::move(request), false);
+    writePayload(std::move(request));
   }
 }
 
@@ -52,7 +52,7 @@ void ChannelRequester::onComplete() noexcept {
   }
   if (!publisherClosed()) {
     publisherComplete();
-    completeStream();
+    writeComplete();
     tryCompleteChannel();
   }
 }
@@ -65,7 +65,7 @@ void ChannelRequester::onError(folly::exception_wrapper ex) noexcept {
   }
   if (!publisherClosed()) {
     publisherComplete();
-    applicationError(ex.get_exception()->what());
+    writeApplicationError(ex.get_exception()->what());
     tryCompleteChannel();
   }
 }
@@ -89,7 +89,7 @@ void ChannelRequester::cancel() noexcept {
     return;
   }
   cancelConsumer();
-  cancelStream();
+  writeCancel();
   tryCompleteChannel();
 }
 
