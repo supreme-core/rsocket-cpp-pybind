@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "RSocketTests.h"
+#include "rsocket/test/test_utils/GenericRequestResponseHandler.h"
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/TestSubscriber.h"
 
@@ -20,20 +21,21 @@ using namespace rsocket::tests::client_server;
 class TestHandlerHello : public rsocket::RSocketResponder {
  public:
   /// Handles a new inbound Stream requested by the other end.
-  std::shared_ptr<Flowable<rsocket::Payload>> handleRequestChannel(
+  std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+  handleRequestChannel(
       rsocket::Payload initialPayload,
-      std::shared_ptr<Flowable<rsocket::Payload>> request,
-      rsocket::StreamId) override {
+      std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> stream,
+      rsocket::StreamId streamId) override {
     // say "Hello" to each name on the input stream
-    return request->map([initialPayload = std::move(initialPayload)](
-        Payload p) {
-      std::stringstream ss;
-      ss << "[" << initialPayload.cloneDataToString() << "] "
-         << "Hello " << p.moveDataToString() << "!";
-      std::string s = ss.str();
+    return stream->map(
+        [initialPayload = std::move(initialPayload)](Payload p) {
+          std::stringstream ss;
+          ss << "[" << initialPayload.cloneDataToString() << "] "
+             << "Hello " << p.moveDataToString() << "!";
+          std::string s = ss.str();
 
-      return Payload(s);
-    });
+          return Payload(s);
+        });
   }
 };
 
@@ -358,4 +360,89 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
   responderSubscriber->awaitTerminalEvent();
   responderSubscriber->assertValueAt(0, "Requester stream: 1 of 10");
   responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
+}
+
+struct LargePayloadChannelHandler : public rsocket::RSocketResponder {
+  LargePayloadChannelHandler(std::string const& data, std::string const& meta)
+      : data(data), meta(meta) {}
+
+  std::shared_ptr<yarpl::flowable::Flowable<Payload>> handleRequestChannel(
+      Payload initialPayload,
+      std::shared_ptr<yarpl::flowable::Flowable<Payload>> stream,
+      StreamId) {
+    RSocketPayloadUtils::checkSameStrings(
+        initialPayload.data, data, "data received in initial payload");
+    RSocketPayloadUtils::checkSameStrings(
+        initialPayload.metadata, meta, "metadata received in initial payload");
+
+    return stream->map([&](Payload payload) {
+      RSocketPayloadUtils::checkSameStrings(
+          payload.data, data, "data received in server stream");
+      RSocketPayloadUtils::checkSameStrings(
+          payload.metadata, meta, "metadata received in server stream");
+      return payload;
+    });
+  }
+
+  std::string const& data;
+  std::string const& meta;
+};
+
+TEST(RequestChannelTest, TestLargePayload) {
+  LOG(INFO) << "Building up large data/metadata, this may take a moment...";
+  std::string const niceLongData = RSocketPayloadUtils::makeLongString(
+      RSocketPayloadUtils::LargeRequestSize, "ABCDEFGH");
+  std::string const niceLongMeta = RSocketPayloadUtils::makeLongString(
+      RSocketPayloadUtils::LargeRequestSize, "12345678");
+
+  LOG(INFO) << "Built meta size: " << niceLongMeta.size()
+            << " data size: " << niceLongData.size();
+
+  folly::ScopedEventBaseThread worker;
+  auto handler =
+      std::make_shared<LargePayloadChannelHandler>(niceLongData, niceLongMeta);
+  auto server = makeServer(handler);
+
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+
+  auto checkForSizePattern = [&](std::vector<size_t> const& meta_sizes,
+                                 std::vector<size_t> const& data_sizes) {
+    auto to = TestSubscriber<int>::create();
+
+    auto seedPayload = Payload(
+        RSocketPayloadUtils::buildIOBufFromString(data_sizes, niceLongData),
+        RSocketPayloadUtils::buildIOBufFromString(meta_sizes, niceLongMeta));
+
+    auto makePayload = [&] {
+      return Payload(seedPayload.data->clone(), seedPayload.metadata->clone());
+    };
+
+    auto requests = yarpl::flowable::Flowable<Payload>::create(
+                        [&](auto& subscriber, int64_t num) {
+                          while (num--) {
+                            subscriber.onNext(makePayload());
+                          }
+                        })
+                        ->take(3);
+
+    requester->requestChannel(std::move(requests))
+        ->map([&](Payload p) {
+          RSocketPayloadUtils::checkSameStrings(
+              p.data, niceLongData, "data received on client");
+          RSocketPayloadUtils::checkSameStrings(
+              p.metadata, niceLongMeta, "metadata received on client");
+          return 0;
+        })
+        ->subscribe(to);
+    to->awaitTerminalEvent(std::chrono::seconds{20});
+    to->assertValueCount(2);
+    to->assertSuccess();
+  };
+
+  // All in one big chunk
+  checkForSizePattern({}, {});
+
+  // Small chunk, big chunk, small chunk
+  checkForSizePattern({100, 5 * 1024 * 1024, 100}, {100, 5 * 1024 * 1024, 100});
 }

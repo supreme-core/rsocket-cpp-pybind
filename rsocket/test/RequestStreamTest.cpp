@@ -221,3 +221,85 @@ TEST(RequestStreamTest, HandleErrorMidStream) {
   ts->assertValueCount(4);
   ts->assertOnErrorMessage("A wild Error appeared!");
 }
+
+struct LargePayloadStreamHandler : public rsocket::RSocketResponder {
+  LargePayloadStreamHandler(
+      std::string const& data,
+      std::string const& meta,
+      Payload const& seedPayload)
+      : data(data), meta(meta), seedPayload(seedPayload) {}
+
+  std::shared_ptr<yarpl::flowable::Flowable<Payload>> handleRequestStream(
+      Payload initialPayload,
+      StreamId) {
+    RSocketPayloadUtils::checkSameStrings(
+        initialPayload.data, data, "data received in initial payload");
+    RSocketPayloadUtils::checkSameStrings(
+        initialPayload.metadata, meta, "metadata received in initial payload");
+
+    return yarpl::flowable::Flowable<Payload>::create([&](auto& subscriber,
+                                                          int64_t num) {
+             while (num--) {
+               auto p = Payload(
+                   seedPayload.data->clone(), seedPayload.metadata->clone());
+               subscriber.onNext(std::move(p));
+             }
+           })
+        ->take(3);
+  }
+
+  std::string const& data;
+  std::string const& meta;
+  Payload const& seedPayload;
+};
+
+TEST(RequestStreamTest, TestLargePayload) {
+  LOG(INFO) << "Building up large data/metadata, this may take a moment...";
+  // ~20 megabytes per frame (metadata + data)
+  std::string const niceLongData = RSocketPayloadUtils::makeLongString(
+      RSocketPayloadUtils::LargeRequestSize, "ABCDEFGH");
+  std::string const niceLongMeta = RSocketPayloadUtils::makeLongString(
+      RSocketPayloadUtils::LargeRequestSize, "12345678");
+
+  LOG(INFO) << "Built meta size: " << niceLongMeta.size()
+            << " data size: " << niceLongData.size();
+
+  auto checkForSizePattern = [&](std::vector<size_t> const& meta_sizes,
+                                 std::vector<size_t> const& data_sizes) {
+    folly::ScopedEventBaseThread worker;
+    auto seedPayload = Payload(
+        RSocketPayloadUtils::buildIOBufFromString(data_sizes, niceLongData),
+        RSocketPayloadUtils::buildIOBufFromString(meta_sizes, niceLongMeta));
+    auto makePayload = [&] {
+      return Payload(seedPayload.data->clone(), seedPayload.metadata->clone());
+    };
+
+    auto handler = std::make_shared<LargePayloadStreamHandler>(
+        niceLongData, niceLongMeta, seedPayload);
+    auto server = makeServer(handler);
+
+    auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+    auto requester = client->getRequester();
+
+    auto to = TestSubscriber<int>::create();
+
+    requester->requestStream(makePayload())
+        ->map([&](Payload p) {
+          RSocketPayloadUtils::checkSameStrings(
+              p.data, niceLongData, "data received on client");
+          RSocketPayloadUtils::checkSameStrings(
+              p.metadata, niceLongMeta, "metadata received on client");
+          return 0;
+        })
+        ->subscribe(to);
+    to->awaitTerminalEvent(std::chrono::seconds{20});
+    to->assertValueCount(3);
+    to->assertSuccess();
+  };
+
+  // All in one big chunk
+  checkForSizePattern({}, {});
+
+  // Small chunk, big chunk, small chunk
+  checkForSizePattern({100, 5 * 1024 * 1024, 100}, {100, 5 * 1024 * 1024, 100});
+}

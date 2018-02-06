@@ -5,6 +5,7 @@
 #include <folly/Random.h>
 #include <folly/String.h>
 #include <folly/io/IOBuf.h>
+#include <algorithm>
 #include <random>
 
 namespace rsocket {
@@ -44,6 +45,26 @@ static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
   }
 }
 
+folly::StringPiece toString(StreamType t) {
+  switch (t) {
+    case StreamType::REQUEST_RESPONSE:
+      return "REQUEST_RESPONSE";
+    case StreamType::STREAM:
+      return "STREAM";
+    case StreamType::CHANNEL:
+      return "CHANNEL";
+    case StreamType::FNF:
+      return "FNF";
+    default:
+      DCHECK(false);
+      return "(invalid StreamType)";
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, StreamType t) {
+  return os << toString(t);
+}
+
 std::ostream& operator<<(std::ostream& os, RSocketMode mode) {
   switch (mode) {
   case RSocketMode::CLIENT:
@@ -80,6 +101,7 @@ std::string to_string(StreamCompletionSignal signal) {
   }
   // this should be never hit because the switch is over all cases
   LOG(FATAL) << "unknown StreamCompletionSignal=" << static_cast<int>(signal);
+  return "<unknown StreamCompletionSignal>";
 }
 
 std::ostream& operator<<(std::ostream& os, StreamCompletionSignal signal) {
@@ -148,7 +170,22 @@ std::ostream& operator<<(
   return out;
 }
 
+std::string humanify(std::unique_ptr<folly::IOBuf> const& buf) {
+  std::string ret;
+  size_t cursor = 0;
+
+  for(auto range : *buf) {
+    for(unsigned char chr : range) {
+      if(cursor >= 20) goto outer;
+      ret += chr;
+      cursor++;
+    }
+  }
+  outer:
+
+  return folly::humanify(ret);
+}
 std::string hexDump(folly::StringPiece s) {
-  return folly::hexDump(s.data(), s.size());
+  return folly::hexDump(s.data(), std::min<size_t>(0xFF, s.size()));
 }
 } // reactivesocket

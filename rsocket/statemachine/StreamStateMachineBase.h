@@ -5,6 +5,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <memory>
 #include "rsocket/internal/Common.h"
+#include "rsocket/statemachine/StreamFragmentAccumulator.h"
 
 namespace folly {
 class IOBuf;

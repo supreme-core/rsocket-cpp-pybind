@@ -23,8 +23,9 @@ class TestHandlerCancel : public rsocket::RSocketResponder {
       std::shared_ptr<folly::Baton<>> onCancel,
       std::shared_ptr<folly::Baton<>> onSubscribe)
       : onCancel_(std::move(onCancel)), onSubscribe_(std::move(onSubscribe)) {}
-  std::shared_ptr<Single<Payload>> handleRequestResponse(Payload request, StreamId)
-      override {
+  std::shared_ptr<Single<Payload>> handleRequestResponse(
+      Payload request,
+      StreamId) override {
     // used to signal to the client when the subscribe is received
     onSubscribe_->post();
     // used to block this responder thread until a cancel is sent from client
@@ -33,32 +34,30 @@ class TestHandlerCancel : public rsocket::RSocketResponder {
     // used to signal to the client once we receive a cancel
     auto onCancel = onCancel_;
     auto requestString = request.moveDataToString();
-    return Single<Payload>::create(
-        [ name = std::move(requestString), cancelFromClient, onCancel ](
-            auto subscriber) mutable {
-          std::thread([
-            subscriber = std::move(subscriber),
-            name = std::move(name),
-            cancelFromClient,
-            onCancel
-          ]() {
-            auto subscription = SingleSubscriptions::create(
-                [cancelFromClient] { cancelFromClient->post(); });
-            subscriber->onSubscribe(subscription);
-            // simulate slow processing or IO being done
-            // and block this current background thread
-            // until we are cancelled
-            cancelFromClient->wait();
-            if (subscription->isCancelled()) {
-              //  this is used by the unit test to assert the cancel was
-              //  received
-              onCancel->post();
-            } else {
-              // if not cancelled would do work and emit here
-            }
-          })
-              .detach();
-        });
+    return Single<Payload>::create([name = std::move(requestString),
+                                    cancelFromClient,
+                                    onCancel](auto subscriber) mutable {
+      std::thread([subscriber = std::move(subscriber),
+                   name = std::move(name),
+                   cancelFromClient,
+                   onCancel]() {
+        auto subscription = SingleSubscriptions::create(
+            [cancelFromClient] { cancelFromClient->post(); });
+        subscriber->onSubscribe(subscription);
+        // simulate slow processing or IO being done
+        // and block this current background thread
+        // until we are cancelled
+        cancelFromClient->wait();
+        if (subscription->isCancelled()) {
+          //  this is used by the unit test to assert the cancel was
+          //  received
+          onCancel->post();
+        } else {
+          // if not cancelled would do work and emit here
+        }
+      })
+          .detach();
+    });
   }
 
  private:
@@ -197,4 +196,70 @@ TEST(RequestResponseTest, FailureOnRequest) {
       ->subscribe(to);
   to->awaitTerminalEvent();
   EXPECT_TRUE(to->getError());
+}
+
+struct LargePayloadReqRespHandler : public rsocket::RSocketResponder {
+  LargePayloadReqRespHandler(std::string const& data, std::string const& meta)
+      : data(data), meta(meta) {}
+
+  std::shared_ptr<yarpl::single::Single<Payload>> handleRequestResponse(
+      Payload payload,
+      StreamId) {
+    RSocketPayloadUtils::checkSameStrings(
+        payload.data, data, "data received in payload");
+    RSocketPayloadUtils::checkSameStrings(
+        payload.metadata, meta, "metadata received in payload");
+
+    return yarpl::single::Single<Payload>::create(
+        [p = std::move(payload)](auto sub) mutable {
+          sub->onSubscribe(yarpl::single::SingleSubscriptions::empty());
+          sub->onSuccess(std::move(p));
+        });
+  }
+
+  std::string const& data;
+  std::string const& meta;
+};
+
+TEST(RequestResponseTest, TestLargePayload) {
+  LOG(INFO) << "Building up large data/metadata, this may take a moment...";
+  std::string niceLongData = RSocketPayloadUtils::makeLongString(
+      RSocketPayloadUtils::LargeRequestSize, "ABCDEFGH");
+  std::string niceLongMeta = RSocketPayloadUtils::makeLongString(
+      RSocketPayloadUtils::LargeRequestSize, "12345678");
+  LOG(INFO) << "Built meta size: " << niceLongMeta.size()
+            << " data size: " << niceLongData.size();
+
+  auto checkForSizePattern = [&](std::vector<size_t> const& meta_sizes,
+                                 std::vector<size_t> const& data_sizes) {
+    folly::ScopedEventBaseThread worker;
+    auto server = makeServer(std::make_shared<LargePayloadReqRespHandler>(
+        niceLongData, niceLongMeta));
+    auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+    auto requester = client->getRequester();
+    auto to = SingleTestObserver<int>::create();
+
+    requester
+        ->requestResponse(Payload(
+            RSocketPayloadUtils::buildIOBufFromString(data_sizes, niceLongData),
+            RSocketPayloadUtils::buildIOBufFromString(
+                meta_sizes, niceLongMeta)))
+        ->map([&](Payload p) {
+          RSocketPayloadUtils::checkSameStrings(
+              p.data, niceLongData, "data (received on client)");
+          RSocketPayloadUtils::checkSameStrings(
+              p.metadata, niceLongMeta, "metadata (received on client)");
+          return 0;
+        })
+        ->subscribe(to);
+    to->awaitTerminalEvent();
+    to->assertSuccess();
+  };
+
+  // All in one big chunk
+  checkForSizePattern({}, {});
+
+  // Small chunk, big chunk, small chunk
+  checkForSizePattern(
+      {100, 10 * 1024 * 1024, 100}, {100, 10 * 1024 * 1024, 100});
 }

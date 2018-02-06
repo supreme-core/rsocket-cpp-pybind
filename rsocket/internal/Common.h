@@ -35,6 +35,7 @@ using StreamId = uint32_t;
 using ResumePosition = int64_t;
 constexpr const ResumePosition kUnspecifiedResumePosition = -1;
 
+std::string humanify(std::unique_ptr<folly::IOBuf> const&);
 std::string hexDump(folly::StringPiece s);
 
 /// Indicates the reason why the stream stateMachine received a terminal signal
@@ -62,6 +63,9 @@ enum class StreamType {
   CHANNEL,
   FNF,
 };
+
+folly::StringPiece toString(StreamType);
+std::ostream& operator<<(std::ostream&, StreamType);
 
 enum class RequestOriginator {
   LOCAL,

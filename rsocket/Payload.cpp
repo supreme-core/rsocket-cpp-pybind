@@ -31,8 +31,7 @@ std::ostream& operator<<(std::ostream& os, const Payload& payload) {
                     : "0")
             << (payload.metadata
                     ? "): '" +
-                        folly::humanify(
-                            payload.metadata->cloneAsValue().moveToFbString().substr(0, 80)) +
+                        humanify(payload.metadata) +
                         "'"
                     : "): <null>")
             << ", Data("
@@ -41,8 +40,7 @@ std::ostream& operator<<(std::ostream& os, const Payload& payload) {
                              : "0")
             << (payload.data
                     ? "): '" +
-                        folly::humanify(
-                            payload.data->cloneAsValue().moveToFbString().substr(0, 80)) +
+                        humanify(payload.data) +
                         "'"
                     : "): <null>");
 }
