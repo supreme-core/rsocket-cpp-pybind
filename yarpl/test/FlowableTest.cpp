@@ -891,3 +891,36 @@ TEST(FlowableTest, ConcatWithCompleteAtSubscription) {
   auto combined = first->concatWith(second)->take(0);
   EXPECT_EQ(run(combined), std::vector<int64_t>({}));
 }
+
+TEST(FlowableTest, ConcatWithVarArgsTest) {
+  auto first = Flowable<>::range(1, 2);
+  auto second = Flowable<>::range(5, 2);
+  auto third = Flowable<>::range(10, 2);
+  auto fourth = Flowable<>::range(15, 2);
+
+  auto combined = first->concatWith(second, third, fourth);
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}
+
+TEST(FlowableTest, ConcatTest) {
+  auto combined = Flowable<int64_t>::concat(
+      Flowable<>::range(1, 2), Flowable<>::range(5, 2));
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6}));
+
+  // Flowable::concat shoud not accept one parameter!
+  // Next line should cause compiler failure: OK!
+  // combined = Flowable<int64_t>::concat(Flowable<>::range(1, 2));
+
+  combined = Flowable<int64_t>::concat(
+      Flowable<>::range(1, 2),
+      Flowable<>::range(5, 2),
+      Flowable<>::range(10, 2));
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11}));
+
+  combined = Flowable<int64_t>::concat(
+      Flowable<>::range(1, 2),
+      Flowable<>::range(5, 2),
+      Flowable<>::range(10, 2),
+      Flowable<>::range(15, 2));
+  EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}

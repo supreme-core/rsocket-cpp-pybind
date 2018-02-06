@@ -194,6 +194,20 @@ class Flowable : public yarpl::enable_get_ref {
 
   std::shared_ptr<Flowable<T>> concatWith(std::shared_ptr<Flowable<T>>);
 
+  template <typename... Args>
+  std::shared_ptr<Flowable<T>> concatWith(
+      std::shared_ptr<Flowable<T>> first,
+      Args... args) {
+    return concatWith(first)->concatWith(args...);
+  }
+
+  template <typename... Args>
+  static std::shared_ptr<Flowable<T>> concat(
+      std::shared_ptr<Flowable<T>> first,
+      Args... args) {
+    return first->concatWith(args...);
+  }
+
   template <typename Q>
   using enableWrapRef =
       typename std::enable_if<details::IsFlowable<Q>::value, Q>::type;
