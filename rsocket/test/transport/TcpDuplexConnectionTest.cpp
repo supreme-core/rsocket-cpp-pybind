@@ -51,7 +51,7 @@ makeSingleClientServer(
         clientConnection = std::move(connection.connection);
       }).wait();
 
-  serverPromise.getFuture().wait();
+  serverPromise.getSemiFuture().wait();
   return std::make_pair(std::move(server), std::move(client));
 }
 
