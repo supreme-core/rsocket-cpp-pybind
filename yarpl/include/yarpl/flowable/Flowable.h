@@ -136,6 +136,51 @@ class Flowable : public yarpl::enable_get_ref {
     return Flowable<T>::create(std::move(lambda));
   }
 
+  static std::shared_ptr<Flowable<T>> just(T value) {
+    auto lambda = [value = std::move(value)](
+                      Subscriber<T>& subscriber, int64_t requested) {
+      DCHECK_GT(requested, 0);
+      subscriber.onNext(value);
+      subscriber.onComplete();
+    };
+
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  static std::shared_ptr<Flowable<T>> justN(std::initializer_list<T> list) {
+    auto lambda = [ v = std::vector<T>(std::move(list)), i = size_t{0} ](
+        Subscriber<T>& subscriber, int64_t requested) mutable {
+      while (i < v.size() && requested-- > 0) {
+        subscriber.onNext(v[i++]);
+      }
+
+      if (i == v.size()) {
+        subscriber.onComplete();
+      }
+    };
+
+    return Flowable<T>::create(std::move(lambda));
+  }
+
+  // this will generate a flowable which can be subscribed to only once
+  static std::shared_ptr<Flowable<T>> justOnce(T value) {
+    auto lambda = [ value = std::move(value), used = false ](
+        Subscriber<T>& subscriber, int64_t) mutable {
+      if (used) {
+        subscriber.onError(
+            std::runtime_error("justOnce value was already used"));
+        return;
+      }
+
+      used = true;
+      // # requested should be > 0.  Ignoring the actual parameter.
+      subscriber.onNext(std::move(value));
+      subscriber.onComplete();
+    };
+
+    return Flowable<T>::create(std::move(lambda));
+  }
+
   template <
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<

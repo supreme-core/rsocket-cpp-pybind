@@ -62,6 +62,16 @@ class Observable : public yarpl::enable_get_ref {
     return Observable<T>::create(std::move(lambda));
   }
 
+  static std::shared_ptr<Observable<T>> just(T value) {
+    auto lambda =
+        [value = std::move(value)](std::shared_ptr<Observer<T>> observer) {
+          observer->onNext(value);
+          observer->onComplete();
+        };
+
+    return Observable<T>::create(std::move(lambda));
+  }
+
   /**
    * The Defer operator waits until an observer subscribes to it, and then it
    * generates an Observable with an ObservableFactory function. It
@@ -75,6 +85,36 @@ class Observable : public yarpl::enable_get_ref {
           std::shared_ptr<Observable<T>>,
           ObservableFactory>::value>::type>
   static std::shared_ptr<Observable<T>> defer(ObservableFactory);
+
+  static std::shared_ptr<Observable<T>> justN(std::initializer_list<T> list) {
+    auto lambda = [v = std::vector<T>(std::move(list))](
+                      std::shared_ptr<Observer<T>> observer) {
+      for (auto const& elem : v) {
+        observer->onNext(elem);
+      }
+      observer->onComplete();
+    };
+
+    return Observable<T>::create(std::move(lambda));
+  }
+
+  // this will generate an observable which can be subscribed to only once
+  static std::shared_ptr<Observable<T>> justOnce(T value) {
+    auto lambda = [ value = std::move(value), used = false ](
+        std::shared_ptr<Observer<T>> observer) mutable {
+      if (used) {
+        observer->onError(
+            std::runtime_error("justOnce value was already used"));
+        return;
+      }
+
+      used = true;
+      observer->onNext(std::move(value));
+      observer->onComplete();
+    };
+
+    return Observable<T>::create(std::move(lambda));
+  }
 
   template <typename OnSubscribe>
   static std::shared_ptr<Observable<T>> create(OnSubscribe);

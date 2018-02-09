@@ -21,46 +21,19 @@ class Observable<void> {
       int64_t count);
 
   template <typename T>
-  static std::shared_ptr<Observable<T>> just(const T& value) {
-    auto lambda = [value](std::shared_ptr<Observer<T>> observer) {
-      observer->onNext(value);
-      observer->onComplete();
-    };
-
-    return Observable<T>::create(std::move(lambda));
+  static std::shared_ptr<Observable<T>> just(T value) {
+    return Observable<T>::just(std::move(value));
   }
 
   template <typename T>
   static std::shared_ptr<Observable<T>> justN(std::initializer_list<T> list) {
-    std::vector<T> vec(list);
-
-    auto lambda = [v = std::move(vec)](std::shared_ptr<Observer<T>> observer) {
-      for (auto const& elem : v) {
-        observer->onNext(elem);
-      }
-      observer->onComplete();
-    };
-
-    return Observable<T>::create(std::move(lambda));
+    return Observable<T>::justN(std::move(list));
   }
 
   // this will generate an observable which can be subscribed to only once
   template <typename T>
   static std::shared_ptr<Observable<T>> justOnce(T value) {
-    auto lambda = [ value = std::move(value), used = false ](
-        std::shared_ptr<Observer<T>> observer) mutable {
-      if (used) {
-        observer->onError(
-            std::runtime_error("justOnce value was already used"));
-        return;
-      }
-
-      used = true;
-      observer->onNext(std::move(value));
-      observer->onComplete();
-    };
-
-    return Observable<T>::create(std::move(lambda));
+    return Observable<T>::justOnce(std::move(value));
   }
 
  private:
