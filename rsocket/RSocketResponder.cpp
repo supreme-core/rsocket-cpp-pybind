@@ -109,7 +109,7 @@ RSocketResponder::handleRequestChannelCore(
   auto eagerSubscriber = std::make_shared<EagerSubscriberBridge>();
   auto flowable = handleRequestChannel(
       std::move(request),
-      yarpl::flowable::Flowable<rsocket::Payload>::fromPublisher(
+      yarpl::flowable::internal::flowableFromSubscriber<rsocket::Payload>(
           [eagerSubscriber](
               std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
                   subscriber) { eagerSubscriber->subscribe(subscriber); }),

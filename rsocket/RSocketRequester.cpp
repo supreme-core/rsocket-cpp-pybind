@@ -37,7 +37,7 @@ RSocketRequester::requestChannel(
         requestStream) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  return yarpl::flowable::Flowable<Payload>::fromPublisher([
+  return yarpl::flowable::internal::flowableFromSubscriber<Payload>([
     eb = eventBase_,
     requestStream = std::move(requestStream),
     srs = stateMachine_
@@ -74,7 +74,7 @@ std::shared_ptr<yarpl::flowable::Flowable<Payload>>
 RSocketRequester::requestStream(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  return yarpl::flowable::Flowable<Payload>::fromPublisher([
+  return yarpl::flowable::internal::flowableFromSubscriber<Payload>([
     eb = eventBase_,
     request = std::move(request),
     srs = stateMachine_

@@ -17,8 +17,9 @@ using namespace rsocket::tests::client_server;
 namespace {
 class TestHandlerSync : public rsocket::RSocketResponder {
  public:
-  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
-      override {
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(
+      Payload request,
+      StreamId) override {
     // string from payload data
     auto requestString = request.moveDataToString();
 
@@ -100,34 +101,33 @@ TEST(RequestStreamTest, HelloNoFlowControl) {
 
 class TestHandlerAsync : public rsocket::RSocketResponder {
  public:
-  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
-      override {
+  explicit TestHandlerAsync(folly::Executor& executor) : executor_(executor) {}
+
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(
+      Payload request,
+      StreamId) override {
     // string from payload data
     auto requestString = request.moveDataToString();
 
-    return Flowable<Payload>::fromPublisher(
-        [requestString = std::move(requestString)](
-            std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
-          std::thread([requestString = std::move(requestString),
-                       subscriber = std::move(subscriber)]() {
-            Flowable<>::range(1, 40)
-                ->map([name = std::move(requestString)](int64_t v) {
-                  std::stringstream ss;
-                  ss << "Hello " << name << " " << v << "!";
-                  std::string s = ss.str();
-                  return Payload(s, "metadata");
-                })
-                ->subscribe(subscriber);
-          })
-              .detach();
-        });
+    return Flowable<>::range(1, 40)
+        ->map([name = std::move(requestString)](int64_t v) {
+          std::stringstream ss;
+          ss << "Hello " << name << " " << v << "!";
+          std::string s = ss.str();
+          return Payload(s, "metadata");
+        })
+        ->subscribeOn(executor_);
   }
+private:
+  folly::Executor& executor_;
 };
 } // namespace
 
 TEST(RequestStreamTest, HelloAsync) {
   folly::ScopedEventBaseThread worker;
-  auto server = makeServer(std::make_shared<TestHandlerAsync>());
+  folly::ScopedEventBaseThread worker2;
+  auto server =
+      makeServer(std::make_shared<TestHandlerAsync>(*worker2.getEventBase()));
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
   auto ts = TestSubscriber<std::string>::create();
@@ -170,7 +170,8 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
 
 class TestHandlerResponder : public rsocket::RSocketResponder {
  public:
-  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload, StreamId) override {
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload, StreamId)
+      override {
     return Flowable<Payload>::error(
         std::runtime_error("A wild Error appeared!"));
   }
@@ -191,8 +192,9 @@ TEST(RequestStreamTest, HandleError) {
 
 class TestErrorAfterOnNextResponder : public rsocket::RSocketResponder {
  public:
-  std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload request, StreamId)
-      override {
+  std::shared_ptr<Flowable<Payload>> handleRequestStream(
+      Payload request,
+      StreamId) override {
     // string from payload data
     auto requestString = request.moveDataToString();
 

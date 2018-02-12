@@ -36,7 +36,7 @@ ScheduledRSocketResponder::handleRequestStream(
     StreamId streamId) {
   auto innerFlowable = inner_->handleRequestStream(std::move(request),
                                                    streamId);
-  return yarpl::flowable::Flowable<Payload>::fromPublisher(
+  return yarpl::flowable::internal::flowableFromSubscriber<Payload>(
   [innerFlowable = std::move(innerFlowable), eventBase = &eventBase_](
       std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
   subscriber) {
@@ -52,19 +52,20 @@ ScheduledRSocketResponder::handleRequestChannel(
     std::shared_ptr<yarpl::flowable::Flowable<Payload>>
     requestStream,
     StreamId streamId) {
-  auto requestStreamFlowable = yarpl::flowable::Flowable<Payload>::fromPublisher(
-  [requestStream = std::move(requestStream), eventBase = &eventBase_](
-      std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
-  subscriber) {
-    requestStream->subscribe(std::make_shared<
-        ScheduledSubscriptionSubscriber<Payload>>
-                                 (std::move(subscriber), *eventBase));
-  });
+  auto requestStreamFlowable =
+      yarpl::flowable::internal::flowableFromSubscriber<Payload>(
+          [requestStream = std::move(requestStream), eventBase = &eventBase_](
+              std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
+                  subscriber) {
+            requestStream->subscribe(
+                std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
+                    std::move(subscriber), *eventBase));
+          });
   auto innerFlowable = inner_->handleRequestChannel(std::move(request),
                                                     std::move(
                                                         requestStreamFlowable),
                                                     streamId);
-  return yarpl::flowable::Flowable<Payload>::fromPublisher(
+  return yarpl::flowable::internal::flowableFromSubscriber<Payload>(
   [innerFlowable = std::move(innerFlowable), eventBase = &eventBase_](
       std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
   subscriber) {

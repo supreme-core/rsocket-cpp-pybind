@@ -181,13 +181,6 @@ class Flowable : public yarpl::enable_get_ref {
     return Flowable<T>::create(std::move(lambda));
   }
 
-  template <
-      typename OnSubscribe,
-      typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe,
-          std::shared_ptr<Subscriber<T>>>::value>::type>
-  static std::shared_ptr<Flowable<T>> fromPublisher(OnSubscribe function);
-
   template <typename TGenerator>
   static std::shared_ptr<Flowable<T>> fromGenerator(TGenerator generator);
 
@@ -257,6 +250,9 @@ class Flowable : public yarpl::enable_get_ref {
   using enableWrapRef =
       typename std::enable_if<details::IsFlowable<Q>::value, Q>::type;
 
+  // Combines multiple Flowables so that they act like a
+  // single Flowable. The items
+  // emitted by the merged Flowables may interlieve.
   template <typename Q = T>
   enableWrapRef<Q> merge() {
     return this->flatMap([](auto f) { return std::move(f); });
@@ -354,6 +350,17 @@ class Flowable : public yarpl::enable_get_ref {
           details::TrackingSubscriber<T>&,
           int64_t>::value>::type>
   static std::shared_ptr<Flowable<T>> create(Emitter emitter);
+
+  template <
+      typename OnSubscribe,
+      typename = typename std::enable_if<folly::is_invocable<
+          OnSubscribe,
+          std::shared_ptr<Subscriber<T>>>::value>::type>
+  //TODO(lehecka): enable this warning once mobile code is clear
+  // FOLLY_DEPRECATED(
+  //     "Flowable<T>::fromPublisher is deprecated: Use PublishProcessor or "
+  //     "contact rsocket team if you can't figure out what to replace it with")
+  static std::shared_ptr<Flowable<T>> fromPublisher(OnSubscribe function);
 };
 
 } // namespace flowable
@@ -373,11 +380,19 @@ std::shared_ptr<Flowable<T>> Flowable<T>::create(Emitter emitter) {
       std::move(emitter));
 }
 
+namespace internal {
+template <typename T, typename OnSubscribe>
+std::shared_ptr<Flowable<T>> flowableFromSubscriber(OnSubscribe function) {
+  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
+      std::move(function));
+}
+} // namespace internal
+
+// TODO(lehecka): remove
 template <typename T>
 template <typename OnSubscribe, typename>
 std::shared_ptr<Flowable<T>> Flowable<T>::fromPublisher(OnSubscribe function) {
-  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
-      std::move(function));
+  return internal::flowableFromSubscriber<T>(std::move(function));
 }
 
 template <typename T>

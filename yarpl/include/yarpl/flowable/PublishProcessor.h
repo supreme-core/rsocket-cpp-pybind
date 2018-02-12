@@ -37,6 +37,10 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
     }
   }
 
+  bool hasSubscribers() const {
+    return !publishers_.copy()->empty();
+  }
+
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     auto publisher = std::make_shared<PublisherSubscription>(subscriber, this);
     // we have to call onSubscribe before adding it to the list of publishers

@@ -186,27 +186,9 @@ struct FlowableEvbPair {
 std::shared_ptr<FlowableEvbPair> make_range_flowable(int start, int end) {
   auto ret = std::make_shared<FlowableEvbPair>();
   ret->evb.start("MRF_Worker");
-
-  ret->flowable = Flowable<int>::fromPublisher(
-      [&ret, start, end](std::shared_ptr<Subscriber<int>> s) mutable {
-        auto evb = ret->evb.getEventBase();
-        auto subscription = std::make_shared<CBSubscription>(
-            [=](int64_t req) mutable {
-              /* request */
-              CHECK_EQ(req, 1);
-              if (start >= end) {
-                evb->runInEventBaseThread([=] { s->onComplete(); });
-              } else {
-                auto n = start++;
-                evb->runInEventBaseThread([=] { s->onNext(n); });
-              }
-            },
-            /* onCancel: do nothing */
-            []() {});
-
-        evb->runInEventBaseThread([=] { s->onSubscribe(subscription); });
-      });
-
+  ret->flowable = Flowable<>::range(start, end - start)
+                       ->map([](int64_t val) { return (int)val; })
+                       ->subscribeOn(*ret->evb.getEventBase());
   return ret;
 }
 

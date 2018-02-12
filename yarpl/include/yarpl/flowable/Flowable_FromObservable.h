@@ -11,8 +11,11 @@ namespace yarpl {
 namespace observable {
 template <typename T>
 class Observable;
+
+template <typename T>
+class Observer;
 }
-}
+} // namespace yarpl
 
 class MissingBackpressureException;
 
@@ -113,6 +116,7 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     // by default drop anything else received while we don't have credits
   }
 
+ private:
   std::shared_ptr<observable::Observable<T>> observable_;
   std::shared_ptr<flowable::Subscriber<T>> subscriber_;
   std::atomic_bool started{false};
@@ -247,6 +251,6 @@ class FlowableFromObservableSubscriptionMissingStrategy
     Super::onNext(std::move(t));
   }
 };
-}
-}
-}
+} // namespace details
+} // namespace flowable
+} // namespace yarpl

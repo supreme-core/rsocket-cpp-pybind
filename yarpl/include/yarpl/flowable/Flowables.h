@@ -36,6 +36,13 @@ class Flowable<void> {
     return Flowable<T>::justOnce(std::move(value));
   }
 
+  template <typename T, typename... Args>
+  static std::shared_ptr<Flowable<T>> concat(
+      std::shared_ptr<Flowable<T>> first,
+      Args... args) {
+    return first->concatWith(args...);
+  }
+
  private:
   Flowable() = delete;
 };

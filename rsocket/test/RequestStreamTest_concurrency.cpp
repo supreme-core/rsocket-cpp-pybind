@@ -35,6 +35,7 @@ using namespace ::testing;
 class LockstepAsyncHandler : public rsocket::RSocketResponder {
   LockstepBatons& batons_;
   Sequence& subscription_seq_;
+  folly::ScopedEventBaseThread worker_;
 
  public:
   LockstepAsyncHandler(LockstepBatons& batons, Sequence& subscription_seq)
@@ -43,47 +44,53 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
   std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload p, StreamId)
       override {
     EXPECT_EQ(p.moveDataToString(), "initial");
-    return Flowable<Payload>::fromPublisher(
-        [this](std::shared_ptr<flowable::Subscriber<Payload>> subscriber) {
-          auto subscription = std::make_shared<StrictMock<MockSubscription>>();
 
-          std::thread([=] {
-            CHECK_WAIT(this->batons_.onRequestReceived);
+    auto step1 = Flowable<Payload>::empty()->doOnComplete([this]() {
+      CHECK_WAIT(this->batons_.onRequestReceived);
+      LOCKSTEP_DEBUG("SERVER: sending onNext(foo)");
+    });
 
-            LOCKSTEP_DEBUG("SERVER: sending onNext(foo)");
-            subscriber->onNext(Payload("foo"));
-            CHECK_WAIT(this->batons_.onCancelSent);
-            CHECK_WAIT(this->batons_.onCancelReceivedToserver);
+    auto step2 = Flowable<>::justOnce(Payload("foo"))->doOnComplete([this]() {
+      CHECK_WAIT(this->batons_.onCancelSent);
+      CHECK_WAIT(this->batons_.onCancelReceivedToserver);
+      LOCKSTEP_DEBUG("SERVER: sending onNext(bar)");
+    });
 
-            LOCKSTEP_DEBUG("SERVER: sending onNext(bar)");
-            subscriber->onNext(Payload("bar"));
-            this->batons_.onSecondPayloadSent.post();
-            LOCKSTEP_DEBUG("SERVER: sending onComplete()");
-            subscriber->onComplete();
-            LOCKSTEP_DEBUG("SERVER: posting serverFinished");
-            this->batons_.serverFinished.post();
-          }).detach();
+    auto step3 = Flowable<>::justOnce(Payload("bar"))->doOnComplete([this]() {
+      this->batons_.onSecondPayloadSent.post();
+      LOCKSTEP_DEBUG("SERVER: sending onComplete()");
+    });
 
-          // checked once the subscription is destroyed
-          EXPECT_CALL(*subscription, request_(2))
-              .InSequence(this->subscription_seq_)
-              .WillOnce(Invoke([=](auto n) {
-                LOCKSTEP_DEBUG("SERVER: got request(" << n << ")");
-                EXPECT_EQ(n, 2);
-                this->batons_.onRequestReceived.post();
-              }));
+    auto generator = Flowable<>::concat(step1, step2, step3)
+                         ->doOnComplete([this]() {
+                           LOCKSTEP_DEBUG("SERVER: posting serverFinished");
+                           this->batons_.serverFinished.post();
+                         })
+                         ->subscribeOn(*worker_.getEventBase());
 
-          EXPECT_CALL(*subscription, cancel_())
-              .InSequence(this->subscription_seq_)
-              .WillOnce(Invoke([=] {
-                LOCKSTEP_DEBUG("SERVER: received cancel()");
-                this->batons_.onCancelReceivedToclient.post();
-                this->batons_.onCancelReceivedToserver.post();
-              }));
+    // checked once the subscription is destroyed
+    auto requestCheckpoint = std::make_shared<MockFunction<void(int64_t)>>();
+    EXPECT_CALL(*requestCheckpoint, Call(2))
+        .InSequence(this->subscription_seq_)
+        .WillOnce(Invoke([=](auto n) {
+          LOCKSTEP_DEBUG("SERVER: got request(" << n << ")");
+          EXPECT_EQ(n, 2);
+          this->batons_.onRequestReceived.post();
+        }));
 
-          LOCKSTEP_DEBUG("SERVER: sending onSubscribe()");
-          subscriber->onSubscribe(subscription);
-        });
+    auto cancelCheckpoint = std::make_shared<MockFunction<void()>>();
+    EXPECT_CALL(*cancelCheckpoint, Call())
+        .InSequence(this->subscription_seq_)
+        .WillOnce(Invoke([=] {
+          LOCKSTEP_DEBUG("SERVER: received cancel()");
+          this->batons_.onCancelReceivedToclient.post();
+          this->batons_.onCancelReceivedToserver.post();
+        }));
+
+    return generator
+        ->doOnRequest(
+            [requestCheckpoint](auto n) { requestCheckpoint->Call(n); })
+        ->doOnCancel([cancelCheckpoint] { cancelCheckpoint->Call(); });
   }
 };
 
