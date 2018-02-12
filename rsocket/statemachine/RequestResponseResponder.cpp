@@ -15,7 +15,7 @@ void RequestResponseResponder::onSubscribe(
   DCHECK(!gotOnSubscribe_.exchange(true)) << "Already called onSubscribe()";
 #endif
 
-  if (StreamStateMachineBase::isTerminated()) {
+  if (state_ == State::CLOSED) {
     subscription->cancel();
     return;
   }
@@ -76,7 +76,6 @@ void RequestResponseResponder::endStream(StreamCompletionSignal signal) {
   if (auto subscription = std::move(producingSubscription_)) {
     subscription->cancel();
   }
-  StreamStateMachineBase::endStream(signal);
 }
 
 void RequestResponseResponder::handleCancel() {

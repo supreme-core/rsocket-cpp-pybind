@@ -16,7 +16,7 @@ using namespace yarpl::flowable;
 
 void ConsumerBase::subscribe(
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) {
-  if (isTerminated()) {
+  if (state_ == State::CLOSED) {
     subscriber->onSubscribe(yarpl::flowable::Subscription::empty());
     subscriber->onComplete();
     return;
@@ -48,6 +48,7 @@ void ConsumerBase::generateRequest(size_t n) {
 
 void ConsumerBase::endStream(StreamCompletionSignal signal) {
   VLOG(5) << "ConsumerBase::endStream(" << signal << ")";
+  state_ = State::CLOSED;
   if (auto subscriber = std::move(consumingSubscriber_)) {
     if (signal == StreamCompletionSignal::COMPLETE ||
         signal == StreamCompletionSignal::CANCEL) { // TODO: remove CANCEL
@@ -58,7 +59,6 @@ void ConsumerBase::endStream(StreamCompletionSignal signal) {
       subscriber->onError(StreamInterruptedException(static_cast<int>(signal)));
     }
   }
-  StreamStateMachineBase::endStream(signal);
 }
 
 size_t ConsumerBase::getConsumerAllowance() const {

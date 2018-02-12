@@ -46,13 +46,9 @@ class StreamStateMachineBase {
   /// 3. per "unsubscribe handshake", the state machine must deliver
   /// corresponding
   ///   terminal signal to the connection.
-  virtual void endStream(StreamCompletionSignal signal);
+  virtual void endStream(StreamCompletionSignal) {}
 
  protected:
-  bool isTerminated() const {
-    return isTerminated_;
-  }
-
   void
   newStream(StreamType streamType, uint32_t initialRequestN, Payload payload);
 
@@ -71,8 +67,6 @@ class StreamStateMachineBase {
   /// safety of the dtor.
   const std::shared_ptr<StreamsWriter> writer_;
   const StreamId streamId_;
-  // TODO: remove and nulify the writer_ instead
-  bool isTerminated_{false};
 };
 
 } // namespace rsocket

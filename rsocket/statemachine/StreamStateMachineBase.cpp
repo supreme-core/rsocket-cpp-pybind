@@ -30,10 +30,6 @@ size_t StreamStateMachineBase::getConsumerAllowance() const {
   return 0;
 }
 
-void StreamStateMachineBase::endStream(StreamCompletionSignal) {
-  isTerminated_ = true;
-}
-
 void StreamStateMachineBase::newStream(
     StreamType streamType,
     uint32_t initialRequestN,
@@ -70,7 +66,6 @@ void StreamStateMachineBase::writeInvalidError(std::string msg) {
 }
 
 void StreamStateMachineBase::removeFromWriter() {
-  isTerminated_ = true;
   writer_->onStreamClosed(streamId_);
   // TODO: set writer_ to nullptr
 }

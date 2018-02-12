@@ -32,9 +32,8 @@ void StreamResponder::onError(folly::exception_wrapper ex) noexcept {
   }
 }
 
-void StreamResponder::endStream(StreamCompletionSignal signal) {
+void StreamResponder::endStream(StreamCompletionSignal) {
   terminatePublisher();
-  StreamStateMachineBase::endStream(signal);
 }
 
 void StreamResponder::handleCancel() {

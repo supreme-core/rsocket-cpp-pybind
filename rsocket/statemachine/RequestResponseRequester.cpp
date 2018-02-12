@@ -12,7 +12,7 @@ using namespace yarpl::flowable;
 
 void RequestResponseRequester::subscribe(
     std::shared_ptr<yarpl::single::SingleObserver<Payload>> subscriber) {
-  DCHECK(!isTerminated());
+  DCHECK(state_ != State::CLOSED);
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_ = std::move(subscriber);
   consumingSubscriber_->onSubscribe(this->ref_from_this(this));
