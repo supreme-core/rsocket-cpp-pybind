@@ -21,7 +21,6 @@
 #include "rsocket/internal/ScheduledSubscriber.h"
 #include "rsocket/internal/WarmResumeManager.h"
 #include "rsocket/statemachine/ChannelResponder.h"
-#include "rsocket/statemachine/StreamState.h"
 #include "rsocket/statemachine/StreamStateMachineBase.h"
 
 namespace rsocket {
@@ -36,7 +35,6 @@ RSocketStateMachine::RSocketStateMachine(
     std::shared_ptr<ColdResumeHandler> coldResumeHandler)
     : mode_{mode},
       stats_{stats ? stats : RSocketStats::noop()},
-      streamState_{*stats_},
       resumeManager_{resumeManager
                          ? resumeManager
                          : std::make_shared<WarmResumeManager>(stats_)},
@@ -210,8 +208,8 @@ void RSocketStateMachine::sendPendingFrames() {
 
   // We are free to try to send frames again.  Not all frames might be sent if
   // the connection breaks, the rest of them will queue up again.
-  auto outputFrames = streamState_.moveOutputPendingFrames();
-  for (auto& frame : outputFrames) {
+  auto frames = consumePendingOutputFrames();
+  for (auto& frame : frames) {
     outputFrameOrEnqueue(std::move(frame));
   }
 
@@ -359,8 +357,7 @@ void RSocketStateMachine::reconnect(
 void RSocketStateMachine::addStream(
     StreamId streamId,
     std::shared_ptr<StreamStateMachineBase> stateMachine) {
-  auto result =
-      streamState_.streams_.emplace(streamId, std::move(stateMachine));
+  auto result = streams_.emplace(streamId, std::move(stateMachine));
   DCHECK(result.second);
 }
 
@@ -368,29 +365,28 @@ bool RSocketStateMachine::endStreamInternal(
     StreamId streamId,
     StreamCompletionSignal signal) {
   VLOG(6) << "endStreamInternal";
-  auto it = streamState_.streams_.find(streamId);
-  if (it == streamState_.streams_.end()) {
+  auto it = streams_.find(streamId);
+  if (it == streams_.end()) {
     // Unsubscribe handshake initiated by the connection, we're done.
     return false;
   }
 
   // Remove from the map before notifying the stateMachine.
   auto streamElem = std::move(it->second);
-  streamState_.streams_.erase(it);
+  streams_.erase(it);
   streamElem.stateMachine->endStream(signal);
   return true;
 }
 
 void RSocketStateMachine::closeStreams(StreamCompletionSignal signal) {
   // Close all streams.
-  while (!streamState_.streams_.empty()) {
-    auto oldSize = streamState_.streams_.size();
-    auto result =
-        endStreamInternal(streamState_.streams_.begin()->first, signal);
+  while (!streams_.empty()) {
+    auto oldSize = streams_.size();
+    auto result = endStreamInternal(streams_.begin()->first, signal);
     // TODO(stupaq): what kind of a user action could violate these
     // assertions?
     DCHECK(result);
-    DCHECK_EQ(streamState_.streams_.size(), oldSize - 1);
+    DCHECK_EQ(streams_.size(), oldSize - 1);
   }
 }
 
@@ -585,8 +581,8 @@ void RSocketStateMachine::handleStreamFrame(
     StreamId streamId,
     FrameType frameType,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
-  auto it = streamState_.streams_.find(streamId);
-  if (it == streamState_.streams_.end()) {
+  auto it = streams_.find(streamId);
+  if (it == streams_.end()) {
     handleUnknownStream(streamId, frameType, std::move(serializedFrame));
     return;
   }
@@ -823,8 +819,8 @@ void RSocketStateMachine::handleUnknownStream(
   }
 }
 
-// Called when 'initialFrame' is the first frame for a stream or request, and the stream
-// is fragmented.
+// Called when 'initialFrame' is the first frame for a stream or request, and
+// the stream is fragmented.
 template <typename FrameType>
 void RSocketStateMachine::handleInitialFollowsFrame(
     StreamId streamId,
@@ -937,7 +933,8 @@ void RSocketStateMachine::resumeFromPosition(ResumePosition position) {
   }
   resumeManager_->sendFramesFromPosition(position, *frameTransport_);
 
-  for (auto& frame : streamState_.moveOutputPendingFrames()) {
+  auto frames = consumePendingOutputFrames();
+  for (auto& frame : frames) {
     outputFrameOrEnqueue(std::move(frame));
   }
 
@@ -952,7 +949,7 @@ void RSocketStateMachine::outputFrameOrEnqueue(
   if (!isDisconnected() && !resumeCallback_) {
     outputFrame(std::move(frame));
   } else {
-    streamState_.enqueueOutputPendingFrame(std::move(frame));
+    enqueuePendingOutputFrame(std::move(frame));
   }
 }
 
@@ -1140,7 +1137,7 @@ void RSocketStateMachine::writeError(Frame_ERROR&& frame) {
 }
 
 void RSocketStateMachine::onStreamClosed(StreamId streamId) {
-  streamState_.streams_.erase(streamId);
+  streams_.erase(streamId);
   resumeManager_->onStreamClosed(streamId);
 }
 
@@ -1173,8 +1170,8 @@ bool RSocketStateMachine::ensureOrAutodetectFrameSerializer(
 
 size_t RSocketStateMachine::getConsumerAllowance(StreamId streamId) const {
   size_t consumerAllowance = 0;
-  auto it = streamState_.streams_.find(streamId);
-  if (it != streamState_.streams_.end()) {
+  auto it = streams_.find(streamId);
+  if (it != streams_.end()) {
     consumerAllowance = it->second.stateMachine->getConsumerAllowance();
   }
   return consumerAllowance;
@@ -1216,6 +1213,24 @@ void RSocketStateMachine::setProtocolVersionOrThrow(
   }
 
   transportGuard.dismiss();
+}
+
+void RSocketStateMachine::enqueuePendingOutputFrame(
+    std::unique_ptr<folly::IOBuf> frame) {
+  auto const length = frame->computeChainDataLength();
+  stats_->streamBufferChanged(1, static_cast<int64_t>(length));
+  pendingSize_ += length;
+  pendingOutputFrames_.push_back(std::move(frame));
+}
+
+std::deque<std::unique_ptr<folly::IOBuf>>
+RSocketStateMachine::consumePendingOutputFrames() {
+  if (auto const numFrames = pendingOutputFrames_.size()) {
+    stats_->streamBufferChanged(
+        -static_cast<int64_t>(numFrames), -static_cast<int64_t>(pendingSize_));
+    pendingSize_ = 0;
+  }
+  return std::move(pendingOutputFrames_);
 }
 
 } // namespace rsocket

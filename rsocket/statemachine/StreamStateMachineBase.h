@@ -69,4 +69,15 @@ class StreamStateMachineBase {
   const StreamId streamId_;
 };
 
+struct StreamStateElem {
+  StreamStateElem(std::shared_ptr<StreamStateMachineBase> sm)
+      : stateMachine(std::move(sm)) {}
+
+  StreamStateElem(StreamStateElem const&) = delete;
+  StreamStateElem(StreamStateElem&&) = default;
+
+  StreamFragmentAccumulator fragmentAccumulator;
+  std::shared_ptr<StreamStateMachineBase> stateMachine;
+};
+
 } // namespace rsocket

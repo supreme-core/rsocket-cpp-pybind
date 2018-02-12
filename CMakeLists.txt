@@ -298,8 +298,6 @@ add_library(
   rsocket/statemachine/StreamRequester.h
   rsocket/statemachine/StreamResponder.cpp
   rsocket/statemachine/StreamResponder.h
-  rsocket/statemachine/StreamState.cpp
-  rsocket/statemachine/StreamState.h
   rsocket/statemachine/StreamStateMachineBase.cpp
   rsocket/statemachine/StreamStateMachineBase.h
   rsocket/statemachine/StreamsFactory.cpp

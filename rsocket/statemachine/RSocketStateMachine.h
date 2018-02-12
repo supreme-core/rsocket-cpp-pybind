@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <list>
 #include <memory>
+#include <deque>
 
 #include "rsocket/ColdResumeHandler.h"
 #include "rsocket/DuplexConnection.h"
@@ -14,7 +14,7 @@
 #include "rsocket/internal/Common.h"
 #include "rsocket/internal/KeepaliveTimer.h"
 #include "rsocket/statemachine/StreamFragmentAccumulator.h"
-#include "rsocket/statemachine/StreamState.h"
+#include "rsocket/statemachine/StreamStateMachineBase.h"
 #include "rsocket/statemachine/StreamsFactory.h"
 #include "rsocket/statemachine/StreamsWriter.h"
 
@@ -33,8 +33,6 @@ class RSocketResponder;
 class RSocketStateMachine;
 class RSocketStats;
 class ResumeManager;
-class StreamState;
-class StreamStateMachineBase;
 
 class FrameSink {
  public:
@@ -259,6 +257,9 @@ class RSocketStateMachine final
       ProtocolVersion version,
       const std::shared_ptr<FrameTransport>& transport);
 
+  void enqueuePendingOutputFrame(std::unique_ptr<folly::IOBuf>);
+  std::deque<std::unique_ptr<folly::IOBuf>> consumePendingOutputFrames();
+
   /// Client/server mode this state machine is operating in.
   const RSocketMode mode_;
 
@@ -273,13 +274,19 @@ class RSocketStateMachine final
 
   std::shared_ptr<RSocketStats> stats_;
 
-  /// Per-stream frame buffer between the state machine and the FrameTransport.
-  StreamState streamState_;
+  /// A queue of frames that are slated to be sent out.
+  std::deque<std::unique_ptr<folly::IOBuf>> pendingOutputFrames_;
+
+  /// The byte size of all pending output frames.
+  size_t pendingSize_{0};
 
   /// Accumulates the REQUEST payloads for new incoming streams which haven't
   ///  been seen before (and therefore have no backing state machine in
   /// streamState_ yet), and are fragmented
   std::unordered_map<StreamId, StreamFragmentAccumulator> streamFragments_;
+
+  /// Map of all individual stream state machines.
+  std::unordered_map<StreamId, StreamStateElem> streams_;
 
   // Manages all state needed for warm/cold resumption.
   std::shared_ptr<ResumeManager> resumeManager_;
