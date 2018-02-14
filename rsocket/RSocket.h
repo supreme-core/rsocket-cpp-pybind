@@ -68,13 +68,9 @@ class RSocket {
       std::shared_ptr<RSocketStats> stats = RSocketStats::noop());
 
   RSocket() = delete;
-
   RSocket(const RSocket&) = delete;
-
   RSocket(RSocket&&) = delete;
-
   RSocket& operator=(const RSocket&) = delete;
-
   RSocket& operator=(RSocket&&) = delete;
 };
 }

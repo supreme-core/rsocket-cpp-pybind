@@ -73,11 +73,11 @@ writeFlags(std::ostream& os, FrameFlags frameFlags, FrameType frameType) {
   }
   return os;
 }
-}
+} // namespace
 
 std::ostream& operator<<(std::ostream& os, const FrameHeader& header) {
   os << header.type << "[";
   return writeFlags(os, header.flags, header.type)
       << ", " << header.streamId << "]";
 }
-}
+} // namespace rsocket

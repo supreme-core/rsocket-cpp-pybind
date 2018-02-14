@@ -40,7 +40,9 @@ class RequestResponseRequester : public StreamStateMachineBase,
     NEW,
     REQUESTED,
     CLOSED,
-  } state_{State::NEW};
+  };
+
+  State state_{State::NEW};
 
   /// The observer that will consume payloads.
   std::shared_ptr<yarpl::single::SingleObserver<Payload>> consumingSubscriber_;

@@ -37,6 +37,8 @@ class PublisherBase {
   enum class State : uint8_t {
     RESPONDING,
     CLOSED,
-  } state_{State::RESPONDING};
+  };
+
+  State state_{State::RESPONDING};
 };
 }

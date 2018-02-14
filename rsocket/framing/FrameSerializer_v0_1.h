@@ -8,8 +8,8 @@ namespace rsocket {
 
 class FrameSerializerV0_1 : public FrameSerializerV0 {
  public:
-  constexpr static const ProtocolVersion Version = ProtocolVersion(0, 1);
-  constexpr static const size_t kMinBytesNeededForAutodetection = 12; // bytes
+  constexpr static ProtocolVersion Version = ProtocolVersion(0, 1);
+  constexpr static size_t kMinBytesNeededForAutodetection = 12; // bytes
 
   static ProtocolVersion detectProtocolVersion(
       const folly::IOBuf& firstFrame,

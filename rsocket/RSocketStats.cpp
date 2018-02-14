@@ -7,6 +7,10 @@ namespace rsocket {
 class NoopStats : public RSocketStats {
  public:
   NoopStats() = default;
+  NoopStats(const NoopStats&) = delete; // non construction-copyable
+  NoopStats& operator=(const NoopStats&) = delete; // non copyable
+  NoopStats& operator=(const NoopStats&&) = delete; // non movable
+  NoopStats(NoopStats&&) = delete; // non construction-movable
   ~NoopStats() = default;
 
   void socketCreated() override {}
@@ -43,12 +47,6 @@ class NoopStats : public RSocketStats {
     static auto singleton = std::make_shared<NoopStats>();
     return singleton;
   }
-
- private:
-  NoopStats(const NoopStats&) = delete; // non construction-copyable
-  NoopStats& operator=(const NoopStats&) = delete; // non copyable
-  NoopStats& operator=(const NoopStats&&) = delete; // non movable
-  NoopStats(NoopStats&&) = delete; // non construction-movable
 };
 
 std::shared_ptr<RSocketStats> RSocketStats::noop() {

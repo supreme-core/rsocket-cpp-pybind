@@ -35,7 +35,9 @@ class RequestResponseResponder : public StreamStateMachineBase,
   enum class State : uint8_t {
     RESPONDING,
     CLOSED,
-  } state_{State::RESPONDING};
+  };
+
+  State state_{State::RESPONDING};
 
   std::shared_ptr<yarpl::single::SingleSubscription> producingSubscription_;
 #ifndef NDEBUG

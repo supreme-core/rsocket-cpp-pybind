@@ -44,7 +44,7 @@ void RequestResponseRequester::cancel() noexcept {
     case State::CLOSED:
       break;
   }
-  consumingSubscriber_ = nullptr;
+  consumingSubscriber_.reset();
 }
 
 void RequestResponseRequester::endStream(StreamCompletionSignal signal) {

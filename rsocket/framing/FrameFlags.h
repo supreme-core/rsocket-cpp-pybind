@@ -57,6 +57,6 @@ constexpr FrameFlags operator~(FrameFlags a) {
   return static_cast<FrameFlags>(~raw(a));
 }
 
-std::ostream& operator<<(std::ostream&, FrameFlags);
+std::ostream& operator<<(std::ostream& ostr, FrameFlags a);
 
-}
+} // namespace rsocket
