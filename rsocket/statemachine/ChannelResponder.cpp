@@ -57,15 +57,6 @@ void ChannelResponder::endStream(StreamCompletionSignal signal) {
   ConsumerBase::endStream(signal);
 }
 
-// TODO: remove this unused function
-void ChannelResponder::processInitialFrame(Frame_REQUEST_CHANNEL&& frame) {
-  onNextPayloadFrame(
-      frame.requestN_,
-      std::move(frame.payload_),
-      frame.header_.flagsComplete(),
-      true);
-}
-
 void ChannelResponder::handlePayload(
     Payload&& payload,
     bool complete,

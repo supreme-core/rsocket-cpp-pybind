@@ -22,8 +22,6 @@ class ChannelResponder : public ConsumerBase,
       : ConsumerBase(std::move(writer), streamId),
         PublisherBase(initialRequestN) {}
 
-  void processInitialFrame(Frame_REQUEST_CHANNEL&&);
-
  private:
   void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
                        subscription) noexcept override;
