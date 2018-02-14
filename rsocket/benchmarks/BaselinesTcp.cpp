@@ -25,9 +25,8 @@ static void BM_Baseline_TCP_SendReceive(
     int sock = -1;
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
-    char message[MAX_MESSAGE_LENGTH];
+    std::array<char, MAX_MESSAGE_LENGTH> message = {};
 
-    std::memset(message, 0, sizeof(message));
     std::memset(&addr, 0, sizeof(addr));
 
     if (serverSock < 0) {
@@ -70,7 +69,7 @@ static void BM_Baseline_TCP_SendReceive(
 
     size_t sentBytes = 0;
     while (sentBytes < loadSize) {
-      if (send(sock, message, msgLength, 0) !=
+      if (send(sock, message.data(), msgLength, 0) !=
           static_cast<ssize_t>(msgLength)) {
         perror("send");
         return;
@@ -86,13 +85,10 @@ static void BM_Baseline_TCP_SendReceive(
     std::this_thread::yield();
   }
 
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
-  struct sockaddr_in addr;
-  socklen_t addrlen = sizeof(addr);
-  char message[MAX_MESSAGE_LENGTH];
-
-  std::memset(message, 0, sizeof(message));
-  std::memset(&addr, 0, sizeof(addr));
+  const int sock = socket(AF_INET, SOCK_STREAM, 0);
+  struct sockaddr_in addr = {};
+  const socklen_t addrlen = sizeof(addr);
+  std::array<char, MAX_MESSAGE_LENGTH> message = {};
 
   if (sock < 0) {
     perror("connector socket");
@@ -113,7 +109,7 @@ static void BM_Baseline_TCP_SendReceive(
 
   size_t receivedBytes = 0;
   while (receivedBytes < loadSize) {
-    ssize_t recved = recv(sock, message, recvLength, 0);
+    const ssize_t recved = recv(sock, message.data(), recvLength, 0);
 
     if (recved < 0) {
       perror("recv");
