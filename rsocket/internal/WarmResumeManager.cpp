@@ -29,7 +29,7 @@ void WarmResumeManager::trackSentFrame(
     size_t consumerAllowance) {
   if (shouldTrackFrame(frameType)) {
     // TODO(tmont): this could be expensive, find a better way to get length
-    auto frameDataLength = serializedFrame.computeChainDataLength();
+    const auto frameDataLength = serializedFrame.computeChainDataLength();
 
     VLOG(6) << "Track sent frame " << frameType
             << " Allowance: " << consumerAllowance;
@@ -90,8 +90,8 @@ void WarmResumeManager::addFrame(
 void WarmResumeManager::evictFrame() {
   DCHECK(!frames_.empty());
 
-  auto position = frames_.size() > 1 ? std::next(frames_.begin())->first
-                                     : lastSentPosition_;
+  const auto position = frames_.size() > 1 ? std::next(frames_.begin())->first
+                                           : lastSentPosition_;
   resetUpToPosition(position);
 }
 
@@ -102,7 +102,7 @@ void WarmResumeManager::clearFrames(ResumePosition position) {
   DCHECK(position <= lastSentPosition_);
   DCHECK(position >= firstSentPosition_);
 
-  auto end = std::lower_bound(
+  const auto end = std::lower_bound(
       frames_.begin(),
       frames_.end(),
       position,
@@ -110,7 +110,7 @@ void WarmResumeManager::clearFrames(ResumePosition position) {
         return pair.first < pos;
       });
   DCHECK(end == frames_.end() || end->first >= firstSentPosition_);
-  auto pos = end == frames_.end() ? position : end->first;
+  const auto pos = end == frames_.end() ? position : end->first;
   stats_->resumeBufferChanged(
       -static_cast<int>(std::distance(frames_.begin(), end)),
       -static_cast<int>(pos - firstSentPosition_));

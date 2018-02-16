@@ -70,9 +70,9 @@ class RSocketClient {
   // Creates RSocketStateMachine and RSocketRequester
   void createState();
 
-  std::shared_ptr<ConnectionFactory> connectionFactory_;
+  const std::shared_ptr<ConnectionFactory> connectionFactory_;
   std::shared_ptr<RSocketResponder> responder_;
-  std::chrono::milliseconds keepaliveInterval_;
+  const std::chrono::milliseconds keepaliveInterval_;
   std::shared_ptr<RSocketStats> stats_;
   std::shared_ptr<RSocketConnectionEvents> connectionEvents_;
   std::shared_ptr<ResumeManager> resumeManager_;
@@ -81,8 +81,8 @@ class RSocketClient {
   std::shared_ptr<RSocketStateMachine> stateMachine_;
   std::shared_ptr<RSocketRequester> requester_;
 
-  ProtocolVersion protocolVersion_;
-  ResumeIdentificationToken token_;
+  const ProtocolVersion protocolVersion_;
+  const ResumeIdentificationToken token_;
 
   // Remember the StateMachine's evb (supplied through constructor).  If no
   // EventBase is provided, the underlying transport's EventBase will be used

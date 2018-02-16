@@ -27,8 +27,8 @@ class ScheduledFrameProcessor : public FrameProcessor {
   void onTerminal(folly::exception_wrapper ex) override;
 
  private:
-  std::shared_ptr<FrameProcessor> frameProcessor_;
-  folly::EventBase* evb_;
+  const std::shared_ptr<FrameProcessor> frameProcessor_;
+  folly::EventBase* const evb_;
 };
 
 } // rsocket

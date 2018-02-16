@@ -84,15 +84,15 @@ void RSocketStateMachine::connectServer(
 bool RSocketStateMachine::resumeServer(
     std::shared_ptr<FrameTransport> frameTransport,
     const ResumeParameters& resumeParams) {
-  folly::Optional<int64_t> clientAvailable =
+  const folly::Optional<int64_t> clientAvailable =
       (resumeParams.clientPosition == kUnspecifiedResumePosition)
       ? folly::none
       : folly::make_optional(
             resumeManager_->impliedPosition() - resumeParams.clientPosition);
 
-  int64_t serverAvailable =
+  const int64_t serverAvailable =
       resumeManager_->lastSentPosition() - resumeManager_->firstSentPosition();
-  int64_t serverDelta =
+  const int64_t serverDelta =
       resumeManager_->lastSentPosition() - resumeParams.serverPosition;
 
   std::runtime_error exn{"Connection being resumed, dropping old connection"};
@@ -100,7 +100,7 @@ bool RSocketStateMachine::resumeServer(
   setProtocolVersionOrThrow(resumeParams.protocolVersion, frameTransport);
   connect(std::move(frameTransport));
 
-  auto result = resumeFromPositionOrClose(
+  const auto result = resumeFromPositionOrClose(
       resumeParams.serverPosition, resumeParams.clientPosition);
 
   stats_->serverResume(
@@ -198,7 +198,7 @@ void RSocketStateMachine::connect(std::shared_ptr<FrameTransport> transport) {
 
   // Keep a reference to this, as processing frames might close this
   // instance.
-  auto copyThis = shared_from_this();
+  const auto copyThis = shared_from_this();
   frameTransport_->setFrameProcessor(copyThis);
   stats_->socketConnected();
 }
@@ -357,7 +357,7 @@ void RSocketStateMachine::reconnect(
 void RSocketStateMachine::addStream(
     StreamId streamId,
     std::shared_ptr<StreamStateMachineBase> stateMachine) {
-  auto result = streams_.emplace(streamId, std::move(stateMachine));
+  const auto result = streams_.emplace(streamId, std::move(stateMachine));
   DCHECK(result.second);
 }
 
@@ -365,7 +365,7 @@ bool RSocketStateMachine::endStreamInternal(
     StreamId streamId,
     StreamCompletionSignal signal) {
   VLOG(6) << "endStreamInternal";
-  auto it = streams_.find(streamId);
+  const auto it = streams_.find(streamId);
   if (it == streams_.end()) {
     // Unsubscribe handshake initiated by the connection, we're done.
     return false;
@@ -381,8 +381,8 @@ bool RSocketStateMachine::endStreamInternal(
 void RSocketStateMachine::closeStreams(StreamCompletionSignal signal) {
   // Close all streams.
   while (!streams_.empty()) {
-    auto oldSize = streams_.size();
-    auto result = endStreamInternal(streams_.begin()->first, signal);
+    const auto oldSize = streams_.size();
+    const auto result = endStreamInternal(streams_.begin()->first, signal);
     // TODO(stupaq): what kind of a user action could violate these
     // assertions?
     DCHECK(result);
@@ -398,7 +398,7 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
 
   // Necessary in case the only stream state machine closes itself, and takes
   // the RSocketStateMachine with it.
-  auto self = shared_from_this();
+  const auto self = shared_from_this();
 
   if (!ensureOrAutodetectFrameSerializer(*frame)) {
     constexpr folly::StringPiece message{"Cannot detect protocol version"};
@@ -406,18 +406,18 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
     return;
   }
 
-  auto frameType = frameSerializer_->peekFrameType(*frame);
+  const auto frameType = frameSerializer_->peekFrameType(*frame);
   stats_->frameRead(frameType);
 
-  auto optStreamId = frameSerializer_->peekStreamId(*frame);
+  const auto optStreamId = frameSerializer_->peekStreamId(*frame);
   if (!optStreamId) {
     constexpr folly::StringPiece message{"Cannot decode stream ID"};
     closeWithError(Frame_ERROR::connectionError(message.str()));
     return;
   }
 
-  auto frameLength = frame->computeChainDataLength();
-  auto streamId = *optStreamId;
+  const auto frameLength = frame->computeChainDataLength();
+  const auto streamId = *optStreamId;
   if (streamId == 0) {
     handleConnectionFrame(frameType, std::move(frame));
   } else if (resumeCallback_) {
@@ -442,8 +442,8 @@ void RSocketStateMachine::onTerminal(folly::exception_wrapper ex) {
     disconnect(std::move(ex));
     return;
   }
-  auto termSignal = ex ? StreamCompletionSignal::CONNECTION_ERROR
-                       : StreamCompletionSignal::CONNECTION_END;
+  const auto termSignal = ex ? StreamCompletionSignal::CONNECTION_ERROR
+                             : StreamCompletionSignal::CONNECTION_END;
   close(std::move(ex), termSignal);
 }
 
@@ -510,7 +510,7 @@ void RSocketStateMachine::handleConnectionFrame(
         streamsFactory().setNextStreamId(
             resumeManager_->getLargestUsedStreamId());
         for (const auto& it : resumeManager_->getStreamResumeInfos()) {
-          auto streamId = it.first;
+          const auto streamId = it.first;
           const StreamResumeInfo& streamResumeInfo = it.second;
           if (streamResumeInfo.requester == RequestOriginator::LOCAL &&
               streamResumeInfo.streamType == StreamType::STREAM) {
@@ -581,7 +581,7 @@ void RSocketStateMachine::handleStreamFrame(
     StreamId streamId,
     FrameType frameType,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
-  auto it = streams_.find(streamId);
+  const auto it = streams_.find(streamId);
   if (it == streams_.end()) {
     handleUnknownStream(streamId, frameType, std::move(serializedFrame));
     return;
@@ -718,7 +718,7 @@ void RSocketStateMachine::handleUnknownStream(
       return;
     }
 
-    auto it = streamFragments_.find(streamId);
+    const auto it = streamFragments_.find(streamId);
     if (it == streamFragments_.end()) {
       auto msg = folly::sformat(
           "Expected payload frame in stream {} to be in fragment cache",
@@ -825,7 +825,7 @@ template <typename FrameType>
 void RSocketStateMachine::handleInitialFollowsFrame(
     StreamId streamId,
     FrameType&& initialFrame) {
-  auto it = streamFragments_.find(streamId);
+  const auto it = streamFragments_.find(streamId);
   if (it == streamFragments_.end()) {
     streamFragments_.insert(std::make_pair(
         streamId,
@@ -850,7 +850,7 @@ void RSocketStateMachine::setupRequestChannel(
     Payload payload) {
   auto stateMachine =
       streamsFactory_.createChannelResponder(requestN, streamId);
-  auto requestSink = requestResponder_->handleRequestChannelCore(
+  const auto requestSink = requestResponder_->handleRequestChannelCore(
       std::move(payload), streamId, stateMachine);
   stateMachine->subscribe(requestSink);
 }
@@ -898,12 +898,13 @@ bool RSocketStateMachine::resumeFromPositionOrClose(
   DCHECK(!isDisconnected());
   DCHECK(mode_ == RSocketMode::SERVER);
 
-  bool clientPositionExist = (clientPosition == kUnspecifiedResumePosition) ||
+  const bool clientPositionExist =
+      (clientPosition == kUnspecifiedResumePosition) ||
       clientPosition <= resumeManager_->impliedPosition();
 
   if (clientPositionExist &&
       resumeManager_->isPositionAvailable(serverPosition)) {
-    Frame_RESUME_OK resumeOkFrame(resumeManager_->impliedPosition());
+    Frame_RESUME_OK resumeOkFrame{resumeManager_->impliedPosition()};
     VLOG(3) << "Out: " << resumeOkFrame;
     frameTransport_->outputFrameOrDrop(
         frameSerializer_->serializeOut(std::move(resumeOkFrame)));
@@ -967,7 +968,7 @@ void RSocketStateMachine::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
 void RSocketStateMachine::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
   DCHECK(!isDisconnected());
 
-  auto frameType = frameSerializer_->peekFrameType(*frame);
+  const auto frameType = frameSerializer_->peekFrameType(*frame);
   stats_->frameWritten(frameType);
 
   if (isResumable_) {
@@ -1074,7 +1075,7 @@ void RSocketStateMachine::writeNewStream(
     uint32_t initialRequestN,
     Payload payload) {
   if (coldResumeHandler_ && streamType != StreamType::FNF) {
-    auto streamToken =
+    const auto streamToken =
         coldResumeHandler_->generateStreamToken(payload, streamId, streamType);
     resumeManager_->onStreamOpen(
         streamId, RequestOriginator::LOCAL, streamToken, streamType);
@@ -1170,7 +1171,7 @@ bool RSocketStateMachine::ensureOrAutodetectFrameSerializer(
 
 size_t RSocketStateMachine::getConsumerAllowance(StreamId streamId) const {
   size_t consumerAllowance = 0;
-  auto it = streams_.find(streamId);
+  const auto it = streams_.find(streamId);
   if (it != streams_.end()) {
     consumerAllowance = it->second.stateMachine->getConsumerAllowance();
   }

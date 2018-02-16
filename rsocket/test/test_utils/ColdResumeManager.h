@@ -44,11 +44,11 @@ class ColdResumeManager : public WarmResumeManager {
 
   void onStreamClosed(StreamId streamId) override;
 
-  const StreamResumeInfos& getStreamResumeInfos() override {
+  const StreamResumeInfos& getStreamResumeInfos() const override {
     return streamResumeInfos_;
   }
 
-  StreamId getLargestUsedStreamId() override {
+  StreamId getLargestUsedStreamId() const override {
     return largestUsedStreamId_;
   }
 

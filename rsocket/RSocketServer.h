@@ -105,7 +105,7 @@ class RSocketServer {
       std::unique_ptr<DuplexConnection> connection,
       rsocket::ResumeParameters setupPayload);
 
-  std::unique_ptr<ConnectionAcceptor> duplexConnectionAcceptor_;
+  const std::unique_ptr<ConnectionAcceptor> duplexConnectionAcceptor_;
   bool started{false};
 
   class SetupResumeAcceptorTag {};

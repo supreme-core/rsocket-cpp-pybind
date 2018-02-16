@@ -18,9 +18,9 @@ void StreamRequester::request(int64_t n) noexcept {
   if (!requested_) {
     requested_ = true;
 
-    auto initialN =
+    const auto initialN =
         n > Frame_REQUEST_N::kMaxRequestN ? Frame_REQUEST_N::kMaxRequestN : n;
-    auto remainingN = n > Frame_REQUEST_N::kMaxRequestN
+    const auto remainingN = n > Frame_REQUEST_N::kMaxRequestN
         ? n - Frame_REQUEST_N::kMaxRequestN
         : 0;
 

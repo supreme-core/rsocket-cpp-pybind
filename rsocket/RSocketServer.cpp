@@ -126,7 +126,7 @@ void RSocketServer::onRSocketSetup(
     std::shared_ptr<RSocketServiceHandler> serviceHandler,
     std::unique_ptr<DuplexConnection> connection,
     SetupParameters setupParams) {
-  auto eventBase = folly::EventBaseManager::get()->getExistingEventBase();
+  const auto eventBase = folly::EventBaseManager::get()->getExistingEventBase();
   VLOG(2) << "Received new setup payload on " << eventBase->getName();
   CHECK(eventBase);
   auto result = serviceHandler->onNewSetup(setupParams);
@@ -147,7 +147,7 @@ void RSocketServer::onRSocketSetup(
                 "Received invalid Responder from server")));
     return;
   }
-  auto rs = std::make_shared<RSocketStateMachine>(
+  const auto rs = std::make_shared<RSocketStateMachine>(
       useScheduledResponder_
           ? std::make_shared<ScheduledRSocketResponder>(
                 std::move(connectionParams.responder), *eventBase)
@@ -164,7 +164,7 @@ void RSocketServer::onRSocketSetup(
 
   auto requester = std::make_shared<RSocketRequester>(rs, *eventBase);
   auto serverState = std::shared_ptr<RSocketServerState>(
-      new RSocketServerState(*eventBase, rs, requester));
+      new RSocketServerState(*eventBase, rs, std::move(requester)));
   serviceHandler->onNewRSocketState(std::move(serverState), setupParams.token);
   rs->connectServer(
       std::make_shared<FrameTransportImpl>(std::move(connection)),
@@ -184,9 +184,9 @@ void RSocketServer::onRSocketResume(
             ->serializeOut(Frame_ERROR::rejectedSetup(result.error().what())));
     return;
   }
-  auto serverState = std::move(result.value());
+  const auto serverState = std::move(result.value());
   CHECK(serverState);
-  auto* eventBase = folly::EventBaseManager::get()->getExistingEventBase();
+  const auto eventBase = folly::EventBaseManager::get()->getExistingEventBase();
   VLOG(2) << "Resuming client on " << eventBase->getName();
   if (!serverState->eventBase_.isInEventBaseThread()) {
     // If the resumed connection is on a different EventBase, then use

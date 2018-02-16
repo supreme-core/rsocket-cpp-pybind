@@ -114,13 +114,13 @@ class ResumeManager {
   virtual void onStreamClosed(StreamId streamId) = 0;
 
   // Returns the cached stream information.
-  virtual const StreamResumeInfos& getStreamResumeInfos() = 0;
+  virtual const StreamResumeInfos& getStreamResumeInfos() const = 0;
 
   // Returns the largest used StreamId so far.
-  virtual StreamId getLargestUsedStreamId() = 0;
+  virtual StreamId getLargestUsedStreamId() const = 0;
 
   // Utility method to check frames which should be tracked for resumption.
-  inline bool shouldTrackFrame(const FrameType frameType) {
+  inline bool shouldTrackFrame(const FrameType frameType) const {
     switch (frameType) {
       case FrameType::REQUEST_CHANNEL:
       case FrameType::REQUEST_STREAM:

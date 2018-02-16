@@ -34,25 +34,25 @@ bool TestInterpreter::run() {
           "Executing command: [{}] {}", i, command.name());
       ++i;
       if (command.name() == "subscribe") {
-        auto subscribe = command.as<SubscribeCommand>();
+        const auto subscribe = command.as<SubscribeCommand>();
         handleSubscribe(subscribe);
       } else if (command.name() == "request") {
-        auto request = command.as<RequestCommand>();
+        const auto request = command.as<RequestCommand>();
         handleRequest(request);
       } else if (command.name() == "await") {
-        auto await = command.as<AwaitCommand>();
+        const auto await = command.as<AwaitCommand>();
         handleAwait(await);
       } else if (command.name() == "cancel") {
-        auto cancel = command.as<CancelCommand>();
+        const auto cancel = command.as<CancelCommand>();
         handleCancel(cancel);
       } else if (command.name() == "assert") {
-        auto assert = command.as<AssertCommand>();
+        const auto assert = command.as<AssertCommand>();
         handleAssert(assert);
       } else if (command.name() == "disconnect") {
-        auto disconnect = command.as<DisconnectCommand>();
+        const auto disconnect = command.as<DisconnectCommand>();
         handleDisconnect(disconnect);
       } else if (command.name() == "resume") {
-        auto resume = command.as<ResumeCommand>();
+        const auto resume = command.as<ResumeCommand>();
         handleResume(resume);
       } else {
         LOG(ERROR) << "unknown command " << command.name();
@@ -187,7 +187,7 @@ void TestInterpreter::handleAssert(const AssertCommand& command) {
 
 std::shared_ptr<BaseSubscriber> TestInterpreter::getSubscriber(
     const std::string& id) {
-  auto found = testSubscribers_.find(id);
+  const auto found = testSubscribers_.find(id);
   if (found == testSubscribers_.end()) {
     throw std::runtime_error("unable to find test subscriber with provided id");
   }

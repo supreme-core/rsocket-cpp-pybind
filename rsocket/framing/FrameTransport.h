@@ -16,6 +16,6 @@ class FrameTransport {
   //TODO(T25011919): remove
   virtual DuplexConnection* getConnection() = 0;
 
-  virtual bool isConnectionFramed() = 0;
+  virtual bool isConnectionFramed() const = 0;
 };
 }

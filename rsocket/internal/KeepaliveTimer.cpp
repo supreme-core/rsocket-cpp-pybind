@@ -15,13 +15,13 @@ KeepaliveTimer::~KeepaliveTimer() {
   stop();
 }
 
-std::chrono::milliseconds KeepaliveTimer::keepaliveTime() {
+std::chrono::milliseconds KeepaliveTimer::keepaliveTime() const {
   return period_;
 }
 
 void KeepaliveTimer::schedule() {
-  auto scheduledGeneration = *generation_;
-  auto generation = generation_;
+  const auto scheduledGeneration = *generation_;
+  const auto generation = generation_;
   eventBase_.runAfterDelay(
       [this, generation, scheduledGeneration]() {
         if (*generation == scheduledGeneration) {
@@ -35,7 +35,7 @@ void KeepaliveTimer::sendKeepalive() {
   if (pending_) {
     // Make sure connection_ is not deleted (via external call to stop)
     // while we still mid-operation
-    auto localPtr = connection_;
+    const auto localPtr = connection_;
     stop();
     // TODO: we need to use max lifetime from the setup frame for this
     localPtr->disconnectOrCloseWithError(
@@ -51,7 +51,7 @@ void KeepaliveTimer::sendKeepalive() {
 void KeepaliveTimer::stop() {
   *generation_ += 1;
   pending_ = false;
-  connection_ = nullptr;
+  connection_.reset();
 }
 
 // must be called from the same thread as stop

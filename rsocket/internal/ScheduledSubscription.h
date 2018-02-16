@@ -25,7 +25,7 @@ class ScheduledSubscription : public yarpl::flowable::Subscription {
   void cancel() noexcept override;
 
  private:
-  std::shared_ptr<yarpl::flowable::Subscription> inner_;
+  const std::shared_ptr<yarpl::flowable::Subscription> inner_;
   folly::EventBase& eventBase_;
 };
 

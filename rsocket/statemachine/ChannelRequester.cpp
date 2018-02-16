@@ -17,9 +17,9 @@ void ChannelRequester::onNext(Payload request) noexcept {
   if (!requested_) {
     requested_ = true;
 
-    size_t initialN =
+    const size_t initialN =
         initialResponseAllowance_.consumeUpTo(Frame_REQUEST_N::kMaxRequestN);
-    size_t remainingN = initialResponseAllowance_.consumeAll();
+    const size_t remainingN = initialResponseAllowance_.consumeAll();
     // Send as much as possible with the initial request.
     CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
     newStream(

@@ -5,7 +5,7 @@
 namespace rsocket {
 
 bool SwappableEventBase::runInEventBaseThread(CbFunc cb) {
-  std::lock_guard<std::mutex> l(hasSebDtored_->l_);
+  const std::lock_guard<std::mutex> l(hasSebDtored_->l_);
 
   if(this->isSwapping()) {
     queued_.push_back(std::move(cb));
@@ -18,7 +18,7 @@ bool SwappableEventBase::runInEventBaseThread(CbFunc cb) {
 }
 
 void SwappableEventBase::setEventBase(folly::EventBase& newEb) {
-  std::lock_guard<std::mutex> l(hasSebDtored_->l_);
+  const std::lock_guard<std::mutex> l(hasSebDtored_->l_);
 
   auto const alreadySwapping = this->isSwapping();
   nextEb_ = &newEb;
@@ -27,7 +27,7 @@ void SwappableEventBase::setEventBase(folly::EventBase& newEb) {
   }
 
   eb_->runInEventBaseThread([this, hasSebDtored = hasSebDtored_]() {
-    std::lock_guard<std::mutex> lInner(hasSebDtored->l_);
+    const std::lock_guard<std::mutex> lInner(hasSebDtored->l_);
     if(hasSebDtored->destroyed_) {
       // SEB was destroyed, any queued callbacks were appended to the old eb_
       return;
@@ -53,7 +53,7 @@ bool SwappableEventBase::isSwapping() const {
 }
 
 SwappableEventBase::~SwappableEventBase() {
-  std::lock_guard<std::mutex> l(hasSebDtored_->l_);
+  const std::lock_guard<std::mutex> l(hasSebDtored_->l_);
 
   hasSebDtored_->destroyed_ = true;
   for(auto& cb : queued_) {

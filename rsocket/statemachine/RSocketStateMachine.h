@@ -291,7 +291,7 @@ class RSocketStateMachine final
   // Manages all state needed for warm/cold resumption.
   std::shared_ptr<ResumeManager> resumeManager_;
 
-  std::shared_ptr<RSocketResponder> requestResponder_;
+  const std::shared_ptr<RSocketResponder> requestResponder_;
   std::shared_ptr<FrameTransport> frameTransport_;
   std::unique_ptr<FrameSerializer> frameSerializer_;
 

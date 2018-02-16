@@ -31,7 +31,7 @@ class ScheduledFrameTransport : public FrameTransport,
   void setFrameProcessor(std::shared_ptr<FrameProcessor> fp) override;
   void outputFrameOrDrop(std::unique_ptr<folly::IOBuf> ioBuf) override;
   void close() override;
-  bool isConnectionFramed() override;
+  bool isConnectionFramed() const override;
 
  private:
   DuplexConnection* getConnection() override {
@@ -43,8 +43,8 @@ class ScheduledFrameTransport : public FrameTransport,
   }
 
  private:
-  folly::EventBase* transportEvb_;
-  folly::EventBase* stateMachineEvb_;
-  std::shared_ptr<FrameTransport> frameTransport_;
+  folly::EventBase* const transportEvb_;
+  folly::EventBase* const stateMachineEvb_;
+  const std::shared_ptr<FrameTransport> frameTransport_;
 };
 }

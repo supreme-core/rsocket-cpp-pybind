@@ -69,8 +69,9 @@ bool& FrameSerializer::preallocateFrameSizeField() {
   return preallocateFrameSizeField_;
 }
 
-folly::IOBufQueue FrameSerializer::createBufferQueue(size_t bufferSize) {
-  auto prependSize = preallocateFrameSizeField_ ? frameLengthFieldSize() : 0;
+folly::IOBufQueue FrameSerializer::createBufferQueue(size_t bufferSize) const {
+  const auto prependSize =
+      preallocateFrameSizeField_ ? frameLengthFieldSize() : 0;
   auto buf = folly::IOBuf::createCombined(bufferSize + prependSize);
   buf->advance(prependSize);
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());

@@ -75,7 +75,7 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
   }
 
  private:
-  std::shared_ptr<yarpl::flowable::Subscriber<T>> inner_;
+  const std::shared_ptr<yarpl::flowable::Subscriber<T>> inner_;
   folly::EventBase& eventBase_;
 };
 
@@ -116,7 +116,7 @@ class ScheduledSubscriptionSubscriber
   }
 
  private:
-  std::shared_ptr<yarpl::flowable::Subscriber<T>> inner_;
+  const std::shared_ptr<yarpl::flowable::Subscriber<T>> inner_;
   folly::EventBase& eventBase_;
 };
 

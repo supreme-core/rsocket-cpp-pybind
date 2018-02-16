@@ -63,7 +63,7 @@ class ScheduledSingleObserver : public yarpl::single::SingleObserver<T> {
   }
 
  private:
-  std::shared_ptr<yarpl::single::SingleObserver<T>> inner_;
+  const std::shared_ptr<yarpl::single::SingleObserver<T>> inner_;
   folly::EventBase& eventBase_;
 };
 
@@ -98,7 +98,7 @@ class ScheduledSubscriptionSingleObserver : public yarpl::single::SingleObserver
   }
 
  private:
-  std::shared_ptr<yarpl::single::SingleObserver<T>> inner_;
+  const std::shared_ptr<yarpl::single::SingleObserver<T>> inner_;
   folly::EventBase& eventBase_;
 };
 } // rsocket

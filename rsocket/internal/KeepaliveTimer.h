@@ -14,7 +14,7 @@ class KeepaliveTimer {
 
   ~KeepaliveTimer();
 
-  std::chrono::milliseconds keepaliveTime();
+  std::chrono::milliseconds keepaliveTime() const;
 
   void schedule();
 
@@ -29,8 +29,8 @@ class KeepaliveTimer {
  private:
   std::shared_ptr<FrameSink> connection_;
   folly::EventBase& eventBase_;
-  std::shared_ptr<uint32_t> generation_;
-  std::chrono::milliseconds period_;
+  const std::shared_ptr<uint32_t> generation_;
+  const std::chrono::milliseconds period_;
   std::atomic<bool> pending_{false};
 };
 }

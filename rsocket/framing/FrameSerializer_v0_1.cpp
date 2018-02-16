@@ -9,7 +9,7 @@ namespace rsocket {
 constexpr const ProtocolVersion FrameSerializerV0_1::Version;
 constexpr const size_t FrameSerializerV0_1::kMinBytesNeededForAutodetection;
 
-ProtocolVersion FrameSerializerV0_1::protocolVersion() {
+ProtocolVersion FrameSerializerV0_1::protocolVersion() const {
   return Version;
 }
 
@@ -48,18 +48,18 @@ ProtocolVersion FrameSerializerV0_1::detectProtocolVersion(
   try {
     cur.skip(skipBytes);
 
-    auto frameType = cur.readBE<uint16_t>();
+    const auto frameType = cur.readBE<uint16_t>();
     cur.skip(sizeof(uint16_t)); // flags
-    auto streamId = cur.readBE<uint32_t>();
+    const auto streamId = cur.readBE<uint32_t>();
 
-    constexpr static const auto kSETUP = 0x0001;
-    constexpr static const auto kRESUME = 0x000E;
+    constexpr static auto kSETUP = 0x0001;
+    constexpr static auto kRESUME = 0x000E;
 
     VLOG(4) << "frameType=" << frameType << "streamId=" << streamId;
 
     if (frameType == kSETUP && streamId == 0) {
-      auto majorVersion = cur.readBE<uint16_t>();
-      auto minorVersion = cur.readBE<uint16_t>();
+      const auto majorVersion = cur.readBE<uint16_t>();
+      const auto minorVersion = cur.readBE<uint16_t>();
 
       VLOG(4) << "majorVersion=" << majorVersion
               << " minorVersion=" << minorVersion;

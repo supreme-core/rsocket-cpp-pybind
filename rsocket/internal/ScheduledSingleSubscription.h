@@ -23,7 +23,7 @@ class ScheduledSingleSubscription : public yarpl::single::SingleSubscription {
   void cancel() override;
 
  private:
-  std::shared_ptr<yarpl::single::SingleSubscription> inner_;
+  const std::shared_ptr<yarpl::single::SingleSubscription> inner_;
   folly::EventBase& eventBase_;
 };
 

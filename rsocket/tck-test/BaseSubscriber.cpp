@@ -12,7 +12,7 @@ namespace rsocket {
 namespace tck {
 
 void BaseSubscriber::awaitTerminalEvent() {
-  std::unique_lock<std::mutex> lock(mutex_);
+  const std::unique_lock<std::mutex> lock(mutex_);
   if (!terminatedCV_.wait_for(lock, std::chrono::seconds(5), [&] {
         return completed_ || errored_;
       })) {
@@ -21,7 +21,7 @@ void BaseSubscriber::awaitTerminalEvent() {
 }
 
 void BaseSubscriber::awaitAtLeast(int numItems) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  const std::unique_lock<std::mutex> lock(mutex_);
   if (!valuesCV_.wait_for(lock, std::chrono::seconds(5), [&] {
         return valuesCount_ >= numItems;
       })) {
@@ -30,9 +30,9 @@ void BaseSubscriber::awaitAtLeast(int numItems) {
 }
 
 void BaseSubscriber::awaitNoEvents(int waitTime) {
-  int valuesCount = valuesCount_;
-  bool completed = completed_;
-  bool errored = errored_;
+  const int valuesCount = valuesCount_;
+  const bool completed = completed_;
+  const bool errored = errored_;
   /* sleep override */
   std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
   if (valuesCount != valuesCount_ || completed != completed_ ||
@@ -57,7 +57,7 @@ void BaseSubscriber::assertError() {
 void BaseSubscriber::assertValues(
     const std::vector<std::pair<std::string, std::string>>& values) {
   assertValueCount(values.size());
-  std::unique_lock<std::mutex> lock(mutex_);
+  const std::unique_lock<std::mutex> lock(mutex_);
   for (size_t i = 0; i < values.size(); i++) {
     if (values_[i] != values[i]) {
       throw std::runtime_error(folly::sformat(
@@ -71,7 +71,7 @@ void BaseSubscriber::assertValues(
 }
 
 void BaseSubscriber::assertValueCount(size_t valueCount) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  const std::unique_lock<std::mutex> lock(mutex_);
   if (values_.size() != valueCount) {
     throw std::runtime_error(folly::sformat(
         "Did not receive expected number of values! Expected={} Actual={}",
@@ -81,7 +81,7 @@ void BaseSubscriber::assertValueCount(size_t valueCount) {
 }
 
 void BaseSubscriber::assertReceivedAtLeast(size_t valueCount) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  const std::unique_lock<std::mutex> lock(mutex_);
   if (values_.size() < valueCount) {
     throw std::runtime_error(folly::sformat(
         "Did not receive the minimum number of values! Expected={} Actual={}",

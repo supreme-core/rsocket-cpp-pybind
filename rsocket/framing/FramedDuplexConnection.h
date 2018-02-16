@@ -31,8 +31,8 @@ class FramedDuplexConnection : public virtual DuplexConnection {
   }
 
  private:
-  std::unique_ptr<DuplexConnection> inner_;
+  const std::unique_ptr<DuplexConnection> inner_;
   std::shared_ptr<FramedReader> inputReader_;
-  std::shared_ptr<ProtocolVersion> protocolVersion_;
+  const std::shared_ptr<ProtocolVersion> protocolVersion_;
 };
 }

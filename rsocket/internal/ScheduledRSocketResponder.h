@@ -42,7 +42,7 @@ class ScheduledRSocketResponder : public RSocketResponder {
       StreamId streamId) override;
 
  private:
-  std::shared_ptr<RSocketResponder> inner_;
+  const std::shared_ptr<RSocketResponder> inner_;
   folly::EventBase& eventBase_;
 };
 

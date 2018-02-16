@@ -30,7 +30,7 @@ class ConnectionSet {
   void insert(std::shared_ptr<RSocketStateMachine>, folly::EventBase*);
   void remove(const std::shared_ptr<RSocketStateMachine>&);
 
-  size_t size();
+  size_t size() const;
 
  private:
   using StateMachineMap = std::

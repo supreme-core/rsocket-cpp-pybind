@@ -48,6 +48,6 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
   bool dispatchingFrames_{false};
 
   folly::IOBufQueue payloadQueue_{folly::IOBufQueue::cacheChainLength()};
-  std::shared_ptr<ProtocolVersion> version_;
+  const std::shared_ptr<ProtocolVersion> version_;
 };
 }

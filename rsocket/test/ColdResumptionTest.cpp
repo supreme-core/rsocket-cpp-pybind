@@ -78,8 +78,8 @@ class HelloResumeHandler : public ColdResumeHandler {
       : subscribers_(std::move(subscribers)) {}
 
   std::string generateStreamToken(const Payload& payload, StreamId, StreamType)
-      override {
-    auto streamToken =
+      const override {
+    const auto streamToken =
         payload.data->cloneAsValue().moveToFbString().toStdString();
     VLOG(3) << "Generated token: " << streamToken;
     return streamToken;

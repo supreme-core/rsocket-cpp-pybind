@@ -14,7 +14,7 @@ namespace rsocket {
 std::string ColdResumeHandler::generateStreamToken(
     const Payload&,
     StreamId streamId,
-    StreamType) {
+    StreamType) const {
   return folly::to<std::string>(streamId);
 }
 

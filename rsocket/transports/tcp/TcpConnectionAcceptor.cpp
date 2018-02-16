@@ -102,7 +102,7 @@ void TcpConnectionAcceptor::start(OnDuplexConnectionAccept onAccept) {
         serverSocket_->listen(options_.backlog);
         serverSocket_->startAccepting();
 
-        for (auto& i : serverSocket_->getAddresses()) {
+        for (const auto& i : serverSocket_->getAddresses()) {
           VLOG(1) << "Listening on " << i.describe();
         }
       })

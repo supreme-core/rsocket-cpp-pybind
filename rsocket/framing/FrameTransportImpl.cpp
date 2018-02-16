@@ -56,8 +56,7 @@ void FrameTransportImpl::close() {
   if (!connection_) {
     return;
   }
-
-  auto oldConnection = std::move(connection_);
+  connection_.reset();
 
   if (auto subscription = std::move(connectionInputSub_)) {
     subscription->cancel();
@@ -115,7 +114,7 @@ void FrameTransportImpl::outputFrameOrDrop(
   }
 }
 
-bool FrameTransportImpl::isConnectionFramed() {
+bool FrameTransportImpl::isConnectionFramed() const {
   CHECK(connection_);
   return connection_->isFramed();
 }

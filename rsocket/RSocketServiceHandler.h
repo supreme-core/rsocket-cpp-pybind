@@ -90,7 +90,7 @@ class RSocketServiceHandler {
   virtual bool canResume(
       const std::vector<StreamId>& /* cleanStreamIds */,
       const std::vector<StreamId>& /* dirtyStreamIds */,
-      ResumeIdentificationToken);
+      ResumeIdentificationToken) const;
 
   // Convenience constructor to create a simple RSocketServiceHandler.
   static std::shared_ptr<RSocketServiceHandler> create(

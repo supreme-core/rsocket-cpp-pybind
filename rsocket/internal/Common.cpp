@@ -115,7 +115,7 @@ StreamInterruptedException::StreamInterruptedException(int _terminatingSignal)
 ResumeIdentificationToken::ResumeIdentificationToken() {}
 
 ResumeIdentificationToken::ResumeIdentificationToken(const std::string& token) {
-  auto getNibble = [&token](size_t i) {
+  const auto getNibble = [&token](size_t i) {
     uint8_t nibble;
     if (token[i] >= '0' && token[i] <= '9') {
       nibble = token[i] - '0';
@@ -132,8 +132,8 @@ ResumeIdentificationToken::ResumeIdentificationToken(const std::string& token) {
   }
   size_t i = 2;
   while (i < token.size()) {
-    uint8_t firstNibble = getNibble(i++);
-    uint8_t secondNibble = getNibble(i++);
+    const uint8_t firstNibble = getNibble(i++);
+    const uint8_t secondNibble = getNibble(i++);
     bits_.push_back((firstNibble << 4) | secondNibble);
   }
 }
@@ -163,7 +163,7 @@ std::ostream& operator<<(
     std::ostream& out,
     const ResumeIdentificationToken& token) {
   out << "0x";
-  for (auto b : token.data()) {
+  for (const auto b : token.data()) {
     out << HEX_CHARS[(b & 0xF0) >> 4];
     out << HEX_CHARS[b & 0x0F];
   }
@@ -174,8 +174,8 @@ std::string humanify(std::unique_ptr<folly::IOBuf> const& buf) {
   std::string ret;
   size_t cursor = 0;
 
-  for(auto range : *buf) {
-    for(unsigned char chr : range) {
+  for(const auto range : *buf) {
+    for(const unsigned char chr : range) {
       if(cursor >= 20) goto outer;
       ret += chr;
       cursor++;

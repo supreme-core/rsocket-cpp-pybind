@@ -34,7 +34,7 @@ class RSocketServerState {
         rSocketRequester_(rSocketRequester) {}
 
   folly::EventBase& eventBase_;
-  std::shared_ptr<RSocketStateMachine> rSocketStateMachine_;
-  std::shared_ptr<RSocketRequester> rSocketRequester_;
+  const std::shared_ptr<RSocketStateMachine> rSocketStateMachine_;
+  const std::shared_ptr<RSocketRequester> rSocketRequester_;
 };
 }

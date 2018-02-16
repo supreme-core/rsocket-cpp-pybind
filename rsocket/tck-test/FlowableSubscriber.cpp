@@ -40,10 +40,10 @@ void FlowableSubscriber::onSubscribe(
 void FlowableSubscriber::onNext(Payload element) noexcept {
   LOG(INFO) << "... received onNext from Publisher: " << element;
   {
-    std::unique_lock<std::mutex> lock(mutex_);
-    std::string data =
+    const std::unique_lock<std::mutex> lock(mutex_);
+    const std::string data =
         element.data ? element.data->moveToFbString().toStdString() : "";
-    std::string metadata = element.metadata
+    const std::string metadata = element.metadata
         ? element.metadata->moveToFbString().toStdString()
         : "";
     values_.push_back(std::make_pair(data, metadata));
@@ -55,7 +55,7 @@ void FlowableSubscriber::onNext(Payload element) noexcept {
 void FlowableSubscriber::onComplete() noexcept {
   LOG(INFO) << "... received onComplete from Publisher";
   {
-    std::unique_lock<std::mutex> lock(mutex_);
+    const std::unique_lock<std::mutex> lock(mutex_);
     completed_ = true;
   }
 
@@ -65,7 +65,7 @@ void FlowableSubscriber::onComplete() noexcept {
 void FlowableSubscriber::onError(folly::exception_wrapper ex) noexcept {
   LOG(INFO) << "... received onError from Publisher";
   {
-    std::unique_lock<std::mutex> lock(mutex_);
+    const std::unique_lock<std::mutex> lock(mutex_);
     errors_.push_back(std::move(ex));
     errored_ = true;
   }

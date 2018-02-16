@@ -51,7 +51,7 @@ size_t frameSizeWithoutLengthField(ProtocolVersion version, size_t frameSize) {
 }
 
 size_t FramedReader::readFrameLength() const {
-  auto fieldLength = frameSizeFieldLength(*version_);
+  const auto fieldLength = frameSizeFieldLength(*version_);
   DCHECK_GT(fieldLength, 0);
 
   folly::io::Cursor cur{payloadQueue_.front()};
@@ -84,7 +84,7 @@ void FramedReader::parseFrames() {
   }
 
   // Delivering onNext can trigger termination and destroy this instance.
-  auto thisPtr = this->ref_from_this(this);
+  const auto thisPtr = this->ref_from_this(this);
 
   dispatchingFrames_ = true;
 
@@ -113,7 +113,8 @@ void FramedReader::parseFrames() {
     }
 
     payloadQueue_.trimStart(frameSizeFieldLen);
-    auto payloadSize = frameSizeWithoutLengthField(*version_, nextFrameSize);
+    const auto payloadSize =
+        frameSizeWithoutLengthField(*version_, nextFrameSize);
 
     DCHECK_GT(payloadSize, 0)
         << "folly::IOBufQueue::split(0) returns a nullptr, can't have that";
@@ -170,7 +171,7 @@ bool FramedReader::ensureOrAutodetectProtocolVersion() {
     return true;
   }
 
-  auto minBytesNeeded = std::max(
+  const auto minBytesNeeded = std::max(
       FrameSerializerV0_1::kMinBytesNeededForAutodetection,
       FrameSerializerV1_0::kMinBytesNeededForAutodetection);
   DCHECK_GT(minBytesNeeded, 0);
@@ -183,16 +184,16 @@ bool FramedReader::ensureOrAutodetectProtocolVersion() {
 
   auto const& firstFrame = *payloadQueue_.front();
 
-  auto detected = FrameSerializerV1_0::detectProtocolVersion(
+  const auto detectedV1 = FrameSerializerV1_0::detectProtocolVersion(
       firstFrame, kFrameLengthFieldLengthV1_0);
-  if (detected != ProtocolVersion::Unknown) {
+  if (detectedV1 != ProtocolVersion::Unknown) {
     *version_ = FrameSerializerV1_0::Version;
     return true;
   }
 
-  detected = FrameSerializerV0_1::detectProtocolVersion(
+  const auto detectedV0 = FrameSerializerV0_1::detectProtocolVersion(
       firstFrame, kFrameLengthFieldLengthV0_1);
-  if (detected != ProtocolVersion::Unknown) {
+  if (detectedV0 != ProtocolVersion::Unknown) {
     *version_ = FrameSerializerV0_1::Version;
     return true;
   }

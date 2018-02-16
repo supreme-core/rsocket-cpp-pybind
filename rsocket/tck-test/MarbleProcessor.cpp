@@ -76,7 +76,7 @@ void MarbleProcessor::run(
   }
 
   while (true) {
-    auto c = marble_[index_];
+    const auto c = marble_[index_];
     switch (c) {
       case '#':
         LOG(INFO) << "Sending onError";
@@ -87,7 +87,7 @@ void MarbleProcessor::run(
       default: {
         if (canSend_ > 0) {
           Payload payload;
-          auto it = argMap_.find(folly::to<std::string>(c));
+          const auto it = argMap_.find(folly::to<std::string>(c));
           LOG(INFO) << "Sending data " << c;
           if (it != argMap_.end()) {
             LOG(INFO) << folly::sformat(
@@ -113,7 +113,7 @@ void MarbleProcessor::run(
     std::shared_ptr<yarpl::single::SingleObserver<rsocket::Payload>>
         subscriber) {
   while (true) {
-    auto c = marble_[index_];
+    const auto c = marble_[index_];
     switch (c) {
       case '#':
         LOG(INFO) << "Sending onError";
@@ -125,7 +125,7 @@ void MarbleProcessor::run(
         return;
       default: {
         Payload payload;
-        auto it = argMap_.find(folly::to<std::string>(c));
+        const auto it = argMap_.find(folly::to<std::string>(c));
         LOG(INFO) << "Sending data " << c;
         if (it != argMap_.end()) {
           LOG(INFO) << folly::sformat(

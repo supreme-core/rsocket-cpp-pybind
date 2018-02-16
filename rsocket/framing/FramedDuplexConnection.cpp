@@ -29,7 +29,7 @@ void writeFrameLength(
   auto shift = (frameSizeFieldLength - 1) * 8;
 
   while (frameSizeFieldLength--) {
-    auto byte = (frameLength >> shift) & 0xFF;
+    const auto byte = (frameLength >> shift) & 0xFF;
     cur.write(static_cast<uint8_t>(byte));
     shift -= 8;
   }

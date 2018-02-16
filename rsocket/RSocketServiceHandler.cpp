@@ -16,7 +16,7 @@ RSocketServiceHandler::onResume(ResumeIdentificationToken) {
 bool RSocketServiceHandler::canResume(
     const std::vector<StreamId>& /* cleanStreamIds */,
     const std::vector<StreamId>& /* dirtyStreamIds */,
-    ResumeIdentificationToken) {
+    ResumeIdentificationToken) const {
   return true;
 }
 

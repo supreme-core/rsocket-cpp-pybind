@@ -19,7 +19,7 @@ class RSocketError : public std::runtime_error {
    * https://github.com/ReactiveSocket/reactivesocket/blob/master/Protocol.md#error-codes
    * @return
    */
-  virtual int getErrorCode() = 0;
+  virtual int getErrorCode() const = 0;
 };
 
 /**
@@ -29,7 +29,7 @@ class InvalidSetupError : public RSocketError {
  public:
   using RSocketError::RSocketError;
 
-  int getErrorCode() override {
+  int getErrorCode() const override {
     return 0x00000001;
   }
 
@@ -45,7 +45,7 @@ class UnsupportedSetupError : public RSocketError {
  public:
   using RSocketError::RSocketError;
 
-  int getErrorCode() override {
+  int getErrorCode() const override {
     return 0x00000002;
   }
 
@@ -61,7 +61,7 @@ class RejectedSetupError : public RSocketError {
  public:
   using RSocketError::RSocketError;
 
-  int getErrorCode() override {
+  int getErrorCode() const override {
     return 0x00000003;
   }
 
@@ -77,7 +77,7 @@ class RejectedResumeError : public RSocketError {
  public:
   using RSocketError::RSocketError;
 
-  int getErrorCode() override {
+  int getErrorCode() const override {
     return 0x00000004;
   }
 
@@ -93,7 +93,7 @@ class ConnectionError : public RSocketError {
  public:
   using RSocketError::RSocketError;
 
-  int getErrorCode() override {
+  int getErrorCode() const override {
     return 0x00000101;
   }
 
@@ -109,7 +109,7 @@ class ConnectionCloseError : public RSocketError {
  public:
   using RSocketError::RSocketError;
 
-  int getErrorCode() override {
+  int getErrorCode() const override {
     return 0x00000102;
   }
 

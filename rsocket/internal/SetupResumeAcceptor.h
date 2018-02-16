@@ -72,7 +72,7 @@ class SetupResumeAcceptor final {
 
   bool closed_{false};
 
-  folly::EventBase* eventBase_;
+  folly::EventBase* const eventBase_;
 };
 
 } // namespace rsocket

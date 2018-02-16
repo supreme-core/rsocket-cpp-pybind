@@ -108,7 +108,7 @@ void SetupResumeAcceptor::processFrame(
     return;
   }
 
-  auto serializer = FrameSerializer::createAutodetectedSerializer(*buf);
+  const auto serializer = FrameSerializer::createAutodetectedSerializer(*buf);
   if (!serializer) {
     VLOG(2) << "Unable to detect protocol version";
     return;
@@ -130,7 +130,7 @@ void SetupResumeAcceptor::processFrame(
       frame.moveToSetupPayload(params);
 
       if (serializer->protocolVersion() != params.protocolVersion) {
-        std::string msg{"SETUP frame has invalid protocol version"};
+        const std::string msg{"SETUP frame has invalid protocol version"};
         auto err = serializer->serializeOut(Frame_ERROR::invalidSetup(msg));
         connection->send(std::move(err));
         break;
@@ -143,7 +143,7 @@ void SetupResumeAcceptor::processFrame(
     case FrameType::RESUME: {
       Frame_RESUME frame;
       if (!serializer->deserializeFrom(frame, std::move(buf))) {
-        std::string msg{"Cannot decode RESUME frame"};
+        const std::string msg{"Cannot decode RESUME frame"};
         auto err = serializer->serializeOut(Frame_ERROR::connectionError(msg));
         connection->send(std::move(err));
         break;
@@ -158,7 +158,7 @@ void SetupResumeAcceptor::processFrame(
           ProtocolVersion(frame.versionMajor_, frame.versionMinor_));
 
       if (serializer->protocolVersion() != params.protocolVersion) {
-        std::string msg{"RESUME frame has invalid protocol version"};
+        const std::string msg{"RESUME frame has invalid protocol version"};
         auto err = serializer->serializeOut(Frame_ERROR::rejectedResume(msg));
         connection->send(std::move(err));
         break;
@@ -169,7 +169,7 @@ void SetupResumeAcceptor::processFrame(
     }
 
     default: {
-      std::string msg{"Invalid frame, expected SETUP/RESUME"};
+      const std::string msg{"Invalid frame, expected SETUP/RESUME"};
       auto err = serializer->serializeOut(Frame_ERROR::connectionError(msg));
       connection->send(std::move(err));
       break;
@@ -187,7 +187,7 @@ void SetupResumeAcceptor::accept(
     return;
   }
 
-  auto subscriber = std::make_shared<OneFrameSubscriber>(
+  const auto subscriber = std::make_shared<OneFrameSubscriber>(
       *this, std::move(connection), std::move(onSetup), std::move(onResume));
   connections_.insert(subscriber);
   subscriber->setInput();

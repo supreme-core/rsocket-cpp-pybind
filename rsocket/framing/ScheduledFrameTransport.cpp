@@ -30,7 +30,7 @@ void ScheduledFrameTransport::close() {
   });
 }
 
-bool ScheduledFrameTransport::isConnectionFramed() {
+bool ScheduledFrameTransport::isConnectionFramed() const {
   DCHECK(frameTransport_) << "there should be no way to get null here";
   return frameTransport_->isConnectionFramed();
 }

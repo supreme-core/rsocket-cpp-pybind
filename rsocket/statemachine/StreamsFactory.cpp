@@ -106,7 +106,7 @@ void StreamsFactory::createRequestResponseRequester(
 }
 
 StreamId StreamsFactory::getNextStreamId() {
-  StreamId streamId = nextStreamId_;
+  const StreamId streamId = nextStreamId_;
   CHECK(streamId <= std::numeric_limits<int32_t>::max() - 2);
   nextStreamId_ += 2;
   return streamId;

@@ -78,7 +78,7 @@ std::ostream& operator<<(std::ostream&, StreamCompletionSignal);
 class StreamInterruptedException : public std::runtime_error {
  public:
   explicit StreamInterruptedException(int _terminatingSignal);
-  int terminatingSignal;
+  const int terminatingSignal;
 };
 
 class ResumeIdentificationToken {

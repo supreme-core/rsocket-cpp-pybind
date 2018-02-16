@@ -44,7 +44,7 @@ class NoopStats : public RSocketStats {
   void keepaliveReceived() override {}
 
   static std::shared_ptr<NoopStats> instance() {
-    static auto singleton = std::make_shared<NoopStats>();
+    static const auto singleton = std::make_shared<NoopStats>();
     return singleton;
   }
 };

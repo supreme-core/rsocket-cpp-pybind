@@ -21,7 +21,7 @@ ConnectionSet::~ConnectionSet() {
   // Move all the connections out of the synchronized map so we don't block
   // while closing the state machines.
   {
-    auto locked = machines_.lock();
+    const auto locked = machines_.lock();
     if (locked->empty()) {
       VLOG(2) << "No connections to close, early exit";
       return;
@@ -37,7 +37,7 @@ ConnectionSet::~ConnectionSet() {
     auto rsocket = std::move(kv.first);
     auto evb = kv.second;
 
-    auto close = [rs = std::move(rsocket)] {
+    const auto close = [rs = std::move(rsocket)] {
       rs->close({}, StreamCompletionSignal::SOCKET_CLOSED);
     };
 
@@ -69,7 +69,7 @@ void ConnectionSet::remove(
     const std::shared_ptr<RSocketStateMachine>& machine) {
   VLOG(4) << "remove(" << machine.get() << ")";
 
-  auto locked = machines_.lock();
+  const auto locked = machines_.lock();
   auto const result = locked->erase(machine);
   DCHECK_LE(result, 1);
 
@@ -78,7 +78,7 @@ void ConnectionSet::remove(
   }
 }
 
-size_t ConnectionSet::size() {
+size_t ConnectionSet::size() const {
   return machines_.lock()->size();
 }
 

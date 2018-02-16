@@ -62,15 +62,15 @@ class WarmResumeManager : public ResumeManager {
   // No action to perform for WarmResumeManager
   void onStreamClosed(StreamId) override{};
 
-  const StreamResumeInfos& getStreamResumeInfos() override {
+  const StreamResumeInfos& getStreamResumeInfos() const override {
     LOG(FATAL) << "Not Implemented for Warm Resumption";
   }
 
-  StreamId getLargestUsedStreamId() override {
+  StreamId getLargestUsedStreamId() const override {
     LOG(FATAL) << "Not Implemented for Warm Resumption";
   }
 
-  size_t size() {
+  size_t size() const {
     return size_;
   }
 
@@ -81,7 +81,7 @@ class WarmResumeManager : public ResumeManager {
   // Called before clearing cached frames to update stats.
   void clearFrames(ResumePosition position);
 
-  std::shared_ptr<RSocketStats> stats_;
+  const std::shared_ptr<RSocketStats> stats_;
 
   // Start position of the send buffer queue
   ResumePosition firstSentPosition_{0};

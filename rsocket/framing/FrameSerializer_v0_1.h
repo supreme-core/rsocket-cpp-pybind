@@ -15,6 +15,6 @@ class FrameSerializerV0_1 : public FrameSerializerV0 {
       const folly::IOBuf& firstFrame,
       size_t skipBytes = 0);
 
-  ProtocolVersion protocolVersion() override;
+  ProtocolVersion protocolVersion() const override;
 };
 } // reactivesocket

@@ -79,14 +79,16 @@ class ServerResponder : public RSocketResponder {
       Payload request,
       StreamId) override {
     LOG(INFO) << "handleRequestStream " << request;
-    std::string data = request.data->moveToFbString().toStdString();
-    std::string metadata = request.metadata->moveToFbString().toStdString();
-    auto it = marbles_.streamMarbles.find(std::make_pair(data, metadata));
+    const std::string data = request.data->moveToFbString().toStdString();
+    const std::string metadata =
+        request.metadata->moveToFbString().toStdString();
+    const auto it = marbles_.streamMarbles.find(std::make_pair(data, metadata));
     if (it == marbles_.streamMarbles.end()) {
       return yarpl::flowable::Flowable<rsocket::Payload>::error(
           std::logic_error("No MarbleHandler found"));
     } else {
-      auto marbleProcessor = std::make_shared<tck::MarbleProcessor>(it->second);
+      const auto marbleProcessor =
+          std::make_shared<tck::MarbleProcessor>(it->second);
       auto lambda = [marbleProcessor](
           auto& subscriber, int64_t requested) mutable {
         return marbleProcessor->run(subscriber, requested);
@@ -99,14 +101,17 @@ class ServerResponder : public RSocketResponder {
       Payload request,
       StreamId) override {
     LOG(INFO) << "handleRequestResponse " << request;
-    std::string data = request.data->moveToFbString().toStdString();
-    std::string metadata = request.metadata->moveToFbString().toStdString();
-    auto it = marbles_.reqRespMarbles.find(std::make_pair(data, metadata));
+    const std::string data = request.data->moveToFbString().toStdString();
+    const std::string metadata =
+        request.metadata->moveToFbString().toStdString();
+    const auto it =
+        marbles_.reqRespMarbles.find(std::make_pair(data, metadata));
     if (it == marbles_.reqRespMarbles.end()) {
       return yarpl::single::Singles::error<rsocket::Payload>(
           std::logic_error("No MarbleHandler found"));
     } else {
-      auto marbleProcessor = std::make_shared<tck::MarbleProcessor>(it->second);
+      const auto marbleProcessor =
+          std::make_shared<tck::MarbleProcessor>(it->second);
       auto lambda =
           [marbleProcessor](
               std::shared_ptr<yarpl::single::SingleObserver<rsocket::Payload>>
@@ -137,7 +142,7 @@ class ServiceHandler : public RSocketServiceHandler {
 
   folly::Expected<std::shared_ptr<RSocketServerState>, RSocketException>
   onResume(ResumeIdentificationToken token) override {
-    auto itr = store_->find(token);
+    const auto itr = store_->find(token);
     CHECK(itr != store_->end());
     return itr->second;
   };
@@ -168,10 +173,10 @@ int main(int argc, char* argv[]) {
   opts.threads = 1;
 
   // RSocket server accepting on TCP
-  auto rs = RSocket::createServer(
+  const auto rs = RSocket::createServer(
       std::make_unique<TcpConnectionAcceptor>(std::move(opts)));
 
-  auto rawRs = rs.get();
+  const auto rawRs = rs.get();
   auto serverThread = std::thread(
       [=] { rawRs->startAndPark(std::make_shared<ServiceHandler>()); });
 

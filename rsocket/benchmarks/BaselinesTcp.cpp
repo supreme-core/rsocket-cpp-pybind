@@ -23,11 +23,9 @@ static void BM_Baseline_TCP_SendReceive(
   std::thread t([&]() {
     int serverSock = socket(AF_INET, SOCK_STREAM, 0);
     int sock = -1;
-    struct sockaddr_in addr;
+    struct sockaddr_in addr = {};
     socklen_t addrlen = sizeof(addr);
     std::array<char, MAX_MESSAGE_LENGTH> message = {};
-
-    std::memset(&addr, 0, sizeof(addr));
 
     if (serverSock < 0) {
       perror("acceptor socket");

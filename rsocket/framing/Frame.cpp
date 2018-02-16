@@ -11,10 +11,10 @@
 
 namespace rsocket {
 
-const uint32_t Frame_LEASE::kMaxTtl;
-const uint32_t Frame_LEASE::kMaxNumRequests;
-const uint32_t Frame_SETUP::kMaxKeepaliveTime;
-const uint32_t Frame_SETUP::kMaxLifetime;
+constexpr uint32_t Frame_LEASE::kMaxTtl;
+constexpr uint32_t Frame_LEASE::kMaxNumRequests;
+constexpr uint32_t Frame_SETUP::kMaxKeepaliveTime;
+constexpr uint32_t Frame_SETUP::kMaxLifetime;
 
 std::ostream& operator<<(std::ostream& os, const Frame_REQUEST_Base& frame) {
   return os << frame.header_ << "(" << frame.requestN_ << ", "
