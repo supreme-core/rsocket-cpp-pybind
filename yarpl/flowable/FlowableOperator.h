@@ -398,8 +398,10 @@ class SubscribeOnOperator : public FlowableOperator<T, T> {
       : upstream_(std::move(upstream)), executor_(executor) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    upstream_->subscribe(
-        std::make_shared<Subscription>(executor_, std::move(subscriber)));
+    executor_.add([this, self = this->ref_from_this(this), subscriber] {
+      upstream_->subscribe(
+          std::make_shared<Subscription>(executor_, std::move(subscriber)));
+    });
   }
 
  private:
