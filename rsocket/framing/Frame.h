@@ -22,8 +22,8 @@ class Optional;
 namespace io {
 class Cursor;
 class QueueAppender;
-}
-}
+} // namespace io
+} // namespace folly
 
 namespace rsocket {
 
@@ -246,21 +246,21 @@ class Frame_ERROR {
         payload_(std::move(payload)) {}
 
   // Connection errors.
-  static Frame_ERROR invalidSetup(std::string);
-  static Frame_ERROR unsupportedSetup(std::string);
-  static Frame_ERROR rejectedSetup(std::string);
-  static Frame_ERROR rejectedResume(std::string);
-  static Frame_ERROR connectionError(std::string);
+  static Frame_ERROR invalidSetup(folly::StringPiece);
+  static Frame_ERROR unsupportedSetup(folly::StringPiece);
+  static Frame_ERROR rejectedSetup(folly::StringPiece);
+  static Frame_ERROR rejectedResume(folly::StringPiece);
+  static Frame_ERROR connectionError(folly::StringPiece);
 
   // Stream errors.
-  static Frame_ERROR applicationError(StreamId, std::string);
-  static Frame_ERROR rejected(StreamId, std::string);
-  static Frame_ERROR canceled(StreamId, std::string);
-  static Frame_ERROR invalid(StreamId, std::string);
+  static Frame_ERROR applicationError(StreamId, folly::StringPiece);
+  static Frame_ERROR rejected(StreamId, folly::StringPiece);
+  static Frame_ERROR canceled(StreamId, folly::StringPiece);
+  static Frame_ERROR invalid(StreamId, folly::StringPiece);
 
  private:
-  static Frame_ERROR connectionErr(ErrorCode, std::string);
-  static Frame_ERROR streamErr(ErrorCode, std::string, StreamId);
+  static Frame_ERROR connectionErr(ErrorCode, folly::StringPiece);
+  static Frame_ERROR streamErr(ErrorCode, folly::StringPiece, StreamId);
 
  public:
   FrameHeader header_;
@@ -420,4 +420,4 @@ std::ostream& operator<<(std::ostream&, const Frame_RESUME_OK&);
 
 StreamType getStreamType(FrameType frameType);
 bool isNewStreamFrame(FrameType frameType);
-}
+} // namespace rsocket

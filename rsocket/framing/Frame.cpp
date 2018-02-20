@@ -53,54 +53,58 @@ std::ostream& operator<<(std::ostream& os, const Frame_PAYLOAD& frame) {
   return os << frame.header_ << ", " << frame.payload_;
 }
 
-Frame_ERROR Frame_ERROR::invalidSetup(std::string message) {
-  return connectionErr(ErrorCode::INVALID_SETUP, std::move(message));
+Frame_ERROR Frame_ERROR::invalidSetup(folly::StringPiece message) {
+  return connectionErr(ErrorCode::INVALID_SETUP, message);
 }
 
-Frame_ERROR Frame_ERROR::unsupportedSetup(std::string message) {
-  return connectionErr(ErrorCode::UNSUPPORTED_SETUP, std::move(message));
+Frame_ERROR Frame_ERROR::unsupportedSetup(folly::StringPiece message) {
+  return connectionErr(ErrorCode::UNSUPPORTED_SETUP, message);
 }
 
-Frame_ERROR Frame_ERROR::rejectedSetup(std::string message) {
-  return connectionErr(ErrorCode::REJECTED_SETUP, std::move(message));
+Frame_ERROR Frame_ERROR::rejectedSetup(folly::StringPiece message) {
+  return connectionErr(ErrorCode::REJECTED_SETUP, message);
 }
 
-Frame_ERROR Frame_ERROR::rejectedResume(std::string message) {
-  return connectionErr(ErrorCode::REJECTED_RESUME, std::move(message));
+Frame_ERROR Frame_ERROR::rejectedResume(folly::StringPiece message) {
+  return connectionErr(ErrorCode::REJECTED_RESUME, message);
 }
 
-Frame_ERROR Frame_ERROR::connectionError(std::string message) {
-  return connectionErr(ErrorCode::CONNECTION_ERROR, std::move(message));
+Frame_ERROR Frame_ERROR::connectionError(folly::StringPiece message) {
+  return connectionErr(ErrorCode::CONNECTION_ERROR, message);
 }
 
 Frame_ERROR Frame_ERROR::applicationError(
     StreamId stream,
-    std::string message) {
-  return streamErr(ErrorCode::APPLICATION_ERROR, std::move(message), stream);
+    folly::StringPiece message) {
+  return streamErr(ErrorCode::APPLICATION_ERROR, message, stream);
 }
 
-Frame_ERROR Frame_ERROR::rejected(StreamId stream, std::string message) {
-  return streamErr(ErrorCode::REJECTED, std::move(message), stream);
+Frame_ERROR Frame_ERROR::rejected(StreamId stream, folly::StringPiece message) {
+  return streamErr(ErrorCode::REJECTED, message, stream);
 }
 
-Frame_ERROR Frame_ERROR::canceled(StreamId stream, std::string message) {
-  return streamErr(ErrorCode::CANCELED, std::move(message), stream);
+Frame_ERROR Frame_ERROR::canceled(StreamId stream, folly::StringPiece message) {
+  return streamErr(ErrorCode::CANCELED, message, stream);
 }
 
-Frame_ERROR Frame_ERROR::invalid(StreamId stream, std::string message) {
-  return streamErr(ErrorCode::INVALID, std::move(message), stream);
+Frame_ERROR Frame_ERROR::invalid(StreamId stream, folly::StringPiece message) {
+  return streamErr(ErrorCode::INVALID, message, stream);
 }
 
-Frame_ERROR Frame_ERROR::connectionErr(ErrorCode err, std::string message) {
-  return Frame_ERROR{0, err, Payload{std::move(message)}};
+Frame_ERROR Frame_ERROR::connectionErr(
+    ErrorCode err,
+    folly::StringPiece message) {
+  return Frame_ERROR{0, err, Payload{message}};
 }
 
-Frame_ERROR
-Frame_ERROR::streamErr(ErrorCode err, std::string message, StreamId stream) {
+Frame_ERROR Frame_ERROR::streamErr(
+    ErrorCode err,
+    folly::StringPiece message,
+    StreamId stream) {
   if (stream == 0) {
     throw std::invalid_argument{"Can't make stream error for stream zero"};
   }
-  return Frame_ERROR{stream, err, Payload{std::move(message)}};
+  return Frame_ERROR{stream, err, Payload{message}};
 }
 
 std::ostream& operator<<(std::ostream& os, const Frame_ERROR& frame) {

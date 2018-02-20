@@ -57,12 +57,12 @@ void StreamStateMachineBase::writeComplete() {
   writer_->writePayload(Frame_PAYLOAD::complete(streamId_));
 }
 
-void StreamStateMachineBase::writeApplicationError(std::string msg) {
-  writer_->writeError(Frame_ERROR::applicationError(streamId_, std::move(msg)));
+void StreamStateMachineBase::writeApplicationError(folly::StringPiece msg) {
+  writer_->writeError(Frame_ERROR::applicationError(streamId_, msg));
 }
 
-void StreamStateMachineBase::writeInvalidError(std::string msg) {
-  writer_->writeError(Frame_ERROR::invalid(streamId_, std::move(msg)));
+void StreamStateMachineBase::writeInvalidError(folly::StringPiece msg) {
+  writer_->writeError(Frame_ERROR::invalid(streamId_, msg));
 }
 
 void StreamStateMachineBase::removeFromWriter() {

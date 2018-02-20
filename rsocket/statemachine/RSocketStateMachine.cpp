@@ -401,8 +401,8 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   const auto self = shared_from_this();
 
   if (!ensureOrAutodetectFrameSerializer(*frame)) {
-    constexpr folly::StringPiece message{"Cannot detect protocol version"};
-    closeWithError(Frame_ERROR::connectionError(message.str()));
+    constexpr auto msg = "Cannot detect protocol version";
+    closeWithError(Frame_ERROR::connectionError(msg));
     return;
   }
 
@@ -411,8 +411,8 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
 
   const auto optStreamId = frameSerializer_->peekStreamId(*frame);
   if (!optStreamId) {
-    constexpr folly::StringPiece message{"Cannot decode stream ID"};
-    closeWithError(Frame_ERROR::connectionError(message.str()));
+    constexpr auto msg = "Cannot decode stream ID";
+    closeWithError(Frame_ERROR::connectionError(msg));
     return;
   }
 
@@ -425,10 +425,9 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
     // than connection level frames which drives the resumption
     // TODO(lehecka): this assertion should be handled more elegantly using
     // different state machine
-    constexpr folly::StringPiece message{
-        "Received stream frame while resuming"};
-    LOG(ERROR) << message;
-    closeWithError(Frame_ERROR::connectionError(message.str()));
+    constexpr auto msg = "Received stream frame while resuming";
+    LOG(ERROR) << msg;
+    closeWithError(Frame_ERROR::connectionError(msg));
     return;
   } else {
     handleStreamFrame(streamId, frameType, std::move(frame));
@@ -492,17 +491,16 @@ void RSocketStateMachine::handleConnectionFrame(
       VLOG(3) << mode_ << " In: " << frame;
 
       if (!resumeCallback_) {
-        constexpr folly::StringPiece message{
-            "Received RESUME_OK while not resuming"};
-        closeWithError(Frame_ERROR::connectionError(message.str()));
+        constexpr auto msg = "Received RESUME_OK while not resuming";
+        closeWithError(Frame_ERROR::connectionError(msg));
         return;
       }
 
       if (!resumeManager_->isPositionAvailable(frame.position_)) {
-        auto message = folly::sformat(
+        auto const msg = folly::sformat(
             "Client cannot resume, server position {} is not available",
             frame.position_);
-        closeWithError(Frame_ERROR::connectionError(std::move(message)));
+        closeWithError(Frame_ERROR::connectionError(msg));
         return;
       }
 
@@ -569,9 +567,9 @@ void RSocketStateMachine::handleConnectionFrame(
     case FrameType::PAYLOAD:
     case FrameType::EXT:
     default: {
-      auto msg = folly::sformat(
+      auto const msg = folly::sformat(
           "Unexpected {} frame for stream 0", toString(frameType));
-      closeWithError(Frame_ERROR::connectionError(std::move(msg)));
+      closeWithError(Frame_ERROR::connectionError(msg));
       return;
     }
   }
@@ -666,9 +664,9 @@ void RSocketStateMachine::handleStreamFrame(
     case FrameType::RESUME:
     case FrameType::RESUME_OK:
     case FrameType::EXT: {
-      auto msg = folly::sformat(
+      auto const msg = folly::sformat(
           "Unexpected {} frame for stream {}", toString(frameType), streamId);
-      closeWithError(Frame_ERROR::connectionError(std::move(msg)));
+      closeWithError(Frame_ERROR::connectionError(msg));
       break;
     }
     default:
@@ -695,9 +693,9 @@ void RSocketStateMachine::handleUnknownStream(
   }
 
   if (!isNewStreamFrame(frameType) && (frameType != FrameType::PAYLOAD)) {
-    auto msg = folly::sformat(
+    auto const msg = folly::sformat(
         "Unexpected frame {} for stream {}", toString(frameType), streamId);
-    closeWithError(Frame_ERROR::connectionError(std::move(msg)));
+    closeWithError(Frame_ERROR::connectionError(msg));
     return;
   }
 
@@ -720,10 +718,10 @@ void RSocketStateMachine::handleUnknownStream(
 
     const auto it = streamFragments_.find(streamId);
     if (it == streamFragments_.end()) {
-      auto msg = folly::sformat(
+      auto const msg = folly::sformat(
           "Expected payload frame in stream {} to be in fragment cache",
           streamId);
-      closeWithError(Frame_ERROR::connectionError(std::move(msg)));
+      closeWithError(Frame_ERROR::connectionError(msg));
       return;
     }
 
@@ -832,9 +830,9 @@ void RSocketStateMachine::handleInitialFollowsFrame(
         StreamFragmentAccumulator{initialFrame,
                                   std::move(initialFrame.payload_)}));
   } else {
-    auto msg = folly::sformat(
+    auto const msg = folly::sformat(
         "Expected stream {} to already be in fragment cache", streamId);
-    closeWithError(Frame_ERROR::connectionError(std::move(msg)));
+    closeWithError(Frame_ERROR::connectionError(msg));
   }
 }
 
@@ -912,7 +910,7 @@ bool RSocketStateMachine::resumeFromPositionOrClose(
     return true;
   }
 
-  auto message = folly::to<std::string>(
+  auto const msg = folly::to<std::string>(
       "Cannot resume server, client lastServerPosition=",
       serverPosition,
       " firstClientPosition=",
@@ -920,7 +918,7 @@ bool RSocketStateMachine::resumeFromPositionOrClose(
       " is not available. Last reset position is ",
       resumeManager_->firstSentPosition());
 
-  closeWithError(Frame_ERROR::connectionError(std::move(message)));
+  closeWithError(Frame_ERROR::connectionError(msg));
   return false;
 }
 

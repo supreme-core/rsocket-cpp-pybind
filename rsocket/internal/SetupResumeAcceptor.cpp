@@ -118,7 +118,7 @@ void SetupResumeAcceptor::processFrame(
     case FrameType::SETUP: {
       Frame_SETUP frame;
       if (!serializer->deserializeFrom(frame, std::move(buf))) {
-        std::string msg{"Cannot decode SETUP frame"};
+        constexpr auto msg = "Cannot decode SETUP frame";
         auto err = serializer->serializeOut(Frame_ERROR::connectionError(msg));
         connection->send(std::move(err));
         break;
@@ -130,7 +130,7 @@ void SetupResumeAcceptor::processFrame(
       frame.moveToSetupPayload(params);
 
       if (serializer->protocolVersion() != params.protocolVersion) {
-        const std::string msg{"SETUP frame has invalid protocol version"};
+        constexpr auto msg = "SETUP frame has invalid protocol version";
         auto err = serializer->serializeOut(Frame_ERROR::invalidSetup(msg));
         connection->send(std::move(err));
         break;
@@ -143,7 +143,7 @@ void SetupResumeAcceptor::processFrame(
     case FrameType::RESUME: {
       Frame_RESUME frame;
       if (!serializer->deserializeFrom(frame, std::move(buf))) {
-        const std::string msg{"Cannot decode RESUME frame"};
+        constexpr auto msg = "Cannot decode RESUME frame";
         auto err = serializer->serializeOut(Frame_ERROR::connectionError(msg));
         connection->send(std::move(err));
         break;
@@ -158,7 +158,7 @@ void SetupResumeAcceptor::processFrame(
           ProtocolVersion(frame.versionMajor_, frame.versionMinor_));
 
       if (serializer->protocolVersion() != params.protocolVersion) {
-        const std::string msg{"RESUME frame has invalid protocol version"};
+        constexpr auto msg = "RESUME frame has invalid protocol version";
         auto err = serializer->serializeOut(Frame_ERROR::rejectedResume(msg));
         connection->send(std::move(err));
         break;
@@ -169,7 +169,7 @@ void SetupResumeAcceptor::processFrame(
     }
 
     default: {
-      const std::string msg{"Invalid frame, expected SETUP/RESUME"};
+      constexpr auto msg = "Invalid frame, expected SETUP/RESUME";
       auto err = serializer->serializeOut(Frame_ERROR::connectionError(msg));
       connection->send(std::move(err));
       break;

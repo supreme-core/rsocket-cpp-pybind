@@ -57,8 +57,8 @@ class StreamStateMachineBase {
 
   void writePayload(Payload&& payload, bool complete = false);
   void writeComplete();
-  void writeApplicationError(std::string);
-  void writeInvalidError(std::string);
+  void writeApplicationError(folly::StringPiece);
+  void writeInvalidError(folly::StringPiece);
 
   void removeFromWriter();
 

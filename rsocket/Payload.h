@@ -20,8 +20,8 @@ struct Payload {
       std::unique_ptr<folly::IOBuf> metadata = std::unique_ptr<folly::IOBuf>());
 
   explicit Payload(
-      const std::string& data,
-      const std::string& metadata = std::string());
+      folly::StringPiece data,
+      folly::StringPiece metadata = folly::StringPiece{});
 
   explicit operator bool() const {
     return data != nullptr || metadata != nullptr;
@@ -45,4 +45,4 @@ struct Payload {
 };
 
 std::ostream& operator<<(std::ostream& os, const Payload& payload);
-}
+} // namespace rsocket

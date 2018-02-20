@@ -7,15 +7,27 @@
 
 namespace rsocket {
 
-Payload::Payload(
-    std::unique_ptr<folly::IOBuf> _data,
-    std::unique_ptr<folly::IOBuf> _metadata)
-    : data(std::move(_data)), metadata(std::move(_metadata)) {}
+namespace {
 
-Payload::Payload(const std::string& _data, const std::string& _metadata)
-    : data(folly::IOBuf::copyBuffer(_data)) {
-  if (!_metadata.empty()) {
-    metadata = folly::IOBuf::copyBuffer(_metadata);
+std::string moveIOBufToString(std::unique_ptr<folly::IOBuf> buf) {
+  return buf ? buf->moveToFbString().toStdString() : "";
+}
+
+std::string cloneIOBufToString(std::unique_ptr<folly::IOBuf> const& buf) {
+  return buf ? buf->cloneAsValue().moveToFbString().toStdString() : "";
+}
+
+} // namespace
+
+Payload::Payload(
+    std::unique_ptr<folly::IOBuf> d,
+    std::unique_ptr<folly::IOBuf> m)
+    : data{std::move(d)}, metadata{std::move(m)} {}
+
+Payload::Payload(folly::StringPiece d, folly::StringPiece m)
+    : data{folly::IOBuf::copyBuffer(d.data(), d.size())} {
+  if (!m.empty()) {
+    metadata = folly::IOBuf::copyBuffer(m.data(), m.size());
   }
 }
 
@@ -25,39 +37,15 @@ void Payload::checkFlags(FrameFlags flags) const {
 
 std::ostream& operator<<(std::ostream& os, const Payload& payload) {
   return os << "Metadata("
-            << (payload.metadata
-                    ? folly::to<std::string>(
-                          payload.metadata->computeChainDataLength())
-                    : "0")
-            << (payload.metadata
-                    ? "): '" +
-                        humanify(payload.metadata) +
-                        "'"
-                    : "): <null>")
+            << (payload.metadata ? payload.metadata->computeChainDataLength()
+                                 : 0)
+            << "): "
+            << (payload.metadata ? "'" + humanify(payload.metadata) + "'"
+                                 : "<null>")
             << ", Data("
-            << (payload.data ? folly::to<std::string>(
-                                   payload.data->computeChainDataLength())
-                             : "0")
-            << (payload.data
-                    ? "): '" +
-                        humanify(payload.data) +
-                        "'"
-                    : "): <null>");
-}
-
-static std::string moveIOBufToString(std::unique_ptr<folly::IOBuf> iobuf) {
-  if (!iobuf) {
-    return "";
-  }
-  return iobuf->moveToFbString().toStdString();
-}
-
-static std::string cloneIOBufToString(
-    std::unique_ptr<folly::IOBuf> const& iobuf) {
-  if (!iobuf) {
-    return "";
-  }
-  return iobuf->cloneAsValue().moveToFbString().toStdString();
+            << (payload.data ? payload.data->computeChainDataLength() : 0)
+            << "): "
+            << (payload.data ? "'" + humanify(payload.data) + "'" : "<null>");
 }
 
 std::string Payload::moveDataToString() {
@@ -86,7 +74,6 @@ Payload Payload::clone() const {
   if (data) {
     out.data = data->clone();
   }
-
   if (metadata) {
     out.metadata = metadata->clone();
   }
@@ -94,7 +81,7 @@ Payload Payload::clone() const {
 }
 
 FrameFlags Payload::getFlags() const {
-  return (metadata != nullptr ? FrameFlags::METADATA : FrameFlags::EMPTY);
+  return metadata != nullptr ? FrameFlags::METADATA : FrameFlags::EMPTY;
 }
 
 } // namespace rsocket
