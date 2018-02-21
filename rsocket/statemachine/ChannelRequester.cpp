@@ -65,6 +65,7 @@ void ChannelRequester::onError(folly::exception_wrapper ex) noexcept {
   }
   if (!publisherClosed()) {
     publisherComplete();
+    endStream(StreamCompletionSignal::ERROR);
     writeApplicationError(ex.get_exception()->what());
     tryCompleteChannel();
   }
@@ -121,7 +122,7 @@ void ChannelRequester::handlePayload(
 void ChannelRequester::handleError(folly::exception_wrapper ex) {
   CHECK(requested_);
   errorConsumer(std::move(ex));
-  tryCompleteChannel();
+  terminatePublisher();
 }
 
 void ChannelRequester::handleRequestN(uint32_t n) {
@@ -134,4 +135,4 @@ void ChannelRequester::handleCancel() {
   publisherComplete();
   tryCompleteChannel();
 }
-}
+} // namespace rsocket

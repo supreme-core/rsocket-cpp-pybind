@@ -30,6 +30,7 @@ void ChannelResponder::onComplete() noexcept {
 void ChannelResponder::onError(folly::exception_wrapper ex) noexcept {
   if (!publisherClosed()) {
     publisherComplete();
+    endStream(StreamCompletionSignal::ERROR);
     writeApplicationError(ex.get_exception()->what());
     tryCompleteChannel();
   }
@@ -89,6 +90,6 @@ void ChannelResponder::handleRequestN(uint32_t n) {
 
 void ChannelResponder::handleError(folly::exception_wrapper ex) {
   errorConsumer(std::move(ex));
-  tryCompleteChannel();
+  terminatePublisher();
 }
 }

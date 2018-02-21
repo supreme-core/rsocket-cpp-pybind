@@ -36,12 +36,12 @@ class ConsumerBase : public StreamStateMachineBase,
 
   size_t getConsumerAllowance() const override;
 
- protected:
-  void cancelConsumer();
-
   bool consumerClosed() const {
     return state_ == State::CLOSED;
   }
+
+ protected:
+  void cancelConsumer();
 
   void endStream(StreamCompletionSignal signal) override;
 
@@ -77,4 +77,4 @@ class ConsumerBase : public StreamStateMachineBase,
 
   State state_{State::RESPONDING};
 };
-}
+} // namespace rsocket

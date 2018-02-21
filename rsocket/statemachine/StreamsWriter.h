@@ -3,6 +3,8 @@
 #pragma once
 
 #include "rsocket/Payload.h"
+#include "rsocket/framing/Frame.h"
+#include "rsocket/framing/FrameType.h"
 #include "rsocket/internal/Common.h"
 
 namespace rsocket {

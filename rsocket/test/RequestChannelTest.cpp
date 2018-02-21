@@ -359,7 +359,8 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
 
   responderSubscriber->awaitTerminalEvent();
   responderSubscriber->assertValueAt(0, "Requester stream: 1 of 10");
-  responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
+  responderSubscriber->assertSuccess();
+  responderSubscriber->assertValueCount(1);
 }
 
 struct LargePayloadChannelHandler : public rsocket::RSocketResponder {
