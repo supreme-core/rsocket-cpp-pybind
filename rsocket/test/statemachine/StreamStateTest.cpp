@@ -14,6 +14,7 @@ using namespace rsocket;
 using namespace testing;
 using namespace yarpl::mocks;
 
+// @see github.com/rsocket/rsocket/blob/master/Protocol.md#request-channel
 TEST(StreamState, NewStateMachineBase) {
   auto writer = std::make_shared<StrictMock<MockStreamsWriter>>();
   EXPECT_CALL(*writer, onStreamClosed(_));
@@ -55,8 +56,8 @@ TEST(StreamState, ChannelRequesterOnError) {
 
   subscriber->onError(std::runtime_error("test"));
 
-  ASSERT_TRUE(requester->publisherClosed());
   ASSERT_TRUE(requester->consumerClosed());
+  ASSERT_TRUE(requester->publisherClosed());
 }
 
 TEST(StreamState, ChannelResponderOnError) {
@@ -83,8 +84,8 @@ TEST(StreamState, ChannelResponderOnError) {
 
   subscriber->onError(std::runtime_error("test"));
 
-  ASSERT_TRUE(responder->publisherClosed());
   ASSERT_TRUE(responder->consumerClosed());
+  ASSERT_TRUE(responder->publisherClosed());
 }
 
 TEST(StreamState, ChannelRequesterHandleError) {
@@ -149,6 +150,88 @@ TEST(StreamState, ChannelResponderHandleError) {
   ConsumerBase* consumer = responder.get();
   consumer->handleError(std::runtime_error("test"));
 
-  ASSERT_TRUE(responder->publisherClosed());
   ASSERT_TRUE(responder->consumerClosed());
+  ASSERT_TRUE(responder->publisherClosed());
+}
+
+// https://github.com/rsocket/rsocket/blob/master/Protocol.md#cancel-from-requester-responder-terminates
+TEST(StreamState, ChannelRequesterCancel) {
+  auto writer = std::make_shared<StrictMock<MockStreamsWriter>>();
+  auto requester = std::make_shared<ChannelRequester>(writer, 1u);
+
+  EXPECT_CALL(*writer, writeNewStream(1u, _, _, _));
+  EXPECT_CALL(*writer, writePayload(_)).Times(2);
+  EXPECT_CALL(*writer, writeCancel(_));
+  EXPECT_CALL(*writer, onStreamClosed(1u)).Times(0);
+
+  auto mockSubscriber =
+      std::make_shared<StrictMock<MockSubscriber<rsocket::Payload>>>();
+  EXPECT_CALL(*mockSubscriber, onSubscribe_(_));
+  requester->subscribe(mockSubscriber);
+
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
+  EXPECT_CALL(*subscription, cancel_()).Times(0);
+  EXPECT_CALL(*subscription, request_(1));
+  EXPECT_CALL(*subscription, request_(2));
+
+  yarpl::flowable::Subscriber<rsocket::Payload>* subscriber = requester.get();
+  subscriber->onSubscribe(subscription);
+  // Initial request to activate the channel
+  subscriber->onNext(Payload());
+
+  ASSERT_FALSE(requester->consumerClosed());
+  ASSERT_FALSE(requester->publisherClosed());
+
+  ConsumerBase* consumer = requester.get();
+  consumer->cancel();
+
+  ASSERT_TRUE(requester->consumerClosed());
+  ASSERT_FALSE(requester->publisherClosed());
+
+  // Still capable of using the producer side
+  StreamStateMachineBase* base = requester.get();
+  base->handleRequestN(2u);
+  subscriber->onNext(Payload());
+  subscriber->onNext(Payload());
+}
+
+TEST(StreamState, ChannelRequesterHandleCancel) {
+  auto writer = std::make_shared<StrictMock<MockStreamsWriter>>();
+  auto requester = std::make_shared<ChannelRequester>(writer, 1u);
+
+  EXPECT_CALL(*writer, writeNewStream(1u, _, _, _));
+  EXPECT_CALL(*writer, writePayload(_)).Times(0);
+  EXPECT_CALL(*writer, onStreamClosed(1u));
+
+  auto mockSubscriber =
+      std::make_shared<StrictMock<MockSubscriber<rsocket::Payload>>>();
+  EXPECT_CALL(*mockSubscriber, onSubscribe_(_));
+  requester->subscribe(mockSubscriber); // cycle: requester <-> mockSubscriber
+
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
+  EXPECT_CALL(*subscription, cancel_());
+  EXPECT_CALL(*subscription, request_(1));
+
+  yarpl::flowable::Subscriber<rsocket::Payload>* subscriber = requester.get();
+  subscriber->onSubscribe(subscription);
+  // Initial request to activate the channel
+  subscriber->onNext(Payload());
+
+  ASSERT_FALSE(requester->consumerClosed());
+  ASSERT_FALSE(requester->publisherClosed());
+
+  ConsumerBase* consumer = requester.get();
+  consumer->handleCancel();
+
+  ASSERT_TRUE(requester->publisherClosed());
+  ASSERT_FALSE(requester->consumerClosed());
+
+  // As the publisher is closed, this payload will be dropped
+  subscriber->onNext(Payload());
+  subscriber->onNext(Payload());
+
+  // Break the cycle: requester <-> mockSubscriber
+  EXPECT_CALL(*writer, writeCancel(_));
+  auto consumerSubscription = mockSubscriber->subscription();
+  consumerSubscription->cancel();
 }

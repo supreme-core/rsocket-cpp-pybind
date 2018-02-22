@@ -132,7 +132,7 @@ void ChannelRequester::handleRequestN(uint32_t n) {
 
 void ChannelRequester::handleCancel() {
   CHECK(requested_);
-  publisherComplete();
+  terminatePublisher();
   tryCompleteChannel();
 }
 } // namespace rsocket
