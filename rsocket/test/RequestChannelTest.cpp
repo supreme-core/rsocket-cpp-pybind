@@ -25,7 +25,7 @@ class TestHandlerHello : public rsocket::RSocketResponder {
   handleRequestChannel(
       rsocket::Payload initialPayload,
       std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> stream,
-      rsocket::StreamId streamId) override {
+      rsocket::StreamId /*streamId*/) override {
     // say "Hello" to each name on the input stream
     return stream->map(
         [initialPayload = std::move(initialPayload)](Payload p) {
