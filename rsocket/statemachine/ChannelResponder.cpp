@@ -80,7 +80,7 @@ void ChannelResponder::onNextPayloadFrame(
 }
 
 void ChannelResponder::handleCancel() {
-  publisherComplete();
+  terminatePublisher();
   tryCompleteChannel();
 }
 
