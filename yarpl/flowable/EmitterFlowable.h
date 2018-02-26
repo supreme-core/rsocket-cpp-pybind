@@ -190,7 +190,20 @@ class EmiterSubscription final : public Subscription,
 template <typename T>
 class TrackingSubscriber : public Subscriber<T> {
  public:
-  TrackingSubscriber(Subscriber<T>& subscriber) : inner_(&subscriber) {}
+  TrackingSubscriber(
+      Subscriber<T>& subscriber,
+      int64_t
+#ifndef NDEBUG
+          requested
+#endif
+      )
+      : inner_(&subscriber)
+#ifndef NDEBUG
+        ,
+        requested_(requested)
+#endif
+  {
+  }
 
   void onSubscribe(std::shared_ptr<Subscription> s) override {
     inner_->onSubscribe(std::move(s));
@@ -207,6 +220,11 @@ class TrackingSubscriber : public Subscriber<T> {
   }
 
   void onNext(T value) override {
+#ifndef NDEBUG
+    auto old = requested_;
+    DCHECK(old > credits::consume(requested_, 1))
+        << "cannot emit more than requested";
+#endif
     emitted_++;
     inner_->onNext(std::move(value));
   }
@@ -219,6 +237,9 @@ class TrackingSubscriber : public Subscriber<T> {
   int64_t emitted_{0};
   bool completed_{false};
   Subscriber<T>* inner_;
+#ifndef NDEBUG
+  int64_t requested_;
+#endif
 };
 
 template <typename T, typename Emitter>
@@ -234,7 +255,7 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
 
   std::tuple<int64_t, bool> emit(Subscriber<T>& subscriber, int64_t requested)
       override {
-    TrackingSubscriber<T> trackingSubscriber(subscriber);
+    TrackingSubscriber<T> trackingSubscriber(subscriber, requested);
     emitter_(trackingSubscriber, requested);
     return trackingSubscriber.getResult();
   }

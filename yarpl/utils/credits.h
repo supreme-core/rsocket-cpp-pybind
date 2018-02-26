@@ -35,6 +35,8 @@ constexpr int64_t kNoFlowControl{std::numeric_limits<int64_t>::max()};
  *
  * If 'current' is set to "cancelled" using the magic number INT64_MIN it will
  * not be changed.
+ *
+ * Returns new value of credits.
  */
 int64_t add(std::atomic<int64_t>*, int64_t);
 
@@ -55,6 +57,8 @@ bool cancel(std::atomic<int64_t>*);
  * Consume (remove) credits from the 'current' atomic<int64_t>.
  *
  * This MUST only be used to remove credits after emitting a value via onNext.
+ *
+ * Returns new value of credits.
  */
 int64_t consume(std::atomic<int64_t>*, int64_t);
 
@@ -64,6 +68,11 @@ int64_t consume(std::atomic<int64_t>*, int64_t);
  * Returns true if consuming the credit was successful.
  */
 bool tryConsume(std::atomic<int64_t>*, int64_t);
+
+/**
+ * Version of consume that works for non-atomic integers.
+ */
+int64_t consume(int64_t&, int64_t);
 
 /**
  * Whether the current value represents a "cancelled" subscription.

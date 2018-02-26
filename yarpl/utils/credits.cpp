@@ -8,7 +8,7 @@
 namespace yarpl {
 namespace credits {
 
-int64_t add(std::atomic<std::int64_t>* current, int64_t n) {
+int64_t add(std::atomic<int64_t>* current, int64_t n) {
   for (;;) {
     auto r = current->load();
     // if already "infinite"
@@ -52,7 +52,7 @@ int64_t add(int64_t current, int64_t n) {
   return current + n;
 }
 
-bool cancel(std::atomic<std::int64_t>* current) {
+bool cancel(std::atomic<int64_t>* current) {
   for (;;) {
     auto r = current->load();
     if (r == kCanceled) {
@@ -67,7 +67,7 @@ bool cancel(std::atomic<std::int64_t>* current) {
   }
 }
 
-int64_t consume(std::atomic<std::int64_t>* current, int64_t n) {
+int64_t consume(std::atomic<int64_t>* current, int64_t n) {
   for (;;) {
     auto r = current->load();
     if (n <= 0) {
@@ -111,11 +111,25 @@ bool tryConsume(std::atomic<std::int64_t>* current, int64_t n) {
   }
 }
 
-bool isCancelled(std::atomic<std::int64_t>* current) {
+bool isCancelled(std::atomic<int64_t>* current) {
   return current->load() == kCanceled;
 }
 
-bool isInfinite(std::atomic<std::int64_t>* current) {
+int64_t consume(int64_t& current, int64_t n) {
+  if (n <= 0) {
+    // do nothing, return existing unmodified value
+    return current;
+  }
+  if (current < n) {
+    // bad usage somewhere ... be resilient, just set to r
+    n = current;
+  }
+
+  current -= n;
+  return current;
+}
+
+bool isInfinite(std::atomic<int64_t>* current) {
   return current->load() == kNoFlowControl;
 }
 
