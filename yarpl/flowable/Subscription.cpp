@@ -13,5 +13,5 @@ std::shared_ptr<Subscription> Subscription::empty() {
   return std::make_shared<NullSubscription>();
 }
 
-} // flowable
-} // yarpl
+} // namespace flowable
+} // namespace yarpl

@@ -22,12 +22,21 @@
 #include <folly/functional/Invoke.h>
 
 namespace yarpl {
-namespace observable {
 
 /**
  *Strategy for backpressure when converting from Observable to Flowable.
  */
-enum class BackpressureStrategy { BUFFER, DROP, ERROR, LATEST, MISSING };
+enum class BackpressureStrategy {
+  BUFFER, // Buffers all onNext values until the downstream consumes them.
+  DROP, // Drops the most recent onNext value if the downstream can't keep up.
+  ERROR, // Signals a MissingBackpressureException in case the downstream can't
+         // keep up.
+  LATEST, // Keeps only the latest onNext value, overwriting any previous value
+          // if the downstream can't keep up.
+  MISSING // OnNext events are written without any buffering or dropping.
+};
+
+namespace observable {
 
 template <typename T = void>
 class Observable : public yarpl::enable_get_ref {
