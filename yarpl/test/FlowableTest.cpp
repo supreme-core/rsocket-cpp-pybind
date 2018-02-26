@@ -329,10 +329,10 @@ TEST(FlowableTest, IgnoreElementsPartial) {
   subscriber->cancel();
 }
 
-TEST(FlowableTest, IgnoreElementsError) {
+TEST(FlowableTest, FlowableErrorNoRequestN) {
   constexpr auto kMsg = "Failure";
 
-  auto subscriber = std::make_shared<TestSubscriber<int>>();
+  auto subscriber = std::make_shared<TestSubscriber<int>>(0);
   auto flowable = Flowable<int>::error(std::runtime_error(kMsg));
   flowable->subscribe(subscriber);
 
@@ -341,18 +341,6 @@ TEST(FlowableTest, IgnoreElementsError) {
 }
 
 TEST(FlowableTest, FlowableError) {
-  constexpr auto kMsg = "something broke!";
-
-  auto flowable = Flowable<int>::error(std::runtime_error(kMsg));
-  auto subscriber = std::make_shared<TestSubscriber<int>>();
-  flowable->subscribe(subscriber);
-
-  EXPECT_FALSE(subscriber->isComplete());
-  EXPECT_TRUE(subscriber->isError());
-  EXPECT_EQ(subscriber->getErrorMsg(), kMsg);
-}
-
-TEST(FlowableTest, FlowableErrorPtr) {
   constexpr auto kMsg = "something broke!";
 
   auto flowable = Flowable<int>::error(std::runtime_error(kMsg));
@@ -373,9 +361,32 @@ TEST(FlowableTest, FlowableEmpty) {
   EXPECT_FALSE(subscriber->isError());
 }
 
+TEST(FlowableTest, FlowableEmptyNoRequestN) {
+  auto flowable = Flowable<int>::empty();
+  auto subscriber = std::make_shared<TestSubscriber<int>>(0);
+  flowable->subscribe(subscriber);
+
+  EXPECT_TRUE(subscriber->isComplete());
+  EXPECT_FALSE(subscriber->isError());
+}
+
 TEST(FlowableTest, FlowableNever) {
   auto flowable = Flowable<int>::never();
   auto subscriber = std::make_shared<TestSubscriber<int>>();
+  flowable->subscribe(subscriber);
+  EXPECT_THROW(
+      subscriber->awaitTerminalEvent(std::chrono::milliseconds(100)),
+      std::runtime_error);
+
+  EXPECT_FALSE(subscriber->isComplete());
+  EXPECT_FALSE(subscriber->isError());
+
+  subscriber->cancel();
+}
+
+TEST(FlowableTest, FlowableNeverNoRequestN) {
+  auto flowable = Flowable<int>::never();
+  auto subscriber = std::make_shared<TestSubscriber<int>>(0);
   flowable->subscribe(subscriber);
   EXPECT_THROW(
       subscriber->awaitTerminalEvent(std::chrono::milliseconds(100)),
