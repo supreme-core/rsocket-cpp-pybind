@@ -598,38 +598,6 @@ TEST(Observable, CancelReleasesObjects) {
   observable->subscribe(collector);
 }
 
-TEST(Observable, CompleteReleasesObjects) {
-  auto shared = std::make_shared<std::shared_ptr<Observer<int>>>();
-  {
-    auto observable = Observable<int>::create(
-                          [shared](std::shared_ptr<Observer<int>> observer) {
-                            *shared = observer;
-                            // onComplete releases the DoOnComplete operator
-                            // so the lambda params will be freed
-                            observer->onComplete();
-                          })
-                          ->doOnComplete([shared] {});
-    observable->subscribe();
-  }
-  EXPECT_EQ(1, shared->use_count());
-}
-
-TEST(Observable, ErrorReleasesObjects) {
-  auto shared = std::make_shared<std::shared_ptr<Observer<int>>>();
-  {
-    auto observable = Observable<int>::create(
-                          [shared](std::shared_ptr<Observer<int>> observer) {
-                            *shared = observer;
-                            // onError releases the DoOnComplete operator
-                            // so the lambda params will be freed
-                            observer->onError(std::runtime_error("error"));
-                          })
-                          ->doOnComplete([shared] { /*never executed*/ });
-    observable->subscribe();
-  }
-  EXPECT_EQ(1, shared->use_count());
-}
-
 class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
   using Super = ObservableOperator<int, int>;
 

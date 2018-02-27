@@ -39,18 +39,11 @@ std::shared_ptr<T> atomic_load(AtomicReference<T>* ar) {
 }
 
 template <typename T>
-std::shared_ptr<T> atomic_exchange(
-    AtomicReference<T>* ar,
-    std::shared_ptr<T> r) {
+std::shared_ptr<T> atomic_exchange(AtomicReference<T>* ar, std::shared_ptr<T> r) {
   auto refptr = ar->ref.lock();
   auto old = std::move(*refptr);
   *refptr = std::move(r);
   return std::move(old);
-}
-
-template <typename T>
-std::shared_ptr<T> atomic_exchange(AtomicReference<T>* ar, std::nullptr_t) {
-  return atomic_exchange(ar, std::shared_ptr<T>());
 }
 
 template <typename T>
