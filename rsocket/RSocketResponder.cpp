@@ -62,7 +62,6 @@ RSocketResponder::handleRequestChannelCore(
     }
 
     void onComplete() noexcept override {
-      DCHECK(inner_);
       if (auto inner = std::move(inner_)) {
         inner->onComplete();
         subscription_.reset();
