@@ -54,7 +54,7 @@ BENCHMARK(StreamThroughput, n) {
     for (auto& client : fixture->clients) {
       client->getRequester()
           ->requestStream(Payload("TcpStream"))
-          ->subscribe(yarpl::make_ref<BoundedSubscriber>(latch, FLAGS_items));
+          ->subscribe(std::make_shared<BoundedSubscriber>(latch, FLAGS_items));
     }
   }
 

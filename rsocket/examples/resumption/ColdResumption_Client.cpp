@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     auto resumeManager = std::make_shared<ColdResumeManager>(
         RSocketStats::noop(), "" /* inputFile */);
     {
-      auto firstSub = yarpl::make_ref<HelloSubscriber>();
+      auto firstSub = std::make_shared<HelloSubscriber>();
       auto coldResumeHandler = std::make_shared<HelloResumeHandler>(
           HelloSubscribers({{firstPayload, firstSub}}));
       auto firstClient = RSocket::createConnectedClient(
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
     auto resumeManager = std::make_shared<ColdResumeManager>(
         RSocketStats::noop(), "/tmp/firstResumption.json" /* inputFile */);
     {
-      auto firstSub = yarpl::make_ref<HelloSubscriber>();
+      auto firstSub = std::make_shared<HelloSubscriber>();
       auto coldResumeHandler = std::make_shared<HelloResumeHandler>(
           HelloSubscribers({{firstPayload, firstSub}}));
       auto secondClient = RSocket::createResumedClient(
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
 
       // Create another stream to verify StreamIds are set properly after
       // resumption
-      auto secondSub = yarpl::make_ref<HelloSubscriber>();
+      auto secondSub = std::make_shared<HelloSubscriber>();
       secondClient->getRequester()
           ->requestStream(Payload(secondPayload))
           ->subscribe(secondSub);
@@ -191,8 +191,8 @@ int main(int argc, char* argv[]) {
   {
     auto resumeManager = std::make_shared<ColdResumeManager>(
         RSocketStats::noop(), "/tmp/secondResumption.json" /* inputFile */);
-    auto firstSub = yarpl::make_ref<HelloSubscriber>();
-    auto secondSub = yarpl::make_ref<HelloSubscriber>();
+    auto firstSub = std::make_shared<HelloSubscriber>();
+    auto secondSub = std::make_shared<HelloSubscriber>();
     auto coldResumeHandler =
         std::make_shared<HelloResumeHandler>(HelloSubscribers(
             {{firstPayload, firstSub}, {secondPayload, secondSub}}));
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
 
     // Create another stream to verify StreamIds are set properly after
     // resumption
-    auto thirdSub = yarpl::make_ref<HelloSubscriber>();
+    auto thirdSub = std::make_shared<HelloSubscriber>();
     thirdClient->getRequester()
         ->requestStream(Payload(thirdPayload))
         ->subscribe(thirdSub);

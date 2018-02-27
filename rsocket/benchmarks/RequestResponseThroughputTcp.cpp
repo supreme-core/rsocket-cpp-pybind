@@ -84,7 +84,7 @@ BENCHMARK(RequestResponseThroughput, n) {
     auto& client = fixture->clients[i % opts.clients];
     client->getRequester()
         ->requestResponse(Payload("RequestResponseTcp"))
-        ->subscribe(yarpl::make_ref<Observer>(latch));
+        ->subscribe(std::make_shared<Observer>(latch));
   }
 
   constexpr std::chrono::minutes timeout{5};

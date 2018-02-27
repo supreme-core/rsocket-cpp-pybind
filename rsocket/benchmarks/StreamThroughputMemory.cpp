@@ -164,7 +164,7 @@ BENCHMARK(StreamThroughput, n) {
 
   client->getRequester()
       ->requestStream(Payload("InMemoryStream"))
-      ->subscribe(yarpl::make_ref<BoundedSubscriber>(latch, FLAGS_items));
+      ->subscribe(std::make_shared<BoundedSubscriber>(latch, FLAGS_items));
 
   constexpr std::chrono::minutes timeout{5};
   if (!latch.timed_wait(timeout)) {

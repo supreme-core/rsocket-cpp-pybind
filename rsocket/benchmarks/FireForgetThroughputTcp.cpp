@@ -63,7 +63,7 @@ BENCHMARK(FireForgetThroughput, n) {
     for (auto& client : fixture->clients) {
       client->getRequester()
           ->fireAndForget(Payload("TcpFireAndForget"))
-          ->subscribe(yarpl::make_ref<yarpl::single::SingleObserverBase<void>>());
+          ->subscribe(std::make_shared<yarpl::single::SingleObserverBase<void>>());
     }
   }
 

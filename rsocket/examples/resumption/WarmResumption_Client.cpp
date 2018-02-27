@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
 
   folly::ScopedEventBaseThread worker1;
 
-  auto subscriber1 = yarpl::make_ref<HelloSubscriber>();
+  auto subscriber1 = std::make_shared<HelloSubscriber>();
   auto client = getClientAndRequestStream(worker1.getEventBase(), subscriber1);
 
   subscriber1->request(7);
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
           LOG(INFO) << "UnknownException " << typeid(e).name();
         }
         // Create a new client
-        auto subscriber2 = yarpl::make_ref<HelloSubscriber>();
+        auto subscriber2 = std::make_shared<HelloSubscriber>();
         auto client =
             getClientAndRequestStream(worker1.getEventBase(), subscriber2);
         subscriber2->request(7);
