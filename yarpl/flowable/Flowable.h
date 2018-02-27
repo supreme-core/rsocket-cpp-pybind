@@ -30,6 +30,9 @@ struct IsFlowable<std::shared_ptr<Flowable<R>>> : std::true_type {
   using ElemType = R;
 };
 
+template <typename T>
+class TrackingSubscriber;
+
 } // namespace details
 
 template <typename T>
@@ -96,15 +99,26 @@ class Flowable : public yarpl::enable_get_ref {
   // creator methods:
   //
 
-  // Creates Flowable which completes the subscriber right after it subscribes
-  static std::shared_ptr<Flowable<T>> empty();
+  static std::shared_ptr<Flowable<T>> empty() {
+    auto lambda = [](Subscriber<T>& subscriber, int64_t) {
+      subscriber.onComplete();
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
 
-  // Creates Flowable which will never terminate the subscriber
-  static std::shared_ptr<Flowable<T>> never();
+  static std::shared_ptr<Flowable<T>> never() {
+    auto lambda = [](details::TrackingSubscriber<T>& subscriber, int64_t) {
+      subscriber.setCompleted();
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
 
-  // Create Flowable which will imediatelly terminate the subscriber upon
-  // subscription with the provided error
-  static std::shared_ptr<Flowable<T>> error(folly::exception_wrapper ex);
+  static std::shared_ptr<Flowable<T>> error(folly::exception_wrapper ex) {
+    auto lambda = [ex = std::move(ex)](Subscriber<T>& subscriber, int64_t) {
+      subscriber.onError(std::move(ex));
+    };
+    return Flowable<T>::create(std::move(lambda));
+  }
 
   template <typename Ex>
   static std::shared_ptr<Flowable<T>> error(Ex&) {
@@ -115,7 +129,11 @@ class Flowable : public yarpl::enable_get_ref {
 
   template <typename Ex>
   static std::shared_ptr<Flowable<T>> error(Ex& ex, std::exception_ptr ptr) {
-    return Flowable<T>::error(folly::exception_wrapper(std::move(ptr), ex));
+    auto lambda = [ew = folly::exception_wrapper(std::move(ptr), ex)](
+                      Subscriber<T>& subscriber, int64_t) {
+      subscriber.onError(std::move(ew));
+    };
+    return Flowable<T>::create(std::move(lambda));
   }
 
   static std::shared_ptr<Flowable<T>> just(T value) {
@@ -329,7 +347,7 @@ class Flowable : public yarpl::enable_get_ref {
       typename = typename std::enable_if<folly::is_invocable_r<
           void,
           Emitter,
-          Subscriber<T>&,
+          details::TrackingSubscriber<T>&,
           int64_t>::value>::type>
   static std::shared_ptr<Flowable<T>> create(Emitter emitter);
 
@@ -360,44 +378,6 @@ template <typename Emitter, typename>
 std::shared_ptr<Flowable<T>> Flowable<T>::create(Emitter emitter) {
   return std::make_shared<details::EmitterWrapper<T, Emitter>>(
       std::move(emitter));
-}
-
-template <typename T>
-std::shared_ptr<Flowable<T>> Flowable<T>::empty() {
-  class EmptyFlowable : public Flowable<T> {
-    void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-      subscriber->onSubscribe(Subscription::empty());
-      // does not wait for request(n) to complete
-      subscriber->onComplete();
-    }
-  };
-  return std::make_shared<EmptyFlowable>();
-}
-
-template <typename T>
-std::shared_ptr<Flowable<T>> Flowable<T>::never() {
-  class NeverFlowable : public Flowable<T> {
-    void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-      subscriber->onSubscribe(Subscription::empty());
-    }
-  };
-  return std::make_shared<NeverFlowable>();
-}
-
-template <typename T>
-std::shared_ptr<Flowable<T>> Flowable<T>::error(folly::exception_wrapper ex) {
-  class ErrorFlowable : public Flowable<T> {
-    void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-      subscriber->onSubscribe(Subscription::empty());
-      // does not wait for request(n) to error
-      subscriber->onError(ex_);
-    }
-    folly::exception_wrapper ex_;
-
-   public:
-    explicit ErrorFlowable(folly::exception_wrapper ex) : ex_(std::move(ex)) {}
-  };
-  return std::make_shared<ErrorFlowable>(std::move(ex));
 }
 
 namespace internal {

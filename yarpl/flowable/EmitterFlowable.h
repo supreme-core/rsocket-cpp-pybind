@@ -229,6 +229,10 @@ class TrackingSubscriber : public Subscriber<T> {
     inner_->onNext(std::move(value));
   }
 
+  void setCompleted() {
+    completed_ = true;
+  }
+
   auto getResult() {
     return std::make_tuple(emitted_, completed_);
   }
