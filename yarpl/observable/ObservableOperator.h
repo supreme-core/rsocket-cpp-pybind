@@ -501,21 +501,25 @@ class FromPublisherOperator : public Observable<T> {
     }
 
     void onComplete() override {
-      inner_->onComplete();
+      if(auto inner = atomic_exchange(&inner_, nullptr)) {
+        inner->onComplete();
+      }
       Observer<T>::onComplete();
     }
 
     void onError(folly::exception_wrapper ex) override {
-      inner_->onError(std::move(ex));
+      if(auto inner = atomic_exchange(&inner_, nullptr)) {
+        inner->onError(std::move(ex));
+      }
       Observer<T>::onError(folly::exception_wrapper());
     }
 
     void onNext(T t) override {
-      inner_->onNext(std::move(t));
+      atomic_load(&inner_)->onNext(std::move(t));
     }
 
    private:
-    std::shared_ptr<Observer<T>> inner_;
+    AtomicReference<Observer<T>> inner_;
   };
 
  public:
