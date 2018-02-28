@@ -85,13 +85,4 @@ bool isCancelled(std::atomic<int64_t>*);
 bool isInfinite(std::atomic<int64_t>*);
 
 }
-
-namespace flowable {
-// Exception thrown in case the downstream can't keep up.
-class MissingBackpressureException : public std::runtime_error {
- public:
-  MissingBackpressureException()
-      : std::runtime_error("BACK_PRESSURE: DROP (missing credits onNext)") {}
-};
-} // namespace flowable
 }

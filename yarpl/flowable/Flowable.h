@@ -207,6 +207,8 @@ class Flowable : public yarpl::enable_get_ref {
 
   /*
    * To instruct a Flowable to do its work on a particular Executor.
+   * the onSubscribe, request and cancel methods will be scheduled on the
+   * provided executor
    */
   std::shared_ptr<Flowable<T>> subscribeOn(folly::Executor&);
 

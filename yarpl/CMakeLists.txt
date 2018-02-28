@@ -65,6 +65,7 @@ add_library(
         yarpl
         # public API
         Refcounted.h
+        Common.h
         # Flowable public API
         Flowable.h
         flowable/DeferFlowable.h

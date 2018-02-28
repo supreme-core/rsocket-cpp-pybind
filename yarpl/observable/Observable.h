@@ -16,25 +16,13 @@
 #include "yarpl/observable/Observers.h"
 #include "yarpl/observable/Subscription.h"
 
+#include "yarpl/Common.h"
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/Flowable_FromObservable.h"
 
 #include <folly/functional/Invoke.h>
 
 namespace yarpl {
-
-/**
- *Strategy for backpressure when converting from Observable to Flowable.
- */
-enum class BackpressureStrategy {
-  BUFFER, // Buffers all onNext values until the downstream consumes them.
-  DROP, // Drops the most recent onNext value if the downstream can't keep up.
-  ERROR, // Signals a MissingBackpressureException in case the downstream can't
-         // keep up.
-  LATEST, // Keeps only the latest onNext value, overwriting any previous value
-          // if the downstream can't keep up.
-  MISSING // OnNext events are written without any buffering or dropping.
-};
 
 namespace observable {
 
@@ -292,10 +280,13 @@ class Observable : public yarpl::enable_get_ref {
 
   /**
    * Convert from Observable to Flowable with a given BackpressureStrategy.
-   *
-   * Currently the only strategy is DROP.
    */
   auto toFlowable(BackpressureStrategy strategy);
+
+  /**
+   * Convert from Observable to Flowable with a given BackpressureStrategy.
+   */
+  auto toFlowable(std::shared_ptr<IBackpressureStrategy<T>> strategy);
 };
 } // namespace observable
 } // namespace yarpl
@@ -497,44 +488,31 @@ std::shared_ptr<Observable<T>> Observable<T>::doOnCancel(Function function) {
 
 template <typename T>
 auto Observable<T>::toFlowable(BackpressureStrategy strategy) {
-  // we currently ONLY support the DROP strategy
-  // so do not use the strategy parameter for anything
-  return yarpl::flowable::internal::flowableFromSubscriber<
-      T>([thisObservable = this->ref_from_this(this),
-          strategy](std::shared_ptr<flowable::Subscriber<T>> subscriber) {
-    std::shared_ptr<flowable::Subscription> subscription;
-    switch (strategy) {
-      case BackpressureStrategy::DROP:
-        subscription = std::make_shared<
-            flowable::details::FlowableFromObservableSubscriptionDropStrategy<
-                T>>(thisObservable, subscriber);
-        break;
-      case BackpressureStrategy::ERROR:
-        subscription = std::make_shared<
-            flowable::details::FlowableFromObservableSubscriptionErrorStrategy<
-                T>>(thisObservable, subscriber);
-        break;
-      case BackpressureStrategy::BUFFER:
-        subscription = std::make_shared<
-            flowable::details::FlowableFromObservableSubscriptionBufferStrategy<
-                T>>(thisObservable, subscriber);
-        break;
-      case BackpressureStrategy::LATEST:
-        subscription = std::make_shared<
-            flowable::details::FlowableFromObservableSubscriptionLatestStrategy<
-                T>>(thisObservable, subscriber);
-        break;
-      case BackpressureStrategy::MISSING:
-        subscription = std::make_shared<
-            flowable::details::
-                FlowableFromObservableSubscriptionMissingStrategy<T>>(
-            thisObservable, subscriber);
-        break;
-      default:
-        CHECK(false); // unknown value for strategy
-    }
-    subscriber->onSubscribe(std::move(subscription));
-  });
+  switch (strategy) {
+    case BackpressureStrategy::DROP:
+      return toFlowable(IBackpressureStrategy<T>::drop());
+    case BackpressureStrategy::ERROR:
+      return toFlowable(IBackpressureStrategy<T>::error());
+    case BackpressureStrategy::BUFFER:
+      return toFlowable(IBackpressureStrategy<T>::buffer());
+    case BackpressureStrategy::LATEST:
+      return toFlowable(IBackpressureStrategy<T>::latest());
+    case BackpressureStrategy::MISSING:
+      return toFlowable(IBackpressureStrategy<T>::missing());
+    default:
+      CHECK(false); // unknown value for strategy
+  }
+}
+
+template <typename T>
+auto Observable<T>::toFlowable(
+    std::shared_ptr<IBackpressureStrategy<T>> strategy) {
+  return yarpl::flowable::internal::flowableFromSubscriber<T>(
+      [thisObservable = this->ref_from_this(this),
+       strategy = std::move(strategy)](
+          std::shared_ptr<flowable::Subscriber<T>> subscriber) {
+        strategy->init(std::move(thisObservable), std::move(subscriber));
+      });
 }
 
 } // namespace observable

@@ -92,22 +92,25 @@ class EmiterSubscription final : public Subscription,
   }
 
   void onNext(T value) override {
+#ifndef NDEBUG
     DCHECK(!hasFinished_) << "onComplete() or onError() already called";
-
+#endif
     subscriber_->onNext(std::move(value));
   }
 
   void onComplete() override {
+#ifndef NDEBUG
     DCHECK(!hasFinished_) << "onComplete() or onError() already called";
     hasFinished_ = true;
-
+#endif
     subscriber_->onComplete();
   }
 
   void onError(folly::exception_wrapper error) override {
+#ifndef NDEBUG
     DCHECK(!hasFinished_) << "onComplete() or onError() already called";
     hasFinished_ = true;
-
+#endif
     subscriber_->onError(error);
   }
 
@@ -178,7 +181,9 @@ class EmiterSubscription final : public Subscription,
   // value represents cancellation.  Other -ve values aren't permitted.
   std::atomic_int_fast64_t requested_{0};
 
+#ifndef NDEBUG
   bool hasFinished_{false}; // onComplete or onError called
+#endif
 
   // We don't want to recursively invoke process(); one loop should do.
   std::atomic_bool processing_{false};

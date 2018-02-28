@@ -5,6 +5,7 @@
 #include "yarpl/flowable/PublishProcessor.h"
 #include "yarpl/flowable/TestSubscriber.h"
 
+using namespace yarpl;
 using namespace yarpl::flowable;
 using namespace testing;
 

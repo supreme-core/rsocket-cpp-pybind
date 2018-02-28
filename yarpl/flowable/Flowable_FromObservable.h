@@ -4,6 +4,7 @@
 
 #include <folly/Synchronized.h>
 #include <deque>
+#include "yarpl/Common.h"
 #include "yarpl/Flowable.h"
 #include "yarpl/utils/credits.h"
 
@@ -14,35 +15,41 @@ class Observable;
 
 template <typename T>
 class Observer;
-}
-} // namespace yarpl
-
-class MissingBackpressureException;
-
-namespace yarpl {
-namespace flowable {
-
-namespace details {
+} // namespace observable
 
 template <typename T>
-class FlowableFromObservableSubscription : public flowable::Subscription,
-                                           public observable::Observer<T> {
+class BackpressureStrategyBase : public IBackpressureStrategy<T>,
+                                 public flowable::Subscription,
+                                 public observable::Observer<T> {
+protected:
+  //
+  // the following methods are to be overridden
+  //
+  virtual void onCreditsAvailable(int64_t /*credits*/) = 0;
+  virtual void onNextWithoutCredits(T /*t*/) = 0;
+
  public:
-  FlowableFromObservableSubscription(
+  void init(
       std::shared_ptr<observable::Observable<T>> observable,
-      std::shared_ptr<flowable::Subscriber<T>> subscriber)
-      : observable_(std::move(observable)),
-        subscriber_(std::move(subscriber)) {}
+      std::shared_ptr<flowable::Subscriber<T>> subscriber) override {
+    observable_ = std::move(observable);
+    subscriber_ = std::move(subscriber);
+    subscriber_->onSubscribe(this->ref_from_this(this));
+  }
 
-  FlowableFromObservableSubscription(FlowableFromObservableSubscription&&) =
-      delete;
+  BackpressureStrategyBase() = default;
+  BackpressureStrategyBase(BackpressureStrategyBase&&) = delete;
 
-  FlowableFromObservableSubscription(
-      const FlowableFromObservableSubscription&) = delete;
-  FlowableFromObservableSubscription& operator=(
-      FlowableFromObservableSubscription&&) = delete;
-  FlowableFromObservableSubscription& operator=(
-      const FlowableFromObservableSubscription&) = delete;
+  BackpressureStrategyBase(const BackpressureStrategyBase&) = delete;
+  BackpressureStrategyBase& operator=(BackpressureStrategyBase&&) = delete;
+  BackpressureStrategyBase& operator=(const BackpressureStrategyBase&) = delete;
+
+  // only for testing purposes
+  void setTestSubscriber(std::shared_ptr<flowable::Subscriber<T>> subscriber) {
+    subscriber_ = std::move(subscriber);
+    subscriber_->onSubscribe(this->ref_from_this(this));
+    started_ = true;
+  }
 
   void request(int64_t n) override {
     if (n <= 0) {
@@ -60,7 +67,7 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     // instance around to finish this method
     auto thisPtr = this->ref_from_this(this);
 
-    if (!started.exchange(true)) {
+    if (!started_.exchange(true)) {
       observable_->subscribe(this->ref_from_this(this));
 
       // the credits might have changed since subscribe
@@ -78,13 +85,16 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     }
     observable::Observer<T>::subscription()->cancel();
     credits::cancel(&requested_);
+    subscriber_ = nullptr;
   }
 
   // Observer override
   void onNext(T t) override {
+    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
+      return;
+    }
     if (requested_ > 0) {
-      subscriber_->onNext(std::move(t));
-      credits::consume(&requested_, 1);
+      downstreamOnNext(std::move(t));
       return;
     }
     onNextWithoutCredits(std::move(t));
@@ -92,6 +102,20 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
 
   // Observer override
   void onComplete() override {
+    downstreamOnComplete();
+  }
+
+  // Observer override
+  void onError(folly::exception_wrapper ex) override {
+    downstreamOnError(std::move(ex));
+  }
+
+  virtual void downstreamOnNext(T t) {
+    credits::consume(&requested_, 1);
+    subscriber_->onNext(std::move(t));
+  }
+
+  void downstreamOnComplete() {
     if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
       return;
     }
@@ -100,8 +124,7 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     observable::Observer<T>::onComplete();
   }
 
-  // Observer override
-  void onError(folly::exception_wrapper error) override {
+  void downstreamOnError(folly::exception_wrapper error) {
     if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
       return;
     }
@@ -110,50 +133,38 @@ class FlowableFromObservableSubscription : public flowable::Subscription,
     observable::Observer<T>::onError(folly::exception_wrapper());
   }
 
- protected:
-  virtual void onCreditsAvailable(int64_t /*credits*/) {}
-  virtual void onNextWithoutCredits(T /*t*/) {
-    // by default drop anything else received while we don't have credits
-  }
-
  private:
   std::shared_ptr<observable::Observable<T>> observable_;
   std::shared_ptr<flowable::Subscriber<T>> subscriber_;
-  std::atomic_bool started{false};
+  std::atomic_bool started_{false};
   std::atomic<int64_t> requested_{0};
 };
 
 template <typename T>
-using FlowableFromObservableSubscriptionDropStrategy =
-    FlowableFromObservableSubscription<T>;
+class DropBackpressureStrategy : public BackpressureStrategyBase<T> {
+ public:
+  void onCreditsAvailable(int64_t /*credits*/) override {}
+  void onNextWithoutCredits(T /*t*/) override {
+    // drop anything while we don't have credits
+  }
+};
 
 template <typename T>
-class FlowableFromObservableSubscriptionErrorStrategy
-    : public FlowableFromObservableSubscription<T> {
-  using Super = FlowableFromObservableSubscription<T>;
+class ErrorBackpressureStrategy : public BackpressureStrategyBase<T> {
+  using Super = BackpressureStrategyBase<T>;
 
- public:
-  using Super::FlowableFromObservableSubscription;
+  void onCreditsAvailable(int64_t /*credits*/) override {}
 
- private:
   void onNextWithoutCredits(T /*t*/) override {
-    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
-      return;
-    }
-    Super::onError(MissingBackpressureException());
+    Super::downstreamOnError(flowable::MissingBackpressureException());
     Super::cancel();
   }
 };
 
 template <typename T>
-class FlowableFromObservableSubscriptionBufferStrategy
-    : public FlowableFromObservableSubscription<T> {
-  using Super = FlowableFromObservableSubscription<T>;
+class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
+  using Super = BackpressureStrategyBase<T>;
 
- public:
-  using Super::FlowableFromObservableSubscription;
-
- private:
   void onComplete() override {
     if (!buffer_->empty()) {
       // we have buffered some items so we will defer delivering on complete for
@@ -169,10 +180,6 @@ class FlowableFromObservableSubscriptionBufferStrategy
   //
 
   void onNextWithoutCredits(T t) override {
-    if (Super::isUnsubscribed()) {
-      return;
-    }
-
     buffer_->push_back(std::move(t));
   }
 
@@ -180,7 +187,7 @@ class FlowableFromObservableSubscriptionBufferStrategy
     DCHECK(credits > 0);
     auto&& lockedBuffer = buffer_.wlock();
     while (credits-- > 0 && !lockedBuffer->empty()) {
-      Super::onNext(std::move(lockedBuffer->front()));
+      Super::downstreamOnNext(std::move(lockedBuffer->front()));
       lockedBuffer->pop_front();
     }
 
@@ -194,14 +201,9 @@ class FlowableFromObservableSubscriptionBufferStrategy
 };
 
 template <typename T>
-class FlowableFromObservableSubscriptionLatestStrategy
-    : public FlowableFromObservableSubscription<T> {
-  using Super = FlowableFromObservableSubscription<T>;
+class LatestBackpressureStrategy : public BackpressureStrategyBase<T> {
+  using Super = BackpressureStrategyBase<T>;
 
- public:
-  using Super::FlowableFromObservableSubscription;
-
- private:
   void onComplete() override {
     if (storesLatest_) {
       // we have buffered an item so we will defer delivering on complete for
@@ -225,7 +227,7 @@ class FlowableFromObservableSubscriptionLatestStrategy
     DCHECK(credits > 0);
     if (storesLatest_) {
       storesLatest_ = false;
-      Super::onNext(std::move(*latest_.wlock()));
+      Super::downstreamOnNext(std::move(*latest_.wlock()));
 
       if (completed_) {
         Super::onComplete();
@@ -239,18 +241,40 @@ class FlowableFromObservableSubscriptionLatestStrategy
 };
 
 template <typename T>
-class FlowableFromObservableSubscriptionMissingStrategy
-    : public FlowableFromObservableSubscription<T> {
-  using Super = FlowableFromObservableSubscription<T>;
+class MissingBackpressureStrategy : public BackpressureStrategyBase<T> {
+  using Super = BackpressureStrategyBase<T>;
 
- public:
-  using Super::FlowableFromObservableSubscription;
+  void onCreditsAvailable(int64_t /*credits*/) override {}
 
- private:
   void onNextWithoutCredits(T t) override {
-    Super::onNext(std::move(t));
+    // call onNext anyways (and potentially violating the protocol)
+    Super::downstreamOnNext(std::move(t));
   }
 };
-} // namespace details
-} // namespace flowable
+
+template <typename T>
+std::shared_ptr<IBackpressureStrategy<T>> IBackpressureStrategy<T>::buffer() {
+  return std::make_shared<BufferBackpressureStrategy<T>>();
+}
+
+template <typename T>
+std::shared_ptr<IBackpressureStrategy<T>> IBackpressureStrategy<T>::drop() {
+  return std::make_shared<DropBackpressureStrategy<T>>();
+}
+
+template <typename T>
+std::shared_ptr<IBackpressureStrategy<T>> IBackpressureStrategy<T>::error() {
+  return std::make_shared<ErrorBackpressureStrategy<T>>();
+}
+
+template <typename T>
+std::shared_ptr<IBackpressureStrategy<T>> IBackpressureStrategy<T>::latest() {
+  return std::make_shared<LatestBackpressureStrategy<T>>();
+}
+
+template <typename T>
+std::shared_ptr<IBackpressureStrategy<T>> IBackpressureStrategy<T>::missing() {
+  return std::make_shared<MissingBackpressureStrategy<T>>();
+}
+
 } // namespace yarpl

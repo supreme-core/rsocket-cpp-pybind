@@ -6,6 +6,7 @@
 #include <vector>
 #include "yarpl/flowable/Flowable.h"
 #include "yarpl/utils/credits.h"
+#include "yarpl/Common.h"
 
 namespace yarpl {
 namespace flowable {
