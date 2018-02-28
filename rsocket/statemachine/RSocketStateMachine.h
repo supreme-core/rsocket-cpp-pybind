@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <memory>
 #include <deque>
+#include <memory>
 
 #include "rsocket/ColdResumeHandler.h"
 #include "rsocket/DuplexConnection.h"
@@ -59,7 +59,7 @@ class FrameSink {
 class RSocketStateMachine final
     : public FrameSink,
       public FrameProcessor,
-      public StreamsWriter,
+      public StreamsWriterImpl,
       public std::enable_shared_from_this<RSocketStateMachine> {
  public:
   RSocketStateMachine(
@@ -138,13 +138,6 @@ class RSocketStateMachine final
   DuplexConnection* getConnection();
 
  private:
-  template <typename WriteInitialFrame>
-  void writeFragmented(
-      WriteInitialFrame,
-      StreamId const,
-      FrameFlags const,
-      Payload payload);
-
   void connect(std::shared_ptr<FrameTransport>);
 
   /// Terminate underlying connection and connect new connection
@@ -165,17 +158,17 @@ class RSocketStateMachine final
 
   uint32_t getKeepaliveTime() const;
 
-  void sendPendingFrames();
+  void sendPendingFrames() override;
 
-  /// Send a frame to the output.  Will buffer the frame if the state machine is
-  /// disconnected or in the process of resuming.
-  void outputFrameOrEnqueue(std::unique_ptr<folly::IOBuf>);
+  // Should buffer the frame if the state machine is disconnected or in the
+  // process of resuming.
+  bool shouldQueue() override;
+  RSocketStats& stats() override {
+    return *stats_;
+  }
 
-  template <typename T>
-  void outputFrameOrEnqueue(T&& frame) {
-    VLOG(3) << mode_ << " Out: " << frame;
-    outputFrameOrEnqueue(
-        frameSerializer_->serializeOut(std::forward<T>(frame)));
+  FrameSerializer& serializer() override {
+    return *frameSerializer_;
   }
 
   template <typename TFrame>
@@ -231,21 +224,13 @@ class RSocketStateMachine final
   void sendKeepalive(FrameFlags, std::unique_ptr<folly::IOBuf>);
 
   void resumeFromPosition(ResumePosition);
-  void outputFrame(std::unique_ptr<folly::IOBuf>);
+  void outputFrame(std::unique_ptr<folly::IOBuf>) override;
 
   void writeNewStream(
       StreamId streamId,
       StreamType streamType,
       uint32_t initialRequestN,
       Payload payload) override;
-
-  void writeRequestN(Frame_REQUEST_N&&) override;
-  void writeCancel(Frame_CANCEL&&) override;
-
-  void writePayload(Frame_PAYLOAD&&) override;
-
-  // TODO: writeFragmentedError
-  void writeError(Frame_ERROR&&) override;
 
   void onStreamClosed(StreamId) override;
 
@@ -256,9 +241,6 @@ class RSocketStateMachine final
   void setProtocolVersionOrThrow(
       ProtocolVersion version,
       const std::shared_ptr<FrameTransport>& transport);
-
-  void enqueuePendingOutputFrame(std::unique_ptr<folly::IOBuf>);
-  std::deque<std::unique_ptr<folly::IOBuf>> consumePendingOutputFrames();
 
   /// Client/server mode this state machine is operating in.
   const RSocketMode mode_;
@@ -273,12 +255,6 @@ class RSocketStateMachine final
   bool coldResumeInProgress_{false};
 
   std::shared_ptr<RSocketStats> stats_;
-
-  /// A queue of frames that are slated to be sent out.
-  std::deque<std::unique_ptr<folly::IOBuf>> pendingOutputFrames_;
-
-  /// The byte size of all pending output frames.
-  size_t pendingSize_{0};
 
   /// Accumulates the REQUEST payloads for new incoming streams which haven't
   ///  been seen before (and therefore have no backing state machine in

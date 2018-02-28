@@ -206,12 +206,7 @@ void RSocketStateMachine::connect(std::shared_ptr<FrameTransport> transport) {
 void RSocketStateMachine::sendPendingFrames() {
   DCHECK(!resumeCallback_);
 
-  // We are free to try to send frames again.  Not all frames might be sent if
-  // the connection breaks, the rest of them will queue up again.
-  auto frames = consumePendingOutputFrames();
-  for (auto& frame : frames) {
-    outputFrameOrEnqueue(std::move(frame));
-  }
+  StreamsWriterImpl::sendPendingFrames();
 
   // TODO: turn on only after setup frame was received
   if (keepaliveTimer_) {
@@ -333,7 +328,7 @@ void RSocketStateMachine::closeWithError(Frame_ERROR&& error) {
 
   std::runtime_error exn{error.payload_.cloneDataToString()};
   if (frameSerializer_) {
-    outputFrameOrEnqueue(std::move(error));
+    outputFrameOrEnqueue(frameSerializer_->serializeOut(std::move(error)));
   }
   close(std::move(exn), signal);
 }
@@ -942,25 +937,21 @@ void RSocketStateMachine::resumeFromPosition(ResumePosition position) {
   }
 }
 
-void RSocketStateMachine::outputFrameOrEnqueue(
-    std::unique_ptr<folly::IOBuf> frame) {
+bool RSocketStateMachine::shouldQueue() {
   // if we are resuming we cant send any frames until we receive RESUME_OK
-  if (!isDisconnected() && !resumeCallback_) {
-    outputFrame(std::move(frame));
-  } else {
-    enqueuePendingOutputFrame(std::move(frame));
-  }
+  return isDisconnected() || resumeCallback_;
 }
 
 void RSocketStateMachine::fireAndForget(Payload request) {
   auto const streamId = streamsFactory().getNextStreamId();
   Frame_REQUEST_FNF frame{streamId, FrameFlags::EMPTY, std::move(request)};
-  outputFrameOrEnqueue(std::move(frame));
+  outputFrameOrEnqueue(frameSerializer_->serializeOut(std::move(frame)));
 }
 
 void RSocketStateMachine::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
   Frame_METADATA_PUSH metadataPushFrame{std::move(metadata)};
-  outputFrameOrEnqueue(std::move(metadataPushFrame));
+  outputFrameOrEnqueue(
+      frameSerializer_->serializeOut(std::move(metadataPushFrame)));
 }
 
 void RSocketStateMachine::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
@@ -992,81 +983,6 @@ bool RSocketStateMachine::isClosed() const {
   return isClosed_;
 }
 
-// The max amount of user data transmitted per frame - eg the size
-// of the data and metadata combined, plus the size of the frame header.
-// This assumes that the frame header will never be more than 512 bytes in
-// size. A CHECK in FrameTransportImpl enforces this. The idea is that
-// 16M is so much larger than the ~500 bytes possibly wasted that it won't
-// be noticeable (0.003% wasted at most)
-constexpr size_t GENEROUS_MAX_FRAME_SIZE = 0xFFFFFF - 512;
-
-// writeFragmented takes a `payload` and splits it up into chunks which
-// are sent as fragmented requests. The first fragmented payload is
-// given to writeInitialFrame, which is expected to write the initial
-// "REQUEST_" or "PAYLOAD" frame of a stream or response. writeFragmented
-// then writes the rest of the frames as payloads.
-//
-// writeInitialFrame
-//  - called with the payload of the first frame to send, and any additional
-//    flags (eg, addFlags with FOLLOWS, if there are more frames to write)
-// streamId
-//  - The stream ID to write additional fragments with
-// addFlags
-//  - All flags that writeInitialFrame wants to write the first frame with,
-//    and all flags that subsequent fragmented payloads will be sent with
-// payload
-//  - The unsplit payload to send, possibly in multiple fragments
-template <typename WriteInitialFrame>
-void RSocketStateMachine::writeFragmented(
-    WriteInitialFrame writeInitialFrame,
-    StreamId const streamId,
-    FrameFlags const addFlags,
-    Payload payload) {
-  folly::IOBufQueue metaQueue{folly::IOBufQueue::cacheChainLength()};
-  folly::IOBufQueue dataQueue{folly::IOBufQueue::cacheChainLength()};
-
-  // have to keep track of "did the full payload even have a metadata", because
-  // the rsocket protocol makes a distinction between a zero-length metadata
-  // and a null metadata.
-  bool const haveNonNullMeta = !!payload.metadata;
-  metaQueue.append(std::move(payload.metadata));
-  dataQueue.append(std::move(payload.data));
-
-  bool isFirstFrame = true;
-
-  while (true) {
-    Payload sendme;
-
-    // chew off some metadata (splitAtMost will never return a null pointer,
-    // safe to compute length on it always)
-    if (haveNonNullMeta) {
-      sendme.metadata = metaQueue.splitAtMost(GENEROUS_MAX_FRAME_SIZE);
-      DCHECK_GE(
-          GENEROUS_MAX_FRAME_SIZE, sendme.metadata->computeChainDataLength());
-    }
-    sendme.data = dataQueue.splitAtMost(
-        GENEROUS_MAX_FRAME_SIZE -
-        (haveNonNullMeta ? sendme.metadata->computeChainDataLength() : 0));
-
-    auto const metaLeft = metaQueue.chainLength();
-    auto const dataLeft = dataQueue.chainLength();
-    auto const moreFragments = metaLeft || dataLeft;
-    auto const flags =
-        (moreFragments ? FrameFlags::FOLLOWS : FrameFlags::EMPTY) | addFlags;
-
-    if (isFirstFrame) {
-      isFirstFrame = false;
-      writeInitialFrame(std::move(sendme), flags);
-    } else {
-      outputFrameOrEnqueue(Frame_PAYLOAD(streamId, flags, std::move(sendme)));
-    }
-
-    if (!moreFragments) {
-      break;
-    }
-  }
-}
-
 void RSocketStateMachine::writeNewStream(
     StreamId streamId,
     StreamType streamType,
@@ -1079,60 +995,8 @@ void RSocketStateMachine::writeNewStream(
         streamId, RequestOriginator::LOCAL, streamToken, streamType);
   }
 
-  // for simplicity, require that sent buffers don't consist of chains
-  writeFragmented(
-      [&](Payload p, FrameFlags flags) {
-        switch (streamType) {
-          case StreamType::CHANNEL:
-            outputFrameOrEnqueue(Frame_REQUEST_CHANNEL(
-                streamId, flags, initialRequestN, std::move(p)));
-            break;
-          case StreamType::STREAM:
-            outputFrameOrEnqueue(Frame_REQUEST_STREAM(
-                streamId, flags, initialRequestN, std::move(p)));
-            break;
-          case StreamType::REQUEST_RESPONSE:
-            outputFrameOrEnqueue(
-                Frame_REQUEST_RESPONSE(streamId, flags, std::move(p)));
-            break;
-          case StreamType::FNF:
-            outputFrameOrEnqueue(
-                Frame_REQUEST_FNF(streamId, flags, std::move(p)));
-            break;
-          default:
-            CHECK(false) << "invalid stream type " << toString(streamType);
-        }
-      },
-      streamId,
-      FrameFlags::EMPTY,
-      std::move(payload));
-}
-
-void RSocketStateMachine::writeRequestN(Frame_REQUEST_N&& frame) {
-  outputFrameOrEnqueue(std::move(frame));
-}
-
-void RSocketStateMachine::writeCancel(Frame_CANCEL&& frame) {
-  outputFrameOrEnqueue(std::move(frame));
-}
-
-void RSocketStateMachine::writePayload(Frame_PAYLOAD&& f) {
-  Frame_PAYLOAD frame = std::move(f);
-  auto const streamId = frame.header_.streamId;
-  auto const initialFlags = frame.header_.flags;
-
-  writeFragmented(
-      [this, streamId](Payload p, FrameFlags flags) {
-        outputFrameOrEnqueue(Frame_PAYLOAD(streamId, flags, std::move(p)));
-      },
-      streamId,
-      initialFlags,
-      std::move(frame.payload_));
-}
-
-void RSocketStateMachine::writeError(Frame_ERROR&& frame) {
-  // TODO: implement fragmentation for writeError as well
-  outputFrameOrEnqueue(std::move(frame));
+  StreamsWriterImpl::writeNewStream(
+      streamId, streamType, initialRequestN, std::move(payload));
 }
 
 void RSocketStateMachine::onStreamClosed(StreamId streamId) {
@@ -1212,24 +1076,6 @@ void RSocketStateMachine::setProtocolVersionOrThrow(
   }
 
   transportGuard.dismiss();
-}
-
-void RSocketStateMachine::enqueuePendingOutputFrame(
-    std::unique_ptr<folly::IOBuf> frame) {
-  auto const length = frame->computeChainDataLength();
-  stats_->streamBufferChanged(1, static_cast<int64_t>(length));
-  pendingSize_ += length;
-  pendingOutputFrames_.push_back(std::move(frame));
-}
-
-std::deque<std::unique_ptr<folly::IOBuf>>
-RSocketStateMachine::consumePendingOutputFrames() {
-  if (auto const numFrames = pendingOutputFrames_.size()) {
-    stats_->streamBufferChanged(
-        -static_cast<int64_t>(numFrames), -static_cast<int64_t>(pendingSize_));
-    pendingSize_ = 0;
-  }
-  return std::move(pendingOutputFrames_);
 }
 
 } // namespace rsocket
