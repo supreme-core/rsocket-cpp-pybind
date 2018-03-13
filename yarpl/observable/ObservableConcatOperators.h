@@ -56,6 +56,10 @@ class ConcatWithOperator : public ObservableOperator<T, T> {
       if (auto observer = std::move(upObserver_)) {
         observer->cancel();
       }
+      first_.reset();
+      second_.reset();
+      upObserver_.reset();
+      downObserver_.reset();
     }
 
     void onNext(T value) {
@@ -67,13 +71,19 @@ class ConcatWithOperator : public ObservableOperator<T, T> {
         upObserver_ =
             std::make_shared<ForwardObserver>(this->shared_from_this());
         second_->subscribe(upObserver_);
+        second_.reset();
       } else {
         downObserver_->onComplete();
+        downObserver_.reset();
       }
     }
 
     void onError(folly::exception_wrapper ew) {
       downObserver_->onError(std::move(ew));
+      first_.reset();
+      second_.reset();
+      upObserver_.reset();
+      downObserver_.reset();
     }
 
    private:
@@ -103,11 +113,14 @@ class ConcatWithOperator : public ObservableOperator<T, T> {
 
     void onComplete() override {
       concatWithSubscription_->onComplete();
+      concatWithSubscription_.reset();
     }
 
     void onError(folly::exception_wrapper ew) override {
       concatWithSubscription_->onError(std::move(ew));
+      concatWithSubscription_.reset();
     }
+
     void onNext(T value) override {
       concatWithSubscription_->onNext(std::move(value));
     }

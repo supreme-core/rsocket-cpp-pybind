@@ -7,6 +7,7 @@
 #include <condition_variable>
 
 #include "yarpl/Observable.h"
+#include "yarpl/flowable/Flowable.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/Subscribers.h"
 #include "yarpl/test_utils/Mocks.h"
@@ -931,4 +932,39 @@ TEST(Observable, ConcatTest) {
       Observable<>::range(10, 2),
       Observable<>::range(15, 2));
   EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
+}
+
+TEST(Observable, ToFlowableConcat) {
+  // Concat a flowable with an observable.
+  // Convert the observable to flowable before concat.
+  // Use ERROR as backpressure strategy.
+
+  // Test: Request only as much as the initial flowable provides
+  //   - Check that the observable is not subscribed to so it doesn't flood
+
+  auto a = yarpl::flowable::Flowable<>::range(1, 1);
+  auto b = Observable<>::range(2, 9)->toFlowable(BackpressureStrategy::ERROR);
+
+  auto c = a->concatWith(b);
+
+  uint32_t request = 1;
+  auto subscriber =
+      std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(request);
+
+  std::vector<int64_t> v;
+
+  EXPECT_CALL(*subscriber, onSubscribe_(_));
+  EXPECT_CALL(*subscriber, onNext_(_))
+      .WillRepeatedly(Invoke([&](int64_t value) { v.push_back(value); }));
+  EXPECT_CALL(*subscriber, onError_(_)).Times(0);
+
+  c->subscribe(subscriber);
+
+  // As only 1 item is requested, the second flowable will not be subscribed. So
+  // the observer will not flood the stream and cause ERROR.
+  EXPECT_EQ(v, std::vector<int64_t>({1}));
+
+  // Now flood the stream
+  EXPECT_CALL(*subscriber, onError_(_));
+  subscriber->subscription()->request(1);
 }

@@ -57,6 +57,10 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
       if (auto subscriber = std::move(upSubscriber_)) {
         subscriber->cancel();
       }
+      first_.reset();
+      second_.reset();
+      downSubscriber_.reset();
+      upSubscriber_.reset();
     }
 
     void onNext(T value) {
@@ -69,16 +73,25 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
         upSubscriber_ =
             std::make_shared<ForwardSubscriber>(this->shared_from_this());
         second_->subscribe(upSubscriber_);
+        second_.reset();
         if (requested_ > 0) {
-          upSubscriber_->request(requested_);
+          if (upSubscriber_) { // second flowable can immediately terminate
+            upSubscriber_->request(requested_);
+          }
         }
       } else {
         downSubscriber_->onComplete();
+        downSubscriber_.reset();
+        upSubscriber_.reset();
       }
     }
 
     void onError(folly::exception_wrapper ew) {
       downSubscriber_->onError(std::move(ew));
+      first_.reset();
+      second_.reset();
+      downSubscriber_.reset();
+      upSubscriber_.reset();
     }
 
    private:
