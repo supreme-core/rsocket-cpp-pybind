@@ -935,3 +935,26 @@ TEST(FlowableTest, ConcatTest) {
       Flowable<>::range(15, 2));
   EXPECT_EQ(run(combined), std::vector<int64_t>({1, 2, 5, 6, 10, 11, 15, 16}));
 }
+
+TEST(FlowableTest, ConcatWith_DelaySubscribe) {
+  // If there is no request for the second flowable, don't subscribe to it
+  bool subscribed = false;
+  auto a = Flowable<>::range(1, 1);
+  auto b = Flowable<>::range(2, 1)->doOnSubscribe(
+      [&subscribed]() { subscribed = true; });
+  auto combined = a->concatWith(b);
+
+  uint32_t request = 1;
+  std::vector<int64_t> values;
+  auto subscriber = Subscribers::create<int64_t>(
+      [&values](int64_t value) { values.push_back(value); }, request);
+
+  combined->subscribe(subscriber);
+
+  ASSERT_EQ(values, std::vector<int64_t>({1}));
+  ASSERT_FALSE(subscribed);
+
+  // termination signal!
+  auto baseSubscriber = static_cast<BaseSubscriber<int64_t>*>(subscriber.get());
+  baseSubscriber->cancel(); // otherwise we leak the active subscription
+}

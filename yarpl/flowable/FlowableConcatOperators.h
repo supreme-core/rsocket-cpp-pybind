@@ -50,7 +50,16 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
 
     void request(int64_t n) override {
       credits::add(&requested_, n);
-      upSubscriber_->request(n);
+      if (!upSubscriber_) {
+        if (n > 0 && second_) {
+          upSubscriber_ = std::make_shared<ForwardSubscriber>(
+              this->shared_from_this(), requested_);
+          second_->subscribe(upSubscriber_);
+          second_.reset();
+        }
+      } else {
+        upSubscriber_->request(n);
+      }
     }
 
     void cancel() override {
@@ -69,15 +78,13 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
     }
 
     void onComplete() {
+      upSubscriber_.reset();
       if (auto first = std::move(first_)) {
-        upSubscriber_ =
-            std::make_shared<ForwardSubscriber>(this->shared_from_this());
-        second_->subscribe(upSubscriber_);
-        second_.reset();
         if (requested_ > 0) {
-          if (upSubscriber_) { // second flowable can immediately terminate
-            upSubscriber_->request(requested_);
-          }
+          upSubscriber_ = std::make_shared<ForwardSubscriber>(
+              this->shared_from_this(), requested_);
+          second_->subscribe(upSubscriber_);
+          second_.reset();
         }
       } else {
         downSubscriber_->onComplete();
@@ -106,8 +113,10 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
                             public yarpl::flowable::Subscription {
    public:
     ForwardSubscriber(
-        std::shared_ptr<ConcatWithSubscription> concatWithSubscription)
-        : concatWithSubscription_(std::move(concatWithSubscription)) {}
+        std::shared_ptr<ConcatWithSubscription> concatWithSubscription,
+        uint32_t initialRequest = 0u)
+        : concatWithSubscription_(std::move(concatWithSubscription)),
+          initialRequest_(initialRequest) {}
 
     void request(int64_t n) override {
       subscription_->request(n);
@@ -122,6 +131,9 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
     void onSubscribe(std::shared_ptr<Subscription> subscription) override {
       // Don't forward the subscription to downstream subscriber
       subscription_ = std::move(subscription);
+      if (auto req = std::exchange(initialRequest_, 0)) {
+        subscription_->request(req);
+      }
     }
 
     void onComplete() override {
@@ -138,6 +150,8 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
    private:
     std::shared_ptr<ConcatWithSubscription> concatWithSubscription_;
     std::shared_ptr<flowable::Subscription> subscription_;
+
+    uint32_t initialRequest_{0};
   };
 
  private:
