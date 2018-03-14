@@ -4,6 +4,7 @@
 
 #include <folly/ExceptionWrapper.h>
 #include <memory>
+
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/StreamFragmentAccumulator.h"
 
@@ -23,9 +24,9 @@ struct Payload;
 class StreamStateMachineBase {
  public:
   StreamStateMachineBase(
-      std::shared_ptr<StreamsWriter> writer,
+      StreamsWriter& writer,
       StreamId streamId)
-      : writer_{std::move(writer)}, streamId_(streamId) {}
+      : writer_{writer}, streamId_(streamId) {}
   virtual ~StreamStateMachineBase() = default;
 
   virtual void handlePayload(Payload&& payload, bool complete, bool flagsNext);
@@ -62,11 +63,8 @@ class StreamStateMachineBase {
 
   void removeFromWriter();
 
-  /// A partially-owning pointer to the connection, the stream runs on.
-  /// It is declared as const to allow only ctor to initialize it for thread
-  /// safety of the dtor.
-  const std::shared_ptr<StreamsWriter> writer_;
-  const StreamId streamId_;
+  StreamsWriter& writer_;
+  StreamId streamId_;
 };
 
 struct StreamStateElem {

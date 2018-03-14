@@ -16,10 +16,10 @@ class RequestResponseRequester : public StreamStateMachineBase,
                                  public yarpl::enable_get_ref {
  public:
   RequestResponseRequester(
-      std::shared_ptr<StreamsWriter> writer,
+      StreamsWriter& writer,
       StreamId streamId,
       Payload payload)
-      : StreamStateMachineBase(std::move(writer), streamId),
+      : StreamStateMachineBase(writer, streamId),
         initialPayload_(std::move(payload)) {}
 
   void subscribe(

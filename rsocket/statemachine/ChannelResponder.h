@@ -16,11 +16,10 @@ class ChannelResponder : public ConsumerBase,
                          public yarpl::flowable::Subscriber<Payload> {
  public:
   ChannelResponder(
-      std::shared_ptr<StreamsWriter> writer,
+      StreamsWriter& writer,
       StreamId streamId,
       uint32_t initialRequestN)
-      : ConsumerBase(std::move(writer), streamId),
-        PublisherBase(initialRequestN) {}
+      : ConsumerBase(writer, streamId), PublisherBase(initialRequestN) {}
 
  private:
   void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
@@ -47,4 +46,4 @@ class ChannelResponder : public ConsumerBase,
 
   void tryCompleteChannel();
 };
-}
+} // namespace rsocket

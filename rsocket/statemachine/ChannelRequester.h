@@ -14,9 +14,9 @@ class ChannelRequester : public ConsumerBase,
                          public PublisherBase,
                          public yarpl::flowable::Subscriber<Payload> {
  public:
-  ChannelRequester(std::shared_ptr<StreamsWriter> writer, StreamId streamId)
-      : ConsumerBase(std::move(writer), streamId),
-        PublisherBase(1 /*initialRequestN*/) {}
+  ChannelRequester(StreamsWriter& writer, StreamId streamId)
+      : ConsumerBase(writer, streamId),
+        PublisherBase(1 /* initialRequestN */) {}
 
  private:
   void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>
@@ -41,4 +41,4 @@ class ChannelRequester : public ConsumerBase,
   Allowance initialResponseAllowance_;
   bool requested_{false};
 };
-}
+} // namespace rsocket

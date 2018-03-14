@@ -51,8 +51,7 @@ StreamsFactory::createChannelRequester(
   }
 
   auto const streamId = getNextStreamId();
-  auto stateMachine = std::make_shared<ChannelRequester>(
-      connection_.shared_from_this(), streamId);
+  auto stateMachine = std::make_shared<ChannelRequester>(connection_, streamId);
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
   return stateMachine;
@@ -68,7 +67,7 @@ void StreamsFactory::createStreamRequester(
 
   auto const streamId = getNextStreamId();
   auto stateMachine = std::make_shared<StreamRequester>(
-      connection_.shared_from_this(), streamId, std::move(request));
+      connection_, streamId, std::move(request));
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
 }
@@ -82,8 +81,8 @@ void StreamsFactory::createStreamRequester(
     return;
   }
 
-  auto stateMachine = std::make_shared<StreamRequester>(
-      connection_.shared_from_this(), streamId, Payload());
+  auto stateMachine =
+      std::make_shared<StreamRequester>(connection_, streamId, Payload());
   // Set requested to true (since cold resumption)
   stateMachine->setRequested(n);
   connection_.addStream(streamId, stateMachine);
@@ -100,7 +99,7 @@ void StreamsFactory::createRequestResponseRequester(
 
   auto const streamId = getNextStreamId();
   auto stateMachine = std::make_shared<RequestResponseRequester>(
-      connection_.shared_from_this(), streamId, std::move(payload));
+      connection_, streamId, std::move(payload));
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
 }
@@ -137,7 +136,7 @@ std::shared_ptr<ChannelResponder> StreamsFactory::createChannelResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
   auto stateMachine = std::make_shared<ChannelResponder>(
-      connection_.shared_from_this(), streamId, initialRequestN);
+      connection_, streamId, initialRequestN);
   connection_.addStream(streamId, stateMachine);
   return stateMachine;
 }
@@ -146,17 +145,17 @@ std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
 StreamsFactory::createStreamResponder(
     uint32_t initialRequestN,
     StreamId streamId) {
-  auto stateMachine = std::make_shared<StreamResponder>(
-      connection_.shared_from_this(), streamId, initialRequestN);
+  auto stateMachine =
+      std::make_shared<StreamResponder>(connection_, streamId, initialRequestN);
   connection_.addStream(streamId, stateMachine);
   return stateMachine;
 }
 
 std::shared_ptr<yarpl::single::SingleObserver<Payload>>
 StreamsFactory::createRequestResponseResponder(StreamId streamId) {
-  auto stateMachine = std::make_shared<RequestResponseResponder>(
-      connection_.shared_from_this(), streamId);
+  auto stateMachine =
+      std::make_shared<RequestResponseResponder>(connection_, streamId);
   connection_.addStream(streamId, stateMachine);
   return stateMachine;
 }
-}
+} // namespace rsocket
