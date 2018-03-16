@@ -6,8 +6,8 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/portability/GFlags.h>
 
-#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/RSocket.h"
+#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
 #include "yarpl/Flowable.h"
@@ -30,16 +30,17 @@ int main(int argc, char* argv[]) {
   address.setFromHostPort(FLAGS_host, FLAGS_port);
 
   auto client = RSocket::createConnectedClient(
-      std::make_unique<TcpConnectionFactory>(*worker.getEventBase(),
-                                             std::move(address)))
-      .get();
+                    std::make_unique<TcpConnectionFactory>(
+                        *worker.getEventBase(), std::move(address)))
+                    .get();
 
   client->getRequester()
-      ->requestChannel(Flowable<>::justN({"initialPayload", "Bob", "Jane"})
-                           ->map([](std::string v) {
-                             std::cout << "Sending: " << v << std::endl;
-                             return Payload(v);
-                           }))
+      ->requestChannel(
+          Payload("initialPayload"),
+          Flowable<>::justN({"Bob", "Jane"})->map([](std::string v) {
+            std::cout << "Sending: " << v << std::endl;
+            return Payload(v);
+          }))
       ->subscribe([](Payload p) {
         std::cout << "Received: " << p.moveDataToString() << std::endl;
       });

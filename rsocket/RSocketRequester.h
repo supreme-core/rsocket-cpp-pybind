@@ -65,6 +65,17 @@ class RSocketRequester {
       std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> requests);
 
   /**
+   * As requestStream function accepts an initial request, this version of
+   * requestChannel also accepts an initial request.
+   * @see requestChannel
+   * @see requestStream
+   */
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+  requestChannel(
+      Payload request,
+      std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> requests);
+
+  /**
    * Send a single request and get a single response.
    *
    * Interaction model details can be found at
@@ -101,7 +112,13 @@ class RSocketRequester {
   virtual void closeSocket();
 
  protected:
+  virtual std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+  requestChannel(
+      Payload request,
+      bool hasInitialRequest,
+      std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> requests);
+
   std::shared_ptr<rsocket::RSocketStateMachine> stateMachine_;
   folly::EventBase* eventBase_;
 };
-}
+} // namespace rsocket

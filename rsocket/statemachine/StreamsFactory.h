@@ -22,6 +22,8 @@ class StreamsFactory {
   StreamsFactory(RSocketStateMachine& connection, RSocketMode mode);
 
   std::shared_ptr<yarpl::flowable::Subscriber<Payload>> createChannelRequester(
+      Payload request,
+      bool hasInitialRequest,
       std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink);
 
   void createStreamRequester(
@@ -60,4 +62,4 @@ class StreamsFactory {
   StreamId nextStreamId_;
   StreamId lastPeerStreamId_{0};
 };
-} // reactivesocket
+} // namespace rsocket

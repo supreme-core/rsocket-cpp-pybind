@@ -27,15 +27,14 @@ class TestHandlerHello : public rsocket::RSocketResponder {
       std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>> stream,
       rsocket::StreamId streamId) override {
     // say "Hello" to each name on the input stream
-    return stream->map(
-        [initialPayload = std::move(initialPayload)](Payload p) {
-          std::stringstream ss;
-          ss << "[" << initialPayload.cloneDataToString() << "] "
-             << "Hello " << p.moveDataToString() << "!";
-          std::string s = ss.str();
+    return stream->map([initialPayload = std::move(initialPayload)](Payload p) {
+      std::stringstream ss;
+      ss << "[" << initialPayload.cloneDataToString() << "] "
+         << "Hello " << p.moveDataToString() << "!";
+      std::string s = ss.str();
 
-          return Payload(s);
-        });
+      return Payload(s);
+    });
   }
 };
 
@@ -48,7 +47,8 @@ TEST(RequestChannelTest, Hello) {
   auto ts = TestSubscriber<std::string>::create();
   requester
       ->requestChannel(
-          Flowable<>::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
+          Payload("/hello"),
+          Flowable<>::justN({"Bob", "Jane"})->map([](std::string v) {
             return Payload(v);
           }))
       ->map([](auto p) { return p.moveDataToString(); })
@@ -74,7 +74,8 @@ TEST(RequestChannelTest, HelloNoFlowControl) {
   auto ts = TestSubscriber<std::string>::create();
   requester
       ->requestChannel(
-          Flowable<>::justN({"/hello", "Bob", "Jane"})->map([](std::string v) {
+          Payload("/hello"),
+          Flowable<>::justN({"Bob", "Jane"})->map([](std::string v) {
             return Payload(v);
           }))
       ->map([](auto p) { return p.moveDataToString(); })
@@ -180,16 +181,17 @@ TEST(RequestChannelTest, CompleteRequesterResponderContinues) {
         return Payload(s, "metadata");
       });
 
-  requester->requestChannel(requesterFlowable)
+  requester->requestChannel(Payload("Initial Request"), requesterFlowable)
       ->map([](auto p) { return p.moveDataToString(); })
       ->subscribe(requestSubscriber);
 
   // finish streaming from Requester
   responderSubscriber->awaitTerminalEvent();
   responderSubscriber->assertSuccess();
-  responderSubscriber->assertValueCount(10);
-  responderSubscriber->assertValueAt(0, "Requester stream: 1 of 10");
-  responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
+  responderSubscriber->assertValueCount(11);
+  responderSubscriber->assertValueAt(0, "Initial Request");
+  responderSubscriber->assertValueAt(1, "Requester stream: 1 of 10");
+  responderSubscriber->assertValueAt(10, "Requester stream: 10 of 10");
 
   // Requester stream is closed, Responder continues
   requestSubscriber->request(50);
@@ -257,7 +259,7 @@ TEST(RequestChannelTest, FlowControl) {
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
 
-  auto requestSubscriber = TestSubscriber<std::string>::create(1);
+  auto requestSubscriber = TestSubscriber<std::string>::create(0);
   auto responderSubscriber = responder->getChannelSubscriber();
 
   int64_t requesterRangeEnd = 10;
@@ -270,21 +272,22 @@ TEST(RequestChannelTest, FlowControl) {
         return Payload(s, "metadata");
       });
 
-  requester->requestChannel(requesterFlowable)
+  requester->requestChannel(Payload("Initial Request"), requesterFlowable)
       ->map([](auto p) { return p.moveDataToString(); })
       ->subscribe(requestSubscriber);
 
+  // Wait till the Channel is created
   responderSubscriber->awaitValueCount(1);
-  requestSubscriber->awaitValueCount(1);
 
-  for (int i = 2; i <= 10; i++) {
+  for (int i = 1; i <= 10; i++) {
     requestSubscriber->request(1);
-    responderSubscriber->request(1);
-
-    responderSubscriber->awaitValueCount(i);
     requestSubscriber->awaitValueCount(i);
-
     requestSubscriber->assertValueCount(i);
+  }
+
+  for (int i = 1; i <= 10; i++) {
+    responderSubscriber->request(1);
+    responderSubscriber->awaitValueCount(i);
     responderSubscriber->assertValueCount(i);
   }
 
@@ -297,8 +300,9 @@ TEST(RequestChannelTest, FlowControl) {
   requestSubscriber->assertValueAt(0, "Responder stream: 1 of 10");
   requestSubscriber->assertValueAt(9, "Responder stream: 10 of 10");
 
-  responderSubscriber->assertValueAt(0, "Requester stream: 1 of 10");
-  responderSubscriber->assertValueAt(9, "Requester stream: 10 of 10");
+  responderSubscriber->assertValueAt(0, "Initial Request");
+  responderSubscriber->assertValueAt(1, "Requester stream: 1 of 10");
+  responderSubscriber->assertValueAt(10, "Requester stream: 10 of 10");
 }
 
 class TestChannelResponderFailure : public rsocket::RSocketResponder {
@@ -349,7 +353,7 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
         return Payload(s, "metadata");
       });
 
-  requester->requestChannel(requesterFlowable)
+  requester->requestChannel(Payload("Initial Request"), requesterFlowable)
       ->map([](auto p) { return p.moveDataToString(); })
       ->subscribe(requestSubscriber);
 
@@ -358,9 +362,9 @@ TEST(RequestChannelTest, FailureOnResponderRequesterSees) {
   requestSubscriber->assertOnErrorMessage("A wild Error appeared!");
 
   responderSubscriber->awaitTerminalEvent();
-  responderSubscriber->assertValueAt(0, "Requester stream: 1 of 10");
   responderSubscriber->assertSuccess();
   responderSubscriber->assertValueCount(1);
+  responderSubscriber->assertValueAt(0, "Initial Request");
 }
 
 struct LargePayloadChannelHandler : public rsocket::RSocketResponder {

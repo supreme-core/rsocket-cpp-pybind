@@ -35,20 +35,43 @@ std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
 RSocketRequester::requestChannel(
     std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
         requestStream) {
+  return requestChannel(Payload(), false, std::move(requestStream));
+}
+
+std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+RSocketRequester::requestChannel(
+    Payload request,
+    std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+        requestStream) {
+  return requestChannel(std::move(request), true, std::move(requestStream));
+}
+
+std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+RSocketRequester::requestChannel(
+    Payload request,
+    bool hasInitialRequest,
+    std::shared_ptr<yarpl::flowable::Flowable<rsocket::Payload>>
+        requestStream) {
   CHECK(stateMachine_); // verify the socket was not closed
 
   return yarpl::flowable::internal::flowableFromSubscriber<Payload>([
     eb = eventBase_,
+    request = std::move(request),
+    hasInitialRequest,
     requestStream = std::move(requestStream),
     srs = stateMachine_
   ](std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
     auto lambda = [
       requestStream = std::move(requestStream),
+      request = std::move(request),
+      hasInitialRequest,
       subscriber = std::move(subscriber),
       srs = std::move(srs),
       eb
     ]() mutable {
       auto responseSink = srs->streamsFactory().createChannelRequester(
+          std::move(request),
+          hasInitialRequest,
           std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
               std::move(subscriber), *eb));
       // responseSink is wrapped with thread scheduling

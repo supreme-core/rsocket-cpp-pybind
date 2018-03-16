@@ -11,29 +11,36 @@ void ChannelRequester::onSubscribe(
     std::shared_ptr<Subscription> subscription) noexcept {
   CHECK(!requested_);
   publisherSubscribe(std::move(subscription));
+
+  if (hasInitialRequest_) {
+    initStream(std::move(request_));
+  }
+}
+
+void ChannelRequester::initStream(Payload&& request) {
+  requested_ = true;
+
+  const size_t initialN =
+      initialResponseAllowance_.consumeUpTo(Frame_REQUEST_N::kMaxRequestN);
+  const size_t remainingN = initialResponseAllowance_.consumeAll();
+
+  // Send as much as possible with the initial request.
+  CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
+  newStream(
+      StreamType::CHANNEL, static_cast<uint32_t>(initialN), std::move(request));
+  // We must inform ConsumerBase about an implicit allowance we have
+  // requested from the remote end.
+  ConsumerBase::addImplicitAllowance(initialN);
+  // Pump the remaining allowance into the ConsumerBase _after_ sending the
+  // initial request.
+  if (remainingN) {
+    ConsumerBase::generateRequest(remainingN);
+  }
 }
 
 void ChannelRequester::onNext(Payload request) noexcept {
   if (!requested_) {
-    requested_ = true;
-
-    const size_t initialN =
-        initialResponseAllowance_.consumeUpTo(Frame_REQUEST_N::kMaxRequestN);
-    const size_t remainingN = initialResponseAllowance_.consumeAll();
-    // Send as much as possible with the initial request.
-    CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
-    newStream(
-        StreamType::CHANNEL,
-        static_cast<uint32_t>(initialN),
-        std::move(request));
-    // We must inform ConsumerBase about an implicit allowance we have
-    // requested from the remote end.
-    ConsumerBase::addImplicitAllowance(initialN);
-    // Pump the remaining allowance into the ConsumerBase _after_ sending the
-    // initial request.
-    if (remainingN) {
-      ConsumerBase::generateRequest(remainingN);
-    }
+    initStream(std::move(request));
     return;
   }
 

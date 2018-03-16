@@ -44,6 +44,8 @@ static void subscribeToErrorSingle(
 
 std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
 StreamsFactory::createChannelRequester(
+    Payload request,
+    bool hasInitialRequest,
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
   if (connection_.isDisconnected()) {
     subscribeToErrorFlowable(std::move(responseSink));
@@ -51,7 +53,13 @@ StreamsFactory::createChannelRequester(
   }
 
   auto const streamId = getNextStreamId();
-  auto stateMachine = std::make_shared<ChannelRequester>(connection_, streamId);
+  std::shared_ptr<ChannelRequester> stateMachine;
+  if (hasInitialRequest) {
+    stateMachine = std::make_shared<ChannelRequester>(
+        std::move(request), connection_, streamId);
+  } else {
+    stateMachine = std::make_shared<ChannelRequester>(connection_, streamId);
+  }
   connection_.addStream(streamId, stateMachine);
   stateMachine->subscribe(std::move(responseSink));
   return stateMachine;
