@@ -3,21 +3,6 @@
 #pragma once
 
 #include <atomic>
-#include <cassert>
-#include <cstddef>
-#include <functional>
-#include <type_traits>
-#include <utility>
-
-#include <cxxabi.h>
-#include <cstdlib>
-#include <memory>
-#include <mutex>
-#include <ostream>
-#include <string>
-#include <typeinfo>
-#include <unordered_map>
-
 #include <folly/Synchronized.h>
 
 namespace yarpl {
@@ -83,13 +68,5 @@ class enable_get_ref : public std::enable_shared_from_this<enable_get_ref> {
 public:
   virtual ~enable_get_ref() = default;
 };
-
-//TODO(lehecka): removing
-template <typename T, typename CastTo = T, typename... Args>
-std::shared_ptr<CastTo> make_ref(Args&&... args) {
-  auto r = std::static_pointer_cast<CastTo>(
-      std::make_shared<T>(std::forward<Args>(args)...));
-  return std::move(r);
-}
 
 } /* namespace yarpl */

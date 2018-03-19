@@ -1,14 +1,11 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "FlowableExamples.h"
-
+#include <folly/io/async/ScopedEventBaseThread.h>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
-
-#include <folly/io/async/ScopedEventBaseThread.h>
-
 #include "yarpl/Flowable.h"
 
 using namespace yarpl;
@@ -46,7 +43,7 @@ void fromPublisherExample() {
       }
     };
 
-    auto subscription = make_ref<Subscription>();
+    auto subscription = std::make_shared<Subscription>();
     subscriber->onSubscribe(subscription);
     subscriber->onNext(1234);
     subscriber->onNext(5678);
