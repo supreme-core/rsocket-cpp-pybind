@@ -3,24 +3,20 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
-#include <stdexcept>
-#include <string>
 #include <type_traits>
 #include <utility>
+#include <folly/functional/Invoke.h>
 
 #include "yarpl/utils/type_traits.h"
 
 #include "yarpl/Refcounted.h"
 #include "yarpl/observable/Observer.h"
-#include "yarpl/observable/Observers.h"
 #include "yarpl/observable/Subscription.h"
 
 #include "yarpl/Common.h"
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/Flowable_FromObservable.h"
 
-#include <folly/functional/Invoke.h>
 
 namespace yarpl {
 
@@ -127,7 +123,7 @@ class Observable : public yarpl::enable_get_ref {
       typename =
           typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
   std::shared_ptr<Subscription> subscribe(Next next) {
-    return subscribe(Observers::create<T>(std::move(next)));
+    return subscribe(Observer<T>::create(std::move(next)));
   }
 
   /**
@@ -140,7 +136,7 @@ class Observable : public yarpl::enable_get_ref {
           folly::is_invocable<Next, T>::value &&
           folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
   std::shared_ptr<Subscription> subscribe(Next next, Error error) {
-    return subscribe(Observers::create<T>(std::move(next), std::move(error)));
+    return subscribe(Observer<T>::create(std::move(next), std::move(error)));
   }
 
   /**
@@ -156,12 +152,12 @@ class Observable : public yarpl::enable_get_ref {
           folly::is_invocable<Complete>::value>::type>
   std::shared_ptr<Subscription>
   subscribe(Next next, Error error, Complete complete) {
-    return subscribe(Observers::create<T>(
+    return subscribe(Observer<T>::create(
         std::move(next), std::move(error), std::move(complete)));
   }
 
   std::shared_ptr<Subscription> subscribe() {
-    return subscribe(Observers::createNull<T>());
+    return subscribe(Observer<T>::create());
   }
 
   template <

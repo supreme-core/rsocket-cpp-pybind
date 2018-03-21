@@ -106,7 +106,7 @@ TEST(Observable, SingleOnNext) {
 
   std::vector<int> v;
   a->subscribe(
-      Observers::create<int>([&v](const int& value) { v.push_back(value); }));
+      Observer<int>::create([&v](const int& value) { v.push_back(value); }));
   EXPECT_EQ(v.at(0), 1);
 }
 
@@ -120,7 +120,7 @@ TEST(Observable, MultiOnNext) {
 
   std::vector<int> v;
   a->subscribe(
-      Observers::create<int>([&v](const int& value) { v.push_back(value); }));
+      Observer<int>::create([&v](const int& value) { v.push_back(value); }));
 
   EXPECT_EQ(v.at(0), 1);
   EXPECT_EQ(v.at(1), 2);
@@ -133,7 +133,7 @@ TEST(Observable, OnError) {
     obs->onError(std::runtime_error("something broke!"));
   });
 
-  a->subscribe(Observers::create<int>(
+  a->subscribe(Observer<int>::create(
       [](int) { /* do nothing */ },
       [&errorMessage](folly::exception_wrapper ex) {
         errorMessage = ex.get_exception()->what();
@@ -153,7 +153,7 @@ TEST(Observable, ItemsCollectedSynchronously) {
     obs->onComplete();
   });
 
-  a->subscribe(Observers::create<Tuple>([](const Tuple& value) {
+  a->subscribe(Observer<Tuple>::create([](const Tuple& value) {
     std::cout << "received value " << value.a << std::endl;
   }));
 }
@@ -179,7 +179,7 @@ TEST(DISABLED_Observable, ItemsCollectedAsynchronously) {
 
   std::vector<Tuple> v;
   v.reserve(10); // otherwise it resizes and copies on each push_back
-  a->subscribe(Observers::create<Tuple>([&v](const Tuple& value) {
+  a->subscribe(Observer<Tuple>::create([&v](const Tuple& value) {
     std::cout << "received value " << value.a << std::endl;
     // copy into vector
     v.push_back(value);
@@ -567,7 +567,7 @@ TEST(Observable, ObserversComplete) {
   auto observable = Observable<int>::empty();
   bool completed = false;
 
-  auto observer = Observers::create<int>(
+  auto observer = Observer<int>::create(
       [](int) { unreachable(); },
       [](folly::exception_wrapper) { unreachable(); },
       [&] { completed = true; });
@@ -580,7 +580,7 @@ TEST(Observable, ObserversError) {
   auto observable = Observable<int>::error(std::runtime_error("Whoops"));
   bool errored = false;
 
-  auto observer = Observers::create<int>(
+  auto observer = Observer<int>::create(
       [](int) { unreachable(); },
       [&](folly::exception_wrapper) { errored = true; },
       [] { unreachable(); });

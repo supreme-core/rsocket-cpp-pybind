@@ -3,6 +3,7 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
+#include <folly/functional/Invoke.h>
 #include <glog/logging.h>
 #include "yarpl/Refcounted.h"
 #include "yarpl/observable/Subscription.h"
@@ -51,14 +52,14 @@ class Observer : public yarpl::enable_get_ref {
   // Note that calling cancel on the tied subscription is not going to cancel
   // this subscriber
   void addSubscription(std::shared_ptr<Subscription> subscription) {
-    if(!subscription_) {
+    if (!subscription_) {
       subscription->cancel();
       return;
     }
     subscription_->tieSubscription(std::move(subscription));
   }
 
-  template<typename OnCancel>
+  template <typename OnCancel>
   void addSubscription(OnCancel onCancel) {
     addSubscription(Subscription::create(std::move(onCancel)));
   }
@@ -77,8 +78,119 @@ class Observer : public yarpl::enable_get_ref {
     subscription_->cancel();
   }
 
+public:
+  template <
+      typename Next,
+      typename =
+          typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
+  static std::shared_ptr<Observer<T>> create(Next next);
+
+  template <
+      typename Next,
+      typename Error,
+      typename =
+          typename std::enable_if<folly::is_invocable<Next, T>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
+  static std::shared_ptr<Observer<T>> create(Next next, Error error);
+
+  template <
+      typename Next,
+      typename Error,
+      typename Complete,
+      typename =
+          typename std::enable_if<folly::is_invocable<Next, T>::value>::type,
+      typename = typename std::enable_if<
+          folly::is_invocable<Error, folly::exception_wrapper>::value>::type,
+      typename =
+          typename std::enable_if<folly::is_invocable<Complete>::value>::type>
+  static std::shared_ptr<Observer<T>>
+  create(Next next, Error error, Complete complete);
+
+  static std::shared_ptr<Observer<T>> create() {
+    class NullObserver : public Observer<T> {
+     public:
+      void onNext(T) {}
+    };
+    return std::make_shared<NullObserver>();
+  }
+
  private:
   std::shared_ptr<Subscription> subscription_;
 };
+
+namespace details {
+
+template <typename T, typename Next>
+class Base : public Observer<T> {
+ public:
+  explicit Base(Next next) : next_(std::move(next)) {}
+
+  void onNext(T value) override {
+    next_(std::move(value));
+  }
+
+ private:
+  Next next_;
+};
+
+template <typename T, typename Next, typename Error>
+class WithError : public Base<T, Next> {
+ public:
+  WithError(Next next, Error error)
+      : Base<T, Next>(std::move(next)), error_(std::move(error)) {}
+
+  void onError(folly::exception_wrapper error) override {
+    error_(std::move(error));
+  }
+
+ private:
+  Error error_;
+};
+
+template <typename T, typename Next, typename Error, typename Complete>
+class WithErrorAndComplete : public WithError<T, Next, Error> {
+ public:
+  WithErrorAndComplete(Next next, Error error, Complete complete)
+      : WithError<T, Next, Error>(std::move(next), std::move(error)),
+        complete_(std::move(complete)) {}
+
+  void onComplete() override {
+    complete_();
+  }
+
+ private:
+  Complete complete_;
+};
+} // namespace details
+
+template <typename T>
+template <typename Next, typename>
+std::shared_ptr<Observer<T>> Observer<T>::create(Next next) {
+  return std::make_shared<details::Base<T, Next>>(std::move(next));
 }
+
+template <typename T>
+template <typename Next, typename Error, typename, typename>
+std::shared_ptr<Observer<T>> Observer<T>::create(Next next, Error error) {
+  return std::make_shared<details::WithError<T, Next, Error>>(
+      std::move(next), std::move(error));
 }
+
+template <typename T>
+template <
+    typename Next,
+    typename Error,
+    typename Complete,
+    typename,
+    typename,
+    typename>
+std::shared_ptr<Observer<T>>
+Observer<T>::create(Next next, Error error, Complete complete) {
+  return std::make_shared<
+      details::WithErrorAndComplete<T, Next, Error, Complete>>(
+      std::move(next), std::move(error), std::move(complete));
+}
+
+} // namespace observable
+} // namespace yarpl
