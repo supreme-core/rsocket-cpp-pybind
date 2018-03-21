@@ -78,7 +78,7 @@ class Observer : public yarpl::enable_get_ref {
     subscription_->cancel();
   }
 
-public:
+ public:
   template <
       typename Next,
       typename =

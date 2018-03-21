@@ -4,9 +4,11 @@
 
 #include <boost/noncopyable.hpp>
 #include <folly/ExceptionWrapper.h>
+#include <folly/functional/Invoke.h>
 #include <glog/logging.h>
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscription.h"
+#include "yarpl/utils/credits.h"
 
 namespace yarpl {
 namespace flowable {
@@ -19,6 +21,50 @@ class Subscriber : boost::noncopyable {
   virtual void onComplete() = 0;
   virtual void onError(folly::exception_wrapper) = 0;
   virtual void onNext(T) = 0;
+
+  template <
+      typename Next,
+      typename =
+          typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
+  static std::shared_ptr<Subscriber<T>> create(
+      Next next,
+      int64_t batch = credits::kNoFlowControl);
+
+  template <
+      typename Next,
+      typename Error,
+      typename = typename std::enable_if<
+          folly::is_invocable<Next, T>::value &&
+          folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
+  static std::shared_ptr<Subscriber<T>>
+  create(Next next, Error error, int64_t batch = credits::kNoFlowControl);
+
+  template <
+      typename Next,
+      typename Error,
+      typename Complete,
+      typename = typename std::enable_if<
+          folly::is_invocable<Next, T>::value &&
+          folly::is_invocable<Error, folly::exception_wrapper>::value &&
+          folly::is_invocable<Complete>::value>::type>
+  static std::shared_ptr<Subscriber<T>> create(
+      Next next,
+      Error error,
+      Complete complete,
+      int64_t batch = credits::kNoFlowControl);
+
+  static std::shared_ptr<Subscriber<T>> create() {
+    class NullSubscriber : public Subscriber<T> {
+      void onSubscribe(std::shared_ptr<Subscription> s) override final {
+        s->request(credits::kNoFlowControl);
+      }
+
+      void onNext(T) override final {}
+      void onComplete() override {}
+      void onError(folly::exception_wrapper) override {}
+    };
+    return std::make_shared<NullSubscriber>();
+  }
 };
 
 #define KEEP_REF_TO_THIS()              \
@@ -144,6 +190,117 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
   std::atomic<bool> gotTerminating_{false};
 #endif
 };
+
+namespace details {
+template <typename T, typename Next>
+class Base : public BaseSubscriber<T> {
+ public:
+  Base(Next next, int64_t batch)
+      : next_(std::move(next)), batch_(batch), pending_(0) {}
+
+  void onSubscribeImpl() override final {
+    pending_ += batch_;
+    this->request(batch_);
+  }
+
+  void onNextImpl(T value) override final {
+    try {
+      next_(std::move(value));
+    } catch (const std::exception& exn) {
+      this->cancel();
+      auto ew = folly::exception_wrapper{std::current_exception(), exn};
+      LOG(ERROR) << "'next' method should not throw: " << ew.what();
+      onErrorImpl(ew);
+      return;
+    }
+
+    if (--pending_ < batch_ / 2) {
+      const auto delta = batch_ - pending_;
+      pending_ += delta;
+      this->request(delta);
+    }
+  }
+
+  void onCompleteImpl() override {}
+  void onErrorImpl(folly::exception_wrapper) override {}
+
+ private:
+  Next next_;
+  const int64_t batch_;
+  int64_t pending_;
+};
+
+template <typename T, typename Next, typename Error>
+class WithError : public Base<T, Next> {
+ public:
+  WithError(Next next, Error error, int64_t batch)
+      : Base<T, Next>(std::move(next), batch), error_(std::move(error)) {}
+
+  void onErrorImpl(folly::exception_wrapper error) override final {
+    try {
+      error_(std::move(error));
+    } catch (const std::exception& exn) {
+      auto ew = folly::exception_wrapper{std::current_exception(), exn};
+      LOG(ERROR) << "'error' method should not throw: " << ew.what();
+#ifndef NDEBUG
+      throw ew; // Throw the wrapped exception
+#endif
+    }
+  }
+
+ private:
+  Error error_;
+};
+
+template <typename T, typename Next, typename Error, typename Complete>
+class WithErrorAndComplete : public WithError<T, Next, Error> {
+ public:
+  WithErrorAndComplete(Next next, Error error, Complete complete, int64_t batch)
+      : WithError<T, Next, Error>(std::move(next), std::move(error), batch),
+        complete_(std::move(complete)) {}
+
+  void onCompleteImpl() override final {
+    try {
+      complete_();
+    } catch (const std::exception& exn) {
+      auto ew = folly::exception_wrapper{std::current_exception(), exn};
+      LOG(ERROR) << "'complete' method should not throw: " << ew.what();
+#ifndef NDEBUG
+      throw ew; // Throw the wrapped exception
+#endif
+    }
+  }
+
+ private:
+  Complete complete_;
+};
+} // namespace details
+
+template <typename T>
+template <typename Next, typename>
+std::shared_ptr<Subscriber<T>> Subscriber<T>::create(Next next, int64_t batch) {
+  return std::make_shared<details::Base<T, Next>>(std::move(next), batch);
+}
+
+template <typename T>
+template <typename Next, typename Error, typename>
+std::shared_ptr<Subscriber<T>>
+Subscriber<T>::create(Next next, Error error, int64_t batch) {
+  return std::make_shared<details::WithError<T, Next, Error>>(
+      std::move(next), std::move(error), batch);
+}
+
+template <typename T>
+template <typename Next, typename Error, typename Complete, typename>
+std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
+    Next next,
+    Error error,
+    Complete complete,
+    int64_t batch) {
+  return std::make_shared<
+      details::WithErrorAndComplete<T, Next, Error, Complete>>(
+      std::move(next), std::move(error), std::move(complete), batch);
+}
 
 } // namespace flowable
 } // namespace yarpl

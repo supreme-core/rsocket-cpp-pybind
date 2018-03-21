@@ -9,7 +9,6 @@
 #include "yarpl/Observable.h"
 #include "yarpl/flowable/Flowable.h"
 #include "yarpl/flowable/Subscriber.h"
-#include "yarpl/flowable/Subscribers.h"
 #include "yarpl/test_utils/Mocks.h"
 #include "yarpl/test_utils/Tuple.h"
 
@@ -310,7 +309,7 @@ TEST(Observable, toFlowableDropWithCancel) {
   auto f = a->toFlowable(BackpressureStrategy::DROP);
 
   std::vector<int> v;
-  f->take(5)->subscribe(yarpl::flowable::Subscribers::create<int>(
+  f->take(5)->subscribe(yarpl::flowable::Subscriber<int>::create(
       [&v](const int& value) { v.push_back(value); }));
 
   EXPECT_EQ(v, std::vector<int>({1, 2, 3, 4, 5}));

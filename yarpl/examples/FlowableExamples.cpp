@@ -15,7 +15,7 @@ namespace {
 
 template <typename T>
 auto printer() {
-  return Subscribers::create<T>(
+  return Subscriber<T>::create(
       [](T value) { std::cout << "  next: " << value << std::endl; },
       2 /* low [optional] batch size for demo */);
 }
@@ -99,7 +99,7 @@ void FlowableExamples::run() {
     subscriber.onError(std::runtime_error("error"));
   });
 
-  auto subscriber = Subscribers::create<int>(
+  auto subscriber = Subscriber<int>::create(
       [](int next) { std::cout << "@next: " << next << std::endl; },
       [](folly::exception_wrapper ex) {
         std::cerr << "  exception: " << ex << std::endl;

@@ -97,7 +97,7 @@ TEST(FlowableTest, SingleMovableFlowable) {
 
   size_t received = 0;
   auto subscriber =
-      Subscribers::create<std::unique_ptr<int>>([&](std::unique_ptr<int> p) {
+      Subscriber<std::unique_ptr<int>>::create([&](std::unique_ptr<int> p) {
         EXPECT_EQ(*p, 123456);
         received++;
       });
@@ -435,14 +435,14 @@ TEST(FlowableTest, FlowableFromGeneratorException) {
 
 TEST(FlowableTest, SubscribersComplete) {
   auto flowable = Flowable<int>::empty();
-  auto subscriber = Subscribers::create<int>(
+  auto subscriber = Subscriber<int>::create(
       [](int) { FAIL(); }, [](folly::exception_wrapper) { FAIL(); }, [&] {});
   flowable->subscribe(std::move(subscriber));
 }
 
 TEST(FlowableTest, SubscribersError) {
   auto flowable = Flowable<int>::error(std::runtime_error("Whoops"));
-  auto subscriber = Subscribers::create<int>(
+  auto subscriber = Subscriber<int>::create(
       [](int) { FAIL(); }, [&](folly::exception_wrapper) {}, [] { FAIL(); });
   flowable->subscribe(std::move(subscriber));
 }

@@ -6,11 +6,8 @@
 #include <folly/functional/Invoke.h>
 #include <glog/logging.h>
 #include <memory>
-#include <stdexcept>
-#include <string>
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscriber.h"
-#include "yarpl/flowable/Subscribers.h"
 #include "yarpl/utils/credits.h"
 #include "yarpl/utils/type_traits.h"
 
@@ -47,7 +44,7 @@ class Flowable : public yarpl::enable_get_ref {
       typename =
           typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
   void subscribe(Next next, int64_t batch = credits::kNoFlowControl) {
-    subscribe(Subscribers::create<T>(std::move(next), batch));
+    subscribe(Subscriber<T>::create(std::move(next), batch));
   }
 
   /**
@@ -63,7 +60,7 @@ class Flowable : public yarpl::enable_get_ref {
           folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
   void
   subscribe(Next next, Error error, int64_t batch = credits::kNoFlowControl) {
-    subscribe(Subscribers::create<T>(std::move(next), std::move(error), batch));
+    subscribe(Subscriber<T>::create(std::move(next), std::move(error), batch));
   }
 
   /**
@@ -84,12 +81,12 @@ class Flowable : public yarpl::enable_get_ref {
       Error error,
       Complete complete,
       int64_t batch = credits::kNoFlowControl) {
-    subscribe(Subscribers::create<T>(
+    subscribe(Subscriber<T>::create(
         std::move(next), std::move(error), std::move(complete), batch));
   }
 
   void subscribe() {
-    subscribe(Subscribers::createNull<T>());
+    subscribe(Subscriber<T>::create());
   }
 
   //

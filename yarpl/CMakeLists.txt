@@ -79,7 +79,6 @@ add_library(
         flowable/Flowables.h
         flowable/PublishProcessor.h
         flowable/Subscriber.h
-        flowable/Subscribers.h
         flowable/Subscription.h
         flowable/TestSubscriber.h
         flowable/Subscription.cpp
@@ -93,7 +92,6 @@ add_library(
         observable/ObservableConcatOperators.h
         observable/ObservableDoOperator.h
         observable/Observer.h
-        observable/Observers.h
         observable/Subscription.h
         observable/TestObserver.h
         observable/Subscription.cpp
