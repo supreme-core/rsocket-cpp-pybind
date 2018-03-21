@@ -14,7 +14,7 @@ class Subscription {
   virtual void request(int64_t n) = 0;
   virtual void cancel() = 0;
 
-  static std::shared_ptr<Subscription> empty(); // TODO: rename to create
+  static std::shared_ptr<Subscription> create();
 
   template <typename CancelFunc>
   static std::shared_ptr<Subscription> create(CancelFunc onCancel);
@@ -50,7 +50,8 @@ template <typename CancelFunc, typename RequestFunc>
 std::shared_ptr<Subscription> Subscription::create(
     CancelFunc onCancel,
     RequestFunc onRequest) {
-  return std::make_shared<detail::CallbackSubscription<CancelFunc, RequestFunc>>(
+  return std::make_shared<
+      detail::CallbackSubscription<CancelFunc, RequestFunc>>(
       std::move(onCancel), std::move(onRequest));
 }
 

@@ -5,7 +5,7 @@
 namespace yarpl {
 namespace flowable {
 
-std::shared_ptr<Subscription> Subscription::empty() {
+std::shared_ptr<Subscription> Subscription::create() {
   class NullSubscription : public Subscription {
     void request(int64_t) override {}
     void cancel() override {}

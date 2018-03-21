@@ -2,13 +2,10 @@
 
 #pragma once
 
+#include <folly/functional/Invoke.h>
 #include <utility>
-
 #include "yarpl/Observable.h"
 #include "yarpl/observable/Observer.h"
-#include "yarpl/observable/Subscriptions.h"
-
-#include <folly/functional/Invoke.h>
 
 namespace yarpl {
 namespace observable {
@@ -525,7 +522,7 @@ class FromPublisherOperator : public Observable<T> {
  public:
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<T>> observer) override {
-    auto subscription = Subscriptions::create();
+    auto subscription = Subscription::create();
     observer->onSubscribe(subscription);
 
     if (!subscription->isCancelled()) {

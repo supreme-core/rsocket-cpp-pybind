@@ -22,7 +22,7 @@ TEST(FramedReader, TinyFrame) {
   buf->writableData()[2] = '\x00';
   buf->writableData()[3] = '\x02';
 
-  reader->onSubscribe(yarpl::flowable::Subscription::empty());
+  reader->onSubscribe(yarpl::flowable::Subscription::create());
   reader->onNext(std::move(buf));
 
   auto subscriber = std::make_shared<
@@ -41,7 +41,7 @@ TEST(FramedReader, CantDetectVersion) {
 
   auto buf = folly::IOBuf::copyBuffer("ABCDEFGHIJKLMNOP");
 
-  reader->onSubscribe(yarpl::flowable::Subscription::empty());
+  reader->onSubscribe(yarpl::flowable::Subscription::create());
   reader->onNext(std::move(buf));
 
   auto subscriber = std::make_shared<

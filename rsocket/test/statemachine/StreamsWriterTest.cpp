@@ -20,7 +20,7 @@ TEST(StreamsWriterTest, DelegateMock) {
 
   auto requester = std::make_shared<ChannelRequester>(*writer, 1u);
   yarpl::flowable::Subscriber<rsocket::Payload>* subscriber = requester.get();
-  subscriber->onSubscribe(yarpl::flowable::Subscription::empty());
+  subscriber->onSubscribe(yarpl::flowable::Subscription::create());
   subscriber->onNext(Payload());
 }
 
@@ -31,7 +31,7 @@ TEST(StreamsWriterTest, NewStreamsMockWriterImpl) {
 
   auto requester = std::make_shared<ChannelRequester>(*writer, 1u);
   yarpl::flowable::Subscriber<rsocket::Payload>* subscriber = requester.get();
-  subscriber->onSubscribe(yarpl::flowable::Subscription::empty());
+  subscriber->onSubscribe(yarpl::flowable::Subscription::create());
   subscriber->onNext(Payload());
 }
 
@@ -46,7 +46,7 @@ TEST(StreamsWriterTest, QueueFrames) {
 
   auto requester = std::make_shared<ChannelRequester>(*writer, 1u);
   yarpl::flowable::Subscriber<rsocket::Payload>* subscriber = requester.get();
-  subscriber->onSubscribe(yarpl::flowable::Subscription::empty());
+  subscriber->onSubscribe(yarpl::flowable::Subscription::create());
   subscriber->onNext(Payload());
 }
 
@@ -61,7 +61,7 @@ TEST(StreamsWriterTest, FlushQueuedFrames) {
 
   auto requester = std::make_shared<ChannelRequester>(*writer, 1u);
   yarpl::flowable::Subscriber<rsocket::Payload>* subscriber = requester.get();
-  subscriber->onSubscribe(yarpl::flowable::Subscription::empty());
+  subscriber->onSubscribe(yarpl::flowable::Subscription::create());
   subscriber->onNext(Payload());
 
   // Will queue again

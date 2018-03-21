@@ -368,7 +368,7 @@ template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::empty() {
   class EmptyFlowable : public Flowable<T> {
     void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-      subscriber->onSubscribe(Subscription::empty());
+      subscriber->onSubscribe(Subscription::create());
       // does not wait for request(n) to complete
       subscriber->onComplete();
     }
@@ -380,7 +380,7 @@ template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::never() {
   class NeverFlowable : public Flowable<T> {
     void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-      subscriber->onSubscribe(Subscription::empty());
+      subscriber->onSubscribe(Subscription::create());
     }
   };
   return std::make_shared<NeverFlowable>();
@@ -390,7 +390,7 @@ template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::error(folly::exception_wrapper ex) {
   class ErrorFlowable : public Flowable<T> {
     void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-      subscriber->onSubscribe(Subscription::empty());
+      subscriber->onSubscribe(Subscription::create());
       // does not wait for request(n) to error
       subscriber->onError(ex_);
     }

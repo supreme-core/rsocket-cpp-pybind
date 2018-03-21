@@ -8,7 +8,6 @@
 #include "yarpl/observable/Observer.h"
 #include "yarpl/observable/Observers.h"
 #include "yarpl/observable/Subscription.h"
-#include "yarpl/observable/Subscriptions.h"
 
 /**
  *  // TODO add documentation

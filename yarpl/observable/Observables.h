@@ -5,7 +5,7 @@
 #include <folly/functional/Invoke.h>
 #include <limits>
 #include "yarpl/observable/Observable.h"
-#include "yarpl/observable/Subscriptions.h"
+#include "yarpl/observable/Subscription.h"
 
 namespace yarpl {
 namespace observable {

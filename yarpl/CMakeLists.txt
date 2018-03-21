@@ -95,9 +95,8 @@ add_library(
         observable/Observer.h
         observable/Observers.h
         observable/Subscription.h
-        observable/Subscriptions.h
         observable/TestObserver.h
-        observable/Subscriptions.cpp
+        observable/Subscription.cpp
         observable/Observables.cpp
         # Single
         Single.h

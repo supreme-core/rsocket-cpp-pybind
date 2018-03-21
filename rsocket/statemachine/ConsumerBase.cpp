@@ -17,7 +17,7 @@ using namespace yarpl::flowable;
 void ConsumerBase::subscribe(
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) {
   if (state_ == State::CLOSED) {
-    subscriber->onSubscribe(yarpl::flowable::Subscription::empty());
+    subscriber->onSubscribe(yarpl::flowable::Subscription::create());
     subscriber->onComplete();
     return;
   }

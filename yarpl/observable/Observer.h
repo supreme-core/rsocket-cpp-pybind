@@ -5,7 +5,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <glog/logging.h>
 #include "yarpl/Refcounted.h"
-#include "yarpl/observable/Subscriptions.h"
+#include "yarpl/observable/Subscription.h"
 
 namespace yarpl {
 namespace observable {
@@ -60,7 +60,7 @@ class Observer : public yarpl::enable_get_ref {
 
   template<typename OnCancel>
   void addSubscription(OnCancel onCancel) {
-    addSubscription(Subscriptions::create(std::move(onCancel)));
+    addSubscription(Subscription::create(std::move(onCancel)));
   }
 
   bool isUnsubscribedOrTerminated() const {

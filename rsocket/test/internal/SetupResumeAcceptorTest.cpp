@@ -77,7 +77,7 @@ TEST(SetupResumeAcceptor, CloseWithActiveConnection) {
   auto connection =
       std::make_unique<StrictMock<MockDuplexConnection>>([&](auto input) {
         outerInput = input;
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
       });
 
   ON_CALL(*connection, send_(_)).WillByDefault(Invoke([](auto&) { FAIL(); }));
@@ -98,7 +98,7 @@ TEST(SetupResumeAcceptor, EarlyComplete) {
 
   auto connection =
       std::make_unique<StrictMock<MockDuplexConnection>>([](auto input) {
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
         input->onComplete();
       });
 
@@ -113,7 +113,7 @@ TEST(SetupResumeAcceptor, EarlyError) {
 
   auto connection =
       std::make_unique<StrictMock<MockDuplexConnection>>([](auto input) {
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
         input->onError(std::runtime_error("Whoops"));
       });
 
@@ -130,7 +130,7 @@ TEST(SetupResumeAcceptor, SingleSetup) {
       std::make_unique<StrictMock<MockDuplexConnection>>([](auto input) {
         auto serializer =
             FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
         input->onNext(serializer->serializeOut(makeSetup()));
         input->onComplete();
       });
@@ -160,7 +160,7 @@ TEST(SetupResumeAcceptor, InvalidSetup) {
         auto setup = makeSetup();
         setup.keepaliveTime_ = -5;
 
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
         input->onNext(serializer->serializeOut(std::move(setup)));
         input->onComplete();
       });
@@ -187,7 +187,7 @@ TEST(SetupResumeAcceptor, RejectedSetup) {
 
   auto connection =
       std::make_unique<StrictMock<MockDuplexConnection>>([&](auto input) {
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
         input->onNext(serializer->serializeOut(makeSetup()));
         input->onComplete();
       });
@@ -225,7 +225,7 @@ TEST(SetupResumeAcceptor, RejectedResume) {
 
   auto connection =
       std::make_unique<StrictMock<MockDuplexConnection>>([&](auto input) {
-        input->onSubscribe(yarpl::flowable::Subscription::empty());
+        input->onSubscribe(yarpl::flowable::Subscription::create());
         input->onNext(serializer->serializeOut(makeResume()));
         input->onComplete();
       });
