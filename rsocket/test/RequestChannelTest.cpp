@@ -248,8 +248,8 @@ TEST(RequestChannelTest, CompleteResponderRequesterContinues) {
 }
 
 TEST(RequestChannelTest, FlowControl) {
-  int64_t responderRange = 10;
-  int64_t responderSubscriberInitialRequest = 0;
+  constexpr int64_t responderRange = 10;
+  constexpr int64_t responderSubscriberInitialRequest = 0;
 
   auto responder = std::make_shared<TestChannelResponder>(
       responderRange, responderSubscriberInitialRequest);
@@ -262,7 +262,7 @@ TEST(RequestChannelTest, FlowControl) {
   auto requestSubscriber = TestSubscriber<std::string>::create(0);
   auto responderSubscriber = responder->getChannelSubscriber();
 
-  int64_t requesterRangeEnd = 10;
+  constexpr int64_t requesterRangeEnd = 10;
 
   auto requesterFlowable =
       Flowable<>::range(1, requesterRangeEnd)->map([&](int64_t v) {
@@ -287,8 +287,10 @@ TEST(RequestChannelTest, FlowControl) {
 
   for (int i = 1; i <= 10; i++) {
     responderSubscriber->request(1);
-    responderSubscriber->awaitValueCount(i);
-    responderSubscriber->assertValueCount(i);
+    // the channel initial payload was pushed to responderSubscriber so we
+    // need to add this one item to expected
+    responderSubscriber->awaitValueCount(i + 1);
+    responderSubscriber->assertValueCount(i + 1);
   }
 
   requestSubscriber->awaitTerminalEvent();
