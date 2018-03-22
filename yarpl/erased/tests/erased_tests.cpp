@@ -11,7 +11,7 @@ struct my_subscription {
   my_subscription(my_subscription&&) = default;
 
   void cancel() {}
-  void request(int64_t n) {}
+  void request(int64_t /*n*/) {}
 };
 
 template <typename T>

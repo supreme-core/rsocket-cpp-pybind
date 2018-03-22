@@ -178,7 +178,7 @@ class EarlyCancelSubscriber : public yarpl::flowable::BaseSubscriber<int64_t> {
     subscriber_complete_.post();
   }
 
-  void onErrorImpl(folly::exception_wrapper e) override {
+  void onErrorImpl(folly::exception_wrapper /*e*/) override {
     FAIL();
   }
 

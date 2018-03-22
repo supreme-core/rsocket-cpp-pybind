@@ -677,7 +677,7 @@ class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
         checkpoint_.Call();
       });
     }
-    void onNext(int value) override {}
+    void onNext(int /*value*/) override {}
 
     std::thread t_;
     MockFunction<void()>& checkpoint_;
