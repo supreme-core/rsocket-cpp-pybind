@@ -305,3 +305,30 @@ TEST(RequestStreamTest, TestLargePayload) {
   // Small chunk, big chunk, small chunk
   checkForSizePattern({100, 5 * 1024 * 1024, 100}, {100, 5 * 1024 * 1024, 100});
 }
+
+TEST(RequestStreamTest, MultiSubscribe) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestHandlerSync>());
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+  auto ts = TestSubscriber<std::string>::create();
+  auto stream = requester->requestStream(Payload("Bob"))
+      ->map([](auto p) { return p.moveDataToString(); });
+
+  // First subscribe
+  stream->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+  ts->assertValueCount(10);
+  ts->assertValueAt(0, "Hello Bob 1!");
+  ts->assertValueAt(9, "Hello Bob 10!");
+
+  // Second subscribe
+  ts = TestSubscriber<std::string>::create();
+  stream->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+  ts->assertValueCount(10);
+  ts->assertValueAt(0, "Hello Bob 1!");
+  ts->assertValueAt(9, "Hello Bob 10!");
+}

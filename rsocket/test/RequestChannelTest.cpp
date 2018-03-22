@@ -453,3 +453,40 @@ TEST(RequestChannelTest, TestLargePayload) {
   // Small chunk, big chunk, small chunk
   checkForSizePattern({100, 5 * 1024 * 1024, 100}, {100, 5 * 1024 * 1024, 100});
 }
+
+TEST(RequestChannelTest, MultiSubscribe) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<TestHandlerHello>());
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+
+  auto ts = TestSubscriber<std::string>::create();
+  auto stream = requester
+      ->requestChannel(
+          Payload("/hello"),
+          Flowable<>::justN({"Bob", "Jane"})->map([](std::string v) {
+            return Payload(v);
+          }))
+      ->map([](auto p) { return p.moveDataToString(); });
+
+  // First subscribe
+  stream->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+  ts->assertValueCount(2);
+  // assert that we echo back the 2nd and 3rd request values
+  // with the 1st initial payload prepended to each
+  ts->assertValueAt(0, "[/hello] Hello Bob!");
+  ts->assertValueAt(1, "[/hello] Hello Jane!");
+
+  // Second subscribe
+  ts = TestSubscriber<std::string>::create();
+  stream->subscribe(ts);
+  ts->awaitTerminalEvent();
+  ts->assertSuccess();
+  ts->assertValueCount(2);
+  // assert that we echo back the 2nd and 3rd request values
+  // with the 1st initial payload prepended to each
+  ts->assertValueAt(0, "[/hello] Hello Bob!");
+  ts->assertValueAt(1, "[/hello] Hello Jane!");
+}

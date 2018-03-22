@@ -18,11 +18,15 @@ std::shared_ptr<Flowable<int64_t>> Flowable<>::range(
     }
 
     if (i >= end) {
+      // TODO T27302402: Even though having two subscriptions exist concurrently
+      // for Emitters is not possible still. At least it possible to resubscribe
+      // and consume the same values again.
+      i = 0;
       subscriber.onComplete();
     }
   };
   return Flowable<int64_t>::create(std::move(lambda));
 }
 
-} // flowable
-} // yarpl
+} // namespace flowable
+} // namespace yarpl

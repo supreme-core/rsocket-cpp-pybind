@@ -134,6 +134,10 @@ class Flowable : public yarpl::enable_get_ref {
       }
 
       if (i == v.size()) {
+        // TODO T27302402: Even though having two subscriptions exist
+        // concurrently for Emitters is not possible still. At least it possible
+        // to resubscribe and consume the same values again.
+        i = 0;
         subscriber.onComplete();
       }
     };
