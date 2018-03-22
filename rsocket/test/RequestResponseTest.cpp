@@ -264,7 +264,7 @@ TEST(RequestResponseTest, TestLargePayload) {
       {100, 10 * 1024 * 1024, 100}, {100, 10 * 1024 * 1024, 100});
 }
 
-TEST(RequestResponseTest, DISABLED_MultiSubscribe) {
+TEST(RequestResponseTest, MultiSubscribe) {
   folly::ScopedEventBaseThread worker;
   auto server = makeServer(std::make_shared<GenericRequestResponseHandler>(
       [](StringPair const& request) {

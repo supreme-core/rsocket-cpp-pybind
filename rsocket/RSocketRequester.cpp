@@ -62,11 +62,11 @@ RSocketRequester::requestChannel(
        srs =
            stateMachine_](std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
                               subscriber) mutable {
-        auto lambda = [requestStream = std::move(requestStream),
-                       request = std::move(request),
+        auto lambda = [requestStream,
+                       request = request.clone(),
                        hasInitialRequest,
                        subscriber = std::move(subscriber),
-                       srs = std::move(srs),
+                       srs,
                        eb]() mutable {
           auto responseSink = srs->streamsFactory().createChannelRequester(
               std::move(request),
@@ -101,9 +101,9 @@ RSocketRequester::requestStream(Payload request) {
       [eb = eventBase_, request = std::move(request), srs = stateMachine_](
           std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
               subscriber) mutable {
-        auto lambda = [request = std::move(request),
+        auto lambda = [request = request.clone(),
                        subscriber = std::move(subscriber),
-                       srs = std::move(srs),
+                       srs,
                        eb]() mutable {
           srs->streamsFactory().createStreamRequester(
               std::move(request),
@@ -126,10 +126,10 @@ RSocketRequester::requestResponse(Payload request) {
       [eb = eventBase_, request = std::move(request), srs = stateMachine_](
           std::shared_ptr<yarpl::single::SingleObserver<Payload>>
               observer) mutable {
-        auto lambda = [request = std::move(request),
+        auto lambda = [request = request.clone(),
                        observer = std::move(observer),
                        eb,
-                       srs = std::move(srs)]() mutable {
+                       srs]() mutable {
           srs->streamsFactory().createRequestResponseRequester(
               std::move(request),
               std::make_shared<ScheduledSubscriptionSingleObserver<Payload>>(
@@ -151,9 +151,9 @@ std::shared_ptr<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
       [eb = eventBase_, request = std::move(request), srs = stateMachine_](
           std::shared_ptr<yarpl::single::SingleObserverBase<void>>
               subscriber) mutable {
-        auto lambda = [request = std::move(request),
+        auto lambda = [request = request.clone(),
                        subscriber = std::move(subscriber),
-                       srs = std::move(srs)]() mutable {
+                       srs]() mutable {
           // TODO pass in SingleSubscriber for underlying layers to
           // call onSuccess/onError once put on network
           srs->fireAndForget(std::move(request));
