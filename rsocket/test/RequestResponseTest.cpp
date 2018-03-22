@@ -222,13 +222,13 @@ struct LargePayloadReqRespHandler : public rsocket::RSocketResponder {
 };
 
 TEST(RequestResponseTest, TestLargePayload) {
-  LOG(INFO) << "Building up large data/metadata, this may take a moment...";
+  VLOG(1) << "Building up large data/metadata, this may take a moment...";
   std::string niceLongData = RSocketPayloadUtils::makeLongString(
       RSocketPayloadUtils::LargeRequestSize, "ABCDEFGH");
   std::string niceLongMeta = RSocketPayloadUtils::makeLongString(
       RSocketPayloadUtils::LargeRequestSize, "12345678");
-  LOG(INFO) << "Built meta size: " << niceLongMeta.size()
-            << " data size: " << niceLongData.size();
+  VLOG(1) << "Built meta size: " << niceLongMeta.size()
+          << " data size: " << niceLongData.size();
 
   auto checkForSizePattern = [&](std::vector<size_t> const& meta_sizes,
                                  std::vector<size_t> const& data_sizes) {
@@ -262,4 +262,31 @@ TEST(RequestResponseTest, TestLargePayload) {
   // Small chunk, big chunk, small chunk
   checkForSizePattern(
       {100, 10 * 1024 * 1024, 100}, {100, 10 * 1024 * 1024, 100});
+}
+
+TEST(RequestResponseTest, DISABLED_MultiSubscribe) {
+  folly::ScopedEventBaseThread worker;
+  auto server = makeServer(std::make_shared<GenericRequestResponseHandler>(
+      [](StringPair const& request) {
+        return payload_response(
+            "Hello, " + request.first + " " + request.second + "!", ":)");
+      }));
+
+  auto client = makeClient(worker.getEventBase(), *server->listeningPort());
+  auto requester = client->getRequester();
+
+  auto to = SingleTestObserver<StringPair>::create();
+  auto single = requester->requestResponse(Payload("Jane", "Doe"))
+                    ->map(payload_to_stringpair);
+
+  // Subscribe once
+  single->subscribe(to);
+  to->awaitTerminalEvent();
+  to->assertOnSuccessValue({"Hello, Jane Doe!", ":)"});
+
+  // Subscribe twice
+  to = SingleTestObserver<StringPair>::create();
+  single->subscribe(to);
+  to->awaitTerminalEvent();
+  to->assertOnSuccessValue({"Hello, Jane Doe!", ":)"});
 }

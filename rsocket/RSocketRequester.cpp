@@ -54,140 +54,131 @@ RSocketRequester::requestChannel(
         requestStream) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  return yarpl::flowable::internal::flowableFromSubscriber<Payload>([
-    eb = eventBase_,
-    request = std::move(request),
-    hasInitialRequest,
-    requestStream = std::move(requestStream),
-    srs = stateMachine_
-  ](std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
-    auto lambda = [
-      requestStream = std::move(requestStream),
-      request = std::move(request),
-      hasInitialRequest,
-      subscriber = std::move(subscriber),
-      srs = std::move(srs),
-      eb
-    ]() mutable {
-      auto responseSink = srs->streamsFactory().createChannelRequester(
-          std::move(request),
-          hasInitialRequest,
-          std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
-              std::move(subscriber), *eb));
-      // responseSink is wrapped with thread scheduling
-      // so all emissions happen on the right thread
+  return yarpl::flowable::internal::flowableFromSubscriber<Payload>(
+      [eb = eventBase_,
+       request = std::move(request),
+       hasInitialRequest,
+       requestStream = std::move(requestStream),
+       srs =
+           stateMachine_](std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
+                              subscriber) mutable {
+        auto lambda = [requestStream = std::move(requestStream),
+                       request = std::move(request),
+                       hasInitialRequest,
+                       subscriber = std::move(subscriber),
+                       srs = std::move(srs),
+                       eb]() mutable {
+          auto responseSink = srs->streamsFactory().createChannelRequester(
+              std::move(request),
+              hasInitialRequest,
+              std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
+                  std::move(subscriber), *eb));
+          // responseSink is wrapped with thread scheduling
+          // so all emissions happen on the right thread
 
-      // if we don't get a responseSink back, that means that
-      // the requesting peer wasn't connected (or similar error)
-      // and the Flowable it gets back will immediately call onError
-      if (responseSink) {
-        requestStream->subscribe(std::make_shared<ScheduledSubscriber<Payload>>(
-            std::move(responseSink), *eb));
-      }
-    };
-    if (eb->isInEventBaseThread()) {
-      lambda();
-    } else {
-      eb->runInEventBaseThread(std::move(lambda));
-    }
-  });
+          // if we don't get a responseSink back, that means that
+          // the requesting peer wasn't connected (or similar error)
+          // and the Flowable it gets back will immediately call onError
+          if (responseSink) {
+            requestStream->subscribe(
+                std::make_shared<ScheduledSubscriber<Payload>>(
+                    std::move(responseSink), *eb));
+          }
+        };
+        if (eb->isInEventBaseThread()) {
+          lambda();
+        } else {
+          eb->runInEventBaseThread(std::move(lambda));
+        }
+      });
 }
 
 std::shared_ptr<yarpl::flowable::Flowable<Payload>>
 RSocketRequester::requestStream(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  return yarpl::flowable::internal::flowableFromSubscriber<Payload>([
-    eb = eventBase_,
-    request = std::move(request),
-    srs = stateMachine_
-  ](std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) mutable {
-    auto lambda = [
-      request = std::move(request),
-      subscriber = std::move(subscriber),
-      srs = std::move(srs),
-      eb
-    ]() mutable {
-      srs->streamsFactory().createStreamRequester(
-          std::move(request),
-          std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
-              std::move(subscriber), *eb));
-    };
-    if (eb->isInEventBaseThread()) {
-      lambda();
-    } else {
-      eb->runInEventBaseThread(std::move(lambda));
-    }
-  });
+  return yarpl::flowable::internal::flowableFromSubscriber<Payload>(
+      [eb = eventBase_, request = std::move(request), srs = stateMachine_](
+          std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
+              subscriber) mutable {
+        auto lambda = [request = std::move(request),
+                       subscriber = std::move(subscriber),
+                       srs = std::move(srs),
+                       eb]() mutable {
+          srs->streamsFactory().createStreamRequester(
+              std::move(request),
+              std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
+                  std::move(subscriber), *eb));
+        };
+        if (eb->isInEventBaseThread()) {
+          lambda();
+        } else {
+          eb->runInEventBaseThread(std::move(lambda));
+        }
+      });
 }
 
 std::shared_ptr<yarpl::single::Single<rsocket::Payload>>
 RSocketRequester::requestResponse(Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  return yarpl::single::Single<Payload>::create([
-    eb = eventBase_,
-    request = std::move(request),
-    srs = stateMachine_
-  ](std::shared_ptr<yarpl::single::SingleObserver<Payload>> observer) mutable {
-    auto lambda = [
-      request = std::move(request),
-      observer = std::move(observer),
-      eb,
-      srs = std::move(srs)
-    ]() mutable {
-      srs->streamsFactory().createRequestResponseRequester(
-          std::move(request),
-          std::make_shared<ScheduledSubscriptionSingleObserver<Payload>>(
-              std::move(observer), *eb));
-    };
-    if (eb->isInEventBaseThread()) {
-      lambda();
-    } else {
-      eb->runInEventBaseThread(std::move(lambda));
-    }
-  });
+  return yarpl::single::Single<Payload>::create(
+      [eb = eventBase_, request = std::move(request), srs = stateMachine_](
+          std::shared_ptr<yarpl::single::SingleObserver<Payload>>
+              observer) mutable {
+        auto lambda = [request = std::move(request),
+                       observer = std::move(observer),
+                       eb,
+                       srs = std::move(srs)]() mutable {
+          srs->streamsFactory().createRequestResponseRequester(
+              std::move(request),
+              std::make_shared<ScheduledSubscriptionSingleObserver<Payload>>(
+                  std::move(observer), *eb));
+        };
+        if (eb->isInEventBaseThread()) {
+          lambda();
+        } else {
+          eb->runInEventBaseThread(std::move(lambda));
+        }
+      });
 }
 
 std::shared_ptr<yarpl::single::Single<void>> RSocketRequester::fireAndForget(
     rsocket::Payload request) {
   CHECK(stateMachine_); // verify the socket was not closed
 
-  return yarpl::single::Single<void>::create([
-    eb = eventBase_,
-    request = std::move(request),
-    srs = stateMachine_
-  ](std::shared_ptr<yarpl::single::SingleObserverBase<void>> subscriber) mutable {
-    auto lambda = [
-      request = std::move(request),
-      subscriber = std::move(subscriber),
-      srs = std::move(srs)
-    ]() mutable {
-      // TODO pass in SingleSubscriber for underlying layers to
-      // call onSuccess/onError once put on network
-      srs->fireAndForget(std::move(request));
-      // right now just immediately call onSuccess
-      subscriber->onSubscribe(yarpl::single::SingleSubscriptions::empty());
-      subscriber->onSuccess();
-    };
-    if (eb->isInEventBaseThread()) {
-      lambda();
-    } else {
-      eb->runInEventBaseThread(std::move(lambda));
-    }
-  });
+  return yarpl::single::Single<void>::create(
+      [eb = eventBase_, request = std::move(request), srs = stateMachine_](
+          std::shared_ptr<yarpl::single::SingleObserverBase<void>>
+              subscriber) mutable {
+        auto lambda = [request = std::move(request),
+                       subscriber = std::move(subscriber),
+                       srs = std::move(srs)]() mutable {
+          // TODO pass in SingleSubscriber for underlying layers to
+          // call onSuccess/onError once put on network
+          srs->fireAndForget(std::move(request));
+          // right now just immediately call onSuccess
+          subscriber->onSubscribe(yarpl::single::SingleSubscriptions::empty());
+          subscriber->onSuccess();
+        };
+        if (eb->isInEventBaseThread()) {
+          lambda();
+        } else {
+          eb->runInEventBaseThread(std::move(lambda));
+        }
+      });
 }
 
 void RSocketRequester::metadataPush(std::unique_ptr<folly::IOBuf> metadata) {
   CHECK(stateMachine_); // verify the socket was not closed
 
   eventBase_->runInEventBaseThread(
-      [ srs = stateMachine_, metadata = std::move(metadata) ]() mutable {
+      [srs = stateMachine_, metadata = std::move(metadata)]() mutable {
         srs->metadataPush(std::move(metadata));
       });
 }
 
 DuplexConnection* RSocketRequester::getConnection() {
-  return stateMachine_? stateMachine_->getConnection() : nullptr;
+  return stateMachine_ ? stateMachine_->getConnection() : nullptr;
 }
 } // namespace rsocket

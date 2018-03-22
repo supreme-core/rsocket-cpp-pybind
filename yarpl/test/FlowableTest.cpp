@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "yarpl/Flowable.h"
+#include "yarpl/flowable/Subscriber.h"
 #include "yarpl/flowable/TestSubscriber.h"
 #include "yarpl/test_utils/Mocks.h"
 
@@ -946,7 +947,7 @@ TEST(FlowableTest, ConcatWith_DelaySubscribe) {
 
   uint32_t request = 1;
   std::vector<int64_t> values;
-  auto subscriber = Subscribers::create<int64_t>(
+  auto subscriber = yarpl::flowable::Subscriber<int64_t>::create(
       [&values](int64_t value) { values.push_back(value); }, request);
 
   combined->subscribe(subscriber);
