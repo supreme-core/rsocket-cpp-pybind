@@ -43,6 +43,18 @@ class FlowableOperator : public Flowable<D> {
       CHECK(yarpl::atomic_load(&subscriber_));
     }
 
+    // Subscriber will be provided by the init(Subscriber) call
+    Subscription() {}
+
+    virtual void init(std::shared_ptr<Subscriber<D>> subscriber) {
+      if (yarpl::atomic_load(&subscriber_)) {
+        subscriber->onSubscribe(yarpl::flowable::Subscription::create());
+        subscriber->onError(std::runtime_error("already initialized"));
+        return;
+      }
+      subscriber_ = std::move(subscriber);
+    }
+
     void subscriberOnNext(D value) {
       if (auto subscriber = yarpl::atomic_load(&subscriber_)) {
         subscriber->onNext(std::move(value));

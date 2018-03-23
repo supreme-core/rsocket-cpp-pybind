@@ -21,7 +21,7 @@ std::shared_ptr<Flowable<int64_t>> Flowable<>::range(
       // TODO T27302402: Even though having two subscriptions exist concurrently
       // for Emitters is not possible still. At least it possible to resubscribe
       // and consume the same values again.
-      i = 0;
+      i = start;
       subscriber.onComplete();
     }
   };
