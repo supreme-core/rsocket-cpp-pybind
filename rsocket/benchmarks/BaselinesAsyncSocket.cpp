@@ -199,9 +199,9 @@ using namespace folly;
 //}
 
 static void BM_Baseline_AsyncSocket_SendReceive(
-    size_t loadSize,
-    size_t msgLength,
-    size_t recvLength) {
+    size_t /*loadSize*/,
+    size_t /*msgLength*/,
+    size_t /*recvLength*/) {
   LOG_EVERY_N(INFO, 10000) << "TODO(lehecka): benchmark needs updating, "
                            << "it has memory corruption bugs";
   //  EventBase serverEventBase;
