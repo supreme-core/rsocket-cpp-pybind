@@ -14,10 +14,10 @@ class StreamResponder : public StreamStateMachineBase,
                         public yarpl::flowable::Subscriber<Payload> {
  public:
   StreamResponder(
-      StreamsWriter& writer,
+      std::shared_ptr<StreamsWriter> writer,
       StreamId streamId,
       uint32_t initialRequestN)
-      : StreamStateMachineBase(writer, streamId),
+      : StreamStateMachineBase(std::move(writer), streamId),
         PublisherBase(initialRequestN) {}
 
  protected:
@@ -33,4 +33,4 @@ class StreamResponder : public StreamStateMachineBase,
 
   void endStream(StreamCompletionSignal) override;
 };
-} // namespace rsocket
+}

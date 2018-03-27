@@ -16,8 +16,10 @@ namespace rsocket {
 class RequestResponseResponder : public StreamStateMachineBase,
                                  public yarpl::single::SingleObserver<Payload> {
  public:
-  RequestResponseResponder(StreamsWriter& writer, StreamId streamId)
-      : StreamStateMachineBase(writer, streamId) {}
+  RequestResponseResponder(
+      std::shared_ptr<StreamsWriter> writer,
+      StreamId streamId)
+      : StreamStateMachineBase(std::move(writer), streamId) {}
 
  private:
   void onSubscribe(std::shared_ptr<yarpl::single::SingleSubscription>
@@ -43,4 +45,4 @@ class RequestResponseResponder : public StreamStateMachineBase,
   std::atomic<bool> gotTerminating_{false};
 #endif
 };
-} // namespace rsocket
+}

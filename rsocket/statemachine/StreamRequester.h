@@ -16,11 +16,17 @@ enum class StreamCompletionSignal;
 
 /// Implementation of stream stateMachine that represents a Stream requester
 class StreamRequester : public ConsumerBase {
+  using Base = ConsumerBase;
+
  public:
   // initialization of the ExecutorBase will be ignored for any of the
   // derived classes
-  StreamRequester(StreamsWriter& writer, StreamId streamId, Payload payload)
-      : ConsumerBase(writer, streamId), initialPayload_(std::move(payload)) {}
+  StreamRequester(
+      std::shared_ptr<StreamsWriter> writer,
+      StreamId streamId,
+      Payload payload)
+      : ConsumerBase(std::move(writer), streamId),
+        initialPayload_(std::move(payload)) {}
 
   void setRequested(size_t n);
 
@@ -40,4 +46,4 @@ class StreamRequester : public ConsumerBase {
   Payload initialPayload_;
   bool requested_{false};
 };
-} // namespace rsocket
+}
