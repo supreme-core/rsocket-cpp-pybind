@@ -112,7 +112,7 @@ void TcpConnectionAcceptor::start(OnDuplexConnectionAccept onAccept) {
 void TcpConnectionAcceptor::stop() {
   VLOG(1) << "Shutting down TCP listener";
 
-  serverThread_->getEventBase()->runInEventBaseThread(
+  serverThread_->getEventBase()->runInEventBaseThreadAndWait(
       [serverSocket = std::move(serverSocket_)]() {});
 }
 
