@@ -671,30 +671,35 @@ TEST(FlowableTest, ConsumerThrows_OnNext) {
   EXPECT_TRUE(onErrorIsCalled);
 }
 
-TEST(FlowableTest, ConsumerThrows_OnError) {
-  try {
-    Flowable<>::range(1, 10)->subscribe(
-        [](auto) { throw std::runtime_error("throw at consumption"); },
-        [](auto) { throw std::runtime_error("throw at onError"); },
-        []() { FAIL() << "onError should have been called"; });
-  } catch (const std::runtime_error& exn) {
-    FAIL() << "Error thrown in onError should have been caught.";
-  } catch (...) {
-    LOG(INFO) << "The app crashes in DEBUG mode to inform the implementor.";
-  }
-}
+TEST(FlowableTest, ConsumerThrows_OnNext_Cancel) {
+  class TestOperator : public FlowableOperator<uint32_t, uint32_t> {
+   public:
+    void subscribe(std::shared_ptr<Subscriber<uint32_t>> subscriber) override {
+      auto subscription =
+          std::make_shared<StrictMock<yarpl::mocks::MockSubscription>>();
+      EXPECT_CALL(*subscription, request_(_));
+      EXPECT_CALL(*subscription, cancel_());
+      subscriber->onSubscribe(subscription);
 
-TEST(FlowableTest, ConsumerThrows_OnComplete) {
-  try {
-    Flowable<>::range(1, 10)->subscribe(
-        [](auto) {},
-        [](auto) { FAIL() << "onComplete should have been called"; },
-        []() { throw std::runtime_error("throw at onComplete"); });
-  } catch (const std::runtime_error&) {
-    FAIL() << "Error thrown in onComplete should have been caught.";
-  } catch (...) {
-    LOG(INFO) << "The app crashes in DEBUG mode to inform the implementor.";
-  }
+      try {
+        subscriber->onNext(1);
+      } catch (const std::exception& ex) {
+        FAIL()
+            << "onNext should not throw but subscription should get canceled.";
+      }
+    }
+  };
+
+  auto testOperator = std::make_shared<TestOperator>();
+  auto mapped = testOperator->map([](uint32_t i) {
+    throw std::runtime_error("test");
+    return i;
+  });
+  auto mockSubscriber =
+      std::make_shared<StrictMock<yarpl::mocks::MockSubscriber<uint32_t>>>();
+  EXPECT_CALL(*mockSubscriber, onSubscribe_(_));
+  EXPECT_CALL(*mockSubscriber, onError_(_));
+  mapped->subscribe(mockSubscriber);
 }
 
 TEST(FlowableTest, DeferTest) {

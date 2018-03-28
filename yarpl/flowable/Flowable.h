@@ -431,7 +431,8 @@ std::shared_ptr<Flowable<T>> Flowable<T>::fromGenerator(TGenerator generator) {
       subscriber.onError(
           folly::exception_wrapper(std::current_exception(), ex));
     } catch (...) {
-      subscriber.onError(std::runtime_error("unknown error"));
+      subscriber.onError(std::runtime_error(
+          "Flowable::fromGenerator() threw from Subscriber:onNext()"));
     }
   };
   return Flowable<T>::create(std::move(lambda));

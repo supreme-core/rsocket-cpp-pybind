@@ -240,11 +240,7 @@ class WithError : public Base<T, Next> {
     try {
       error_(std::move(error));
     } catch (const std::exception& exn) {
-      auto ew = folly::exception_wrapper{std::current_exception(), exn};
-      LOG(ERROR) << "'error' method should not throw: " << ew.what();
-#ifndef NDEBUG
-      throw ew; // Throw the wrapped exception
-#endif
+      LOG(ERROR) << "'error' method should not throw: " << exn.what();
     }
   }
 
@@ -263,11 +259,7 @@ class WithErrorAndComplete : public WithError<T, Next, Error> {
     try {
       complete_();
     } catch (const std::exception& exn) {
-      auto ew = folly::exception_wrapper{std::current_exception(), exn};
-      LOG(ERROR) << "'complete' method should not throw: " << ew.what();
-#ifndef NDEBUG
-      throw ew; // Throw the wrapped exception
-#endif
+      LOG(ERROR) << "'complete' method should not throw: " << exn.what();
     }
   }
 
