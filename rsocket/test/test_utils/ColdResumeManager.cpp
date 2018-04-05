@@ -3,6 +3,7 @@
 #include "ColdResumeManager.h"
 
 #include <fstream>
+#include <sstream>
 
 #include <folly/json.h>
 

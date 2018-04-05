@@ -2,6 +2,8 @@
 
 #include "rsocket/internal/Common.h"
 
+#include <sstream>
+
 #include <folly/Random.h>
 #include <folly/String.h>
 #include <folly/io/IOBuf.h>
