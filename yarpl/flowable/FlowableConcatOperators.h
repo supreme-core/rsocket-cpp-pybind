@@ -125,11 +125,16 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
     void cancel() override {
       if (auto subs = std::move(subscription_)) {
         subs->cancel();
+      } else {
+        canceled_ = true;
       }
     }
 
     void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-      // Don't forward the subscription to downstream subscriber
+      if (canceled_) {
+        subscription->cancel();
+        return;
+      }
       subscription_ = std::move(subscription);
       if (auto req = std::exchange(initialRequest_, 0)) {
         subscription_->request(req);
@@ -137,11 +142,13 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
     }
 
     void onComplete() override {
-      concatWithSubscription_->onComplete();
+      auto sub = std::exchange(concatWithSubscription_, nullptr);
+      sub->onComplete();
     }
 
     void onError(folly::exception_wrapper ew) override {
-      concatWithSubscription_->onError(std::move(ew));
+      auto sub = std::exchange(concatWithSubscription_, nullptr);
+      sub->onError(std::move(ew));
     }
     void onNext(T value) override {
       concatWithSubscription_->onNext(std::move(value));
@@ -152,6 +159,7 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
     std::shared_ptr<flowable::Subscription> subscription_;
 
     uint32_t initialRequest_{0};
+    bool canceled_{false};
   };
 
  private:

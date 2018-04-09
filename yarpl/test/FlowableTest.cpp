@@ -1,5 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include <folly/io/async/EventBase.h>
 #include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <thread>
@@ -963,4 +964,38 @@ TEST(FlowableTest, ConcatWith_DelaySubscribe) {
   // termination signal!
   auto baseSubscriber = static_cast<BaseSubscriber<int64_t>*>(subscriber.get());
   baseSubscriber->cancel(); // otherwise we leak the active subscription
+}
+
+TEST(FlowableTest, ConcatWith_EagerCancel) {
+  // If there is no request for the second flowable, don't subscribe to it
+  bool subscribed = false;
+
+  // Control the execution of SubscribeOn operator
+  folly::EventBase evb;
+
+  auto a = Flowable<>::range(1, 1);
+  auto b = Flowable<>::range(2, 1)->subscribeOn(evb)->doOnSubscribe(
+      [&subscribed]() { subscribed = true; });
+  auto combined = a->concatWith(b);
+
+  uint32_t request = 2;
+  std::vector<int64_t> values;
+  auto subscriber = yarpl::flowable::Subscriber<int64_t>::create(
+      [&values](int64_t value) { values.push_back(value); }, request);
+
+  combined->subscribe(subscriber);
+
+  // Even though we requested 2 items, we received 1 item
+  ASSERT_EQ(values, std::vector<int64_t>({1}));
+  ASSERT_FALSE(subscribed); // not yet, callback did not arrive yet!
+
+  // We have requested 2 items, but did not consume the second item yet
+  // and we send a cancel before looping the eventBase
+  auto baseSubscriber = static_cast<BaseSubscriber<int64_t>*>(subscriber.get());
+  baseSubscriber->cancel();
+
+  // If the evb is never looped, it will cause memory leak
+  evb.loop();
+  ASSERT_EQ(values, std::vector<int64_t>({1})); // no change!
+  ASSERT_TRUE(subscribed); // subscribe() already issued before the cancel
 }
