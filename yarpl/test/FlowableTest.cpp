@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <folly/io/async/EventBase.h>
+#include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <thread>
@@ -83,7 +84,6 @@ std::vector<T> run(
   subscriber->awaitTerminalEvent(std::chrono::seconds(1));
   return std::move(subscriber->values());
 }
-
 } // namespace
 
 TEST(FlowableTest, SingleFlowable) {
@@ -998,4 +998,199 @@ TEST(FlowableTest, ConcatWith_EagerCancel) {
   evb.loop();
   ASSERT_EQ(values, std::vector<int64_t>({1})); // no change!
   ASSERT_TRUE(subscribed); // subscribe() already issued before the cancel
+}
+
+class TestTimeout : public folly::AsyncTimeout {
+ public:
+  explicit TestTimeout(folly::EventBase* eventBase, folly::Function<void()> fn)
+      : AsyncTimeout(eventBase), fn_(std::move(fn)) {}
+
+  void timeoutExpired() noexcept override {
+    fn_();
+  }
+
+  folly::Function<void()> fn_;
+};
+
+TEST(FlowableTest, Timeout_NoTimeout) {
+  folly::EventBase timerEvb;
+  auto flowable = Flowable<>::range(1, 1)->observeOn(timerEvb)->timeout(
+      timerEvb, std::chrono::milliseconds(0));
+
+  int requestCount = 1;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+  flowable->subscribe(subscriber);
+
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1}));
+
+  flowable =
+      Flowable<int64_t>::create([=](auto& subscriber, int64_t) {
+        subscriber.onNext(2);
+        subscriber.onComplete();
+      })
+          ->observeOn(timerEvb)
+          ->timeout(timerEvb, std::chrono::seconds(0), std::chrono::seconds(0));
+
+  subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+  flowable->subscribe(subscriber);
+
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({2}));
+}
+
+TEST(FlowableTest, Timeout_OnNextTimeout) {
+  folly::EventBase timerEvb;
+
+  auto flowable = Flowable<>::range(1, 2)->observeOn(timerEvb)->timeout(
+      timerEvb,
+      std::chrono::milliseconds(50),
+      std::chrono::milliseconds(0)); // no init_timeout
+
+  int requestCount = 1;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+  flowable->subscribe(subscriber);
+
+  TestTimeout timeout(&timerEvb, [subscriber]() { subscriber->request(1); });
+  timeout.scheduleTimeout(100); // request next in 100 msec, timeout!
+
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+
+  // first one is consumed
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1}));
+  EXPECT_TRUE(subscriber->isError());
+}
+
+TEST(FlowableTest, Timeout_InitTimeout) {
+  folly::EventBase timerEvb;
+  auto flowable = Flowable<int64_t>::create([=](auto& subscriber, int64_t req) {
+                    if (req > 0) {
+                      subscriber.onNext(2);
+                      subscriber.onComplete();
+                    }
+                  })
+                      ->observeOn(timerEvb)
+                      ->timeout(
+                          timerEvb,
+                          std::chrono::milliseconds(0),
+                          std::chrono::milliseconds(10));
+
+  int requestCount = 0;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+
+  TestTimeout timeout(&timerEvb, [subscriber]() { subscriber->request(1); });
+  timeout.scheduleTimeout(100); // timeout the init
+
+  flowable->subscribe(subscriber);
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(subscriber->isError());
+}
+
+TEST(FlowableTest, Timeout_StopUsageOfTimer) {
+  // When the consumption completes, it should stop using the timer
+  auto flowable = Flowable<>::range(1, 1);
+  {
+    // EventBase will be deleted before the flowable
+    folly::EventBase timerEvb;
+    auto flowableIn = flowable->timeout(timerEvb, std::chrono::milliseconds(1));
+    EXPECT_EQ(run(flowableIn), std::vector<int64_t>({1}));
+  }
+}
+
+TEST(FlowableTest, Timeout_NeverOperator_Timesout) {
+  folly::EventBase timerEvb;
+  auto flowable = Flowable<int64_t>::never()->observeOn(timerEvb)->timeout(
+      timerEvb, std::chrono::milliseconds(10), std::chrono::milliseconds(10));
+
+  int requestCount = 10;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+  flowable->subscribe(subscriber);
+
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(subscriber->isError());
+}
+
+TEST(FlowableTest, Timeout_BecauseOfNoRequest) {
+  folly::ScopedEventBaseThread timerThread;
+  auto flowable = Flowable<>::range(1, 2)
+                      ->observeOn(*timerThread.getEventBase())
+                      ->timeout(
+                          *timerThread.getEventBase(),
+                          std::chrono::seconds(1),
+                          std::chrono::milliseconds(10));
+
+  int requestCount = 0;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+  flowable->subscribe(subscriber);
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(subscriber->isError());
+}
+
+TEST(FlowableTest, Timeout_WithObserveOnSubscribeOn) {
+  folly::ScopedEventBaseThread subscribeOnThread;
+  folly::EventBase timerEvb;
+  auto flowable = Flowable<>::range(1, 2)
+                      ->subscribeOn(*subscribeOnThread.getEventBase())
+                      ->observeOn(timerEvb)
+                      ->timeout(
+                          timerEvb,
+                          std::chrono::milliseconds(10),
+                          std::chrono::milliseconds(100));
+
+  int requestCount = 1;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+
+  TestTimeout timeout(&timerEvb, [subscriber]() { subscriber->request(1); });
+  timeout.scheduleTimeout(100); // timeout onNext
+
+  flowable->subscribe(subscriber);
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+
+  // first one is consumed
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1}));
+  EXPECT_TRUE(subscriber->isError());
+}
+
+TEST(FlowableTest, Timeout_SameThread) {
+  folly::EventBase timerEvb;
+  auto flowable = Flowable<>::range(1, 2)
+                      ->subscribeOn(timerEvb)
+                      ->observeOn(timerEvb)
+                      ->timeout(
+                          timerEvb,
+                          std::chrono::milliseconds(10),
+                          std::chrono::milliseconds(100));
+
+  int requestCount = 1;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
+
+  TestTimeout timeout(&timerEvb, [subscriber]() { subscriber->request(1); });
+  timeout.scheduleTimeout(100); // timeout onNext
+
+  flowable->subscribe(subscriber);
+  timerEvb.loop();
+
+  subscriber->awaitTerminalEvent(std::chrono::seconds(1));
+
+  // first one is consumed
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1}));
+  EXPECT_TRUE(subscriber->isError());
 }

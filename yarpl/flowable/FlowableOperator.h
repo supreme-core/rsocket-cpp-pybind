@@ -15,6 +15,7 @@
 #include <folly/Executor.h>
 #include <folly/Synchronized.h>
 #include <folly/functional/Invoke.h>
+#include <folly/io/async/EventBase.h>
 
 namespace yarpl {
 namespace flowable {
@@ -942,3 +943,4 @@ class FlatMapOperator : public FlowableOperator<T, R> {
 #include "yarpl/flowable/FlowableConcatOperators.h"
 #include "yarpl/flowable/FlowableDoOperator.h"
 #include "yarpl/flowable/FlowableObserveOnOperator.h"
+#include "yarpl/flowable/FlowableTimeoutOperator.h"

@@ -4,6 +4,7 @@
 
 #include <folly/Executor.h>
 #include <folly/functional/Invoke.h>
+#include <folly/io/async/HHWheelTimer.h>
 #include <glog/logging.h>
 #include <memory>
 #include "yarpl/Refcounted.h"
@@ -327,6 +328,11 @@ class Flowable : public yarpl::enable_get_ref {
   std::shared_ptr<Flowable<T>>
   doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
 
+  std::shared_ptr<Flowable<T>> timeout(
+      folly::EventBase& timerEvb,
+      std::chrono::milliseconds timeout,
+      std::chrono::milliseconds initTimeout = std::chrono::milliseconds(0));
+
   template <
       typename Emitter,
       typename = typename std::enable_if<folly::is_invocable_r<
@@ -649,6 +655,15 @@ std::shared_ptr<Flowable<T>> Flowable<T>::doOnCancel(Function function) {
       [] {}, // onComplete
       [](const auto&) {}, // onRequest
       std::move(function)); // onCancel
+}
+
+template <typename T>
+std::shared_ptr<Flowable<T>> Flowable<T>::timeout(
+    folly::EventBase& timerEvb,
+    std::chrono::milliseconds timeout,
+    std::chrono::milliseconds initTimeout) {
+  return std::make_shared<details::TimeoutOperator<T>>(
+      ref_from_this(this), timerEvb, timeout, initTimeout);
 }
 
 } // namespace flowable
