@@ -51,7 +51,7 @@ void RSocketServer::shutdownAndWait() {
   folly::collectAll(closingFutures).get();
 
   // Close off all outstanding connections.
-  connectionSet_.reset();
+  connectionSet_->shutdownAndWait();
 }
 
 void RSocketServer::start(
@@ -108,12 +108,20 @@ void RSocketServer::acceptConnection(
 
   acceptor->accept(
       std::move(framedConnection),
-      std::bind(
-          &RSocketServer::onRSocketSetup,
-          this,
-          serviceHandler,
-          std::placeholders::_1,
-          std::placeholders::_2),
+      [serviceHandler,
+       weakConSet = std::weak_ptr<ConnectionSet>(connectionSet_),
+       scheduledResponder = useScheduledResponder_](
+          std::unique_ptr<DuplexConnection> conn,
+          SetupParameters params) mutable {
+        if (auto connectionSet = weakConSet.lock()) {
+          RSocketServer::onRSocketSetup(
+              serviceHandler,
+              std::move(connectionSet),
+              scheduledResponder,
+              std::move(conn),
+              std::move(params));
+        }
+      },
       std::bind(
           &RSocketServer::onRSocketResume,
           this,
@@ -124,6 +132,8 @@ void RSocketServer::acceptConnection(
 
 void RSocketServer::onRSocketSetup(
     std::shared_ptr<RSocketServiceHandler> serviceHandler,
+    std::shared_ptr<ConnectionSet> connectionSet,
+    bool scheduledResponder,
     std::unique_ptr<DuplexConnection> connection,
     SetupParameters setupParams) {
   const auto eventBase = folly::EventBaseManager::get()->getExistingEventBase();
@@ -148,7 +158,7 @@ void RSocketServer::onRSocketSetup(
     return;
   }
   const auto rs = std::make_shared<RSocketStateMachine>(
-      useScheduledResponder_
+      scheduledResponder
           ? std::make_shared<ScheduledRSocketResponder>(
                 std::move(connectionParams.responder), *eventBase)
           : std::move(connectionParams.responder),
@@ -159,8 +169,15 @@ void RSocketServer::onRSocketSetup(
       nullptr, /* resumeManager */
       nullptr /* coldResumeHandler */);
 
-  connectionSet_->insert(rs, eventBase);
-  rs->registerSet(connectionSet_.get());
+  if (!connectionSet->insert(rs, eventBase)) {
+    VLOG(1) << "Server is closed, so ignore the connection";
+    connection->send(
+        FrameSerializer::createFrameSerializer(setupParams.protocolVersion)
+            ->serializeOut(Frame_ERROR::rejectedSetup(
+                "Server ignores the connection attempt")));
+    return;
+  }
+  rs->registerSet(connectionSet.get());
 
   auto requester = std::make_shared<RSocketRequester>(rs, *eventBase);
   auto serverState = std::shared_ptr<RSocketServerState>(

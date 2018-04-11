@@ -11,9 +11,17 @@ namespace rsocket {
 ConnectionSet::ConnectionSet() {}
 
 ConnectionSet::~ConnectionSet() {
-  VLOG(1) << "Started ~ConnectionSet";
+  if (!shutDown_) {
+    shutdownAndWait();
+  }
+}
+
+void ConnectionSet::shutdownAndWait() {
+  VLOG(1) << "Started ConnectionSet::shutdownAndWait";
+  shutDown_ = true;
+
   SCOPE_EXIT {
-    VLOG(1) << "Finished ~ConnectionSet";
+    VLOG(1) << "Finished ConnectionSet::shutdownAndWait";
   };
 
   StateMachineMap map;
@@ -57,12 +65,16 @@ ConnectionSet::~ConnectionSet() {
   VLOG(2) << "Connections have closed";
 }
 
-void ConnectionSet::insert(
+bool ConnectionSet::insert(
     std::shared_ptr<RSocketStateMachine> machine,
     folly::EventBase* evb) {
   VLOG(4) << "insert(" << machine.get() << ", " << evb << ")";
 
+  if (shutDown_) {
+    return false;
+  }
   machines_.lock()->emplace(std::move(machine), evb);
+  return true;
 }
 
 void ConnectionSet::remove(

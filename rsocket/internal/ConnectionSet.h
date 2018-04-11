@@ -27,10 +27,12 @@ class ConnectionSet {
   ConnectionSet();
   ~ConnectionSet();
 
-  void insert(std::shared_ptr<RSocketStateMachine>, folly::EventBase*);
+  bool insert(std::shared_ptr<RSocketStateMachine>, folly::EventBase*);
   void remove(const std::shared_ptr<RSocketStateMachine>&);
 
   size_t size() const;
+
+  void shutdownAndWait();
 
  private:
   using StateMachineMap = std::
@@ -40,6 +42,7 @@ class ConnectionSet {
   folly::Baton<> shutdownDone_;
   size_t removes_{0};
   size_t targetRemoves_{0};
+  std::atomic<bool> shutDown_{false};
 };
 
 } // namespace rsocket

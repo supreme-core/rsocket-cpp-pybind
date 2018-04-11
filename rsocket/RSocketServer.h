@@ -96,8 +96,10 @@ class RSocketServer {
   size_t getNumConnections();
 
  private:
-  void onRSocketSetup(
+  static void onRSocketSetup(
       std::shared_ptr<RSocketServiceHandler> serviceHandler,
+      std::shared_ptr<ConnectionSet> connectionSet,
+      bool scheduledResponder,
       std::unique_ptr<DuplexConnection> connection,
       rsocket::SetupParameters setupPayload);
   void onRSocketResume(
@@ -115,7 +117,7 @@ class RSocketServer {
   folly::Baton<> waiting_;
   std::atomic<bool> isShutdown_{false};
 
-  std::unique_ptr<ConnectionSet> connectionSet_;
+  std::shared_ptr<ConnectionSet> connectionSet_;
   std::shared_ptr<RSocketStats> stats_;
 
   /**
