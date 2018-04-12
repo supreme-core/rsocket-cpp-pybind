@@ -15,7 +15,7 @@ namespace {
  * Compare a `const folly::IOBuf&` against a `const std::string&`.
  */
 MATCHER_P(IOBufStringEq, s, "") {
-  return folly::IOBufEqual()(*arg, *folly::IOBuf::copyBuffer(s));
+  return folly::IOBufEqualTo()(*arg, *folly::IOBuf::copyBuffer(s));
 }
 
 } // namespace

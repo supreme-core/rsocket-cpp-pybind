@@ -61,8 +61,8 @@ TEST(FrameTest, Frame_REQUEST_STREAM) {
 
   expectHeader(FrameType::REQUEST_STREAM, flags, streamId, frame);
   EXPECT_EQ(requestN, frame.requestN_);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_REQUEST_CHANNEL) {
@@ -76,8 +76,8 @@ TEST(FrameTest, Frame_REQUEST_CHANNEL) {
 
   expectHeader(FrameType::REQUEST_CHANNEL, flags, streamId, frame);
   EXPECT_EQ(requestN, frame.requestN_);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_REQUEST_N) {
@@ -104,8 +104,8 @@ TEST(FrameTest, Frame_PAYLOAD) {
       streamId, flags, Payload(data->clone(), metadata->clone()));
 
   expectHeader(FrameType::PAYLOAD, flags, streamId, frame);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_PAYLOAD_NoMeta) {
@@ -117,7 +117,7 @@ TEST(FrameTest, Frame_PAYLOAD_NoMeta) {
 
   expectHeader(FrameType::PAYLOAD, flags, streamId, frame);
   EXPECT_FALSE(frame.payload_.metadata);
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_ERROR) {
@@ -131,8 +131,8 @@ TEST(FrameTest, Frame_ERROR) {
 
   expectHeader(FrameType::ERROR, flags, streamId, frame);
   EXPECT_EQ(errorCode, frame.errorCode_);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_KEEPALIVE_resume) {
@@ -146,7 +146,7 @@ TEST(FrameTest, Frame_KEEPALIVE_resume) {
   expectHeader(
       FrameType::KEEPALIVE, FrameFlags::KEEPALIVE_RESPOND, streamId, frame);
   EXPECT_EQ(position, frame.position_);
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.data_));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.data_));
 }
 
 TEST(FrameTest, Frame_KEEPALIVE) {
@@ -166,7 +166,7 @@ TEST(FrameTest, Frame_KEEPALIVE) {
   } else if (currProtVersion == ProtocolVersion(1, 0)) {
     EXPECT_EQ(position, frame.position_);
   }
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.data_));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.data_));
 }
 
 TEST(FrameTest, Frame_SETUP) {
@@ -197,7 +197,7 @@ TEST(FrameTest, Frame_SETUP) {
   EXPECT_EQ(ResumeIdentificationToken(), frame.token_);
   EXPECT_EQ("md", frame.metadataMimeType_);
   EXPECT_EQ("d", frame.dataMimeType_);
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_SETUP_resume) {
@@ -227,7 +227,7 @@ TEST(FrameTest, Frame_SETUP_resume) {
   EXPECT_EQ(token, frame.token_);
   EXPECT_EQ("md", frame.metadataMimeType_);
   EXPECT_EQ("d", frame.dataMimeType_);
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_LEASE) {
@@ -250,8 +250,8 @@ TEST(FrameTest, Frame_REQUEST_RESPONSE) {
       streamId, flags, Payload(data->clone(), metadata->clone()));
 
   expectHeader(FrameType::REQUEST_RESPONSE, flags, streamId, frame);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_REQUEST_FNF) {
@@ -263,8 +263,8 @@ TEST(FrameTest, Frame_REQUEST_FNF) {
       streamId, flags, Payload(data->clone(), metadata->clone()));
 
   expectHeader(FrameType::REQUEST_FNF, flags, streamId, frame);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.payload_.metadata));
-  EXPECT_TRUE(folly::IOBufEqual()(*data, *frame.payload_.data));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.payload_.metadata));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
 TEST(FrameTest, Frame_METADATA_PUSH) {
@@ -273,7 +273,7 @@ TEST(FrameTest, Frame_METADATA_PUSH) {
   auto frame = reserialize<Frame_METADATA_PUSH>(metadata->clone());
 
   expectHeader(FrameType::METADATA_PUSH, flags, 0, frame);
-  EXPECT_TRUE(folly::IOBufEqual()(*metadata, *frame.metadata_));
+  EXPECT_TRUE(folly::IOBufEqualTo()(*metadata, *frame.metadata_));
 }
 
 TEST(FrameTest, Frame_RESUME) {
