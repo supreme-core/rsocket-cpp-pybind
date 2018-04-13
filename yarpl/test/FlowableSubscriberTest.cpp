@@ -70,4 +70,24 @@ TEST(FlowableSubscriberTest, TestKeepRefToThisIsEnabled) {
   subscriber->onSubscribe(subscription);
 }
 
+TEST(FlowableSubscriberTest, AutoFlowControl) {
+  size_t count = 0;
+  auto subscriber = Subscriber<int>::create(
+      [&](int value) {
+        ++count;
+        EXPECT_EQ(value, count);
+      },
+      1);
+  auto subscription = std::make_shared<StrictMock<MockSubscription>>();
+
+  EXPECT_CALL(*subscription, request_(1))
+      .Times(3)
+      .WillOnce(InvokeWithoutArgs([&] { subscriber->onNext(1); }))
+      .WillOnce(InvokeWithoutArgs([&] {
+        subscriber->onNext(2);
+        subscriber->onComplete();
+      }));
+
+  subscriber->onSubscribe(subscription);
 }
+} // namespace

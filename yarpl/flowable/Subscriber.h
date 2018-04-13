@@ -199,7 +199,7 @@ class Base : public BaseSubscriber<T> {
       : next_(std::move(next)), batch_(batch), pending_(0) {}
 
   void onSubscribeImpl() override final {
-    pending_ += batch_;
+    pending_ = batch_;
     this->request(batch_);
   }
 
@@ -214,7 +214,7 @@ class Base : public BaseSubscriber<T> {
       return;
     }
 
-    if (--pending_ < batch_ / 2) {
+    if (--pending_ <= batch_ / 2) {
       const auto delta = batch_ - pending_;
       pending_ += delta;
       this->request(delta);

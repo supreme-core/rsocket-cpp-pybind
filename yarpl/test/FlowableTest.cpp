@@ -951,19 +951,16 @@ TEST(FlowableTest, ConcatWith_DelaySubscribe) {
       [&subscribed]() { subscribed = true; });
   auto combined = a->concatWith(b);
 
-  uint32_t request = 1;
-  std::vector<int64_t> values;
-  auto subscriber = yarpl::flowable::Subscriber<int64_t>::create(
-      [&values](int64_t value) { values.push_back(value); }, request);
-
+  uint32_t request = 0;
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>(request);
   combined->subscribe(subscriber);
+  subscriber->request(1);
 
-  ASSERT_EQ(values, std::vector<int64_t>({1}));
+  ASSERT_EQ(subscriber->values(), std::vector<int64_t>({1}));
   ASSERT_FALSE(subscribed);
 
   // termination signal!
-  auto baseSubscriber = static_cast<BaseSubscriber<int64_t>*>(subscriber.get());
-  baseSubscriber->cancel(); // otherwise we leak the active subscription
+  subscriber->cancel(); // otherwise we leak the active subscription
 }
 
 TEST(FlowableTest, ConcatWith_EagerCancel) {
