@@ -417,6 +417,10 @@ class SubscribeOnOperator : public FlowableOperator<T, T> {
     });
   }
 
+  ~SubscribeOnOperator() {
+    executor_.add([upstream = std::move(upstream_)] {});
+  }
+
  private:
   using SuperSubscription = typename Super::Subscription;
   class Subscription : public SuperSubscription {

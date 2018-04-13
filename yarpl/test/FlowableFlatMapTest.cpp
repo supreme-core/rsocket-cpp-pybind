@@ -212,7 +212,9 @@ TEST(FlowableFlatMapTest, Multithreaded) {
   EXPECT_TRUE(validate_flatmapped_values(sub->values(), {{10, 11}, {20, 21}}));
 
   sub->cancel();
+  p1->flowable.reset();
   p1->evb.stop();
+  p2->flowable.reset();
   p2->evb.stop();
 }
 
@@ -237,7 +239,9 @@ TEST(FlowableFlatMapTest, MultithreadedLargeAmount) {
   EXPECT_EQ(60000, sub->getValueCount());
   EXPECT_TRUE(sub->isComplete());
 
+  p1->flowable.reset();
   p1->evb.stop();
+  p2->flowable.reset();
   p2->evb.stop();
 }
 
