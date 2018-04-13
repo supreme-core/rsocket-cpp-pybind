@@ -17,14 +17,13 @@ class ObserveOnOperatorSubscription : public yarpl::flowable::Subscription,
       : subscriber_(std::move(subscriber)),
         subscription_(std::move(subscription)) {}
 
+  // all requesting methods are called from 'executor_' in the
+  // associated subscriber
   void cancel() override {
     auto self = this->ref_from_this(this);
 
     if (auto subscriber = std::move(subscriber_)) {
       subscriber->isCanceled_ = true;
-      subscriber->executor_.add([subscriber = std::move(subscriber)] {
-        subscriber->inner_.reset();
-      });
     }
 
     subscription_->cancel();
@@ -70,7 +69,7 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
   void onComplete() override {
     executor_.add([self = this->ref_from_this(this)]() mutable {
       if (!self->isCanceled_) {
-        std::exchange(self->inner_, nullptr)->onComplete();
+        self->inner_->onComplete();
       }
     });
   }
@@ -78,14 +77,14 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
     executor_.add(
         [ self = this->ref_from_this(this), e = std::move(err) ]() mutable {
           if (!self->isCanceled_) {
-            std::exchange(self->inner_, nullptr)->onError(std::move(e));
+            self->inner_->onError(std::move(e));
           }
         });
   }
 
  private:
   friend class ObserveOnOperatorSubscription<T>;
-  std::atomic<bool> isCanceled_{false};
+  bool isCanceled_{false}; // only accessed in executor_ thread
 
   std::shared_ptr<Subscriber<T>> inner_;
   folly::Executor& executor_;
