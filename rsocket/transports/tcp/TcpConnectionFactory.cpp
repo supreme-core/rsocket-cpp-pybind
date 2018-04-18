@@ -2,6 +2,7 @@
 
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBaseManager.h>
@@ -19,17 +20,24 @@ class ConnectCallback : public folly::AsyncSocket::ConnectCallback {
  public:
   ConnectCallback(
       folly::SocketAddress address,
+      const std::shared_ptr<folly::SSLContext>& sslContext,
       folly::Promise<ConnectionFactory::ConnectedDuplexConnection>
           connectPromise)
-      : address_(address), connectPromise_{std::move(connectPromise)} {
+      : address_(address), connectPromise_(std::move(connectPromise)) {
     VLOG(2) << "Constructing ConnectCallback";
 
     // Set up by ScopedEventBaseThread.
     auto evb = folly::EventBaseManager::get()->getExistingEventBase();
     DCHECK(evb);
 
-    VLOG(3) << "Starting socket";
-    socket_.reset(new folly::AsyncSocket(evb));
+    if (sslContext) {
+      VLOG(3) << "Starting SSL socket";
+      sslContext->setAdvertisedNextProtocols({"rs"});
+      socket_.reset(new folly::AsyncSSLSocket(sslContext, evb));
+    } else {
+      VLOG(3) << "Starting socket";
+      socket_.reset(new folly::AsyncSocket(evb));
+    }
 
     VLOG(3) << "Attempting connection to " << address_;
 
@@ -59,7 +67,7 @@ class ConnectCallback : public folly::AsyncSocket::ConnectCallback {
   }
 
  private:
-  folly::SocketAddress address_;
+  const folly::SocketAddress address_;
   folly::AsyncSocket::UniquePtr socket_;
   folly::Promise<ConnectionFactory::ConnectedDuplexConnection> connectPromise_;
 };
@@ -68,8 +76,11 @@ class ConnectCallback : public folly::AsyncSocket::ConnectCallback {
 
 TcpConnectionFactory::TcpConnectionFactory(
     folly::EventBase& eventBase,
-    folly::SocketAddress address)
-    : address_{std::move(address)}, eventBase_{&eventBase} {
+    folly::SocketAddress address,
+    std::shared_ptr<folly::SSLContext> sslContext)
+    : eventBase_(&eventBase),
+      address_(std::move(address)),
+      sslContext_(std::move(sslContext)) {
   VLOG(1) << "Constructing TcpConnectionFactory";
 }
 
@@ -83,8 +94,8 @@ TcpConnectionFactory::connect() {
   auto connectFuture = connectPromise.getFuture();
 
   eventBase_->runInEventBaseThread(
-      [ this, connectPromise = std::move(connectPromise) ]() mutable {
-        new ConnectCallback(address_, std::move(connectPromise));
+      [this, promise = std::move(connectPromise)]() mutable {
+        new ConnectCallback(address_, sslContext_, std::move(promise));
       });
   return connectFuture;
 }

@@ -8,6 +8,11 @@
 #include "rsocket/ConnectionFactory.h"
 #include "rsocket/DuplexConnection.h"
 
+namespace folly {
+
+class SSLContext;
+}
+
 namespace rsocket {
 
 class RSocketStats;
@@ -19,7 +24,10 @@ class RSocketStats;
  */
 class TcpConnectionFactory : public ConnectionFactory {
  public:
-  TcpConnectionFactory(folly::EventBase& eventBase, folly::SocketAddress);
+  TcpConnectionFactory(
+      folly::EventBase& eventBase,
+      folly::SocketAddress address,
+      std::shared_ptr<folly::SSLContext> sslContext = nullptr);
   virtual ~TcpConnectionFactory();
 
   /**
@@ -34,7 +42,8 @@ class TcpConnectionFactory : public ConnectionFactory {
       std::shared_ptr<RSocketStats> stats = std::shared_ptr<RSocketStats>());
 
  private:
-  folly::SocketAddress address_;
   folly::EventBase* eventBase_;
+  const folly::SocketAddress address_;
+  std::shared_ptr<folly::SSLContext> sslContext_;
 };
 } // namespace rsocket
