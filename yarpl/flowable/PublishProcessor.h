@@ -5,6 +5,7 @@
 #include <folly/Synchronized.h>
 #include <vector>
 #include "yarpl/flowable/Flowable.h"
+#include "yarpl/observable/Observable.h"
 #include "yarpl/utils/credits.h"
 #include "yarpl/Common.h"
 
@@ -22,12 +23,15 @@ namespace flowable {
 // but non-serialized calls to them may lead to undefined state in the currently
 // subscribed Subscribers.
 template <typename T>
-class PublishProcessor : public Flowable<T>, public Subscriber<T> {
+class PublishProcessor : public observable::Observable<T>,
+                         public Subscriber<T> {
   class PublisherSubscription;
   using PublishersVector = std::vector<std::shared_ptr<PublisherSubscription>>;
 
  public:
-  PublishProcessor() : publishers_{std::make_shared<PublishersVector>()} {}
+  static std::shared_ptr<PublishProcessor> create() {
+    return std::shared_ptr<PublishProcessor>(new PublishProcessor());
+  }
 
   ~PublishProcessor() {
     auto publishers = std::make_shared<const PublishersVector>();
@@ -42,14 +46,15 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
     return !publishers_.copy()->empty();
   }
 
-  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
+  std::shared_ptr<observable::Subscription> subscribe(
+      std::shared_ptr<observable::Observer<T>> subscriber) override {
     auto publisher = std::make_shared<PublisherSubscription>(subscriber, this);
     // we have to call onSubscribe before adding it to the list of publishers
     // because they might start emitting right away
     subscriber->onSubscribe(publisher);
 
     if (publisher->isCancelled()) {
-      return;
+      return publisher;
     }
 
     auto publishers = tryAddPublisher(publisher);
@@ -59,6 +64,8 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
     } else if (publishers == kErroredPublishers()) {
       publisher->onError(std::runtime_error("ErroredPublisher"));
     }
+
+    return publisher;
   }
 
   void onSubscribe(std::shared_ptr<Subscription> subscription) override {
@@ -105,6 +112,8 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
   }
 
  private:
+  PublishProcessor() : publishers_{std::make_shared<PublishersVector>()} {}
+
   std::shared_ptr<const PublishersVector> tryAddPublisher(
       std::shared_ptr<PublisherSubscription> subscriber) {
     while (true) {
@@ -163,10 +172,10 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
     }
   }
 
-  class PublisherSubscription : public Subscription {
+  class PublisherSubscription : public observable::Subscription {
    public:
     PublisherSubscription(
-        std::shared_ptr<Subscriber<T>> subscriber,
+        std::shared_ptr<observable::Observer<T>> subscriber,
         PublishProcessor* processor)
         : subscriber_(std::move(subscriber)), processor_(processor) {}
 
@@ -174,13 +183,8 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
     // PublishProcessor::removePublisher will take care of that the race with
     // on{Next, Error, Complete} methods is allowed by the spec
     void cancel() override {
-      credits_ = credits::kCanceled;
+      canceled_ = true;
       processor_->removePublisher(this);
-    }
-
-    // we don't care about races with this method
-    void request(int64_t n) override {
-      credits::add(&credits_, n);
     }
 
     // terminate will never race with on{Next, Error, Complete} because they are
@@ -190,31 +194,35 @@ class PublishProcessor : public Flowable<T>, public Subscriber<T> {
     }
 
     void onNext(T value) {
-      if (credits::tryConsume(&credits_, 1)) {
-        subscriber_->onNext(std::move(value));
-      } else {
-        cancel();
-        subscriber_->onError(MissingBackpressureException());
+      if (canceled_) {
+        return;
       }
+      subscriber_->onNext(std::move(value));
     }
 
     // used internally, not an interface method
     void onError(folly::exception_wrapper ex) {
+      if (canceled_) {
+        return;
+      }
       subscriber_->onError(std::move(ex));
     }
 
     // used internally, not an interface method
     void onComplete() {
+      if (canceled_) {
+        return;
+      }
       subscriber_->onComplete();
     }
 
     bool isCancelled() const {
-      return credits_ == credits::kCanceled;
+      return canceled_;
     }
 
    private:
-    std::atomic<int64_t> credits_{0};
-    std::shared_ptr<Subscriber<T>> subscriber_;
+    std::atomic<bool> canceled_{false};
+    std::shared_ptr<observable::Observer<T>> subscriber_;
     PublishProcessor* processor_;
   };
 
