@@ -104,11 +104,6 @@ class RSocketRequester {
    */
   virtual void metadataPush(std::unique_ptr<folly::IOBuf> metadata);
 
-  /**
-   * To be used only temporarily to check the transport's status.
-   */
-  virtual DuplexConnection* getConnection();
-
   virtual void closeSocket();
 
  protected:
