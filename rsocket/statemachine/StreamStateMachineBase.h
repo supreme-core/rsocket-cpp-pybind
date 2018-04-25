@@ -25,7 +25,7 @@ class StreamStateMachineBase {
   StreamStateMachineBase(
       std::shared_ptr<StreamsWriter> writer,
       StreamId streamId)
-      : writer_{std::move(writer)}, streamId_(streamId) {}
+      : writer_(std::move(writer)), streamId_(streamId) {}
   virtual ~StreamStateMachineBase() = default;
 
   virtual void handlePayload(Payload&& payload, bool complete, bool flagsNext);

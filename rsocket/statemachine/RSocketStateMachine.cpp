@@ -20,10 +20,34 @@
 #include "rsocket/internal/ConnectionSet.h"
 #include "rsocket/internal/ScheduledSubscriber.h"
 #include "rsocket/internal/WarmResumeManager.h"
+#include "rsocket/statemachine/ChannelRequester.h"
 #include "rsocket/statemachine/ChannelResponder.h"
+#include "rsocket/statemachine/RequestResponseRequester.h"
+#include "rsocket/statemachine/RequestResponseResponder.h"
+#include "rsocket/statemachine/StreamRequester.h"
+#include "rsocket/statemachine/StreamResponder.h"
 #include "rsocket/statemachine/StreamStateMachineBase.h"
 
+#include "yarpl/flowable/Flowable.h"
+#include "yarpl/single/Singles.h"
+
 namespace rsocket {
+
+namespace {
+void subscribeToErrorFlowable(
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
+  yarpl::flowable::Flowable<Payload>::error(
+      std::runtime_error("state machine is disconnected/closed"))
+      ->subscribe(std::move(responseSink));
+}
+
+void subscribeToErrorSingle(
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink) {
+  yarpl::single::Singles::error<Payload>(
+      std::runtime_error("state machine is disconnected/closed"))
+      ->subscribe(std::move(responseSink));
+}
+} // namespace
 
 RSocketStateMachine::RSocketStateMachine(
     std::shared_ptr<RSocketResponder> requestResponder,
@@ -35,13 +59,15 @@ RSocketStateMachine::RSocketStateMachine(
     std::shared_ptr<ColdResumeHandler> coldResumeHandler)
     : mode_{mode},
       stats_{stats ? stats : RSocketStats::noop()},
+      // Streams initiated by a client MUST use odd-numbered and streams
+      // initiated by the server MUST use even-numbered stream identifiers
+      nextStreamId_(mode == RSocketMode::CLIENT ? 1 : 2),
       resumeManager_{resumeManager
                          ? resumeManager
                          : std::make_shared<WarmResumeManager>(stats_)},
       requestResponder_{std::move(requestResponder)},
       keepaliveTimer_{std::move(keepaliveTimer)},
       coldResumeHandler_{std::move(coldResumeHandler)},
-      streamsFactory_{*this, mode},
       connectionEvents_{connectionEvents} {
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
@@ -349,11 +375,62 @@ void RSocketStateMachine::reconnect(
   connect(std::move(newFrameTransport));
 }
 
-void RSocketStateMachine::addStream(
-    StreamId streamId,
-    std::shared_ptr<StreamStateMachineBase> stateMachine) {
-  const auto result = streams_.emplace(streamId, std::move(stateMachine));
+void RSocketStateMachine::requestStream(
+    Payload request,
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
+  if (isDisconnected()) {
+    subscribeToErrorFlowable(std::move(responseSink));
+    return;
+  }
+
+  auto const streamId = getNextStreamId();
+  auto stateMachine = std::make_shared<StreamRequester>(
+      shared_from_this(), streamId, std::move(request));
+  const auto result = streams_.emplace(
+      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
   DCHECK(result.second);
+  stateMachine->subscribe(std::move(responseSink));
+}
+
+std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
+RSocketStateMachine::requestChannel(
+    Payload request,
+    bool hasInitialRequest,
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
+  if (isDisconnected()) {
+    subscribeToErrorFlowable(std::move(responseSink));
+    return nullptr;
+  }
+  auto const streamId = getNextStreamId();
+  std::shared_ptr<ChannelRequester> stateMachine;
+  if (hasInitialRequest) {
+    stateMachine = std::make_shared<ChannelRequester>(
+        std::move(request), shared_from_this(), streamId);
+  } else {
+    stateMachine =
+        std::make_shared<ChannelRequester>(shared_from_this(), streamId);
+  }
+  const auto result = streams_.emplace(
+      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  DCHECK(result.second);
+  stateMachine->subscribe(std::move(responseSink));
+  return stateMachine;
+}
+
+void RSocketStateMachine::requestResponse(
+    Payload request,
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink) {
+  if (isDisconnected()) {
+    subscribeToErrorSingle(std::move(responseSink));
+    return;
+  }
+  auto const streamId = getNextStreamId();
+  auto stateMachine = std::make_shared<RequestResponseRequester>(
+      shared_from_this(), streamId, std::move(request));
+  const auto result = streams_.emplace(
+      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  DCHECK(result.second);
+  stateMachine->subscribe(std::move(responseSink));
 }
 
 bool RSocketStateMachine::endStreamInternal(
@@ -500,8 +577,7 @@ void RSocketStateMachine::handleConnectionFrame(
       }
 
       if (coldResumeInProgress_) {
-        streamsFactory().setNextStreamId(
-            resumeManager_->getLargestUsedStreamId());
+        setNextStreamId(resumeManager_->getLargestUsedStreamId());
         for (const auto& it : resumeManager_->getStreamResumeInfos()) {
           const auto streamId = it.first;
           const StreamResumeInfo& streamResumeInfo = it.second;
@@ -510,12 +586,19 @@ void RSocketStateMachine::handleConnectionFrame(
             auto subscriber = coldResumeHandler_->handleRequesterResumeStream(
                 streamResumeInfo.streamToken,
                 streamResumeInfo.consumerAllowance);
-            streamsFactory().createStreamRequester(
+
+            auto stateMachine = std::make_shared<StreamRequester>(
+                shared_from_this(), streamId, Payload());
+            // Set requested to true (since cold resumption)
+            stateMachine->setRequested(streamResumeInfo.consumerAllowance);
+            const auto result = streams_.emplace(
+                streamId,
+                std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+            DCHECK(result.second);
+            stateMachine->subscribe(
                 std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
                     std::move(subscriber),
-                    *folly::EventBaseManager::get()->getEventBase()),
-                streamId,
-                streamResumeInfo.consumerAllowance);
+                    *folly::EventBaseManager::get()->getEventBase()));
           }
         }
         coldResumeInProgress_ = false;
@@ -674,7 +757,7 @@ void RSocketStateMachine::handleUnknownStream(
     StreamId streamId,
     FrameType frameType,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
-  DCHECK(streamId != 0);
+  DCHECK_NE(0, streamId);
   // TODO: comparing string versions is odd because from version
   // 10.0 the lexicographic comparison doesn't work
   // we should change the version to struct
@@ -682,7 +765,7 @@ void RSocketStateMachine::handleUnknownStream(
     // don't check registerNewPeerStreamId if it's a payload - it may be an
     // additional fragment
     if (frameSerializer_->protocolVersion() > ProtocolVersion{0, 0} &&
-        !streamsFactory_.registerNewPeerStreamId(streamId)) {
+        !registerNewPeerStreamId(streamId)) {
       return;
     }
   }
@@ -841,8 +924,11 @@ void RSocketStateMachine::setupRequestChannel(
     StreamId streamId,
     uint32_t requestN,
     Payload payload) {
-  auto stateMachine =
-      streamsFactory_.createChannelResponder(requestN, streamId);
+  auto stateMachine = std::make_shared<ChannelResponder>(
+      shared_from_this(), streamId, requestN);
+  const auto result = streams_.emplace(
+      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  DCHECK(result.second);
   const auto requestSink = requestResponder_->handleRequestChannelCore(
       std::move(payload), streamId, stateMachine);
   stateMachine->subscribe(requestSink);
@@ -852,7 +938,11 @@ void RSocketStateMachine::setupRequestStream(
     StreamId streamId,
     uint32_t requestN,
     Payload payload) {
-  auto stateMachine = streamsFactory_.createStreamResponder(requestN, streamId);
+  auto stateMachine =
+      std::make_shared<StreamResponder>(shared_from_this(), streamId, requestN);
+  const auto result = streams_.emplace(
+      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  DCHECK(result.second);
   requestResponder_->handleRequestStreamCore(
       std::move(payload), streamId, stateMachine);
 }
@@ -860,7 +950,11 @@ void RSocketStateMachine::setupRequestStream(
 void RSocketStateMachine::setupRequestResponse(
     StreamId streamId,
     Payload payload) {
-  auto stateMachine = streamsFactory_.createRequestResponseResponder(streamId);
+  auto stateMachine =
+      std::make_shared<RequestResponseResponder>(shared_from_this(), streamId);
+  const auto result = streams_.emplace(
+      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  DCHECK(result.second);
   requestResponder_->handleRequestResponseCore(
       std::move(payload), streamId, stateMachine);
 }
@@ -943,7 +1037,7 @@ bool RSocketStateMachine::shouldQueue() {
 }
 
 void RSocketStateMachine::fireAndForget(Payload request) {
-  auto const streamId = streamsFactory().getNextStreamId();
+  auto const streamId = getNextStreamId();
   Frame_REQUEST_FNF frame{streamId, FrameFlags::EMPTY, std::move(request)};
   outputFrameOrEnqueue(frameSerializer_->serializeOut(std::move(frame)));
 }
@@ -1076,6 +1170,33 @@ void RSocketStateMachine::setProtocolVersionOrThrow(
   }
 
   transportGuard.dismiss();
+}
+
+StreamId RSocketStateMachine::getNextStreamId() {
+  const StreamId streamId = nextStreamId_;
+  CHECK_GE(std::numeric_limits<int32_t>::max() - 2, streamId);
+  nextStreamId_ += 2;
+  return streamId;
+}
+
+void RSocketStateMachine::setNextStreamId(StreamId streamId) {
+  nextStreamId_ = streamId + 2;
+}
+
+bool RSocketStateMachine::registerNewPeerStreamId(StreamId streamId) {
+  DCHECK_NE(0, streamId);
+  if (nextStreamId_ % 2 == streamId % 2) {
+    // if this is an unknown stream to the socket and this socket is generating
+    // such stream ids, it is an incoming frame on the stream which no longer
+    // exist
+    return false;
+  }
+  if (streamId <= lastPeerStreamId_) {
+    // receiving frame for a stream which no longer exists
+    return false;
+  }
+  lastPeerStreamId_ = streamId;
+  return true;
 }
 
 } // namespace rsocket

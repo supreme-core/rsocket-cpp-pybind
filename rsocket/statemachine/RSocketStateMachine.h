@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <yarpl/flowable/Subscriber.h>
+#include <yarpl/flowable/Subscription.h>
+#include <yarpl/single/SingleObserver.h>
 #include <deque>
 #include <memory>
 
@@ -15,7 +18,6 @@
 #include "rsocket/internal/KeepaliveTimer.h"
 #include "rsocket/statemachine/StreamFragmentAccumulator.h"
 #include "rsocket/statemachine/StreamStateMachineBase.h"
-#include "rsocket/statemachine/StreamsFactory.h"
 #include "rsocket/statemachine/StreamsWriter.h"
 
 namespace rsocket {
@@ -33,6 +35,7 @@ class RSocketResponder;
 class RSocketStateMachine;
 class RSocketStats;
 class ResumeManager;
+class RSocketStateMachineTest;
 
 class FrameSink {
  public:
@@ -106,17 +109,18 @@ class RSocketStateMachine final
   /// Close the connection and all of its streams.
   void close(folly::exception_wrapper, StreamCompletionSignal);
 
-  /// A contract exposed to StreamAutomatonBase, modelled after Subscriber
-  /// and Subscription contracts, while omitting flow control related signals.
+  void requestStream(
+      Payload request,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink);
 
-  /// Adds a stream stateMachine to the connection.
-  ///
-  /// This signal corresponds to Subscriber::onSubscribe.
-  ///
-  /// No frames will be issued as a result of this call. Stream stateMachine
-  /// must take care of writing appropriate frames to the connection, using
-  /// ::writeFrame after calling this method.
-  void addStream(StreamId, std::shared_ptr<StreamStateMachineBase>);
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> requestChannel(
+      Payload request,
+      bool hasInitialRequest,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink);
+
+  void requestResponse(
+      Payload payload,
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink);
 
   /// Send a REQUEST_FNF frame.
   void fireAndForget(Payload);
@@ -130,10 +134,6 @@ class RSocketStateMachine final
   /// Register the connection set that's holding this state machine.  The set
   /// must outlive this state machine.
   void registerSet(ConnectionSet*);
-
-  StreamsFactory& streamsFactory() {
-    return streamsFactory_;
-  }
 
   DuplexConnection* getConnection();
 
@@ -242,6 +242,11 @@ class RSocketStateMachine final
       ProtocolVersion version,
       const std::shared_ptr<FrameTransport>& transport);
 
+  bool registerNewPeerStreamId(StreamId streamId);
+  StreamId getNextStreamId();
+
+  void setNextStreamId(StreamId streamId);
+
   /// Client/server mode this state machine is operating in.
   const RSocketMode mode_;
 
@@ -263,6 +268,8 @@ class RSocketStateMachine final
 
   /// Map of all individual stream state machines.
   std::unordered_map<StreamId, StreamStateElem> streams_;
+  StreamId nextStreamId_;
+  StreamId lastPeerStreamId_{0};
 
   // Manages all state needed for warm/cold resumption.
   std::shared_ptr<ResumeManager> resumeManager_;
@@ -276,12 +283,12 @@ class RSocketStateMachine final
   std::unique_ptr<ClientResumeStatusCallback> resumeCallback_;
   std::shared_ptr<ColdResumeHandler> coldResumeHandler_;
 
-  StreamsFactory streamsFactory_;
-
   std::shared_ptr<RSocketConnectionEvents> connectionEvents_;
 
   /// Back reference to the set that's holding this state machine.
   ConnectionSet* connectionSet_{nullptr};
+
+  friend class rsocket::RSocketStateMachineTest;
 };
 
 } // namespace rsocket

@@ -300,8 +300,6 @@ add_library(
   rsocket/statemachine/StreamResponder.h
   rsocket/statemachine/StreamStateMachineBase.cpp
   rsocket/statemachine/StreamStateMachineBase.h
-  rsocket/statemachine/StreamsFactory.cpp
-  rsocket/statemachine/StreamsFactory.h
   rsocket/statemachine/StreamFragmentAccumulator.h
   rsocket/statemachine/StreamsWriter.h
   rsocket/statemachine/StreamsWriter.cpp
@@ -360,7 +358,9 @@ add_executable(
   rsocket/test/internal/ResumeIdentificationToken.cpp
   rsocket/test/internal/SetupResumeAcceptorTest.cpp
   rsocket/test/internal/SwappableEventBaseTest.cpp
+  rsocket/test/statemachine/RSocketStateMachineTest.cpp
   rsocket/test/statemachine/StreamStateTest.cpp
+  rsocket/test/statemachine/StreamsWriterTest.cpp
   rsocket/test/test_utils/ColdResumeManager.cpp
   rsocket/test/test_utils/ColdResumeManager.h
   rsocket/test/test_utils/GenericRequestResponseHandler.h
