@@ -23,7 +23,7 @@ class ObserveOnOperatorSubscription : public yarpl::flowable::Subscription,
     auto self = this->ref_from_this(this);
 
     if (auto subscriber = std::move(subscriber_)) {
-      subscriber->isCanceled_ = true;
+      subscriber->inner_ = nullptr;
     }
 
     subscription_->cancel();
@@ -49,42 +49,39 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
 
   // all signaling methods are called from upstream EB
   void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-    executor_.add([
-      self = this->ref_from_this(this),
-      s = std::move(subscription)
-    ]() mutable {
-      auto subscription =
-          std::make_shared<ObserveOnOperatorSubscription<T>>(self, std::move(s));
+    executor_.add([self = this->ref_from_this(this),
+                   s = std::move(subscription)]() mutable {
+      auto subscription = std::make_shared<ObserveOnOperatorSubscription<T>>(
+          self, std::move(s));
       self->inner_->onSubscribe(std::move(subscription));
     });
   }
   void onNext(T next) override {
     executor_.add(
-        [ self = this->ref_from_this(this), n = std::move(next) ]() mutable {
-          if (!self->isCanceled_) {
-            self->inner_->onNext(std::move(n));
+        [self = this->ref_from_this(this), n = std::move(next)]() mutable {
+          if (auto& inner = self->inner_) {
+            inner->onNext(std::move(n));
           }
         });
   }
   void onComplete() override {
     executor_.add([self = this->ref_from_this(this)]() mutable {
-      if (!self->isCanceled_) {
-        self->inner_->onComplete();
+      if (auto inner = std::exchange(self->inner_, nullptr)) {
+        inner->onComplete();
       }
     });
   }
   void onError(folly::exception_wrapper err) override {
     executor_.add(
-        [ self = this->ref_from_this(this), e = std::move(err) ]() mutable {
-          if (!self->isCanceled_) {
-            self->inner_->onError(std::move(e));
+        [self = this->ref_from_this(this), e = std::move(err)]() mutable {
+          if (auto inner = std::exchange(self->inner_, nullptr)) {
+            inner->onError(std::move(e));
           }
         });
   }
 
  private:
   friend class ObserveOnOperatorSubscription<T>;
-  bool isCanceled_{false}; // only accessed in executor_ thread
 
   std::shared_ptr<Subscriber<T>> inner_;
   folly::Executor& executor_;
@@ -93,7 +90,9 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
 template <typename T>
 class ObserveOnOperator : public yarpl::flowable::Flowable<T> {
  public:
-  ObserveOnOperator(std::shared_ptr<Flowable<T>> upstream, folly::Executor& executor)
+  ObserveOnOperator(
+      std::shared_ptr<Flowable<T>> upstream,
+      folly::Executor& executor)
       : upstream_(std::move(upstream)), executor_(executor) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
@@ -104,6 +103,6 @@ class ObserveOnOperator : public yarpl::flowable::Flowable<T> {
   std::shared_ptr<Flowable<T>> upstream_;
   folly::Executor& executor_;
 };
-}
-}
-} /* namespace yarpl::flowable::detail */
+} // namespace detail
+} // namespace flowable
+} // namespace yarpl

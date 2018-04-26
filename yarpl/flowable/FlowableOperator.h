@@ -160,6 +160,11 @@ class MapOperator : public FlowableOperator<U, D> {
       }
     }
 
+    void onTerminateImpl() override {
+      flowable_.reset();
+      SuperSubscription::onTerminateImpl();
+    }
+
    private:
     std::shared_ptr<MapOperator> flowable_;
   };
@@ -202,6 +207,11 @@ class FilterOperator : public FlowableOperator<U, U> {
       } else {
         SuperSubscription::request(1);
       }
+    }
+
+    void onTerminateImpl() override {
+      flowable_.reset();
+      SuperSubscription::onTerminateImpl();
     }
 
    private:
@@ -261,6 +271,11 @@ class ReduceOperator : public FlowableOperator<U, D> {
         SuperSubscription::subscriberOnNext(std::move(acc_));
       }
       SuperSubscription::onCompleteImpl();
+    }
+
+    void onTerminateImpl() override {
+      flowable_.reset();
+      SuperSubscription::onTerminateImpl();
     }
 
    private:
@@ -751,6 +766,7 @@ class FlatMapOperator : public FlowableOperator<T, R> {
     void onTerminateImpl() final {
       liveSubscribers_--;
       drainLoop();
+      flowable_.reset();
     }
 
     void request(int64_t n) override {

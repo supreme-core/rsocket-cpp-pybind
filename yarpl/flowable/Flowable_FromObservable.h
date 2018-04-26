@@ -21,7 +21,7 @@ template <typename T>
 class BackpressureStrategyBase : public IBackpressureStrategy<T>,
                                  public flowable::Subscription,
                                  public observable::Observer<T> {
-protected:
+ protected:
   //
   // the following methods are to be overridden
   //
@@ -86,6 +86,7 @@ protected:
     observable::Observer<T>::subscription()->cancel();
     credits::cancel(&requested_);
     subscriber_ = nullptr;
+    observable_.reset();
   }
 
   // Observer override
@@ -122,6 +123,7 @@ protected:
     auto subscriber = std::move(subscriber_);
     subscriber->onComplete();
     observable::Observer<T>::onComplete();
+    observable_.reset();
   }
 
   void downstreamOnError(folly::exception_wrapper error) {
@@ -131,6 +133,7 @@ protected:
     auto subscriber = std::move(subscriber_);
     subscriber->onError(std::move(error));
     observable::Observer<T>::onError(folly::exception_wrapper());
+    observable_.reset();
   }
 
  private:

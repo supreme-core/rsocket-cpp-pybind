@@ -1,8 +1,8 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include "yarpl/flowable/PublishProcessor.h"
 #include <gtest/gtest.h>
 #include "yarpl/Flowable.h"
-#include "yarpl/flowable/PublishProcessor.h"
 #include "yarpl/flowable/TestSubscriber.h"
 
 using namespace yarpl;
@@ -20,6 +20,9 @@ TEST(PublishProcessorTest, OnNextTest) {
   pp->onNext(3);
 
   EXPECT_EQ(subscriber->values(), std::vector<int>({1, 2, 3}));
+
+  // cancel the subscription as its a cyclic reference
+  subscriber->cancel();
 }
 
 TEST(PublishProcessorTest, OnCompleteTest) {
@@ -35,7 +38,8 @@ TEST(PublishProcessorTest, OnCompleteTest) {
   EXPECT_EQ(
       subscriber->values(),
       std::vector<int>({
-          1, 2,
+          1,
+          2,
       }));
   EXPECT_TRUE(subscriber->isComplete());
 
@@ -58,7 +62,8 @@ TEST(PublishProcessorTest, OnErrorTest) {
   EXPECT_EQ(
       subscriber->values(),
       std::vector<int>({
-          1, 2,
+          1,
+          2,
       }));
   EXPECT_TRUE(subscriber->isError());
   EXPECT_EQ(subscriber->getErrorMsg(), "error!");
@@ -83,6 +88,9 @@ TEST(PublishProcessorTest, OnNextMultipleSubscribersTest) {
 
   EXPECT_EQ(subscriber1->values(), std::vector<int>({1, 2, 3}));
   EXPECT_EQ(subscriber2->values(), std::vector<int>({1, 2, 3}));
+
+  subscriber1->cancel();
+  subscriber2->cancel();
 }
 
 TEST(PublishProcessorTest, OnNextSlowSubscriberTest) {
@@ -98,6 +106,7 @@ TEST(PublishProcessorTest, OnNextSlowSubscriberTest) {
   pp->onNext(3);
 
   EXPECT_EQ(subscriber1->values(), std::vector<int>({1, 2, 3}));
+  subscriber1->cancel();
 
   EXPECT_EQ(subscriber2->values(), std::vector<int>({1}));
   EXPECT_TRUE(subscriber2->isError());
@@ -183,7 +192,8 @@ TEST(PublishProcessorTest, OnMultipleSubscribersMultithreadedTest) {
     }));
   }
 
-  while (subscribersReady < threads.size());
+  while (subscribersReady < threads.size())
+    ;
 
   pp->onNext(1);
   pp->onNext(2);

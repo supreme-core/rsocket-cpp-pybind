@@ -185,11 +185,10 @@ TEST(DISABLED_Observable, ItemsCollectedAsynchronously) {
     std::cout << "done pushing into vector" << std::endl;
   }));
 
-  // expect that 3 instances were originally created, then 3 more when copying
-  EXPECT_EQ(6, Tuple::createdCount);
-  // expect that 3 instances still exist in the vector, so only 3 destroyed so
-  // far
-  EXPECT_EQ(3, Tuple::destroyedCount);
+  // 3 copy & 3 move and 3 more copy constructed
+  EXPECT_EQ(9, Tuple::createdCount);
+  // 3 still exists in the vector, 6 destroyed
+  EXPECT_EQ(6, Tuple::destroyedCount);
 
   std::cout << "Leaving block now so Vector should release Tuples..."
             << std::endl;

@@ -4,10 +4,10 @@
 
 #include <folly/Synchronized.h>
 #include <vector>
+#include "yarpl/Common.h"
 #include "yarpl/flowable/Flowable.h"
 #include "yarpl/observable/Observable.h"
 #include "yarpl/utils/credits.h"
-#include "yarpl/Common.h"
 
 namespace yarpl {
 namespace flowable {
@@ -183,45 +183,43 @@ class PublishProcessor : public observable::Observable<T>,
     // PublishProcessor::removePublisher will take care of that the race with
     // on{Next, Error, Complete} methods is allowed by the spec
     void cancel() override {
-      canceled_ = true;
+      subscriber_.reset();
       processor_->removePublisher(this);
     }
 
     // terminate will never race with on{Next, Error, Complete} because they are
     // all called from PublishProcessor and terminate is called only from dtor
     void terminate() {
-      subscriber_->onError(std::runtime_error("PublishProcessor shutdown"));
+      if (auto subscriber = std::exchange(subscriber_, nullptr)) {
+        subscriber->onError(std::runtime_error("PublishProcessor shutdown"));
+      }
     }
 
     void onNext(T value) {
-      if (canceled_) {
-        return;
+      if (subscriber_) {
+        subscriber_->onNext(std::move(value));
       }
-      subscriber_->onNext(std::move(value));
     }
 
     // used internally, not an interface method
     void onError(folly::exception_wrapper ex) {
-      if (canceled_) {
-        return;
+      if (auto subscriber = std::exchange(subscriber_, nullptr)) {
+        subscriber->onError(std::move(ex));
       }
-      subscriber_->onError(std::move(ex));
     }
 
     // used internally, not an interface method
     void onComplete() {
-      if (canceled_) {
-        return;
+      if (auto subscriber = std::exchange(subscriber_, nullptr)) {
+        subscriber->onComplete();
       }
-      subscriber_->onComplete();
     }
 
     bool isCancelled() const {
-      return canceled_;
+      return !subscriber_;
     }
 
    private:
-    std::atomic<bool> canceled_{false};
     std::shared_ptr<observable::Observer<T>> subscriber_;
     PublishProcessor* processor_;
   };

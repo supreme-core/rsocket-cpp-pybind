@@ -84,6 +84,11 @@ class DoOperator : public FlowableOperator<U, U> {
       SuperSub::request(n);
     }
 
+    void onTerminateImpl() override {
+      flowable_.reset();
+      SuperSub::onTerminateImpl();
+    }
+
    private:
     std::shared_ptr<DoOperator> flowable_;
   };
