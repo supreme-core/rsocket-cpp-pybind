@@ -10,10 +10,11 @@
 #include "yarpl/Observable.h"
 #include "yarpl/flowable/TestSubscriber.h"
 #include "yarpl/observable/TestObserver.h"
-#include "yarpl/test_utils/utils.h"
 
 using namespace yarpl::flowable;
 using namespace yarpl::observable;
+
+constexpr std::chrono::milliseconds timeout{100};
 
 TEST(FlowableTests, SubscribeOnWorksAsExpected) {
   folly::ScopedEventBaseThread worker;
@@ -82,7 +83,7 @@ TEST(FlowableTests, ObserveOnWorksAsExpectedSuccess) {
           1 /* initial request(n) */
       );
 
-  CHECK_WAIT(subscriber_complete);
+  subscriber_complete.timed_wait(timeout);
 }
 
 TEST(FlowableTests, ObserveOnWorksAsExpectedError) {
@@ -111,7 +112,7 @@ TEST(FlowableTests, ObserveOnWorksAsExpectedError) {
           1 /* initial request(n) */
       );
 
-  CHECK_WAIT(subscriber_complete);
+  subscriber_complete.timed_wait(timeout);
 }
 
 TEST(FlowableTests, BothObserveAndSubscribeOn) {
@@ -151,7 +152,7 @@ TEST(FlowableTests, BothObserveAndSubscribeOn) {
       1 /* initial request(n) */
   );
 
-  CHECK_WAIT(subscriber_complete);
+  subscriber_complete.timed_wait(timeout);
 }
 
 namespace {
@@ -202,5 +203,5 @@ TEST(FlowableTests, EarlyCancelObserveOn) {
       ->subscribe(std::make_shared<EarlyCancelSubscriber>(
           *worker.getEventBase(), subscriber_complete));
 
-  CHECK_WAIT(subscriber_complete);
+  subscriber_complete.timed_wait(timeout);
 }

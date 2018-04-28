@@ -30,7 +30,7 @@ struct LockstepBatons {
 using namespace yarpl::mocks;
 using namespace ::testing;
 
-#define LOCKSTEP_DEBUG(expr) VLOG(3) << expr
+constexpr std::chrono::milliseconds timeout{100};
 
 class LockstepAsyncHandler : public rsocket::RSocketResponder {
   LockstepBatons& batons_;
@@ -39,31 +39,31 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
 
  public:
   LockstepAsyncHandler(LockstepBatons& batons, Sequence& subscription_seq)
-      : batons_(batons), subscription_seq_(subscription_seq){}
+      : batons_(batons), subscription_seq_(subscription_seq) {}
 
   std::shared_ptr<Flowable<Payload>> handleRequestStream(Payload p, StreamId)
       override {
     EXPECT_EQ(p.moveDataToString(), "initial");
 
     auto step1 = Flowable<Payload>::empty()->doOnComplete([this]() {
-      CHECK_WAIT(this->batons_.onRequestReceived);
-      LOCKSTEP_DEBUG("SERVER: sending onNext(foo)");
+      this->batons_.onRequestReceived.timed_wait(timeout);
+      VLOG(3) << "SERVER: sending onNext(foo)";
     });
 
     auto step2 = Flowable<>::justOnce(Payload("foo"))->doOnComplete([this]() {
-      CHECK_WAIT(this->batons_.onCancelSent);
-      CHECK_WAIT(this->batons_.onCancelReceivedToserver);
-      LOCKSTEP_DEBUG("SERVER: sending onNext(bar)");
+      this->batons_.onCancelSent.timed_wait(timeout);
+      this->batons_.onCancelReceivedToserver.timed_wait(timeout);
+      VLOG(3) << "SERVER: sending onNext(bar)";
     });
 
     auto step3 = Flowable<>::justOnce(Payload("bar"))->doOnComplete([this]() {
       this->batons_.onSecondPayloadSent.post();
-      LOCKSTEP_DEBUG("SERVER: sending onComplete()");
+      VLOG(3) << "SERVER: sending onComplete()";
     });
 
     auto generator = Flowable<>::concat(step1, step2, step3)
                          ->doOnComplete([this]() {
-                           LOCKSTEP_DEBUG("SERVER: posting serverFinished");
+                           VLOG(3) << "SERVER: posting serverFinished";
                            this->batons_.serverFinished.post();
                          })
                          ->subscribeOn(*worker_.getEventBase());
@@ -73,7 +73,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
     EXPECT_CALL(*requestCheckpoint, Call(2))
         .InSequence(this->subscription_seq_)
         .WillOnce(Invoke([=](auto n) {
-          LOCKSTEP_DEBUG("SERVER: got request(" << n << ")");
+          VLOG(3) << "SERVER: got request(" << n << ")";
           EXPECT_EQ(n, 2);
           this->batons_.onRequestReceived.post();
         }));
@@ -82,7 +82,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
     EXPECT_CALL(*cancelCheckpoint, Call())
         .InSequence(this->subscription_seq_)
         .WillOnce(Invoke([=] {
-          LOCKSTEP_DEBUG("SERVER: received cancel()");
+          VLOG(3) << "SERVER: received cancel()";
           this->batons_.onCancelReceivedToclient.post();
           this->batons_.onCancelReceivedToserver.post();
         }));
@@ -94,9 +94,7 @@ class LockstepAsyncHandler : public rsocket::RSocketResponder {
   }
 };
 
-// FIXME: This hits an ASAN heap-use-after-free.  Disabling for now, but we need
-// to get back to this and fix it.
-TEST(RequestStreamTest, DISABLED_OperationsAfterCancel) {
+TEST(RequestStreamTest, OperationsAfterCancel) {
   LockstepBatons batons;
   Sequence server_seq;
   Sequence client_seq;
@@ -107,15 +105,14 @@ TEST(RequestStreamTest, DISABLED_OperationsAfterCancel) {
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
   auto requester = client->getRequester();
 
-  auto subscriber_mock =
-      std::make_shared<testing::StrictMock<yarpl::mocks::MockSubscriber<std::string>>>(
-          0);
+  auto subscriber_mock = std::make_shared<
+      testing::StrictMock<yarpl::mocks::MockSubscriber<std::string>>>(0);
 
   std::shared_ptr<Subscription> subscription;
   EXPECT_CALL(*subscriber_mock, onSubscribe_(_))
       .InSequence(client_seq)
       .WillOnce(Invoke([&](auto s) {
-        LOCKSTEP_DEBUG("CLIENT: got onSubscribe(), sending request(2)");
+        VLOG(3) << "CLIENT: got onSubscribe(), sending request(2)";
         EXPECT_NE(s, nullptr);
         subscription = s;
         subscription->request(2);
@@ -124,11 +121,11 @@ TEST(RequestStreamTest, DISABLED_OperationsAfterCancel) {
       .InSequence(client_seq)
       .WillOnce(Invoke([&](auto) {
         EXPECT_NE(subscription, nullptr);
-        LOCKSTEP_DEBUG("CLIENT: got onNext(foo), sending cancel()");
+        VLOG(3) << "CLIENT: got onNext(foo), sending cancel()";
         subscription->cancel();
         batons.onCancelSent.post();
-        CHECK_WAIT(batons.onCancelReceivedToclient);
-        CHECK_WAIT(batons.onSecondPayloadSent);
+        batons.onCancelReceivedToclient.timed_wait(timeout);
+        batons.onSecondPayloadSent.timed_wait(timeout);
         batons.clientFinished.post();
       }));
 
@@ -136,12 +133,12 @@ TEST(RequestStreamTest, DISABLED_OperationsAfterCancel) {
   // had 'cancel' been called in a different thread with no synchronization,
   // the client's Subscriber _could_ have received 'bar'
 
-  LOCKSTEP_DEBUG("RUNNER: doing requestStream()");
+  VLOG(3) << "RUNNER: doing requestStream()";
   requester->requestStream(Payload("initial"))
       ->map([](auto p) { return p.moveDataToString(); })
       ->subscribe(subscriber_mock);
 
-  CHECK_WAIT(batons.clientFinished);
-  CHECK_WAIT(batons.serverFinished);
-  LOCKSTEP_DEBUG("RUNNER: finished!");
+  batons.clientFinished.timed_wait(timeout);
+  batons.serverFinished.timed_wait(timeout);
+  VLOG(3) << "RUNNER: finished!";
 }

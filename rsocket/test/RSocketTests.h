@@ -7,7 +7,6 @@
 #include "rsocket/RSocket.h"
 
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
-#include "yarpl/test_utils/utils.h"
 
 namespace rsocket {
 namespace tests {

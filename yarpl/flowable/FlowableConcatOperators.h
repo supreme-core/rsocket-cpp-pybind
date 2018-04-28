@@ -51,11 +51,10 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
     void request(int64_t n) override {
       credits::add(&requested_, n);
       if (!upSubscriber_) {
-        if (n > 0 && second_) {
+        if (auto second = std::exchange(second_, nullptr)) {
           upSubscriber_ = std::make_shared<ForwardSubscriber>(
               this->shared_from_this(), requested_);
-          second_->subscribe(upSubscriber_);
-          second_.reset();
+          second->subscribe(upSubscriber_);
         }
       } else {
         upSubscriber_->request(n);
@@ -81,10 +80,13 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
       upSubscriber_.reset();
       if (auto first = std::move(first_)) {
         if (requested_ > 0) {
-          upSubscriber_ = std::make_shared<ForwardSubscriber>(
-              this->shared_from_this(), requested_);
-          second_->subscribe(upSubscriber_);
-          second_.reset();
+          if (auto second = std::exchange(second_, nullptr)) {
+            upSubscriber_ = std::make_shared<ForwardSubscriber>(
+                this->shared_from_this(), requested_);
+            // TODO - T28771728
+            // Concat should not call 'subscribe' on onComplete
+            second->subscribe(upSubscriber_);
+          }
         }
       } else {
         downSubscriber_->onComplete();
