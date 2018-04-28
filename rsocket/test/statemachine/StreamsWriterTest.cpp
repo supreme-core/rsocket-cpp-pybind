@@ -2,7 +2,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <yarpl/test_utils/mocks.h>
+#include <yarpl/test_utils/Mocks.h>
 
 #include "rsocket/statemachine/ChannelRequester.h"
 #include "rsocket/test/test_utils/MockStreamsWriter.h"

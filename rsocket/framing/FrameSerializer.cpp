@@ -10,8 +10,7 @@
 
 namespace rsocket {
 
-constexpr const ProtocolVersion ProtocolVersion::Latest =
-    FrameSerializerV1_0::Version;
+const ProtocolVersion ProtocolVersion::Latest = FrameSerializerV1_0::Version;
 
 std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
     const ProtocolVersion& protocolVersion) {
