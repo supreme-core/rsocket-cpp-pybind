@@ -17,8 +17,8 @@ template <typename Frame, typename... Args>
 Frame reserialize_resume(bool resumable, Args... args) {
   Frame givenFrame, newFrame;
   givenFrame = Frame(std::forward<Args>(args)...);
-  auto frameSerializer = FrameSerializer::createFrameSerializer(
-      ProtocolVersion::Current());
+  auto frameSerializer =
+      FrameSerializer::createFrameSerializer(ProtocolVersion::Latest);
 
   EXPECT_TRUE(frameSerializer->deserializeFrom(
       newFrame,
@@ -30,8 +30,8 @@ Frame reserialize_resume(bool resumable, Args... args) {
 template <typename Frame, typename... Args>
 Frame reserialize(Args... args) {
   Frame givenFrame = Frame(std::forward<Args>(args)...);
-  auto frameSerializer = FrameSerializer::createFrameSerializer(
-      ProtocolVersion::Current());
+  auto frameSerializer =
+      FrameSerializer::createFrameSerializer(ProtocolVersion::Latest);
   auto serializedFrame = frameSerializer->serializeOut(std::move(givenFrame));
   Frame newFrame;
   EXPECT_TRUE(
@@ -160,7 +160,7 @@ TEST(FrameTest, Frame_KEEPALIVE) {
   expectHeader(
       FrameType::KEEPALIVE, FrameFlags::KEEPALIVE_RESPOND, streamId, frame);
   // Default position
-  auto currProtVersion = ProtocolVersion::Current();
+  auto currProtVersion = ProtocolVersion::Latest;
   if (currProtVersion == ProtocolVersion(0, 1)) {
     EXPECT_EQ(0, frame.position_);
   } else if (currProtVersion == ProtocolVersion(1, 0)) {
@@ -314,7 +314,7 @@ TEST(FrameTest, Frame_PreallocatedFrameLengthField) {
   FrameFlags flags = FrameFlags::COMPLETE;
   auto data = folly::IOBuf::copyBuffer("424242");
   auto frameSerializer =
-      FrameSerializer::createFrameSerializer(ProtocolVersion::Current());
+      FrameSerializer::createFrameSerializer(ProtocolVersion::Latest);
   frameSerializer->preallocateFrameSizeField() = true;
 
   auto frame = Frame_PAYLOAD(streamId, flags, Payload(data->clone()));

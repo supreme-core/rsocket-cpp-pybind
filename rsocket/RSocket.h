@@ -41,7 +41,7 @@ class RSocket {
       std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       std::shared_ptr<RSocketConnectionEvents> connectionEvents =
           std::shared_ptr<RSocketConnectionEvents>(),
-      ProtocolVersion protocolVersion = ProtocolVersion::Current(),
+      ProtocolVersion protocolVersion = ProtocolVersion::Latest,
       folly::EventBase* stateMachineEvb = nullptr);
 
   // Creates a RSocketClient from an existing DuplexConnection

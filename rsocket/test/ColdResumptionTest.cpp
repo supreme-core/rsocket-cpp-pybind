@@ -118,7 +118,7 @@ std::unique_ptr<rsocket::RSocketClient> createResumedClient(
                  kDefaultKeepaliveInterval,
                  nullptr, /* stats */
                  nullptr, /* connectionEvents */
-                 ProtocolVersion::Current(),
+                 ProtocolVersion::Latest,
                  stateMachineEvb)
           .get();
     } catch (RSocketException ex) {

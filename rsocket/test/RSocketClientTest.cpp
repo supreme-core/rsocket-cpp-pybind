@@ -5,8 +5,8 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gtest/gtest.h>
 
-#include "rsocket/transports/tcp/TcpConnectionFactory.h"
 #include "rsocket/test/test_utils/MockDuplexConnection.h"
+#include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
 using namespace rsocket;
 using namespace rsocket::tests;
@@ -19,15 +19,15 @@ TEST(RSocketClient, ConnectFails) {
 
   folly::SocketAddress address;
   address.setFromHostPort("localhost", 1);
-  auto client = RSocket::createConnectedClient(
-      std::make_unique<TcpConnectionFactory>(*worker.getEventBase(),
-                                             std::move(address)));
+  auto client =
+      RSocket::createConnectedClient(std::make_unique<TcpConnectionFactory>(
+          *worker.getEventBase(), std::move(address)));
 
-  client.then([&](auto&) {
-    FAIL() << "the test needs to fail";
-  }).onError([&](const std::exception&) {
-    LOG(INFO) << "connection failed as expected";
-  }).get();
+  client.then([&](auto&) { FAIL() << "the test needs to fail"; })
+      .onError([&](const std::exception&) {
+        LOG(INFO) << "connection failed as expected";
+      })
+      .get();
 }
 
 TEST(RSocketClient, PreallocatedBytesInFrames) {
@@ -41,8 +41,7 @@ TEST(RSocketClient, PreallocatedBytesInFrames) {
           Invoke([](std::unique_ptr<folly::IOBuf>& serializedFrame) {
             // we should have headroom preallocated for the frame size field
             EXPECT_EQ(
-                FrameSerializer::createFrameSerializer(
-                    ProtocolVersion::Current())
+                FrameSerializer::createFrameSerializer(ProtocolVersion::Latest)
                     ->frameLengthFieldSize(),
                 serializedFrame->headroom());
           }));
@@ -53,7 +52,8 @@ TEST(RSocketClient, PreallocatedBytesInFrames) {
     auto client = RSocket::createClientFromConnection(
         std::move(connection), *worker.getEventBase());
 
-    client->getRequester()->fireAndForget(Payload("hello"))->subscribe(
-    SingleObservers::create<void>());
+    client->getRequester()
+        ->fireAndForget(Payload("hello"))
+        ->subscribe(SingleObservers::create<void>());
   });
 }

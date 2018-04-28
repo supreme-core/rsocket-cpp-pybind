@@ -143,7 +143,7 @@ void RSocketStateMachine::connectClient(
     std::shared_ptr<FrameTransport> transport,
     SetupParameters params) {
   auto const version = params.protocolVersion == ProtocolVersion::Unknown
-      ? ProtocolVersion::Current()
+      ? ProtocolVersion::Latest
       : params.protocolVersion;
 
   setProtocolVersionOrThrow(version, transport);
@@ -184,8 +184,7 @@ void RSocketStateMachine::resumeClient(
   }
 
   setProtocolVersionOrThrow(
-      version == ProtocolVersion::Unknown ? ProtocolVersion::Current()
-                                          : version,
+      version == ProtocolVersion::Unknown ? ProtocolVersion::Latest : version,
       transport);
 
   Frame_RESUME resumeFrame(

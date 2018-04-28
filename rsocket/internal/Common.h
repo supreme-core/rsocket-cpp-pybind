@@ -138,7 +138,6 @@ struct ProtocolVersion {
 
   static const ProtocolVersion Unknown;
   static const ProtocolVersion Latest;
-  static ProtocolVersion Current();
 };
 
 #pragma pop_macro("major")
