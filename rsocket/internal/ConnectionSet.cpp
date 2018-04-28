@@ -77,12 +77,11 @@ bool ConnectionSet::insert(
   return true;
 }
 
-void ConnectionSet::remove(
-    const std::shared_ptr<RSocketStateMachine>& machine) {
-  VLOG(4) << "remove(" << machine.get() << ")";
+void ConnectionSet::remove(RSocketStateMachine& machine) {
+  VLOG(4) << "remove(" << &machine << ")";
 
   const auto locked = machines_.lock();
-  auto const result = locked->erase(machine);
+  auto const result = locked->erase(machine.shared_from_this());
   DCHECK_LE(result, 1);
 
   if (++removes_ == targetRemoves_) {

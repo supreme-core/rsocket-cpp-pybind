@@ -9,26 +9,26 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "rsocket/statemachine/RSocketStateMachine.h"
+
 namespace folly {
 class EventBase;
 }
 
 namespace rsocket {
 
-class RSocketStateMachine;
-
 /// Set of RSocketStateMachine objects.  Stores them until they call
 /// RSocketStateMachine::close().
 ///
 /// Also tracks which EventBase is controlling each state machine so that they
 /// can be closed on the correct thread.
-class ConnectionSet {
+class ConnectionSet : public RSocketStateMachine::CloseCallback {
  public:
   ConnectionSet();
-  ~ConnectionSet();
+  virtual ~ConnectionSet();
 
   bool insert(std::shared_ptr<RSocketStateMachine>, folly::EventBase*);
-  void remove(const std::shared_ptr<RSocketStateMachine>&);
+  void remove(RSocketStateMachine&) override;
 
   size_t size() const;
 

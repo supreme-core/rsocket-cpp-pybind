@@ -12,6 +12,7 @@
 #include "rsocket/RSocketParameters.h"
 #include "rsocket/RSocketResponder.h"
 #include "rsocket/RSocketServiceHandler.h"
+#include "rsocket/internal/ConnectionSet.h"
 #include "rsocket/internal/SetupResumeAcceptor.h"
 
 namespace rsocket {

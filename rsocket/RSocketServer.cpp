@@ -177,7 +177,7 @@ void RSocketServer::onRSocketSetup(
                 "Server ignores the connection attempt")));
     return;
   }
-  rs->registerSet(connectionSet.get());
+  rs->registerCloseCallback(connectionSet.get());
 
   auto requester = std::make_shared<RSocketRequester>(rs, *eventBase);
   auto serverState = std::shared_ptr<RSocketServerState>(

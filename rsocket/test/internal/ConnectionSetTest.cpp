@@ -25,9 +25,9 @@ std::shared_ptr<RSocketStateMachine> makeStateMachine(folly::EventBase* evb) {
       std::make_shared<RSocketConnectionEvents>(),
       nullptr /* resumeManager */,
       nullptr /* coldResumeHandler */
-      );
+  );
 }
-}
+} // namespace
 
 TEST(ConnectionSet, ImmediateDtor) {
   ConnectionSet set;
@@ -39,7 +39,7 @@ TEST(ConnectionSet, CloseViaMachine) {
 
   ConnectionSet set;
   set.insert(machine, &evb);
-  machine->registerSet(&set);
+  machine->registerCloseCallback(&set);
 
   machine->close({}, StreamCompletionSignal::CANCEL);
 }
@@ -50,5 +50,5 @@ TEST(ConnectionSet, CloseViaSetDtor) {
 
   ConnectionSet set;
   set.insert(machine, &evb);
-  machine->registerSet(&set);
+  machine->registerCloseCallback(&set);
 }

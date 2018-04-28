@@ -17,7 +17,6 @@
 #include "rsocket/framing/FrameSerializer.h"
 #include "rsocket/framing/FrameTransportImpl.h"
 #include "rsocket/internal/ClientResumeStatusCallback.h"
-#include "rsocket/internal/ConnectionSet.h"
 #include "rsocket/internal/ScheduledSubscriber.h"
 #include "rsocket/internal/WarmResumeManager.h"
 #include "rsocket/statemachine/ChannelRequester.h"
@@ -282,8 +281,8 @@ void RSocketStateMachine::close(
     connectionEvents->onClosed(std::move(ex));
   }
 
-  if (connectionSet_) {
-    connectionSet_->remove(shared_from_this());
+  if (closeCallback_) {
+    closeCallback_->remove(*this);
   }
 }
 
@@ -1133,8 +1132,9 @@ size_t RSocketStateMachine::getConsumerAllowance(StreamId streamId) const {
   return consumerAllowance;
 }
 
-void RSocketStateMachine::registerSet(ConnectionSet* set) {
-  connectionSet_ = set;
+void RSocketStateMachine::registerCloseCallback(
+    RSocketStateMachine::CloseCallback* callback) {
+  closeCallback_ = callback;
 }
 
 DuplexConnection* RSocketStateMachine::getConnection() {

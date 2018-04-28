@@ -23,7 +23,6 @@
 namespace rsocket {
 
 class ClientResumeStatusCallback;
-class ConnectionSet;
 class DuplexConnection;
 class FrameSerializer;
 class FrameTransport;
@@ -131,9 +130,16 @@ class RSocketStateMachine final
   /// Send a KEEPALIVE frame, with the RESPOND flag set.
   void sendKeepalive(std::unique_ptr<folly::IOBuf>) override;
 
-  /// Register the connection set that's holding this state machine.  The set
-  /// must outlive this state machine.
-  void registerSet(ConnectionSet*);
+  class CloseCallback {
+   public:
+    virtual ~CloseCallback() = default;
+    virtual void remove(RSocketStateMachine&) = 0;
+  };
+
+  /// Register a callback to be called when the StateMachine is closed.
+  /// It will be used to inform the containers, i.e. ConnectionSet or
+  /// wangle::ConnectionManager, to don't store the StateMachine anymore.
+  void registerCloseCallback(CloseCallback* callback);
 
   DuplexConnection* getConnection();
 
@@ -285,8 +291,7 @@ class RSocketStateMachine final
 
   std::shared_ptr<RSocketConnectionEvents> connectionEvents_;
 
-  /// Back reference to the set that's holding this state machine.
-  ConnectionSet* connectionSet_{nullptr};
+  CloseCallback* closeCallback_{nullptr};
 
   friend class rsocket::RSocketStateMachineTest;
 };
