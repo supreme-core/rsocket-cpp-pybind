@@ -11,16 +11,6 @@
 
 namespace rsocket {
 
-namespace {
-
-/// FrameProcessor that does nothing.  Necessary to tell a FrameTransport it can
-/// output frames in the cases where we want to error it.
-class NoneFrameProcessor final : public FrameProcessor {
-  void processFrame(std::unique_ptr<folly::IOBuf>) override {}
-  void onTerminal(folly::exception_wrapper) override {}
-};
-} // namespace
-
 /// Subscriber that owns a connection, sets itself as that connection's input,
 /// and reads out a single frame before cancelling.
 class SetupResumeAcceptor::OneFrameSubscriber final
