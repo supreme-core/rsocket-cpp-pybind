@@ -28,7 +28,7 @@ class PublisherBase {
   void terminatePublisher();
 
  private:
-  /// A Subscription that constrols production of payloads.
+  /// A Subscription that controls production of payloads.
   /// This is responsible for delivering a terminal signal to the
   /// Subscription once the stream ends.
   std::shared_ptr<yarpl::flowable::Subscription> producingSubscription_;
