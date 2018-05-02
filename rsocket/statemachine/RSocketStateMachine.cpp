@@ -56,6 +56,24 @@ RSocketStateMachine::RSocketStateMachine(
     std::shared_ptr<RSocketConnectionEvents> connectionEvents,
     std::shared_ptr<ResumeManager> resumeManager,
     std::shared_ptr<ColdResumeHandler> coldResumeHandler)
+    : RSocketStateMachine(
+          std::make_shared<RSocketResponderAdapter>(
+              std::move(requestResponder)),
+          std::move(keepaliveTimer),
+          mode,
+          std::move(stats),
+          std::move(connectionEvents),
+          std::move(resumeManager),
+          std::move(coldResumeHandler)) {}
+
+RSocketStateMachine::RSocketStateMachine(
+    std::shared_ptr<RSocketResponderCore> requestResponder,
+    std::unique_ptr<KeepaliveTimer> keepaliveTimer,
+    RSocketMode mode,
+    std::shared_ptr<RSocketStats> stats,
+    std::shared_ptr<RSocketConnectionEvents> connectionEvents,
+    std::shared_ptr<ResumeManager> resumeManager,
+    std::shared_ptr<ColdResumeHandler> coldResumeHandler)
     : mode_{mode},
       stats_{stats ? stats : RSocketStats::noop()},
       // Streams initiated by a client MUST use odd-numbered and streams
@@ -927,7 +945,7 @@ void RSocketStateMachine::setupRequestChannel(
   const auto result = streams_.emplace(
       streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
   DCHECK(result.second);
-  const auto requestSink = requestResponder_->handleRequestChannelCore(
+  const auto requestSink = requestResponder_->handleRequestChannel(
       std::move(payload), streamId, stateMachine);
   stateMachine->subscribe(requestSink);
 }
@@ -941,7 +959,7 @@ void RSocketStateMachine::setupRequestStream(
   const auto result = streams_.emplace(
       streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
   DCHECK(result.second);
-  requestResponder_->handleRequestStreamCore(
+  requestResponder_->handleRequestStream(
       std::move(payload), streamId, stateMachine);
 }
 
@@ -953,7 +971,7 @@ void RSocketStateMachine::setupRequestResponse(
   const auto result = streams_.emplace(
       streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
   DCHECK(result.second);
-  requestResponder_->handleRequestResponseCore(
+  requestResponder_->handleRequestResponse(
       std::move(payload), streamId, stateMachine);
 }
 

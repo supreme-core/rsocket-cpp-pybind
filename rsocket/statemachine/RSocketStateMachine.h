@@ -31,6 +31,7 @@ class KeepaliveTimer;
 class RSocketConnectionEvents;
 class RSocketParameters;
 class RSocketResponder;
+class RSocketResponderCore;
 class RSocketStateMachine;
 class RSocketStats;
 class ResumeManager;
@@ -64,6 +65,15 @@ class RSocketStateMachine final
       public StreamsWriterImpl,
       public std::enable_shared_from_this<RSocketStateMachine> {
  public:
+  RSocketStateMachine(
+      std::shared_ptr<RSocketResponderCore> requestResponder,
+      std::unique_ptr<KeepaliveTimer> keepaliveTimer,
+      RSocketMode mode,
+      std::shared_ptr<RSocketStats> stats,
+      std::shared_ptr<RSocketConnectionEvents> connectionEvents,
+      std::shared_ptr<ResumeManager> resumeManager,
+      std::shared_ptr<ColdResumeHandler> coldResumeHandler);
+
   RSocketStateMachine(
       std::shared_ptr<RSocketResponder> requestResponder,
       std::unique_ptr<KeepaliveTimer> keepaliveTimer,
@@ -280,7 +290,7 @@ class RSocketStateMachine final
   // Manages all state needed for warm/cold resumption.
   std::shared_ptr<ResumeManager> resumeManager_;
 
-  const std::shared_ptr<RSocketResponder> requestResponder_;
+  const std::shared_ptr<RSocketResponderCore> requestResponder_;
   std::shared_ptr<FrameTransport> frameTransport_;
   std::unique_ptr<FrameSerializer> frameSerializer_;
 
