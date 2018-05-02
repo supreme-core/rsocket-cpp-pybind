@@ -14,6 +14,7 @@
 #include "rsocket/framing/FrameFlags.h"
 #include "rsocket/framing/FrameHeader.h"
 #include "rsocket/framing/FrameType.h"
+#include "rsocket/framing/ProtocolVersion.h"
 #include "rsocket/internal/Common.h"
 
 namespace folly {

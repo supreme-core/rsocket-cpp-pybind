@@ -255,6 +255,8 @@ add_library(
   rsocket/framing/FramedDuplexConnection.h
   rsocket/framing/FramedReader.cpp
   rsocket/framing/FramedReader.h
+  rsocket/framing/ProtocolVersion.cpp
+  rsocket/framing/ProtocolVersion.h
   rsocket/framing/ScheduledFrameProcessor.cpp
   rsocket/framing/ScheduledFrameProcessor.h
   rsocket/framing/ScheduledFrameTransport.cpp

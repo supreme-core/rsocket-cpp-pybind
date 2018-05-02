@@ -16,10 +16,6 @@ namespace {
 constexpr const char* HEX_CHARS = {"0123456789abcdef"};
 }
 
-const ProtocolVersion ProtocolVersion::Unknown = ProtocolVersion(
-    std::numeric_limits<uint16_t>::max(),
-    std::numeric_limits<uint16_t>::max());
-
 static const char* getTerminatingSignalErrorMessage(int terminatingSignal) {
   switch (static_cast<StreamCompletionSignal>(terminatingSignal)) {
     case StreamCompletionSignal::CONNECTION_END:

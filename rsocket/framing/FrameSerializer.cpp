@@ -10,8 +10,6 @@
 
 namespace rsocket {
 
-const ProtocolVersion ProtocolVersion::Latest = FrameSerializerV1_0::Version;
-
 std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
     const ProtocolVersion& protocolVersion) {
   if (protocolVersion == FrameSerializerV0::Version) {
@@ -51,8 +49,4 @@ folly::IOBufQueue FrameSerializer::createBufferQueue(size_t bufferSize) const {
   return queue;
 }
 
-
-std::ostream& operator<<(std::ostream& os, const ProtocolVersion& version) {
-  return os << version.major << "." << version.minor;
-}
-}
+} // namespace rsocket

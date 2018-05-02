@@ -5,8 +5,8 @@
 #include <folly/io/IOBufQueue.h>
 
 #include "rsocket/DuplexConnection.h"
+#include "rsocket/framing/ProtocolVersion.h"
 #include "rsocket/internal/Allowance.h"
-#include "rsocket/internal/Common.h"
 #include "yarpl/flowable/Subscription.h"
 
 namespace rsocket {
@@ -50,4 +50,4 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
   folly::IOBufQueue payloadQueue_{folly::IOBufQueue::cacheChainLength()};
   const std::shared_ptr<ProtocolVersion> version_;
 };
-}
+} // namespace rsocket
