@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "JsonRequestHandler.h"
+#include <sstream>
 #include <string>
 #include "yarpl/Flowable.h"
 
@@ -15,11 +16,11 @@ JsonRequestResponder::handleRequestStream(Payload request, StreamId) {
   // string from payload data
   auto requestString = request.moveDataToString();
 
-  return Flowable<>::range(1, 100)->map([name = std::move(requestString)](
-      int64_t v) {
-    std::stringstream ss;
-    ss << "Hello (should be JSON) " << name << " " << v << "!";
-    std::string s = ss.str();
-    return Payload(s, "metadata");
-  });
+  return Flowable<>::range(1, 100)->map(
+      [name = std::move(requestString)](int64_t v) {
+        std::stringstream ss;
+        ss << "Hello (should be JSON) " << name << " " << v << "!";
+        std::string s = ss.str();
+        return Payload(s, "metadata");
+      });
 }

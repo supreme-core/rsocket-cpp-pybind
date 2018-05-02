@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 #include <folly/init/Init.h>
@@ -44,24 +45,25 @@ class PushStreamRequestResponder : public rsocket::RSocketResponder {
     // This examples uses BackpressureStrategy::DROP which simply
     // drops any events emitted from the Observable if the Flowable
     // does not have any credits from the Subscriber.
-    return Observable<Payload>::create([name = std::move(requestString)](
-                                           std::shared_ptr<Observer<Payload>> s) {
-             // Must make this async since it's an infinite stream
-             // and will block the IO thread.
-             // Using a raw thread right now since the 'subscribeOn'
-             // operator is not ready yet. This can eventually
-             // be replaced with use of 'subscribeOn'.
-             std::thread([s, name]() {
-               int64_t v = 0;
-               while (!s->isUnsubscribed()) {
-                 std::stringstream ss;
-                 ss << "Event[" << name << "]-" << ++v << "!";
-                 std::string payloadData = ss.str();
-                 s->onNext(Payload(payloadData, "metadata"));
-               }
-             }).detach();
-
-           })
+    return Observable<Payload>::create(
+               [name = std::move(requestString)](
+                   std::shared_ptr<Observer<Payload>> s) {
+                 // Must make this async since it's an infinite stream
+                 // and will block the IO thread.
+                 // Using a raw thread right now since the 'subscribeOn'
+                 // operator is not ready yet. This can eventually
+                 // be replaced with use of 'subscribeOn'.
+                 std::thread([s, name]() {
+                   int64_t v = 0;
+                   while (!s->isUnsubscribed()) {
+                     std::stringstream ss;
+                     ss << "Event[" << name << "]-" << ++v << "!";
+                     std::string payloadData = ss.str();
+                     s->onNext(Payload(payloadData, "metadata"));
+                   }
+                 })
+                     .detach();
+               })
         ->toFlowable(BackpressureStrategy::DROP);
   }
 };

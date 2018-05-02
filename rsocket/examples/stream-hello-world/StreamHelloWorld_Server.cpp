@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 #include <folly/init/Init.h>
@@ -27,13 +28,13 @@ class HelloStreamRequestResponder : public rsocket::RSocketResponder {
     // string from payload data
     auto requestString = request.moveDataToString();
 
-    return Flowable<>::range(1, 10)->map([name = std::move(requestString)](
-        int64_t v) {
-      std::stringstream ss;
-      ss << "Hello " << name << " " << v << "!";
-      std::string s = ss.str();
-      return Payload(s, "metadata");
-    });
+    return Flowable<>::range(1, 10)->map(
+        [name = std::move(requestString)](int64_t v) {
+          std::stringstream ss;
+          ss << "Hello " << name << " " << v << "!";
+          std::string s = ss.str();
+          return Payload(s, "metadata");
+        });
   }
 };
 

@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 #include <folly/init/Init.h>

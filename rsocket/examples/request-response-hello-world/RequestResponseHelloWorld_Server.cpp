@@ -1,6 +1,7 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 #include <folly/init/Init.h>
@@ -19,26 +20,26 @@ DEFINE_int32(port, 9898, "port to connect to");
 namespace {
 class HelloRequestResponseResponder : public rsocket::RSocketResponder {
  public:
-  std::shared_ptr<Single<Payload>> handleRequestResponse(Payload request, StreamId)
-      override {
+  std::shared_ptr<Single<Payload>> handleRequestResponse(
+      Payload request,
+      StreamId) override {
     std::cout << "HelloRequestResponseRequestResponder.handleRequestResponse "
               << request << std::endl;
 
     // string from payload data
     auto requestString = request.moveDataToString();
 
-    return Single<Payload>::create([name = std::move(requestString)](
-        auto subscriber) {
-
-      std::stringstream ss;
-      ss << "Hello " << name << "!";
-      std::string s = ss.str();
-      subscriber->onSubscribe(SingleSubscriptions::empty());
-      subscriber->onSuccess(Payload(s, "metadata"));
-    });
+    return Single<Payload>::create(
+        [name = std::move(requestString)](auto subscriber) {
+          std::stringstream ss;
+          ss << "Hello " << name << "!";
+          std::string s = ss.str();
+          subscriber->onSubscribe(SingleSubscriptions::empty());
+          subscriber->onSuccess(Payload(s, "metadata"));
+        });
   }
 };
-}
+} // namespace
 
 int main(int argc, char* argv[]) {
   FLAGS_logtostderr = true;
