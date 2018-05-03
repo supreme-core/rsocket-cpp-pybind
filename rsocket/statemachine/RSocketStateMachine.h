@@ -153,6 +153,9 @@ class RSocketStateMachine final
 
   DuplexConnection* getConnection();
 
+  // Has active requests?
+  bool hasStreams() const;
+
  private:
   void connect(std::shared_ptr<FrameTransport>);
 

@@ -1225,4 +1225,8 @@ bool RSocketStateMachine::registerNewPeerStreamId(StreamId streamId) {
   return true;
 }
 
+bool RSocketStateMachine::hasStreams() const {
+  return !streams_.empty();
+}
+
 } // namespace rsocket
