@@ -146,4 +146,16 @@ void WarmResumeManager::sendFramesFromPosition(
   }
 }
 
-} // reactivesocket
+std::shared_ptr<ResumeManager> ResumeManager::makeEmpty() {
+  class Empty : public WarmResumeManager {
+   public:
+    Empty() : WarmResumeManager(nullptr, 0) {}
+    bool shouldTrackFrame(FrameType) const override {
+      return false;
+    }
+  };
+
+  return std::make_shared<Empty>();
+}
+
+} // namespace rsocket

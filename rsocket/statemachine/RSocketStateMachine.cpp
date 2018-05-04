@@ -18,7 +18,6 @@
 #include "rsocket/framing/FrameTransportImpl.h"
 #include "rsocket/internal/ClientResumeStatusCallback.h"
 #include "rsocket/internal/ScheduledSubscriber.h"
-#include "rsocket/internal/WarmResumeManager.h"
 #include "rsocket/statemachine/ChannelRequester.h"
 #include "rsocket/statemachine/ChannelResponder.h"
 #include "rsocket/statemachine/RequestResponseRequester.h"
@@ -79,13 +78,14 @@ RSocketStateMachine::RSocketStateMachine(
       // Streams initiated by a client MUST use odd-numbered and streams
       // initiated by the server MUST use even-numbered stream identifiers
       nextStreamId_(mode == RSocketMode::CLIENT ? 1 : 2),
-      resumeManager_{resumeManager
-                         ? resumeManager
-                         : std::make_shared<WarmResumeManager>(stats_)},
+      resumeManager_(std::move(resumeManager)),
       requestResponder_{std::move(requestResponder)},
       keepaliveTimer_{std::move(keepaliveTimer)},
       coldResumeHandler_{std::move(coldResumeHandler)},
       connectionEvents_{connectionEvents} {
+  CHECK(resumeManager_)
+      << "provide ResumeManager::makeEmpty() instead of nullptr";
+
   // We deliberately do not "open" input or output to avoid having c'tor on the
   // stack when processing any signals from the connection. See ::connect and
   // ::onSubscribe.

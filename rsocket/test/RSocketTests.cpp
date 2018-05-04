@@ -2,8 +2,9 @@
 
 #include "rsocket/test/RSocketTests.h"
 
-#include "rsocket/transports/tcp/TcpConnectionAcceptor.h"
+#include "rsocket/internal/WarmResumeManager.h"
 #include "rsocket/test/test_utils/GenericRequestResponseHandler.h"
+#include "rsocket/transports/tcp/TcpConnectionAcceptor.h"
 
 namespace rsocket {
 namespace tests {
@@ -57,7 +58,7 @@ folly::Future<std::unique_ptr<RSocketClient>> makeClientAsync(
       kDefaultKeepaliveInterval,
       std::move(stats),
       std::shared_ptr<RSocketConnectionEvents>(),
-      std::shared_ptr<ResumeManager>(),
+      ResumeManager::makeEmpty(),
       std::shared_ptr<ColdResumeHandler>(),
       stateMachineEvb);
 }
@@ -133,7 +134,7 @@ std::unique_ptr<RSocketClient> makeWarmResumableClient(
              kDefaultKeepaliveInterval,
              RSocketStats::noop(),
              std::move(connectionEvents),
-             std::shared_ptr<ResumeManager>(),
+             std::make_shared<WarmResumeManager>(RSocketStats::noop()),
              std::shared_ptr<ColdResumeHandler>(),
              stateMachineEvb)
       .get();

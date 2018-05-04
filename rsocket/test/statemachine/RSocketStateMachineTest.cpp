@@ -55,7 +55,7 @@ class RSocketStateMachineTest : public Test {
         RSocketMode::CLIENT,
         nullptr,
         nullptr,
-        nullptr,
+        ResumeManager::makeEmpty(),
         nullptr);
 
     SetupParameters setupParameters;

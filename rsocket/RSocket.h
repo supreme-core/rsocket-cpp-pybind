@@ -23,7 +23,7 @@ class RSocket {
       std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       std::shared_ptr<RSocketConnectionEvents> connectionEvents =
           std::shared_ptr<RSocketConnectionEvents>(),
-      std::shared_ptr<ResumeManager> resumeManager = nullptr,
+      std::shared_ptr<ResumeManager> resumeManager = ResumeManager::makeEmpty(),
       std::shared_ptr<ColdResumeHandler> coldResumeHandler =
           std::shared_ptr<ColdResumeHandler>(),
       folly::EventBase* stateMachineEvb = nullptr);
@@ -57,7 +57,7 @@ class RSocket {
       std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
       std::shared_ptr<RSocketConnectionEvents> connectionEvents =
           std::shared_ptr<RSocketConnectionEvents>(),
-      std::shared_ptr<ResumeManager> resumeManager = nullptr,
+      std::shared_ptr<ResumeManager> resumeManager = ResumeManager::makeEmpty(),
       std::shared_ptr<ColdResumeHandler> coldResumeHandler =
           std::shared_ptr<ColdResumeHandler>(),
       folly::EventBase* stateMachineEvb = nullptr);

@@ -53,6 +53,8 @@ using StreamResumeInfos = std::unordered_map<StreamId, StreamResumeInfo>;
 // - lastSentPosition() would return 350
 class ResumeManager {
  public:
+  static std::shared_ptr<ResumeManager> makeEmpty();
+
   virtual ~ResumeManager() {}
 
   // The following methods will be called for each frame which is being
@@ -120,7 +122,7 @@ class ResumeManager {
   virtual StreamId getLargestUsedStreamId() const = 0;
 
   // Utility method to check frames which should be tracked for resumption.
-  inline bool shouldTrackFrame(const FrameType frameType) const {
+  virtual bool shouldTrackFrame(const FrameType frameType) const {
     switch (frameType) {
       case FrameType::REQUEST_CHANNEL:
       case FrameType::REQUEST_STREAM:

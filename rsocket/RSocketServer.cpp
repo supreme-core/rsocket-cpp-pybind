@@ -9,6 +9,7 @@
 #include "rsocket/framing/FramedDuplexConnection.h"
 #include "rsocket/framing/ScheduledFrameTransport.h"
 #include "rsocket/internal/ConnectionSet.h"
+#include "rsocket/internal/WarmResumeManager.h"
 
 namespace rsocket {
 
@@ -164,9 +165,11 @@ void RSocketServer::onRSocketSetup(
           : std::move(connectionParams.responder),
       nullptr,
       RSocketMode::SERVER,
-      std::move(connectionParams.stats),
+      connectionParams.stats,
       std::move(connectionParams.connectionEvents),
-      nullptr, /* resumeManager */
+      setupParams.resumable
+          ? std::make_shared<WarmResumeManager>(connectionParams.stats)
+          : ResumeManager::makeEmpty(),
       nullptr /* coldResumeHandler */);
 
   if (!connectionSet->insert(rs, eventBase)) {

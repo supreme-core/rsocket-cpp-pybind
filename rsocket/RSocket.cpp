@@ -14,6 +14,9 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
     std::shared_ptr<ResumeManager> resumeManager,
     std::shared_ptr<ColdResumeHandler> coldResumeHandler,
     folly::EventBase* stateMachineEvb) {
+  CHECK(resumeManager)
+      << "provide ResumeManager::makeEmpty() instead of nullptr";
+
   auto createRSC = [
     connectionFactory,
     setupParameters = std::move(setupParameters),

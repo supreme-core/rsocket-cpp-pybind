@@ -34,7 +34,10 @@ RSocketClient::RSocketClient(
       coldResumeHandler_(coldResumeHandler),
       protocolVersion_(protocolVersion),
       token_(std::move(token)),
-      evb_(stateMachineEvb) {}
+      evb_(stateMachineEvb) {
+  CHECK(resumeManager_)
+      << "provide ResumeManager::makeEmpty() instead of nullptr";
+}
 
 RSocketClient::~RSocketClient() {
   VLOG(3) << "~RSocketClient ..";

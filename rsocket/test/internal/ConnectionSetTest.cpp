@@ -23,7 +23,7 @@ std::shared_ptr<RSocketStateMachine> makeStateMachine(folly::EventBase* evb) {
       RSocketMode::SERVER,
       RSocketStats::noop(),
       std::make_shared<RSocketConnectionEvents>(),
-      nullptr /* resumeManager */,
+      ResumeManager::makeEmpty(),
       nullptr /* coldResumeHandler */
   );
 }
