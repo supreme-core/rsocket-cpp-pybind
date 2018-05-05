@@ -1017,6 +1017,7 @@ TEST(FlowableTest, Timeout_NoTimeout) {
   int requestCount = 1;
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
   flowable->subscribe(subscriber);
+  flowable.reset();
 
   timerEvb.loop();
 
@@ -1033,6 +1034,7 @@ TEST(FlowableTest, Timeout_NoTimeout) {
 
   subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
   flowable->subscribe(subscriber);
+  flowable.reset();
 
   timerEvb.loop();
 
@@ -1051,6 +1053,7 @@ TEST(FlowableTest, Timeout_OnNextTimeout) {
   int requestCount = 1;
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
   flowable->subscribe(subscriber);
+  flowable.reset();
 
   TestTimeout timeout(&timerEvb, [subscriber]() { subscriber->request(1); });
   timeout.scheduleTimeout(100); // request next in 100 msec, timeout!
@@ -1085,6 +1088,7 @@ TEST(FlowableTest, Timeout_InitTimeout) {
   timeout.scheduleTimeout(100); // timeout the init
 
   flowable->subscribe(subscriber);
+  flowable.reset();
   timerEvb.loop();
 
   subscriber->awaitTerminalEvent(std::chrono::seconds(1));
@@ -1112,6 +1116,7 @@ TEST(FlowableTest, Timeout_NeverOperator_Timesout) {
   int requestCount = 10;
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
   flowable->subscribe(subscriber);
+  flowable.reset();
 
   timerEvb.loop();
 
@@ -1157,6 +1162,7 @@ TEST(FlowableTest, Timeout_WithObserveOnSubscribeOn) {
   timeout.scheduleTimeout(100); // timeout onNext
 
   flowable->subscribe(subscriber);
+  flowable.reset();
   timerEvb.loop();
 
   subscriber->awaitTerminalEvent(std::chrono::seconds(1));
@@ -1183,6 +1189,7 @@ TEST(FlowableTest, Timeout_SameThread) {
   timeout.scheduleTimeout(100); // timeout onNext
 
   flowable->subscribe(subscriber);
+  flowable.reset();
   timerEvb.loop();
 
   subscriber->awaitTerminalEvent(std::chrono::seconds(1));

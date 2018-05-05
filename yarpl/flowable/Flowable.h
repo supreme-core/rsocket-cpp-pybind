@@ -216,6 +216,8 @@ class Flowable : public yarpl::enable_get_ref {
 
   std::shared_ptr<Flowable<T>> observeOn(folly::Executor&);
 
+  std::shared_ptr<Flowable<T>> observeOn(folly::Executor::KeepAlive<>);
+
   std::shared_ptr<Flowable<T>> concatWith(std::shared_ptr<Flowable<T>>);
 
   template <typename... Args>
@@ -496,8 +498,14 @@ std::shared_ptr<Flowable<T>> Flowable<T>::subscribeOn(
 
 template <typename T>
 std::shared_ptr<Flowable<T>> Flowable<T>::observeOn(folly::Executor& executor) {
+  return observeOn(folly::getKeepAliveToken(executor));
+}
+
+template <typename T>
+std::shared_ptr<Flowable<T>> Flowable<T>::observeOn(
+    folly::Executor::KeepAlive<> executor) {
   return std::make_shared<yarpl::flowable::detail::ObserveOnOperator<T>>(
-      this->ref_from_this(this), executor);
+      this->ref_from_this(this), std::move(executor));
 }
 
 template <typename T>

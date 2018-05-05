@@ -44,12 +44,12 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
  public:
   ObserveOnOperatorSubscriber(
       std::shared_ptr<Subscriber<T>> inner,
-      folly::Executor& executor)
-      : inner_(std::move(inner)), executor_(executor) {}
+      folly::Executor::KeepAlive<> executor)
+      : inner_(std::move(inner)), executor_(std::move(executor)) {}
 
   // all signaling methods are called from upstream EB
   void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-    executor_.add([self = this->ref_from_this(this),
+    executor_->add([self = this->ref_from_this(this),
                    s = std::move(subscription)]() mutable {
       auto subscription = std::make_shared<ObserveOnOperatorSubscription<T>>(
           self, std::move(s));
@@ -57,7 +57,7 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
     });
   }
   void onNext(T next) override {
-    executor_.add(
+    executor_->add(
         [self = this->ref_from_this(this), n = std::move(next)]() mutable {
           if (auto& inner = self->inner_) {
             inner->onNext(std::move(n));
@@ -65,14 +65,14 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
         });
   }
   void onComplete() override {
-    executor_.add([self = this->ref_from_this(this)]() mutable {
+    executor_->add([self = this->ref_from_this(this)]() mutable {
       if (auto inner = std::exchange(self->inner_, nullptr)) {
         inner->onComplete();
       }
     });
   }
   void onError(folly::exception_wrapper err) override {
-    executor_.add(
+    executor_->add(
         [self = this->ref_from_this(this), e = std::move(err)]() mutable {
           if (auto inner = std::exchange(self->inner_, nullptr)) {
             inner->onError(std::move(e));
@@ -84,7 +84,7 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
   friend class ObserveOnOperatorSubscription<T>;
 
   std::shared_ptr<Subscriber<T>> inner_;
-  folly::Executor& executor_;
+  folly::Executor::KeepAlive<> executor_;
 };
 
 template <typename T>
@@ -92,16 +92,16 @@ class ObserveOnOperator : public yarpl::flowable::Flowable<T> {
  public:
   ObserveOnOperator(
       std::shared_ptr<Flowable<T>> upstream,
-      folly::Executor& executor)
-      : upstream_(std::move(upstream)), executor_(executor) {}
+      folly::Executor::KeepAlive<> executor)
+      : upstream_(std::move(upstream)), executor_(std::move(executor)) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     upstream_->subscribe(std::make_shared<ObserveOnOperatorSubscriber<T>>(
-        std::move(subscriber), executor_));
+        std::move(subscriber), folly::getKeepAliveToken(executor_.get())));
   }
 
   std::shared_ptr<Flowable<T>> upstream_;
-  folly::Executor& executor_;
+  folly::Executor::KeepAlive<> executor_;
 };
 } // namespace detail
 } // namespace flowable
