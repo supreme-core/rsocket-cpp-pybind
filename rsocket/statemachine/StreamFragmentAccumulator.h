@@ -7,14 +7,16 @@
 namespace rsocket {
 
 struct StreamFragmentAccumulator {
-  FrameHeader header;
+  StreamType streamType;
+  bool flagsComplete : 1;
+  bool flagsNext : 1;
   uint32_t requestN{0};
   Payload fragments;
 
   StreamFragmentAccumulator(StreamFragmentAccumulator const&) = delete;
   StreamFragmentAccumulator(StreamFragmentAccumulator&&) = default;
 
-  StreamFragmentAccumulator() {}
+  StreamFragmentAccumulator() : flagsComplete(false), flagsNext(false) {}
 
   explicit StreamFragmentAccumulator(
       Frame_REQUEST_Base const& frame,
@@ -39,7 +41,10 @@ struct StreamFragmentAccumulator {
       FrameHeader const& fh,
       uint32_t requestN,
       Payload payload)
-      : header(fh), requestN(requestN) {
+      : streamType(getStreamType(fh.type)),
+        flagsComplete(fh.flagsComplete()),
+        flagsNext(fh.flagsNext()),
+        requestN(requestN) {
     addPayload(std::move(payload));
   }
 

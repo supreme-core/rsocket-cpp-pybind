@@ -25,6 +25,10 @@ class FrameHeader {
     return !!(flags & FrameFlags::NEXT);
   }
 
+  bool flagsFollows() const {
+    return !!(flags & FrameFlags::FOLLOWS);
+  }
+
   FrameType type{FrameType::RESERVED};
   FrameFlags flags{FrameFlags::EMPTY};
   StreamId streamId{0};

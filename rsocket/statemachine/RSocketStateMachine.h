@@ -157,6 +157,29 @@ class RSocketStateMachine final
   bool hasStreams() const;
 
  private:
+  // connection scope signals
+  void onKeepAlive(
+      ResumePosition resumePosition,
+      std::unique_ptr<folly::IOBuf> data,
+      bool keepAliveRespond);
+  void onMetadataPush(std::unique_ptr<folly::IOBuf> metadata);
+  void onResumeOk(ResumePosition resumePosition);
+  void onError(ErrorCode errorCode, Payload payload);
+
+  // stream scope signals
+  void onStreamRequestN(StreamId streamId, uint32_t requestN);
+  void onStreamCancel(StreamId streamId);
+  void onStreamError(StreamId streamId, Payload payload);
+  void onStreamPayload(
+      StreamId streamId,
+      Payload payload,
+      bool flagsFollows,
+      bool flagsComplete,
+      bool flagsNext);
+
+  std::shared_ptr<StreamStateMachineBase> getStreamStateMachine(
+      StreamId streamId);
+
   void connect(std::shared_ptr<FrameTransport>);
 
   /// Terminate underlying connection and connect new connection
