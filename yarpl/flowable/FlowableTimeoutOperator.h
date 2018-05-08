@@ -3,10 +3,23 @@
 #pragma once
 
 namespace yarpl {
+class TimeoutException : public std::runtime_error {
+ public:
+  TimeoutException() : std::runtime_error("yarpl::TimeoutException") {}
+};
+namespace detail {
+class TimeoutExceptionGenerator {
+ public:
+  TimeoutException operator()() const {
+    return {};
+  }
+};
+} // namespace detail
+
 namespace flowable {
 namespace details {
 
-template <typename T>
+template <typename T, typename ExceptionGenerator>
 class TimeoutOperator : public FlowableOperator<T, T> {
   using Super = FlowableOperator<T, T>;
 
@@ -15,15 +28,21 @@ class TimeoutOperator : public FlowableOperator<T, T> {
       std::shared_ptr<Flowable<T>> upstream,
       folly::EventBase& timerEvb,
       std::chrono::milliseconds timeout,
-      std::chrono::milliseconds initTimeout = std::chrono::milliseconds(0))
+      std::chrono::milliseconds initTimeout,
+      ExceptionGenerator&& exnGen)
       : upstream_(std::move(upstream)),
         timerEvb_(timerEvb),
         timeout_(timeout),
-        initTimeout_(initTimeout) {}
+        initTimeout_(initTimeout),
+        exnGen_(std::forward<ExceptionGenerator>(exnGen)) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     auto subscription = std::make_shared<TimeoutSubscription>(
-        subscriber, timerEvb_, initTimeout_, timeout_);
+        this->ref_from_this(this),
+        subscriber,
+        timerEvb_,
+        initTimeout_,
+        timeout_);
     upstream_->subscribe(std::move(subscription));
   }
 
@@ -34,11 +53,13 @@ class TimeoutOperator : public FlowableOperator<T, T> {
 
    public:
     TimeoutSubscription(
+        std::shared_ptr<TimeoutOperator<T, ExceptionGenerator>> flowable,
         std::shared_ptr<Subscriber<T>> subscriber,
         folly::EventBase& timerEvb,
         std::chrono::milliseconds initTimeout,
         std::chrono::milliseconds timeout)
         : Super::Subscription(std::move(subscriber)),
+          flowable_(std::move(flowable)),
           timerEvb_(timerEvb),
           initTimeout_(initTimeout),
           timeout_(timeout) {}
@@ -57,7 +78,7 @@ class TimeoutOperator : public FlowableOperator<T, T> {
 
     void onNextImpl(T value) override {
       DCHECK(timerEvb_.isInEventBaseThread());
-      if (!canceled_) {
+      if (flowable_) {
         if (nextTime_ != std::chrono::steady_clock::time_point::max()) {
           cancelTimeout(); // cancel timer before calling onNext
           auto currentTime = getCurTime();
@@ -79,14 +100,19 @@ class TimeoutOperator : public FlowableOperator<T, T> {
 
     void onTerminateImpl() override {
       DCHECK(timerEvb_.isInEventBaseThread());
-      canceled_ = true;
+      flowable_.reset();
       cancelTimeout();
     }
 
     void timeoutExpired() noexcept override {
-      if (!canceled_) {
-        canceled_ = true;
-        SuperSub::terminateErr(std::runtime_error("timeout expired"));
+      if (auto flowable = std::exchange(flowable_, nullptr)) {
+        SuperSub::terminateErr([&]() -> folly::exception_wrapper {
+          try {
+            return flowable->exnGen_();
+          } catch (...) {
+            return folly::make_exception_wrapper<std::nested_exception>();
+          }
+        }());
       }
     }
 
@@ -95,10 +121,10 @@ class TimeoutOperator : public FlowableOperator<T, T> {
     }
 
    private:
+    std::shared_ptr<TimeoutOperator<T, ExceptionGenerator>> flowable_;
     folly::EventBase& timerEvb_;
     std::chrono::milliseconds initTimeout_;
     std::chrono::milliseconds timeout_;
-    bool canceled_{false};
     std::chrono::steady_clock::time_point nextTime_;
   };
 
@@ -106,6 +132,7 @@ class TimeoutOperator : public FlowableOperator<T, T> {
   folly::EventBase& timerEvb_;
   std::chrono::milliseconds timeout_;
   std::chrono::milliseconds initTimeout_;
+  std::decay_t<ExceptionGenerator> exnGen_;
 };
 
 } // namespace details

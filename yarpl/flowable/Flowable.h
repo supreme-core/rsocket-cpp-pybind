@@ -13,6 +13,12 @@
 #include "yarpl/utils/type_traits.h"
 
 namespace yarpl {
+
+class TimeoutException;
+namespace detail {
+class TimeoutExceptionGenerator;
+}
+
 namespace flowable {
 
 template <typename T = void>
@@ -330,10 +336,13 @@ class Flowable : public yarpl::enable_get_ref {
   std::shared_ptr<Flowable<T>>
   doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
 
+  template <
+      typename ExceptionGenerator = yarpl::detail::TimeoutExceptionGenerator>
   std::shared_ptr<Flowable<T>> timeout(
       folly::EventBase& timerEvb,
       std::chrono::milliseconds timeout,
-      std::chrono::milliseconds initTimeout = std::chrono::milliseconds(0));
+      std::chrono::milliseconds initTimeout,
+      ExceptionGenerator&& exnGen = ExceptionGenerator());
 
   template <
       typename Emitter,
@@ -666,12 +675,18 @@ std::shared_ptr<Flowable<T>> Flowable<T>::doOnCancel(Function function) {
 }
 
 template <typename T>
+template <typename ExceptionGenerator>
 std::shared_ptr<Flowable<T>> Flowable<T>::timeout(
     folly::EventBase& timerEvb,
     std::chrono::milliseconds timeout,
-    std::chrono::milliseconds initTimeout) {
-  return std::make_shared<details::TimeoutOperator<T>>(
-      ref_from_this(this), timerEvb, timeout, initTimeout);
+    std::chrono::milliseconds initTimeout,
+    ExceptionGenerator&& exnGen) {
+  return std::make_shared<details::TimeoutOperator<T, ExceptionGenerator>>(
+      ref_from_this(this),
+      timerEvb,
+      timeout,
+      initTimeout,
+      std::forward<ExceptionGenerator>(exnGen));
 }
 
 } // namespace flowable

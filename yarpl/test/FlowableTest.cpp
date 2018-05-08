@@ -1009,10 +1009,41 @@ class TestTimeout : public folly::AsyncTimeout {
   folly::Function<void()> fn_;
 };
 
+TEST(FlowableTest, Timeout_SpecialException) {
+  class RestrictedType {
+   public:
+    RestrictedType() = default;
+    RestrictedType(RestrictedType&&) noexcept = default;
+    RestrictedType& operator=(RestrictedType&&) noexcept = default;
+    auto operator()() {
+      return std::logic_error("RestrictedType");
+    }
+  };
+
+  folly::EventBase timerEvb;
+  auto flowable = Flowable<int>::never()->timeout<RestrictedType>(
+      timerEvb,
+      std::chrono::milliseconds(0),
+      std::chrono::milliseconds(1),
+      RestrictedType{});
+
+  int requestCount = 1;
+  auto subscriber = std::make_shared<TestSubscriber<int>>(requestCount);
+  flowable->subscribe(subscriber);
+
+  timerEvb.loop();
+
+  EXPECT_EQ(subscriber->values(), std::vector<int>({}));
+  EXPECT_TRUE(subscriber->exceptionWrapper().with_exception(
+      [](const std::logic_error& ex) {
+        EXPECT_STREQ("RestrictedType", ex.what());
+      }));
+}
+
 TEST(FlowableTest, Timeout_NoTimeout) {
   folly::EventBase timerEvb;
   auto flowable = Flowable<>::range(1, 1)->observeOn(timerEvb)->timeout(
-      timerEvb, std::chrono::milliseconds(0));
+      timerEvb, std::chrono::milliseconds(0), std::chrono::milliseconds(0));
 
   int requestCount = 1;
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(requestCount);
@@ -1103,7 +1134,8 @@ TEST(FlowableTest, Timeout_StopUsageOfTimer) {
   {
     // EventBase will be deleted before the flowable
     folly::EventBase timerEvb;
-    auto flowableIn = flowable->timeout(timerEvb, std::chrono::milliseconds(1));
+    auto flowableIn = flowable->timeout(
+        timerEvb, std::chrono::milliseconds(1), std::chrono::milliseconds(0));
     EXPECT_EQ(run(flowableIn), std::vector<int64_t>({1}));
   }
 }
