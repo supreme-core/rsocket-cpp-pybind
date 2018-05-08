@@ -21,19 +21,17 @@ class RSocketResponderCore {
   handleRequestChannel(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<yarpl::flowable::Subscriber<Payload>>&
-          response) noexcept;
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) noexcept;
 
   virtual void handleRequestStream(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<yarpl::flowable::Subscriber<Payload>>&
-          response) noexcept;
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) noexcept;
 
   virtual void handleRequestResponse(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<yarpl::single::SingleObserver<Payload>>&
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>>
           response) noexcept;
 };
 
@@ -116,7 +114,7 @@ class RSocketResponderAdapter : public RSocketResponderCore {
   std::shared_ptr<yarpl::flowable::Subscriber<Payload>> handleRequestChannel(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<yarpl::flowable::Subscriber<Payload>>&
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
           response) noexcept override;
 
   /// Internal method for handling stream requests, not intended to be used
@@ -124,7 +122,7 @@ class RSocketResponderAdapter : public RSocketResponderCore {
   void handleRequestStream(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<yarpl::flowable::Subscriber<Payload>>&
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
           response) noexcept override;
 
   /// Internal method for handling request-response requests, not intended to be
@@ -132,7 +130,7 @@ class RSocketResponderAdapter : public RSocketResponderCore {
   void handleRequestResponse(
       Payload request,
       StreamId streamId,
-      const std::shared_ptr<yarpl::single::SingleObserver<Payload>>&
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>>
           response) noexcept override;
 
   void handleFireAndForget(Payload request, StreamId streamId) override;

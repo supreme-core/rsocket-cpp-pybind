@@ -13,7 +13,7 @@ using namespace yarpl::single;
 void RSocketResponderCore::handleRequestStream(
     Payload,
     StreamId,
-    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
+    std::shared_ptr<Subscriber<Payload>> response) noexcept {
   response->onSubscribe(Subscription::create());
   response->onError(std::logic_error("handleRequestStream not implemented"));
 }
@@ -21,7 +21,7 @@ void RSocketResponderCore::handleRequestStream(
 void RSocketResponderCore::handleRequestResponse(
     Payload,
     StreamId,
-    const std::shared_ptr<SingleObserver<Payload>>& responseObserver) noexcept {
+    std::shared_ptr<SingleObserver<Payload>> responseObserver) noexcept {
   responseObserver->onSubscribe(SingleSubscriptions::empty());
   responseObserver->onError(
       std::logic_error("handleRequestResponse not implemented"));
@@ -38,7 +38,7 @@ void RSocketResponderCore::handleMetadataPush(std::unique_ptr<folly::IOBuf>) {
 std::shared_ptr<Subscriber<Payload>> RSocketResponderCore::handleRequestChannel(
     Payload,
     StreamId,
-    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
+    std::shared_ptr<Subscriber<Payload>> response) noexcept {
   response->onSubscribe(Subscription::create());
   response->onError(std::logic_error("handleRequestStream not implemented"));
 
@@ -81,7 +81,7 @@ std::shared_ptr<Subscriber<Payload>>
 RSocketResponderAdapter::handleRequestChannel(
     Payload request,
     StreamId streamId,
-    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
+    std::shared_ptr<Subscriber<Payload>> response) noexcept {
   class EagerSubscriberBridge : public Subscriber<Payload> {
    public:
     void onSubscribe(
@@ -159,7 +159,7 @@ RSocketResponderAdapter::handleRequestChannel(
 void RSocketResponderAdapter::handleRequestStream(
     Payload request,
     StreamId streamId,
-    const std::shared_ptr<Subscriber<Payload>>& response) noexcept {
+    std::shared_ptr<Subscriber<Payload>> response) noexcept {
   auto flowable =
       inner_->handleRequestStream(std::move(request), std::move(streamId));
   flowable->subscribe(std::move(response));
@@ -169,7 +169,7 @@ void RSocketResponderAdapter::handleRequestStream(
 void RSocketResponderAdapter::handleRequestResponse(
     Payload request,
     StreamId streamId,
-    const std::shared_ptr<SingleObserver<Payload>>& responseObserver) noexcept {
+    std::shared_ptr<SingleObserver<Payload>> responseObserver) noexcept {
   auto single = inner_->handleRequestResponse(std::move(request), streamId);
   single->subscribe(std::move(responseObserver));
 }
