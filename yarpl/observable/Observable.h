@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <folly/functional/Invoke.h>
 #include <memory>
 #include <type_traits>
 #include <utility>
-#include <folly/functional/Invoke.h>
 
 #include "yarpl/utils/type_traits.h"
 
@@ -16,7 +16,6 @@
 #include "yarpl/Common.h"
 #include "yarpl/Flowable.h"
 #include "yarpl/flowable/Flowable_FromObservable.h"
-
 
 namespace yarpl {
 
@@ -93,8 +92,8 @@ class Observable : public yarpl::enable_get_ref {
 
   // this will generate an observable which can be subscribed to only once
   static std::shared_ptr<Observable<T>> justOnce(T value) {
-    auto lambda = [ value = std::move(value), used = false ](
-        std::shared_ptr<Observer<T>> observer) mutable {
+    auto lambda = [value = std::move(value), used = false](
+                      std::shared_ptr<Observer<T>> observer) mutable {
       if (used) {
         observer->onError(
             std::runtime_error("justOnce value was already used"));

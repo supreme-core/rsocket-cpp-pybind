@@ -72,8 +72,8 @@ class SingleOperator : public Single<D> {
 
     // Subscriber.
 
-    void onSubscribe(
-        std::shared_ptr<yarpl::single::SingleSubscription> subscription) override {
+    void onSubscribe(std::shared_ptr<yarpl::single::SingleSubscription>
+                         subscription) override {
       upstream_ = std::move(subscription);
       observer_->onSubscribe(this->ref_from_this(this));
     }
@@ -151,7 +151,8 @@ template <
     typename U,
     typename D,
     typename F,
-    typename = typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
+    typename =
+        typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
 class MapOperator : public SingleOperator<U, D> {
   using ThisOperatorT = MapOperator<U, D, F>;
   using Super = SingleOperator<U, D>;
@@ -219,5 +220,5 @@ class SingleVoidFromPublisherOperator : public Single<void> {
   OnSubscribe function_;
 };
 
-} // single
-} // yarpl
+} // namespace single
+} // namespace yarpl

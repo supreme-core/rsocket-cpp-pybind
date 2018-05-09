@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <atomic>
 #include <folly/Synchronized.h>
+#include <atomic>
 
 namespace yarpl {
 
@@ -54,7 +54,7 @@ class enable_get_ref : public std::enable_shared_from_this<enable_get_ref> {
   std::shared_ptr<As> ref_from_this(As* ptr) {
     // at runtime, ensure that the most derived class can indeed be
     // converted into an 'as'
-    (void) ptr; // silence 'unused parameter' errors in Release builds
+    (void)ptr; // silence 'unused parameter' errors in Release builds
     return std::static_pointer_cast<As>(this->shared_from_this());
   }
 
@@ -62,10 +62,11 @@ class enable_get_ref : public std::enable_shared_from_this<enable_get_ref> {
   std::shared_ptr<As> ref_from_this(As const* ptr) const {
     // at runtime, ensure that the most derived class can indeed be
     // converted into an 'as'
-    (void) ptr; // silence 'unused parameter' errors in Release builds
+    (void)ptr; // silence 'unused parameter' errors in Release builds
     return std::static_pointer_cast<As const>(this->shared_from_this());
   }
-public:
+
+ public:
   virtual ~enable_get_ref() = default;
 };
 

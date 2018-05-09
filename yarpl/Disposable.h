@@ -27,4 +27,4 @@ class Disposable {
    */
   virtual bool isDisposed() = 0;
 };
-}
+} // namespace yarpl

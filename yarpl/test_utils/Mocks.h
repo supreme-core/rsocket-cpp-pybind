@@ -143,15 +143,16 @@ class MockSubscription : public flowable::Subscription {
     cancel_();
   }
 };
-}
+} // namespace mocks
 
 template <typename T, bool keep_reference_to_this = true>
-class MockBaseSubscriber : public flowable::BaseSubscriber<T, keep_reference_to_this> {
-public:
+class MockBaseSubscriber
+    : public flowable::BaseSubscriber<T, keep_reference_to_this> {
+ public:
   MOCK_METHOD0_T(onSubscribeImpl, void());
   MOCK_METHOD1_T(onNextImpl, void(T));
   MOCK_METHOD0_T(onCompleteImpl, void());
   MOCK_METHOD1_T(onErrorImpl, void(folly::exception_wrapper));
 };
 
-} // namespace yarpl::mocks
+} // namespace yarpl

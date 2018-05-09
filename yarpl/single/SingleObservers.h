@@ -83,5 +83,5 @@ class SingleObservers {
   SingleObservers() = delete;
 };
 
-} // observable
-} // yarpl
+} // namespace single
+} // namespace yarpl

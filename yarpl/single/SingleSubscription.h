@@ -16,5 +16,5 @@ class SingleSubscription {
   SingleSubscription() {}
 };
 
-} // single
-} // yarpl
+} // namespace single
+} // namespace yarpl

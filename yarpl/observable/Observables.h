@@ -10,7 +10,7 @@
 namespace yarpl {
 namespace observable {
 
-template<>
+template <>
 class Observable<void> {
  public:
   /**
@@ -40,5 +40,5 @@ class Observable<void> {
   Observable() = delete;
 };
 
-} // observable
-} // yarpl
+} // namespace observable
+} // namespace yarpl

@@ -13,8 +13,8 @@ namespace yarpl {
 namespace single {
 
 /**
-* Implementation that allows checking if a Subscription is cancelled.
-*/
+ * Implementation that allows checking if a Subscription is cancelled.
+ */
 class AtomicBoolSingleSubscription : public SingleSubscription {
  public:
   void cancel() override {
@@ -29,8 +29,8 @@ class AtomicBoolSingleSubscription : public SingleSubscription {
 };
 
 /**
-* Implementation that gets a callback when cancellation occurs.
-*/
+ * Implementation that gets a callback when cancellation occurs.
+ */
 class CallbackSingleSubscription : public SingleSubscription {
  public:
   explicit CallbackSingleSubscription(std::function<void()> onCancel)
@@ -52,10 +52,10 @@ class CallbackSingleSubscription : public SingleSubscription {
 };
 
 /**
-* Implementation that can be cancelled with or without
+ * Implementation that can be cancelled with or without
  * a delegate, and when the delegate exists (before or after cancel)
  * it will be cancelled in a thread-safe manner.
-*/
+ */
 class DelegateSingleSubscription : public SingleSubscription {
  public:
   explicit DelegateSingleSubscription() {}
@@ -118,10 +118,11 @@ class SingleSubscriptions {
   static std::shared_ptr<SingleSubscription> empty() {
     return std::make_shared<AtomicBoolSingleSubscription>();
   }
-  static std::shared_ptr<AtomicBoolSingleSubscription> atomicBoolSubscription() {
+  static std::shared_ptr<AtomicBoolSingleSubscription>
+  atomicBoolSubscription() {
     return std::make_shared<AtomicBoolSingleSubscription>();
   }
 };
 
-} // single namespace
-} // yarpl namespace
+} // namespace single
+} // namespace yarpl

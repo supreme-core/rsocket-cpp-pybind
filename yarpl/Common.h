@@ -40,7 +40,7 @@ enum class BackpressureStrategy {
 
 template <typename T>
 class IBackpressureStrategy {
-public:
+ public:
   virtual ~IBackpressureStrategy() = default;
 
   virtual void init(

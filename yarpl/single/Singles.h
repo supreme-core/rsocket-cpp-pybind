@@ -28,17 +28,20 @@ class Singles {
       typename T,
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe, std::shared_ptr<SingleObserver<T>>>::value>::type>
+          OnSubscribe,
+          std::shared_ptr<SingleObserver<T>>>::value>::type>
   static std::shared_ptr<Single<T>> create(OnSubscribe function) {
-    return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
+    return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
+        std::move(function));
   }
 
   template <typename T>
   static std::shared_ptr<Single<T>> error(folly::exception_wrapper ex) {
-    auto lambda = [e = std::move(ex)](std::shared_ptr<SingleObserver<T>> observer) {
-      observer->onSubscribe(SingleSubscriptions::empty());
-      observer->onError(e);
-    };
+    auto lambda =
+        [e = std::move(ex)](std::shared_ptr<SingleObserver<T>> observer) {
+          observer->onSubscribe(SingleSubscriptions::empty());
+          observer->onError(e);
+        };
     return Single<T>::create(std::move(lambda));
   }
 
@@ -54,7 +57,7 @@ class Singles {
   template <typename T, typename TGenerator>
   static std::shared_ptr<Single<T>> fromGenerator(TGenerator generator) {
     auto lambda = [generator = std::move(generator)](
-        std::shared_ptr<SingleObserver<T>> observer) mutable {
+                      std::shared_ptr<SingleObserver<T>> observer) mutable {
       observer->onSubscribe(SingleSubscriptions::empty());
       observer->onSuccess(generator());
     };
@@ -65,5 +68,5 @@ class Singles {
   Singles() = delete;
 };
 
-} // observable
-} // yarpl
+} // namespace single
+} // namespace yarpl

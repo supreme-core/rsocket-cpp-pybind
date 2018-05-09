@@ -15,31 +15,28 @@ TEST(FlowableSubscriberTest, TestBasicFunctionality) {
   auto subscriber = std::make_shared<StrictMock<MockBaseSubscriber<int>>>();
 
   EXPECT_CALL(*subscriber, onSubscribeImpl())
-    .Times(1)
-    .InSequence(subscriber_seq)
-    .WillOnce(Invoke([&] {
-      subscriber->request(3);
-    }));
-  EXPECT_CALL(*subscriber, onNextImpl(5))
-    .Times(1)
-    .InSequence(subscriber_seq);
+      .Times(1)
+      .InSequence(subscriber_seq)
+      .WillOnce(Invoke([&] { subscriber->request(3); }));
+  EXPECT_CALL(*subscriber, onNextImpl(5)).Times(1).InSequence(subscriber_seq);
   EXPECT_CALL(*subscriber, onCompleteImpl())
-    .Times(1)
-    .InSequence(subscriber_seq);
+      .Times(1)
+      .InSequence(subscriber_seq);
 
   auto subscription = std::make_shared<StrictMock<MockSubscription>>();
   EXPECT_CALL(*subscription, request_(3))
-    .Times(1)
-    .WillOnce(InvokeWithoutArgs([&] {
-      subscriber->onNext(5);
-      subscriber->onComplete();
-    }));
+      .Times(1)
+      .WillOnce(InvokeWithoutArgs([&] {
+        subscriber->onNext(5);
+        subscriber->onComplete();
+      }));
 
   subscriber->onSubscribe(subscription);
 }
 
 TEST(FlowableSubscriberTest, TestKeepRefToThisIsDisabled) {
-  auto subscriber = std::make_shared<StrictMock<MockBaseSubscriber<int, false>>>();
+  auto subscriber =
+      std::make_shared<StrictMock<MockBaseSubscriber<int, false>>>();
   auto subscription = std::make_shared<StrictMock<MockSubscription>>();
 
   // tests that only a single reference exists to the Subscriber; clearing

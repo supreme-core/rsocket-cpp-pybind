@@ -26,10 +26,8 @@ namespace flowable {
  * ts->assert...
  */
 template <typename T>
-class TestSubscriber :
-  public BaseSubscriber<T>,
-  public yarpl::flowable::Subscription
-{
+class TestSubscriber : public BaseSubscriber<T>,
+                       public yarpl::flowable::Subscription {
  public:
   static_assert(
       std::is_copy_constructible<T>::value,
@@ -42,7 +40,8 @@ class TestSubscriber :
    * Create a TestSubscriber that will subscribe and store the value it
    * receives.
    */
-  static std::shared_ptr<TestSubscriber<T>> create(int64_t initial = kNoFlowControl) {
+  static std::shared_ptr<TestSubscriber<T>> create(
+      int64_t initial = kNoFlowControl) {
     return std::make_shared<TestSubscriber<T>>(initial);
   }
 

@@ -93,11 +93,11 @@ void FlowableExamples::run() {
   std::cout << "take example: 3 out of 10 items" << std::endl;
   Flowable<>::range(1, 11)->take(3)->subscribe(printer<int64_t>());
 
-  auto flowable = Flowable<int>::create([total = 0](
-      auto& subscriber, int64_t requested) mutable {
-    subscriber.onNext(12345678);
-    subscriber.onError(std::runtime_error("error"));
-  });
+  auto flowable = Flowable<int>::create(
+      [total = 0](auto& subscriber, int64_t requested) mutable {
+        subscriber.onNext(12345678);
+        subscriber.onError(std::runtime_error("error"));
+      });
 
   auto subscriber = Subscriber<int>::create(
       [](int next) { std::cout << "@next: " << next << std::endl; },

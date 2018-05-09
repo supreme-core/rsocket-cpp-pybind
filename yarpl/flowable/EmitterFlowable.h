@@ -269,6 +269,6 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
   Emitter emitter_;
 };
 
-} // details
-} // flowable
-} // yarpl
+} // namespace details
+} // namespace flowable
+} // namespace yarpl

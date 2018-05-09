@@ -88,8 +88,8 @@ bool validate_flatmapped_values(
 }
 
 TEST(FlowableFlatMapTest, AllRequestedTest) {
-  auto f =
-      Flowable<>::justN<int>({10, 20, 30})->flatMap(make_flowable_mapper_func());
+  auto f = Flowable<>::justN<int>({10, 20, 30})
+               ->flatMap(make_flowable_mapper_func());
 
   std::vector<int64_t> res = run(f);
   EXPECT_EQ(9UL, res.size());
@@ -99,8 +99,8 @@ TEST(FlowableFlatMapTest, AllRequestedTest) {
 }
 
 TEST(FlowableFlatMapTest, FiniteRequested) {
-  auto f =
-      Flowable<>::justN<int>({10, 20, 30})->flatMap(make_flowable_mapper_func());
+  auto f = Flowable<>::justN<int>({10, 20, 30})
+               ->flatMap(make_flowable_mapper_func());
 
   auto subscriber = std::make_shared<TestSubscriber<int64_t>>(1);
   f->subscribe(subscriber);
@@ -140,15 +140,16 @@ TEST(FlowableFlatMapTest, MappedStreamThrows) {
 
     // flowable which emits an onNext, then the next iteration, emits an error
     int64_t i = 1;
-    return Flowable<int64_t>::create([i](auto& subscriber, int64_t req) mutable {
-      CHECK_EQ(1, req);
-      if (i > 0) {
-        subscriber.onNext(i);
-        i--;
-      } else {
-        subscriber.onError(std::runtime_error{"throwing in stream!"});
-      }
-    });
+    return Flowable<int64_t>::create(
+        [i](auto& subscriber, int64_t req) mutable {
+          CHECK_EQ(1, req);
+          if (i > 0) {
+            subscriber.onNext(i);
+            i--;
+          } else {
+            subscriber.onError(std::runtime_error{"throwing in stream!"});
+          }
+        });
   };
 
   auto f = Flowable<>::just<int>(1)->flatMap(std::move(func));
@@ -187,8 +188,8 @@ std::shared_ptr<FlowableEvbPair> make_range_flowable(int start, int end) {
   auto ret = std::make_shared<FlowableEvbPair>();
   ret->evb.start("MRF_Worker");
   ret->flowable = Flowable<>::range(start, end - start)
-                       ->map([](int64_t val) { return (int)val; })
-                       ->subscribeOn(*ret->evb.getEventBase());
+                      ->map([](int64_t val) { return (int)val; })
+                      ->subscribeOn(*ret->evb.getEventBase());
   return ret;
 }
 

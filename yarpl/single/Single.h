@@ -57,7 +57,7 @@ class Single : public yarpl::enable_get_ref {
   void subscribeBlocking(Success next) {
     auto waiting_ = std::make_shared<folly::Baton<>>();
     subscribe(
-        SingleObservers::create<T>([ next = std::move(next), waiting_ ](T t) {
+        SingleObservers::create<T>([next = std::move(next), waiting_](T t) {
           next(std::move(t));
           waiting_->post();
         }));
@@ -96,7 +96,8 @@ class Single<void> {
      public:
       SuccessSingleObserver(Success success) : success_{std::move(success)} {}
 
-      void onSubscribe(std::shared_ptr<SingleSubscription> subscription) override {
+      void onSubscribe(
+          std::shared_ptr<SingleSubscription> subscription) override {
         SingleObserverBase<void>::onSubscribe(std::move(subscription));
       }
 
@@ -136,7 +137,8 @@ namespace single {
 template <typename T>
 template <typename OnSubscribe, typename>
 std::shared_ptr<Single<T>> Single<T>::create(OnSubscribe function) {
-  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(std::move(function));
+  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
+      std::move(function));
 }
 
 template <typename OnSubscribe, typename>

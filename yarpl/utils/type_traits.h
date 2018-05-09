@@ -20,10 +20,10 @@ struct is_callable<
     std::enable_if_t<std::is_same<R, std::result_of_t<F(Args...)>>::value>>
     : std::true_type {};
 
-} // implementation
+} // namespace implementation
 
 template <typename Call, typename Return>
 struct is_callable : implementation::is_callable<Call, Return> {};
 
-} // std
+} // namespace std
 #endif // __cplusplus

@@ -84,5 +84,5 @@ bool isCancelled(std::atomic<int64_t>*);
  */
 bool isInfinite(std::atomic<int64_t>*);
 
-}
-}
+} // namespace credits
+} // namespace yarpl

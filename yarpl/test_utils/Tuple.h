@@ -43,4 +43,4 @@ struct Tuple {
   static std::atomic<int> instanceCount;
 };
 
-} // yarpl
+} // namespace yarpl

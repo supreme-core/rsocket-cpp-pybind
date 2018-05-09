@@ -19,4 +19,4 @@ std::shared_ptr<Observable<int64_t>> Observable<>::range(
   return Observable<int64_t>::create(std::move(lambda));
 }
 } // namespace observable
-} // yarpl
+} // namespace yarpl

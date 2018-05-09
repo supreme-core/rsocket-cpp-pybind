@@ -498,14 +498,14 @@ class FromPublisherOperator : public Observable<T> {
     }
 
     void onComplete() override {
-      if(auto inner = atomic_exchange(&inner_, nullptr)) {
+      if (auto inner = atomic_exchange(&inner_, nullptr)) {
         inner->onComplete();
       }
       Observer<T>::onComplete();
     }
 
     void onError(folly::exception_wrapper ex) override {
-      if(auto inner = atomic_exchange(&inner_, nullptr)) {
+      if (auto inner = atomic_exchange(&inner_, nullptr)) {
         inner->onError(std::move(ex));
       }
       Observer<T>::onError(folly::exception_wrapper());

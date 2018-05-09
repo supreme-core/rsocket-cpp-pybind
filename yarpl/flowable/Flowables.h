@@ -12,7 +12,7 @@
 namespace yarpl {
 namespace flowable {
 
-template<>
+template <>
 class Flowable<void> {
  public:
   /**
@@ -47,5 +47,5 @@ class Flowable<void> {
   Flowable() = delete;
 };
 
-} // flowable
-} // yarpl
+} // namespace flowable
+} // namespace yarpl

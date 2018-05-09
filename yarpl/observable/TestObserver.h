@@ -29,7 +29,8 @@ namespace observable {
  *
  * For example:
  *
- * auto ts = std::make_shared<TestObserver<int>>(std::make_unique<MyObserver>());
+ * auto ts =
+ * std::make_shared<TestObserver<int>>(std::make_unique<MyObserver>());
  * observable->subscribe(ts->unique_observer());
  *
  * Now when 'observable' is subscribed to, the TestObserver behavior
@@ -68,7 +69,8 @@ class TestObserver : public yarpl::observable::Observer<T>,
   /**
    * Block the current thread until either onComplete or onError is called.
    */
-  void awaitTerminalEvent(std::chrono::milliseconds ms = std::chrono::seconds{1});
+  void awaitTerminalEvent(
+      std::chrono::milliseconds ms = std::chrono::seconds{1});
 
   /**
    * If the onNext values received does not match the given count,
@@ -240,5 +242,5 @@ void TestObserver<T>::assertOnErrorMessage(std::string msg) {
     throw std::runtime_error(ss.str());
   }
 }
-}
-}
+} // namespace observable
+} // namespace yarpl

@@ -50,7 +50,7 @@ class ObserveOnOperatorSubscriber : public yarpl::flowable::Subscriber<T>,
   // all signaling methods are called from upstream EB
   void onSubscribe(std::shared_ptr<Subscription> subscription) override {
     executor_->add([self = this->ref_from_this(this),
-                   s = std::move(subscription)]() mutable {
+                    s = std::move(subscription)]() mutable {
       auto subscription = std::make_shared<ObserveOnOperatorSubscription<T>>(
           self, std::move(s));
       self->inner_->onSubscribe(std::move(subscription));

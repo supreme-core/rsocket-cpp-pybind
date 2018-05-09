@@ -219,5 +219,5 @@ class SingleTestObserver : public yarpl::single::SingleObserver<T> {
   std::shared_ptr<DelegateSingleSubscription> delegateSubscription_{
       std::make_shared<DelegateSingleSubscription>()};
 };
-}
-}
+} // namespace single
+} // namespace yarpl

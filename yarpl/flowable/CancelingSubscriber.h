@@ -23,11 +23,13 @@ class CancelingSubscriber final : public BaseSubscriber<T> {
     throw std::logic_error{"CancelingSubscriber::onNext() can never be called"};
   }
   void onCompleteImpl() override {
-    throw std::logic_error{"CancelingSubscriber::onComplete() can never be called"};
+    throw std::logic_error{
+        "CancelingSubscriber::onComplete() can never be called"};
   }
   void onErrorImpl(folly::exception_wrapper) override {
-    throw std::logic_error{"CancelingSubscriber::onError() can never be called"};
+    throw std::logic_error{
+        "CancelingSubscriber::onError() can never be called"};
   }
 };
-}
-}
+} // namespace flowable
+} // namespace yarpl

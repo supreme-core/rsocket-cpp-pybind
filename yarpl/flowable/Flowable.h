@@ -134,8 +134,8 @@ class Flowable : public yarpl::enable_get_ref {
   }
 
   static std::shared_ptr<Flowable<T>> justN(std::initializer_list<T> list) {
-    auto lambda = [ v = std::vector<T>(std::move(list)), i = size_t{0} ](
-        Subscriber<T>& subscriber, int64_t requested) mutable {
+    auto lambda = [v = std::vector<T>(std::move(list)), i = size_t{0}](
+                      Subscriber<T>& subscriber, int64_t requested) mutable {
       while (i < v.size() && requested-- > 0) {
         subscriber.onNext(v[i++]);
       }
@@ -154,8 +154,8 @@ class Flowable : public yarpl::enable_get_ref {
 
   // this will generate a flowable which can be subscribed to only once
   static std::shared_ptr<Flowable<T>> justOnce(T value) {
-    auto lambda = [ value = std::move(value), used = false ](
-        Subscriber<T>& subscriber, int64_t) mutable {
+    auto lambda = [value = std::move(value), used = false](
+                      Subscriber<T>& subscriber, int64_t) mutable {
       if (used) {
         subscriber.onError(
             std::runtime_error("justOnce value was already used"));
@@ -346,11 +346,9 @@ class Flowable : public yarpl::enable_get_ref {
 
   template <
       typename Emitter,
-      typename = typename std::enable_if<folly::is_invocable_r<
-          void,
-          Emitter,
-          Subscriber<T>&,
-          int64_t>::value>::type>
+      typename = typename std::enable_if<
+          folly::is_invocable_r<void, Emitter, Subscriber<T>&, int64_t>::
+              value>::type>
   static std::shared_ptr<Flowable<T>> create(Emitter emitter);
 
   template <
@@ -358,7 +356,7 @@ class Flowable : public yarpl::enable_get_ref {
       typename = typename std::enable_if<folly::is_invocable<
           OnSubscribe,
           std::shared_ptr<Subscriber<T>>>::value>::type>
-  //TODO(lehecka): enable this warning once mobile code is clear
+  // TODO(lehecka): enable this warning once mobile code is clear
   // FOLLY_DEPRECATED(
   //     "Flowable<T>::fromPublisher is deprecated: Use PublishProcessor or "
   //     "contact rsocket team if you can't figure out what to replace it with")
