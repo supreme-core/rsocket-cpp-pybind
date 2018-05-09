@@ -6,8 +6,6 @@
 #include <memory>
 #include <string>
 
-#include "rsocket/framing/FrameFlags.h"
-
 namespace rsocket {
 
 /// The type of a read-only view on a binary buffer.
@@ -27,9 +25,6 @@ struct Payload {
     return data != nullptr || metadata != nullptr;
   }
 
-  FrameFlags getFlags() const;
-  void checkFlags(FrameFlags flags) const;
-
   std::string moveDataToString();
   std::string cloneDataToString() const;
 
@@ -45,4 +40,5 @@ struct Payload {
 };
 
 std::ostream& operator<<(std::ostream& os, const Payload& payload);
+
 } // namespace rsocket

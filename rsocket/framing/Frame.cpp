@@ -11,6 +11,21 @@
 
 namespace rsocket {
 
+namespace detail {
+
+FrameFlags getFlags(const Payload& p) {
+  return p.metadata ? FrameFlags::METADATA : FrameFlags::EMPTY;
+}
+
+void checkFlags(const Payload& p, FrameFlags flags) {
+  if (bool(p.metadata) != bool(flags & FrameFlags::METADATA)) {
+    throw std::invalid_argument{
+        "Value of METADATA flag doesn't match payload metadata"};
+  }
+}
+
+} // namespace detail
+
 constexpr uint32_t Frame_LEASE::kMaxTtl;
 constexpr uint32_t Frame_LEASE::kMaxNumRequests;
 constexpr uint32_t Frame_SETUP::kMaxKeepaliveTime;

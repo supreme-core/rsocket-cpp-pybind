@@ -1,9 +1,11 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "rsocket/Payload.h"
+
 #include <folly/String.h>
 #include <folly/io/Cursor.h>
-#include "rsocket/framing/Frame.h"
+
+#include "rsocket/internal/Common.h"
 
 namespace rsocket {
 
@@ -29,10 +31,6 @@ Payload::Payload(folly::StringPiece d, folly::StringPiece m)
   if (!m.empty()) {
     metadata = folly::IOBuf::copyBuffer(m.data(), m.size());
   }
-}
-
-void Payload::checkFlags(FrameFlags flags) const {
-  DCHECK(!!(flags & FrameFlags::METADATA) == bool(metadata));
 }
 
 std::ostream& operator<<(std::ostream& os, const Payload& payload) {
@@ -78,10 +76,6 @@ Payload Payload::clone() const {
     out.metadata = metadata->clone();
   }
   return out;
-}
-
-FrameFlags Payload::getFlags() const {
-  return metadata != nullptr ? FrameFlags::METADATA : FrameFlags::EMPTY;
 }
 
 } // namespace rsocket

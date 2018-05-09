@@ -28,6 +28,14 @@ class QueueAppender;
 
 namespace rsocket {
 
+namespace detail {
+
+FrameFlags getFlags(const Payload&);
+
+void checkFlags(const Payload&, FrameFlags);
+
+} // namespace detail
+
 /// Frames do not form hierarchy, as we never perform type erasure on a frame.
 /// We use inheritance only to save code duplication.
 ///
@@ -67,12 +75,10 @@ class Frame_REQUEST_Base {
       FrameFlags flags,
       uint32_t requestN,
       Payload payload)
-      : header_(frameType, flags | payload.getFlags(), streamId),
+      : header_(frameType, flags | detail::getFlags(payload), streamId),
         requestN_(requestN),
         payload_(std::move(payload)) {
-    // to verify the client didn't set
-    // METADATA and provided none
-    payload_.checkFlags(header_.flags);
+    detail::checkFlags(payload_, header_.flags);
     // TODO: DCHECK(requestN_ > 0);
     DCHECK(requestN_ <= Frame_REQUEST_N::kMaxRequestN);
   }
@@ -156,11 +162,10 @@ class Frame_REQUEST_RESPONSE {
   Frame_REQUEST_RESPONSE(StreamId streamId, FrameFlags flags, Payload payload)
       : header_(
             FrameType::REQUEST_RESPONSE,
-            (flags & AllowedFlags) | payload.getFlags(),
+            (flags & AllowedFlags) | detail::getFlags(payload),
             streamId),
         payload_(std::move(payload)) {
-    payload_.checkFlags(header_.flags); // to verify the client didn't set
-    // METADATA and provided none
+    detail::checkFlags(payload_, header_.flags);
   }
 
   FrameHeader header_;
@@ -177,11 +182,10 @@ class Frame_REQUEST_FNF {
   Frame_REQUEST_FNF(StreamId streamId, FrameFlags flags, Payload payload)
       : header_(
             FrameType::REQUEST_FNF,
-            (flags & AllowedFlags) | payload.getFlags(),
+            (flags & AllowedFlags) | detail::getFlags(payload),
             streamId),
         payload_(std::move(payload)) {
-    payload_.checkFlags(header_.flags); // to verify the client didn't set
-    // METADATA and provided none
+    detail::checkFlags(payload_, header_.flags);
   }
 
   FrameHeader header_;
@@ -222,11 +226,10 @@ class Frame_PAYLOAD {
   Frame_PAYLOAD(StreamId streamId, FrameFlags flags, Payload payload)
       : header_(
             FrameType::PAYLOAD,
-            (flags & AllowedFlags) | payload.getFlags(),
+            (flags & AllowedFlags) | detail::getFlags(payload),
             streamId),
         payload_(std::move(payload)) {
-    payload_.checkFlags(header_.flags); // to verify the client didn't set
-    // METADATA and provided none
+    detail::checkFlags(payload_, header_.flags);
   }
 
   static Frame_PAYLOAD complete(StreamId streamId);
@@ -242,7 +245,7 @@ class Frame_ERROR {
 
   Frame_ERROR() = default;
   Frame_ERROR(StreamId streamId, ErrorCode errorCode, Payload payload)
-      : header_(FrameType::ERROR, payload.getFlags(), streamId),
+      : header_(FrameType::ERROR, detail::getFlags(payload), streamId),
         errorCode_(errorCode),
         payload_(std::move(payload)) {}
 
@@ -315,7 +318,7 @@ class Frame_SETUP {
       Payload payload)
       : header_(
             FrameType::SETUP,
-            (flags & AllowedFlags) | payload.getFlags(),
+            (flags & AllowedFlags) | detail::getFlags(payload),
             0),
         versionMajor_(versionMajor),
         versionMinor_(versionMinor),
@@ -325,8 +328,7 @@ class Frame_SETUP {
         metadataMimeType_(metadataMimeType),
         dataMimeType_(dataMimeType),
         payload_(std::move(payload)) {
-    payload_.checkFlags(header_.flags); // to verify the client didn't set
-    // METADATA and provided none
+    detail::checkFlags(payload_, header_.flags);
     DCHECK(keepaliveTime_ > 0);
     DCHECK(maxLifetime_ > 0);
     DCHECK(keepaliveTime_ <= kMaxKeepaliveTime);
