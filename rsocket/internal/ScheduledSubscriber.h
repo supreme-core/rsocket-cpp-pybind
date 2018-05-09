@@ -23,8 +23,8 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
  public:
   ScheduledSubscriber(
       std::shared_ptr<yarpl::flowable::Subscriber<T>> inner,
-      folly::EventBase& eventBase) : inner_(std::move(inner)),
-                                     eventBase_(eventBase) {}
+      folly::EventBase& eventBase)
+      : inner_(std::move(inner)), eventBase_(eventBase) {}
 
   void onSubscribe(
       std::shared_ptr<yarpl::flowable::Subscription> subscription) override {
@@ -32,10 +32,9 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
       inner_->onSubscribe(std::move(subscription));
     } else {
       eventBase_.runInEventBaseThread(
-      [inner = inner_, subscription = std::move(subscription)]
-      {
-        inner->onSubscribe(std::move(subscription));
-      });
+          [inner = inner_, subscription = std::move(subscription)] {
+            inner->onSubscribe(std::move(subscription));
+          });
     }
   }
 
@@ -45,10 +44,7 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
       inner_->onComplete();
     } else {
       eventBase_.runInEventBaseThread(
-      [inner = inner_]
-      {
-        inner->onComplete();
-      });
+          [inner = inner_] { inner->onComplete(); });
     }
   }
 
@@ -57,9 +53,9 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
       inner_->onError(std::move(ex));
     } else {
       eventBase_.runInEventBaseThread(
-      [inner = inner_, ex = std::move(ex)]() mutable {
-        inner->onError(std::move(ex));
-      });
+          [inner = inner_, ex = std::move(ex)]() mutable {
+            inner->onError(std::move(ex));
+          });
     }
   }
 
@@ -68,9 +64,9 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
       inner_->onNext(std::move(value));
     } else {
       eventBase_.runInEventBaseThread(
-      [inner = inner_, value = std::move(value)]() mutable {
-        inner->onNext(std::move(value));
-      });
+          [inner = inner_, value = std::move(value)]() mutable {
+            inner->onNext(std::move(value));
+          });
     }
   }
 
@@ -88,13 +84,12 @@ class ScheduledSubscriber : public yarpl::flowable::Subscriber<T> {
 // request and cancel from any thread.
 //
 template <typename T>
-class ScheduledSubscriptionSubscriber
-    : public yarpl::flowable::Subscriber<T> {
+class ScheduledSubscriptionSubscriber : public yarpl::flowable::Subscriber<T> {
  public:
   ScheduledSubscriptionSubscriber(
       std::shared_ptr<yarpl::flowable::Subscriber<T>> inner,
-      folly::EventBase& eventBase) : inner_(std::move(inner)),
-                                     eventBase_(eventBase) {}
+      folly::EventBase& eventBase)
+      : inner_(std::move(inner)), eventBase_(eventBase) {}
 
   void onSubscribe(
       std::shared_ptr<yarpl::flowable::Subscription> subscription) override {
@@ -120,4 +115,4 @@ class ScheduledSubscriptionSubscriber
   folly::EventBase& eventBase_;
 };
 
-} // rsocket
+} // namespace rsocket

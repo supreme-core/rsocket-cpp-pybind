@@ -30,7 +30,7 @@ class MockConnectionAutomaton : public FrameSink {
     disconnectOrCloseWithError_(error);
   }
 };
-}
+} // namespace
 
 TEST(FollyKeepaliveTimerTest, StartStopWithResponse) {
   auto connectionAutomaton =

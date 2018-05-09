@@ -35,4 +35,4 @@ class FramedDuplexConnection : public virtual DuplexConnection {
   std::shared_ptr<FramedReader> inputReader_;
   const std::shared_ptr<ProtocolVersion> protocolVersion_;
 };
-}
+} // namespace rsocket

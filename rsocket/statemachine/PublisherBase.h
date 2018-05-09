@@ -41,4 +41,4 @@ class PublisherBase {
 
   State state_{State::RESPONDING};
 };
-}
+} // namespace rsocket

@@ -108,5 +108,5 @@ void BaseSubscriber::assertCanceled() {
   }
 }
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

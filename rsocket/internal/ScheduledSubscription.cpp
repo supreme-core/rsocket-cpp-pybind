@@ -8,18 +8,14 @@ namespace rsocket {
 
 ScheduledSubscription::ScheduledSubscription(
     std::shared_ptr<yarpl::flowable::Subscription> inner,
-    folly::EventBase& eventBase) : inner_(std::move(inner)),
-                                   eventBase_(eventBase) {
-}
+    folly::EventBase& eventBase)
+    : inner_(std::move(inner)), eventBase_(eventBase) {}
 
 void ScheduledSubscription::request(int64_t n) noexcept {
   if (eventBase_.isInEventBaseThread()) {
     inner_->request(n);
   } else {
-    eventBase_.runInEventBaseThread([inner = inner_, n]
-    {
-      inner->request(n);
-    });
+    eventBase_.runInEventBaseThread([inner = inner_, n] { inner->request(n); });
   }
 }
 
@@ -27,11 +23,8 @@ void ScheduledSubscription::cancel() noexcept {
   if (eventBase_.isInEventBaseThread()) {
     inner_->cancel();
   } else {
-    eventBase_.runInEventBaseThread([inner = inner_]
-    {
-      inner->cancel();
-    });
+    eventBase_.runInEventBaseThread([inner = inner_] { inner->cancel(); });
   }
 }
 
-} // rsocket
+} // namespace rsocket

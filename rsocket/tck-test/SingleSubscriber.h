@@ -27,5 +27,5 @@ class SingleSubscriber : public BaseSubscriber,
   std::shared_ptr<yarpl::single::SingleSubscription> subscription_;
 };
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

@@ -35,4 +35,4 @@ class FrameHeader {
 };
 
 std::ostream& operator<<(std::ostream&, const FrameHeader&);
-}
+} // namespace rsocket

@@ -33,4 +33,4 @@ class KeepaliveTimer {
   const std::chrono::milliseconds period_;
   std::atomic<bool> pending_{false};
 };
-}
+} // namespace rsocket

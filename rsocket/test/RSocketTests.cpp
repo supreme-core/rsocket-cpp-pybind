@@ -68,8 +68,8 @@ std::unique_ptr<RSocketClient> makeClient(
     uint16_t port,
     folly::EventBase* stateMachineEvb,
     std::shared_ptr<RSocketStats> stats) {
-  return makeClientAsync(
-      eventBase, port, stateMachineEvb, std::move(stats)).get();
+  return makeClientAsync(eventBase, port, stateMachineEvb, std::move(stats))
+      .get();
 }
 
 namespace {
@@ -107,12 +107,11 @@ struct DisconnectedResponder : public rsocket::RSocketResponder {
 
   ~DisconnectedResponder() {}
 };
-}
+} // namespace
 
 std::unique_ptr<RSocketClient> makeDisconnectedClient(
     folly::EventBase* eventBase) {
-  auto server =
-      makeServer(std::make_shared<DisconnectedResponder>());
+  auto server = makeServer(std::make_shared<DisconnectedResponder>());
 
   auto client = makeClient(eventBase, *server->listeningPort());
   client->disconnect().get();

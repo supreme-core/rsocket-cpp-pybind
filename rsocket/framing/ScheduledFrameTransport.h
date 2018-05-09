@@ -37,8 +37,8 @@ class ScheduledFrameTransport : public FrameTransport,
   DuplexConnection* getConnection() override {
     DLOG(FATAL)
         << "ScheduledFrameTransport doesn't support getConnection method, "
-            "because it can create safe usage issues when EventBase of the "
-            "transport and the RSocketClient is not the same.";
+           "because it can create safe usage issues when EventBase of the "
+           "transport and the RSocketClient is not the same.";
     return nullptr;
   }
 
@@ -47,4 +47,4 @@ class ScheduledFrameTransport : public FrameTransport,
   folly::EventBase* const stateMachineEvb_;
   const std::shared_ptr<FrameTransport> frameTransport_;
 };
-}
+} // namespace rsocket

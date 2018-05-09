@@ -34,7 +34,6 @@ struct RSocketConnectionParams {
   std::shared_ptr<RSocketConnectionEvents> connectionEvents;
 };
 
-
 // This class has to be implemented by the application.  The methods can be
 // called from different threads and it is the application's responsibility to
 // ensure thread-safety.
@@ -96,4 +95,4 @@ class RSocketServiceHandler {
   static std::shared_ptr<RSocketServiceHandler> create(
       OnNewSetupFn onNewSetupFn);
 };
-}
+} // namespace rsocket

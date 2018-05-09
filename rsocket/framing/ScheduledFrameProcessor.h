@@ -31,4 +31,4 @@ class ScheduledFrameProcessor : public FrameProcessor {
   folly::EventBase* const evb_;
 };
 
-} // rsocket
+} // namespace rsocket

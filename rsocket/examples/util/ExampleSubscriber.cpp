@@ -69,4 +69,4 @@ void ExampleSubscriber::awaitTerminalEvent() {
   terminalEventCV_.wait(lk, [this] { return terminated_; });
   LOG(INFO) << "ExampleSubscriber " << this << " unblocked";
 }
-}
+} // namespace rsocket_example

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <folly/Optional.h>
+#include <unordered_map>
 #include "rsocket/framing/Frame.h"
 #include "rsocket/framing/FrameTransportImpl.h"
 
@@ -146,4 +146,4 @@ class ResumeManager {
     }
   }
 };
-}
+} // namespace rsocket

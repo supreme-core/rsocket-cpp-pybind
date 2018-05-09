@@ -15,5 +15,5 @@ class HelloStreamRequestHandler : public RSocketResponder {
   handleRequestStream(rsocket::Payload request, rsocket::StreamId streamId)
       override;
 };
-}
-}
+} // namespace tests
+} // namespace rsocket

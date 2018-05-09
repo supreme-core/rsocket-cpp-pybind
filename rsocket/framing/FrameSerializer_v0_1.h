@@ -17,4 +17,4 @@ class FrameSerializerV0_1 : public FrameSerializerV0 {
 
   ProtocolVersion protocolVersion() const override;
 };
-} // reactivesocket
+} // namespace rsocket

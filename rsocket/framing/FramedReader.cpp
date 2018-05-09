@@ -48,7 +48,7 @@ size_t frameSizeWithoutLengthField(ProtocolVersion version, size_t frameSize) {
       ? frameSize - frameSizeFieldLength(version)
       : frameSize;
 }
-}
+} // namespace
 
 size_t FramedReader::readFrameLength() const {
   const auto fieldLength = frameSizeFieldLength(*version_);
@@ -214,4 +214,4 @@ void FramedReader::error(std::string errorMsg) {
     subscriber->onError(std::runtime_error{std::move(errorMsg)});
   }
 }
-}
+} // namespace rsocket

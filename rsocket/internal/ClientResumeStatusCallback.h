@@ -18,4 +18,4 @@ class ClientResumeStatusCallback {
   virtual void onResumeError(folly::exception_wrapper ex) noexcept = 0;
 };
 
-} // reactivesocket
+} // namespace rsocket

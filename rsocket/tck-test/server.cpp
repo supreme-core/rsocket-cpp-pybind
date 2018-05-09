@@ -90,7 +90,7 @@ class ServerResponder : public RSocketResponder {
       const auto marbleProcessor =
           std::make_shared<tck::MarbleProcessor>(it->second);
       auto lambda = [marbleProcessor](
-          auto& subscriber, int64_t requested) mutable {
+                        auto& subscriber, int64_t requested) mutable {
         return marbleProcessor->run(subscriber, requested);
       };
       return Flowable<rsocket::Payload>::create(std::move(lambda));

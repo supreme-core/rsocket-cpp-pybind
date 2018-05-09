@@ -5,11 +5,11 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <array>
 #include <atomic>
 #include <cstring>
 #include <iostream>
 #include <thread>
-#include <array>
 
 #define MAX_MESSAGE_LENGTH (8 * 1024)
 #define PORT (35437)
@@ -35,7 +35,7 @@ static void BM_Baseline_TCP_SendReceive(
 
     int enable = 1;
     if (setsockopt(
-        serverSock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) <
+            serverSock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) <
         0) {
       perror("setsocketopt SO_REUSEADDR");
       return;
@@ -58,7 +58,7 @@ static void BM_Baseline_TCP_SendReceive(
     accepting.store(true);
 
     if ((sock = accept(
-        serverSock, reinterpret_cast<struct sockaddr*>(&addr), &addrlen)) <
+             serverSock, reinterpret_cast<struct sockaddr*>(&addr), &addrlen)) <
         0) {
       perror("accept");
       return;

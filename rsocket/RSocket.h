@@ -73,4 +73,4 @@ class RSocket {
   RSocket& operator=(const RSocket&) = delete;
   RSocket& operator=(RSocket&&) = delete;
 };
-}
+} // namespace rsocket

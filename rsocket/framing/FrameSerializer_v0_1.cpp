@@ -75,4 +75,4 @@ ProtocolVersion FrameSerializerV0_1::detectProtocolVersion(
   return ProtocolVersion::Unknown;
 }
 
-} // reactivesocket
+} // namespace rsocket

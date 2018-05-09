@@ -58,7 +58,7 @@ struct GenericRequestResponseHandler : public rsocket::RSocketResponder {
     Response resp = (*handler_)(req);
 
     return yarpl::single::Single<Payload>::create(
-        [ resp = std::move(resp), this ](auto subscriber) {
+        [resp = std::move(resp), this](auto subscriber) {
           subscriber->onSubscribe(yarpl::single::SingleSubscriptions::empty());
 
           if (resp->type == ResponseImpl::Type::PAYLOAD) {
@@ -93,8 +93,8 @@ Response error_response(T const& err) {
 inline StringPair payload_to_stringpair(Payload p) {
   return StringPair(p.moveDataToString(), p.moveMetadataToString());
 }
-}
-}
+} // namespace tests
+} // namespace rsocket
 
 inline std::ostream& operator<<(
     std::ostream& os,

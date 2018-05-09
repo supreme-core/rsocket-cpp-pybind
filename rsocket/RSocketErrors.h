@@ -103,8 +103,8 @@ class ConnectionError : public RSocketError {
 };
 
 /**
-* Error Code: CONNECTION_CLOSE 0x00000102
-*/
+ * Error Code: CONNECTION_CLOSE 0x00000102
+ */
 class ConnectionCloseError : public RSocketError {
  public:
   using RSocketError::RSocketError;
@@ -117,4 +117,4 @@ class ConnectionCloseError : public RSocketError {
     return "CONNECTION_CLOSE";
   }
 };
-}
+} // namespace rsocket

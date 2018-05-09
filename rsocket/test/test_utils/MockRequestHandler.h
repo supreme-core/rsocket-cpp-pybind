@@ -114,4 +114,4 @@ class MockRequestHandler : public RequestHandler {
   MOCK_METHOD1(socketOnClosed, void(folly::exception_wrapper& listener));
   MOCK_METHOD1(socketOnDisconnected, void(folly::exception_wrapper& listener));
 };
-}
+} // namespace rsocket

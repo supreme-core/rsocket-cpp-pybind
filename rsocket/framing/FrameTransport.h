@@ -13,9 +13,9 @@ class FrameTransport {
   virtual void close() = 0;
 
   // Just for observation purposes!
-  //TODO(T25011919): remove
+  // TODO(T25011919): remove
   virtual DuplexConnection* getConnection() = 0;
 
   virtual bool isConnectionFramed() const = 0;
 };
-}
+} // namespace rsocket

@@ -70,4 +70,4 @@ class Allowance {
       "Allowance representation must be an integer type");
   ValueType value_{0};
 };
-} // reactivesocket
+} // namespace rsocket

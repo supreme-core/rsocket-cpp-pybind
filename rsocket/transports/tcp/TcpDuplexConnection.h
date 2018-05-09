@@ -32,4 +32,4 @@ class TcpDuplexConnection : public DuplexConnection {
   boost::intrusive_ptr<TcpReaderWriter> tcpReaderWriter_;
   std::shared_ptr<RSocketStats> stats_;
 };
-}
+} // namespace rsocket

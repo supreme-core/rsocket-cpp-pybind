@@ -31,7 +31,8 @@ class BaseSubscriber {
   std::atomic<bool> canceled_{false};
 
   ////////////////////////////////////////////////////////////////////////////
-  mutable std::mutex mutex_; // all variables below has to be protected with the mutex
+  mutable std::mutex
+      mutex_; // all variables below has to be protected with the mutex
 
   std::vector<std::pair<std::string, std::string>> values_;
   std::condition_variable valuesCV_;
@@ -45,5 +46,5 @@ class BaseSubscriber {
   ////////////////////////////////////////////////////////////////////////////
 };
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

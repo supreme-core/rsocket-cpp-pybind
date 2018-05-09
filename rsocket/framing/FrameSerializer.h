@@ -42,9 +42,8 @@ class FrameSerializer {
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_CANCEL&&) const = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_PAYLOAD&&) const = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_ERROR&&) const = 0;
-  virtual std::unique_ptr<folly::IOBuf> serializeOut(
-      Frame_KEEPALIVE&&,
-      bool) const = 0;
+  virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_KEEPALIVE&&, bool)
+      const = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_SETUP&&) const = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_LEASE&&) const = 0;
   virtual std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESUME&&) const = 0;
@@ -63,34 +62,29 @@ class FrameSerializer {
   virtual bool deserializeFrom(
       Frame_REQUEST_FNF&,
       std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_REQUEST_N&,
-      std::unique_ptr<folly::IOBuf>) const = 0;
+  virtual bool deserializeFrom(Frame_REQUEST_N&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
   virtual bool deserializeFrom(
       Frame_METADATA_PUSH&,
       std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_CANCEL&,
-      std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_PAYLOAD&,
-      std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_ERROR&, std::unique_ptr<folly::IOBuf>) const = 0;
+  virtual bool deserializeFrom(Frame_CANCEL&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
+  virtual bool deserializeFrom(Frame_PAYLOAD&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
+  virtual bool deserializeFrom(Frame_ERROR&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
   virtual bool deserializeFrom(
       Frame_KEEPALIVE&,
       std::unique_ptr<folly::IOBuf>,
       bool supportsResumability) const = 0;
-  virtual bool deserializeFrom(
-      Frame_SETUP&, std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_LEASE&, std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_RESUME&,
-      std::unique_ptr<folly::IOBuf>) const = 0;
-  virtual bool deserializeFrom(
-      Frame_RESUME_OK&,
-      std::unique_ptr<folly::IOBuf>) const = 0;
+  virtual bool deserializeFrom(Frame_SETUP&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
+  virtual bool deserializeFrom(Frame_LEASE&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
+  virtual bool deserializeFrom(Frame_RESUME&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
+  virtual bool deserializeFrom(Frame_RESUME_OK&, std::unique_ptr<folly::IOBuf>)
+      const = 0;
 
   virtual size_t frameLengthFieldSize() const = 0;
   bool& preallocateFrameSizeField();
@@ -101,4 +95,4 @@ class FrameSerializer {
  private:
   bool preallocateFrameSizeField_{false};
 };
-}
+} // namespace rsocket

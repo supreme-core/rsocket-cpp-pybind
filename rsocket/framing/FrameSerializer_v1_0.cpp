@@ -672,6 +672,6 @@ ProtocolVersion FrameSerializerV1_0::detectProtocolVersion(
 }
 
 size_t FrameSerializerV1_0::frameLengthFieldSize() const {
-    return 3; // bytes
+  return 3; // bytes
 }
-}
+} // namespace rsocket

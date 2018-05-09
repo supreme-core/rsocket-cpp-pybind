@@ -32,4 +32,4 @@ folly::StringPiece toString(FrameType);
 
 std::ostream& operator<<(std::ostream&, FrameType);
 
-}
+} // namespace rsocket

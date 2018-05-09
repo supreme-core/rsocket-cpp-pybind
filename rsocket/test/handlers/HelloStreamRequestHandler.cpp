@@ -21,8 +21,10 @@ HelloStreamRequestHandler::handleRequestStream(
   // string from payload data
   auto requestString = request.moveDataToString();
 
-  return Flowable<>::range(1, 10)->map([name = std::move(requestString)](
-      int64_t v) { return Payload(folly::to<std::string>(v), "metadata"); });
+  return Flowable<>::range(1, 10)->map(
+      [name = std::move(requestString)](int64_t v) {
+        return Payload(folly::to<std::string>(v), "metadata");
+      });
 }
-}
-}
+} // namespace tests
+} // namespace rsocket

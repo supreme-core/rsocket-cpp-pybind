@@ -11,8 +11,8 @@ class EventBase;
 namespace rsocket {
 
 //
-// A decorator of the SingleSubscription object which schedules the method calls on the
-// provided EventBase
+// A decorator of the SingleSubscription object which schedules the method calls
+// on the provided EventBase
 //
 class ScheduledSingleSubscription : public yarpl::single::SingleSubscription {
  public:
@@ -27,4 +27,4 @@ class ScheduledSingleSubscription : public yarpl::single::SingleSubscription {
   folly::EventBase& eventBase_;
 };
 
-} // rsocket
+} // namespace rsocket

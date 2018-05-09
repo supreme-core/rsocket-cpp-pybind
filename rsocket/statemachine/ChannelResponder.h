@@ -47,4 +47,4 @@ class ChannelResponder : public ConsumerBase,
 
   void tryCompleteChannel();
 };
-}
+} // namespace rsocket

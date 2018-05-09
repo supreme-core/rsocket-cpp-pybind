@@ -20,7 +20,8 @@ using namespace rsocket::tests::client_server;
 using namespace yarpl;
 using namespace yarpl::flowable;
 
-typedef std::map<std::string, std::shared_ptr<Subscriber<Payload>>> HelloSubscribers;
+typedef std::map<std::string, std::shared_ptr<Subscriber<Payload>>>
+    HelloSubscribers;
 
 namespace {
 class HelloSubscriber : public BaseSubscriber<Payload> {
@@ -97,7 +98,7 @@ class HelloResumeHandler : public ColdResumeHandler {
  private:
   HelloSubscribers subscribers_;
 };
-}
+} // namespace
 
 std::unique_ptr<rsocket::RSocketClient> createResumedClient(
     folly::EventBase* evb,
@@ -176,7 +177,7 @@ void coldResumer(uint32_t port, uint32_t client_num) {
       }
     }
     worker.getEventBase()->runInEventBaseThreadAndWait(
-        [ client_num, &firstLatestValue, firstSub = std::move(firstSub) ]() {
+        [client_num, &firstLatestValue, firstSub = std::move(firstSub)]() {
           firstLatestValue = firstSub->getLatestValue();
           VLOG(1) << folly::sformat(
               "client{} {}", client_num, firstLatestValue);
@@ -211,19 +212,20 @@ void coldResumer(uint32_t port, uint32_t client_num) {
         std::this_thread::yield();
       }
     }
-    worker.getEventBase()->runInEventBaseThreadAndWait([
-      client_num,
-      &firstLatestValue,
-      firstSub = std::move(firstSub),
-      &secondLatestValue,
-      secondSub = std::move(secondSub)
-    ]() {
-      firstLatestValue = firstSub->getLatestValue();
-      secondLatestValue = secondSub->getLatestValue();
-      VLOG(1) << folly::sformat("client{} {}", client_num, firstLatestValue);
-      VLOG(1) << folly::sformat("client{} {}", client_num, secondLatestValue);
-      VLOG(1) << folly::sformat("client{} Second Resume", client_num);
-    });
+    worker.getEventBase()->runInEventBaseThreadAndWait(
+        [client_num,
+         &firstLatestValue,
+         firstSub = std::move(firstSub),
+         &secondLatestValue,
+         secondSub = std::move(secondSub)]() {
+          firstLatestValue = firstSub->getLatestValue();
+          secondLatestValue = secondSub->getLatestValue();
+          VLOG(1) << folly::sformat(
+              "client{} {}", client_num, firstLatestValue);
+          VLOG(1) << folly::sformat(
+              "client{} {}", client_num, secondLatestValue);
+          VLOG(1) << folly::sformat("client{} Second Resume", client_num);
+        });
   }
 
   {
@@ -311,7 +313,7 @@ TEST(ColdResumptionTest, DifferentEvb) {
       }
     }
     SMWorker.getEventBase()->runInEventBaseThreadAndWait(
-        [&latestValue, firstSub = std::move(firstSub) ]() {
+        [&latestValue, firstSub = std::move(firstSub)]() {
           latestValue = firstSub->getLatestValue();
           VLOG(1) << latestValue;
           VLOG(1) << "First Resume";

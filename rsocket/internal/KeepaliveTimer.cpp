@@ -66,4 +66,4 @@ void KeepaliveTimer::start(const std::shared_ptr<FrameSink>& connection) {
 void KeepaliveTimer::keepaliveReceived() {
   pending_ = false;
 }
-}
+} // namespace rsocket

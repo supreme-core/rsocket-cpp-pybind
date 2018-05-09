@@ -34,5 +34,5 @@ class MarbleProcessor {
   size_t index_{0};
 };
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

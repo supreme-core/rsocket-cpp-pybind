@@ -18,4 +18,4 @@ class MockKeepaliveTimer : public KeepaliveTimer {
   MOCK_METHOD0(keepaliveReceived, void());
   MOCK_METHOD0(keepaliveTime, std::chrono::milliseconds());
 };
-}
+} // namespace rsocket

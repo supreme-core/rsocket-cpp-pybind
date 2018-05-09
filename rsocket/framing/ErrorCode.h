@@ -40,4 +40,4 @@ enum class ErrorCode : uint32_t {
 };
 
 std::ostream& operator<<(std::ostream&, ErrorCode);
-}
+} // namespace rsocket

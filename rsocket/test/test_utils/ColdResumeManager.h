@@ -61,4 +61,4 @@ class ColdResumeManager : public WarmResumeManager {
   // Largest used StreamId so far.
   StreamId largestUsedStreamId_{0};
 };
-}
+} // namespace rsocket

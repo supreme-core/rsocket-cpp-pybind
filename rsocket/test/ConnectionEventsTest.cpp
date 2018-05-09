@@ -94,14 +94,13 @@ TEST(ConnectionEventsTest, DifferentEvb) {
 
   auto clientConnEvents = std::make_shared<StrictMock<MockConnEvents>>();
 
-  EXPECT_CALL(*clientConnEvents, onConnected()).WillOnce(
-      Invoke([evb = SMWorker.getEventBase()]() {
-    EXPECT_TRUE(evb->isInEventBaseThread());
-  }));
+  EXPECT_CALL(*clientConnEvents, onConnected())
+      .WillOnce(Invoke([evb = SMWorker.getEventBase()]() {
+        EXPECT_TRUE(evb->isInEventBaseThread());
+      }));
 
   // create server supporting resumption
-  auto server = makeResumableServer(
-      std::make_shared<HelloServiceHandler>());
+  auto server = makeResumableServer(std::make_shared<HelloServiceHandler>());
 
   // create resumable client
   auto client = makeWarmResumableClient(
@@ -122,23 +121,23 @@ TEST(ConnectionEventsTest, DifferentEvb) {
   }
 
   // disconnect
-  EXPECT_CALL(*clientConnEvents, onDisconnected(_)).WillOnce(
-      InvokeWithoutArgs([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onDisconnected(_))
+      .WillOnce(InvokeWithoutArgs([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
-  EXPECT_CALL(*clientConnEvents, onStreamsPaused()).WillOnce(
-      Invoke([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onStreamsPaused())
+      .WillOnce(Invoke([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
   client->disconnect(std::runtime_error("Test triggered disconnect"));
 
   // resume
-  EXPECT_CALL(*clientConnEvents, onConnected()).WillOnce(
-      Invoke([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onConnected())
+      .WillOnce(Invoke([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
-  EXPECT_CALL(*clientConnEvents, onStreamsResumed()).WillOnce(
-      Invoke([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onStreamsResumed())
+      .WillOnce(Invoke([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
   EXPECT_NO_THROW(client->resume().get());
@@ -149,19 +148,19 @@ TEST(ConnectionEventsTest, DifferentEvb) {
   ts->assertValueCount(10);
 
   // disconnect
-  EXPECT_CALL(*clientConnEvents, onDisconnected(_)).WillOnce(
-      InvokeWithoutArgs([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onDisconnected(_))
+      .WillOnce(InvokeWithoutArgs([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
-  EXPECT_CALL(*clientConnEvents, onStreamsPaused()).WillOnce(
-      Invoke([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onStreamsPaused())
+      .WillOnce(Invoke([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
   client->disconnect(std::runtime_error("Test triggered disconnect"));
 
   // relinquish resources
-  EXPECT_CALL(*clientConnEvents, onClosed(_)).WillOnce(
-      InvokeWithoutArgs([evb = SMWorker.getEventBase()]() {
+  EXPECT_CALL(*clientConnEvents, onClosed(_))
+      .WillOnce(InvokeWithoutArgs([evb = SMWorker.getEventBase()]() {
         EXPECT_TRUE(evb->isInEventBaseThread());
       }));
 }

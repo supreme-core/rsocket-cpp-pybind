@@ -92,4 +92,4 @@ void ChannelResponder::handleError(folly::exception_wrapper ex) {
   errorConsumer(std::move(ex));
   terminatePublisher();
 }
-}
+} // namespace rsocket

@@ -14,11 +14,11 @@ namespace rsocket {
 
 using std::shared_ptr;
 
-class DuplexSubscriber :
-  public yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>
-{
-public:
-  void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription> sub) override {
+class DuplexSubscriber
+    : public yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>> {
+ public:
+  void onSubscribe(
+      std::shared_ptr<yarpl::flowable::Subscription> sub) override {
     subscription_ = sub;
   }
   void onComplete() override {
@@ -28,12 +28,12 @@ public:
     subscription_.reset();
   }
 
-protected:
+ protected:
   std::shared_ptr<yarpl::flowable::Subscription> subscription() {
     return subscription_;
   }
 
-private:
+ private:
   std::shared_ptr<yarpl::flowable::Subscription> subscription_;
 };
 
@@ -75,4 +75,4 @@ class DuplexConnection {
     return false;
   }
 };
-}
+} // namespace rsocket

@@ -31,4 +31,4 @@ std::ostream& operator<<(std::ostream& os, ErrorCode errorCode) {
   }
   return os << "ErrorCode[" << static_cast<uint32_t>(errorCode) << "]";
 }
-}
+} // namespace rsocket

@@ -6,8 +6,8 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/portability/GFlags.h>
 
-#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/RSocket.h"
+#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
 #include "yarpl/Flowable.h"
@@ -29,9 +29,9 @@ int main(int argc, char* argv[]) {
   address.setFromHostPort(FLAGS_host, FLAGS_port);
 
   auto client = RSocket::createConnectedClient(
-      std::make_unique<TcpConnectionFactory>(*worker.getEventBase(),
-                                             std::move(address)))
-      .get();
+                    std::make_unique<TcpConnectionFactory>(
+                        *worker.getEventBase(), std::move(address)))
+                    .get();
 
   client->getRequester()
       ->requestStream(Payload("Jane"))

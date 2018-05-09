@@ -30,4 +30,4 @@ class StatsPrinter : public RSocketStats {
   void keepaliveSent() override;
   void keepaliveReceived() override;
 };
-}
+} // namespace rsocket

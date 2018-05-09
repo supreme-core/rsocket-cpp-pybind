@@ -8,19 +8,15 @@ namespace rsocket {
 
 ScheduledSingleSubscription::ScheduledSingleSubscription(
     std::shared_ptr<yarpl::single::SingleSubscription> inner,
-    folly::EventBase& eventBase) : inner_(std::move(inner)),
-                                   eventBase_(eventBase) {
-}
+    folly::EventBase& eventBase)
+    : inner_(std::move(inner)), eventBase_(eventBase) {}
 
 void ScheduledSingleSubscription::cancel() {
   if (eventBase_.isInEventBaseThread()) {
     inner_->cancel();
   } else {
-    eventBase_.runInEventBaseThread([inner = inner_]
-    {
-      inner->cancel();
-    });
+    eventBase_.runInEventBaseThread([inner = inner_] { inner->cancel(); });
   }
 }
 
-} // rsocket
+} // namespace rsocket

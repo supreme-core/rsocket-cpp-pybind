@@ -461,13 +461,14 @@ TEST(RequestChannelTest, MultiSubscribe) {
   auto requester = client->getRequester();
 
   auto ts = TestSubscriber<std::string>::create();
-  auto stream = requester
-      ->requestChannel(
-          Payload("/hello"),
-          Flowable<>::justN({"Bob", "Jane"})->map([](std::string v) {
-            return Payload(v);
-          }))
-      ->map([](auto p) { return p.moveDataToString(); });
+  auto stream =
+      requester
+          ->requestChannel(
+              Payload("/hello"),
+              Flowable<>::justN({"Bob", "Jane"})->map([](std::string v) {
+                return Payload(v);
+              }))
+          ->map([](auto p) { return p.moveDataToString(); });
 
   // First subscribe
   stream->subscribe(ts);

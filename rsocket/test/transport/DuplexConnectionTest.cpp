@@ -57,9 +57,9 @@ void makeMultipleSetInputGetOutputCalls(
         subscriber->subscription()->cancel();
       });
   clientEvb->runInEventBaseThreadAndWait(
-      [connection = std::move(clientConnection)]{});
+      [connection = std::move(clientConnection)] {});
   serverEvb->runInEventBaseThreadAndWait(
-      [connection = std::move(serverConnection)]{});
+      [connection = std::move(serverConnection)] {});
 }
 
 /**
@@ -126,9 +126,9 @@ void verifyInputAndOutputIsUntied(
         subscriber->subscription()->cancel();
       });
   clientEvb->runInEventBaseThreadAndWait(
-      [connection = std::move(clientConnection)]{});
+      [connection = std::move(clientConnection)] {});
   serverEvb->runInEventBaseThreadAndWait(
-      [connection = std::move(serverConnection)]{});
+      [connection = std::move(serverConnection)] {});
 }
 
 void verifyClosingInputAndOutputDoesntCloseConnection(
@@ -192,9 +192,9 @@ void verifyClosingInputAndOutputDoesntCloseConnection(
 
   // Cleanup
   clientEvb->runInEventBaseThreadAndWait(
-      [connection = std::move(clientConnection)]{});
+      [connection = std::move(clientConnection)] {});
   serverEvb->runInEventBaseThreadAndWait(
-      [connection = std::move(serverConnection)]{});
+      [connection = std::move(serverConnection)] {});
 }
 
 } // namespace tests

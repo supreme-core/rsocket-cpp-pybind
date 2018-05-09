@@ -32,8 +32,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
     return socket_.get();
   }
 
-  void setInput(
-      std::shared_ptr<DuplexConnection::Subscriber> inputSubscriber) {
+  void setInput(std::shared_ptr<DuplexConnection::Subscriber> inputSubscriber) {
     if (inputSubscriber && isClosed()) {
       inputSubscriber->onComplete();
       return;

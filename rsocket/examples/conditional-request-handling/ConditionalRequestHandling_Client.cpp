@@ -5,8 +5,8 @@
 #include <folly/portability/GFlags.h>
 #include <iostream>
 
-#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/RSocket.h"
+#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 #include "yarpl/Flowable.h"
 
@@ -41,7 +41,7 @@ class ChannelConnectionEvents : public RSocketConnectionEvents {
  private:
   std::atomic<bool> closed_{false};
 };
-}
+} // namespace
 
 void sendRequest(std::string mimeType) {
   folly::ScopedEventBaseThread worker;

@@ -79,4 +79,4 @@ class TcpConnectionAcceptor : public ConnectionAcceptor {
   /// Options this acceptor has been configured with.
   Options options_;
 };
-}
+} // namespace rsocket

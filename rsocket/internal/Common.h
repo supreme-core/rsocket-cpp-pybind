@@ -21,7 +21,7 @@ class IOBuf;
 template <typename T>
 class Range;
 typedef Range<const char*> StringPiece;
-}
+} // namespace folly
 
 namespace rsocket {
 
@@ -124,4 +124,4 @@ std::ostream& operator<<(std::ostream&, const ResumeIdentificationToken&);
 
 class FrameSink;
 
-} // reactivesocket
+} // namespace rsocket

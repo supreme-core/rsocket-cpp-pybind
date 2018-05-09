@@ -51,7 +51,7 @@ class Observer : public yarpl::single::SingleObserverBase<Payload> {
  private:
   Latch& latch_;
 };
-}
+} // namespace
 
 BENCHMARK(RequestResponseThroughput, n) {
   (void)n;

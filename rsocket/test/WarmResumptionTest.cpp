@@ -109,7 +109,7 @@ TEST(WarmResumptionTest, FailedResumption2) {
       .then([&] { return client->resume(); })
       .then([] { FAIL() << "Resumption succeeded when it should not"; })
       .onError([listeningPort, newTs, &newClient, &worker2](
-          folly::exception_wrapper) {
+                   folly::exception_wrapper) {
         newClient =
             makeWarmResumableClient(worker2.getEventBase(), listeningPort);
         newClient->getRequester()

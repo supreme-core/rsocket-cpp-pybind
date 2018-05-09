@@ -15,8 +15,7 @@
  * Request 5 items to begin with, then 3 more after each receipt of 3.
  */
 namespace rsocket_example {
-class ExampleSubscriber
-    : public yarpl::flowable::Subscriber<rsocket::Payload> {
+class ExampleSubscriber : public yarpl::flowable::Subscriber<rsocket::Payload> {
  public:
   ~ExampleSubscriber();
   ExampleSubscriber(int initialRequest, int numToTake);
@@ -40,4 +39,4 @@ class ExampleSubscriber
   std::mutex m_;
   std::condition_variable terminalEventCV_;
 };
-}
+} // namespace rsocket_example

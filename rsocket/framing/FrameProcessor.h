@@ -7,7 +7,7 @@
 namespace folly {
 class IOBuf;
 class exception_wrapper;
-}
+} // namespace folly
 
 namespace rsocket {
 
@@ -19,4 +19,4 @@ class FrameProcessor {
   virtual void onTerminal(folly::exception_wrapper) = 0;
 };
 
-} // reactivesocket
+} // namespace rsocket

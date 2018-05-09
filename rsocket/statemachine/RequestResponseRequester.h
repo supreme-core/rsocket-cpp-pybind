@@ -50,4 +50,4 @@ class RequestResponseRequester : public StreamStateMachineBase,
   /// Initial payload which has to be sent with 1st request.
   Payload initialPayload_;
 };
-}
+} // namespace rsocket

@@ -45,4 +45,4 @@ class RequestResponseResponder : public StreamStateMachineBase,
   std::atomic<bool> gotTerminating_{false};
 #endif
 };
-}
+} // namespace rsocket

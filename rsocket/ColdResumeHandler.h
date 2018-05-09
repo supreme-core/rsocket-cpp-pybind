@@ -16,8 +16,8 @@ class ColdResumeHandler {
   virtual ~ColdResumeHandler() = default;
 
   // Generate an application-aware streamToken for the given stream parameters.
-  virtual std::string generateStreamToken(
-      const Payload&, StreamId streamId, StreamType) const;
+  virtual std::string
+  generateStreamToken(const Payload&, StreamId streamId, StreamType) const;
 
   // This method will be called for each REQUEST_STREAM for which the
   // application acted as a responder.  The default action would be to return a
@@ -39,4 +39,4 @@ class ColdResumeHandler {
       std::string streamToken,
       size_t consumerAllowance);
 };
-}
+} // namespace rsocket

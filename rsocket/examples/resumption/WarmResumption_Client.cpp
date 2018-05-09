@@ -6,8 +6,8 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/portability/GFlags.h>
 
-#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/RSocket.h"
+#include "rsocket/examples/util/ExampleSubscriber.h"
 #include "rsocket/internal/ClientResumeStatusCallback.h"
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
@@ -64,7 +64,7 @@ class HelloSubscriber : public yarpl::flowable::Subscriber<Payload> {
   std::shared_ptr<yarpl::flowable::Subscription> subscription_{nullptr};
   std::atomic<int> count_{0};
 };
-}
+} // namespace
 
 std::unique_ptr<RSocketClient> getClientAndRequestStream(
     folly::EventBase* eventBase,

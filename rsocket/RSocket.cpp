@@ -17,44 +17,47 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
   CHECK(resumeManager)
       << "provide ResumeManager::makeEmpty() instead of nullptr";
 
-  auto createRSC = [
-    connectionFactory,
-    setupParameters = std::move(setupParameters),
-    responder = std::move(responder),
-    keepaliveInterval,
-    stats = std::move(stats),
-    connectionEvents = std::move(connectionEvents),
-    resumeManager = std::move(resumeManager),
-    coldResumeHandler = std::move(coldResumeHandler),
-    stateMachineEvb
-  ](ConnectionFactory::ConnectedDuplexConnection connection) mutable {
-    VLOG(3) << "createConnectedClient received DuplexConnection";
-    return RSocket::createClientFromConnection(
-        std::move(connection.connection),
-        connection.eventBase,
-        std::move(setupParameters),
-        std::move(connectionFactory),
-        std::move(responder),
-        keepaliveInterval,
-        std::move(stats),
-        std::move(connectionEvents),
-        std::move(resumeManager),
-        std::move(coldResumeHandler),
-        stateMachineEvb);
-  };
+  auto createRSC =
+      [connectionFactory,
+       setupParameters = std::move(setupParameters),
+       responder = std::move(responder),
+       keepaliveInterval,
+       stats = std::move(stats),
+       connectionEvents = std::move(connectionEvents),
+       resumeManager = std::move(resumeManager),
+       coldResumeHandler = std::move(coldResumeHandler),
+       stateMachineEvb](
+          ConnectionFactory::ConnectedDuplexConnection connection) mutable {
+        VLOG(3) << "createConnectedClient received DuplexConnection";
+        return RSocket::createClientFromConnection(
+            std::move(connection.connection),
+            connection.eventBase,
+            std::move(setupParameters),
+            std::move(connectionFactory),
+            std::move(responder),
+            keepaliveInterval,
+            std::move(stats),
+            std::move(connectionEvents),
+            std::move(resumeManager),
+            std::move(coldResumeHandler),
+            stateMachineEvb);
+      };
 
-  return connectionFactory->connect().then([createRSC = std::move(createRSC)](
-      ConnectionFactory::ConnectedDuplexConnection connection) mutable {
-    // fromConnection method must be called from the transport eventBase
-    // and since there is no guarantee that the Future returned from the
-    // connectionFactory::connect method is executed on the event base, we
-    // have to ensure it by using folly::via
-    auto* transportEvb = &connection.eventBase;
-    return via(transportEvb, [
-      connection = std::move(connection),
-      createRSC = std::move(createRSC)
-    ]() mutable { return createRSC(std::move(connection)); });
-  });
+  return connectionFactory->connect().then(
+      [createRSC = std::move(createRSC)](
+          ConnectionFactory::ConnectedDuplexConnection connection) mutable {
+        // fromConnection method must be called from the transport eventBase
+        // and since there is no guarantee that the Future returned from the
+        // connectionFactory::connect method is executed on the event base, we
+        // have to ensure it by using folly::via
+        auto* transportEvb = &connection.eventBase;
+        return via(
+            transportEvb,
+            [connection = std::move(connection),
+             createRSC = std::move(createRSC)]() mutable {
+              return createRSC(std::move(connection));
+            });
+      });
 }
 
 folly::Future<std::unique_ptr<RSocketClient>> RSocket::createResumedClient(
@@ -80,10 +83,8 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createResumedClient(
       std::move(coldResumeHandler),
       stateMachineEvb);
 
-  return c->resume()
-      .then([client = std::unique_ptr<RSocketClient>(c)]() mutable {
-        return std::move(client);
-      });
+  return c->resume().then([client = std::unique_ptr<RSocketClient>(
+                               c)]() mutable { return std::move(client); });
 }
 
 std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
@@ -113,9 +114,7 @@ std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
       std::move(coldResumeHandler),
       stateMachineEvb));
   c->fromConnection(
-      std::move(connection),
-      transportEvb,
-      std::move(setupParameters));
+      std::move(connection), transportEvb, std::move(setupParameters));
   return c;
 }
 

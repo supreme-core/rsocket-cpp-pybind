@@ -65,4 +65,4 @@ void StatsPrinter::keepaliveSent() {
 void StatsPrinter::keepaliveReceived() {
   LOG(INFO) << "keepalive response received";
 }
-}
+} // namespace rsocket

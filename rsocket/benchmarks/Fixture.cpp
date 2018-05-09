@@ -17,7 +17,7 @@ std::shared_ptr<RSocketClient> makeClient(
       std::make_unique<TcpConnectionFactory>(*eventBase, std::move(address));
   return RSocket::createConnectedClient(std::move(factory)).get();
 }
-}
+} // namespace
 
 Fixture::Fixture(
     Fixture::Options fixtureOpts,
@@ -47,4 +47,4 @@ Fixture::Fixture(
     workers.push_back(std::move(worker));
   }
 }
-}
+} // namespace rsocket

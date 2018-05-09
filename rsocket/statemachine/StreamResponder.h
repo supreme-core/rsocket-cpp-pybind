@@ -33,4 +33,4 @@ class StreamResponder : public StreamStateMachineBase,
 
   void endStream(StreamCompletionSignal) override;
 };
-}
+} // namespace rsocket

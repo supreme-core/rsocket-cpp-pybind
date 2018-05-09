@@ -31,5 +31,5 @@ class FlowableSubscriber : public BaseSubscriber,
   int initialRequestN_{0};
 };
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

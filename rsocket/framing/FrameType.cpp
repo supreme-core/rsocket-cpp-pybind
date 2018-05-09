@@ -57,4 +57,4 @@ std::ostream& operator<<(std::ostream& os, FrameType type) {
   }
   return os << str;
 }
-}
+} // namespace rsocket

@@ -94,6 +94,5 @@ class RSocketClient {
   // EventBase, but the transport ends up being in different EventBase after
   // resumption, and vice versa.
   folly::EventBase* evb_{nullptr};
-
 };
-}
+} // namespace rsocket

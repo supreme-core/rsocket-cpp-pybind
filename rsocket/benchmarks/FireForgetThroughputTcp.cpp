@@ -31,7 +31,7 @@ class Responder : public RSocketResponder {
  private:
   Latch& latch_;
 };
-}
+} // namespace
 
 BENCHMARK(FireForgetThroughput, n) {
   (void)n;
@@ -63,7 +63,8 @@ BENCHMARK(FireForgetThroughput, n) {
     for (auto& client : fixture->clients) {
       client->getRequester()
           ->fireAndForget(Payload("TcpFireAndForget"))
-          ->subscribe(std::make_shared<yarpl::single::SingleObserverBase<void>>());
+          ->subscribe(
+              std::make_shared<yarpl::single::SingleObserverBase<void>>());
     }
   }
 

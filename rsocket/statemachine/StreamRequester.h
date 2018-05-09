@@ -46,4 +46,4 @@ class StreamRequester : public ConsumerBase {
   Payload initialPayload_;
   bool requested_{false};
 };
-}
+} // namespace rsocket

@@ -65,10 +65,10 @@ std::ostream& operator<<(std::ostream& os, StreamType t) {
 
 std::ostream& operator<<(std::ostream& os, RSocketMode mode) {
   switch (mode) {
-  case RSocketMode::CLIENT:
-    return os << "CLIENT";
-  case RSocketMode::SERVER:
-    return os << "SERVER";
+    case RSocketMode::CLIENT:
+      return os << "CLIENT";
+    case RSocketMode::SERVER:
+      return os << "SERVER";
   }
   DLOG(FATAL) << "Invalid RSocketMode";
   return os << "INVALID_RSOCKET_MODE";
@@ -172,18 +172,19 @@ std::string humanify(std::unique_ptr<folly::IOBuf> const& buf) {
   std::string ret;
   size_t cursor = 0;
 
-  for(const auto range : *buf) {
-    for(const unsigned char chr : range) {
-      if(cursor >= 20) goto outer;
+  for (const auto range : *buf) {
+    for (const unsigned char chr : range) {
+      if (cursor >= 20)
+        goto outer;
       ret += chr;
       cursor++;
     }
   }
-  outer:
+outer:
 
   return folly::humanify(ret);
 }
 std::string hexDump(folly::StringPiece s) {
   return folly::hexDump(s.data(), std::min<size_t>(0xFF, s.size()));
 }
-} // reactivesocket
+} // namespace rsocket

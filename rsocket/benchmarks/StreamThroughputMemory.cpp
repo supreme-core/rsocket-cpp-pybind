@@ -53,7 +53,7 @@ class DirectDuplexConnection : public DuplexConnection {
     }
 
     other_->evb_.runInEventBaseThread(
-        [ state = state_, other = other_, b = std::move(buf) ]() mutable {
+        [state = state_, other = other_, b = std::move(buf)]() mutable {
           auto destroyed = state->destroyed.rlock();
           if (*destroyed) {
             return;
@@ -82,7 +82,7 @@ class Acceptor : public ConnectionAcceptor {
 
   void start(OnDuplexConnectionAccept onAccept) override {
     worker_.getEventBase()->runInEventBaseThread(
-        [ this, onAccept = std::move(onAccept) ]() mutable {
+        [this, onAccept = std::move(onAccept)]() mutable {
           auto server = std::make_unique<DirectDuplexConnection>(
               std::move(state_), *worker_.getEventBase());
           server->tie(client_);

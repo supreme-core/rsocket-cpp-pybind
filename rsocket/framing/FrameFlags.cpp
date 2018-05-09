@@ -10,4 +10,4 @@ namespace rsocket {
 std::ostream& operator<<(std::ostream& os, FrameFlags flags) {
   return os << std::bitset<16>{raw(flags)};
 }
-}
+} // namespace rsocket

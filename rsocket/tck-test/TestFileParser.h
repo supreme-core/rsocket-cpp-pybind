@@ -26,5 +26,5 @@ class TestFileParser {
   Test currentTest_;
 };
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

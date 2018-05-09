@@ -16,4 +16,4 @@ class PrintSubscriber : public yarpl::flowable::Subscriber<Payload> {
   void onComplete() noexcept override;
   void onError(folly::exception_wrapper ex) noexcept override;
 };
-}
+} // namespace rsocket

@@ -12,9 +12,8 @@ class EventBase;
 
 namespace rsocket {
 
-using OnDuplexConnectionAccept = std::function<void(
-    std::unique_ptr<rsocket::DuplexConnection>,
-    folly::EventBase&)>;
+using OnDuplexConnectionAccept = std::function<
+    void(std::unique_ptr<rsocket::DuplexConnection>, folly::EventBase&)>;
 
 /**
  * Common interface for a server that accepts connections and turns them into

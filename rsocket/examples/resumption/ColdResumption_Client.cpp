@@ -8,8 +8,8 @@
 
 #include "rsocket/RSocket.h"
 
-#include "rsocket/transports/tcp/TcpConnectionFactory.h"
 #include "rsocket/test/test_utils/ColdResumeManager.h"
+#include "rsocket/transports/tcp/TcpConnectionFactory.h"
 
 using namespace rsocket;
 using namespace yarpl;
@@ -18,7 +18,8 @@ using namespace yarpl::flowable;
 DEFINE_string(host, "localhost", "host to connect to");
 DEFINE_int32(port, 9898, "host:port to connect to");
 
-typedef std::map<std::string, std::shared_ptr<Subscriber<Payload>>> HelloSubscribers;
+typedef std::map<std::string, std::shared_ptr<Subscriber<Payload>>>
+    HelloSubscribers;
 
 namespace {
 
@@ -91,7 +92,7 @@ std::unique_ptr<TcpConnectionFactory> getConnFactory(
   address.setFromHostPort(FLAGS_host, FLAGS_port);
   return std::make_unique<TcpConnectionFactory>(*eventBase, address);
 }
-}
+} // namespace
 
 // There are three sessions and three streams.
 // There is cold-resumption between the three sessions.

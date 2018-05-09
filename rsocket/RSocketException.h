@@ -21,4 +21,4 @@ class ResumptionException : public RSocketException {
 class ConnectionException : public RSocketException {
   using RSocketException::RSocketException;
 };
-}
+} // namespace rsocket

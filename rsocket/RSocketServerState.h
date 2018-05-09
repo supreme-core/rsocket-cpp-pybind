@@ -37,4 +37,4 @@ class RSocketServerState {
   const std::shared_ptr<RSocketStateMachine> rSocketStateMachine_;
   const std::shared_ptr<RSocketRequester> rSocketRequester_;
 };
-}
+} // namespace rsocket

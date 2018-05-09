@@ -39,4 +39,4 @@ class RSocketConnectionEvents {
   // typically gets called after onConnected()
   virtual void onStreamsResumed() {}
 };
-}
+} // namespace rsocket

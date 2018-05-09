@@ -96,4 +96,4 @@ class WarmResumeManager : public ResumeManager {
   const size_t capacity_;
   size_t size_{0};
 };
-}
+} // namespace rsocket

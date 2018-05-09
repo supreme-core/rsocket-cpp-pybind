@@ -19,7 +19,7 @@ constexpr folly::StringPiece REQUESTER = "Requester";
 constexpr folly::StringPiece STREAM_TOKEN = "StreamToken";
 constexpr folly::StringPiece PROD_ALLOWANCE = "ProducerAllowance";
 constexpr folly::StringPiece CONS_ALLOWANCE = "ConsumerAllowance";
-}
+} // namespace
 
 namespace rsocket {
 
@@ -198,4 +198,4 @@ void ColdResumeManager::onStreamOpen(
       streamId, StreamResumeInfo(streamType, requester, streamToken));
 }
 
-} // reactivesocket
+} // namespace rsocket

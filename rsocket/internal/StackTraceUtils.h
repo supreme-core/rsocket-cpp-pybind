@@ -14,4 +14,4 @@ inline std::string getStackTrace() {
 }
 #endif
 
-} // reactivesocket
+} // namespace rsocket

@@ -63,4 +63,4 @@ class ResumeParameters : public RSocketParameters {
   ResumePosition clientPosition;
 };
 
-} // reactivesocket
+} // namespace rsocket

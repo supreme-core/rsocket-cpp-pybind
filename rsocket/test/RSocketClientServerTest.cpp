@@ -86,7 +86,7 @@ TEST(RSocketClientServer, ClientClosesOnWorker) {
   auto client = makeClient(worker.getEventBase(), *server->listeningPort());
 
   // Move the client to the worker thread.
-  worker.getEventBase()->runInEventBaseThread([c = std::move(client)]{});
+  worker.getEventBase()->runInEventBaseThread([c = std::move(client)] {});
 }
 
 /// Test that sending garbage to the server doesn't crash it.

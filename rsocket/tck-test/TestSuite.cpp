@@ -17,5 +17,5 @@ void Test::addCommand(TestCommand command) {
   commands_.push_back(std::move(command));
 }
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

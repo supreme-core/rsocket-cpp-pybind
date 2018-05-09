@@ -32,7 +32,6 @@ class MockDuplexConnection : public DuplexConnection {
     send_(buf);
   }
 
-
   // Mocks.
 
   MOCK_METHOD1(setInput_, void(std::shared_ptr<Subscriber>));

@@ -14,4 +14,4 @@ std::ostream& operator<<(
             << " token: " << setupPayload.token
             << " resumable: " << setupPayload.resumable;
 }
-}
+} // namespace rsocket

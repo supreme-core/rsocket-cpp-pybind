@@ -61,7 +61,6 @@ folly::Future<folly::Unit> RSocketClient::resume() {
 
   return connectionFactory_->connect().then(
       [this](ConnectionFactory::ConnectedDuplexConnection connection) mutable {
-
         if (!evb_) {
           // cold-resumption.  EventBase hasn't been explicitly set for SM by
           // the application.  Use the transports eventBase.
@@ -114,25 +113,23 @@ folly::Future<folly::Unit> RSocketClient::resume() {
           ft = std::move(transport);
         }
 
-        evb_->runInEventBaseThread([
-          this,
-          frameTransport = std::move(ft),
-          resumeCallback = std::move(resumeCallback),
-          connection = std::move(connection)
-        ]() mutable {
-          if (!stateMachine_) {
-            createState();
-          }
+        evb_->runInEventBaseThread(
+            [this,
+             frameTransport = std::move(ft),
+             resumeCallback = std::move(resumeCallback),
+             connection = std::move(connection)]() mutable {
+              if (!stateMachine_) {
+                createState();
+              }
 
-          stateMachine_->resumeClient(
-              token_,
-              std::move(frameTransport),
-              std::move(resumeCallback),
-              protocolVersion_);
-        });
+              stateMachine_->resumeClient(
+                  token_,
+                  std::move(frameTransport),
+                  std::move(resumeCallback),
+                  protocolVersion_);
+            });
 
         return future;
-
       });
 }
 
@@ -143,7 +140,7 @@ folly::Future<folly::Unit> RSocketClient::disconnect(
         std::runtime_error{"RSocketClient must always have a state machine"});
   }
 
-  auto work = [ sm = stateMachine_, e = std::move(ew) ]() mutable {
+  auto work = [sm = stateMachine_, e = std::move(ew)]() mutable {
     sm->disconnect(std::move(e));
   };
 
@@ -185,14 +182,13 @@ void RSocketClient::fromConnection(
         std::move(transport),
         &transportEvb, /* Transport EventBase */
         evb_); /* StateMachine EventBase */
-    evb_->runInEventBaseThread([
-      stateMachine = stateMachine_,
-      scheduledFT = std::move(scheduledFT),
-      setupParameters = std::move(setupParameters)
-    ]() mutable {
-      stateMachine->connectClient(
-          std::move(scheduledFT), std::move(setupParameters));
-    });
+    evb_->runInEventBaseThread(
+        [stateMachine = stateMachine_,
+         scheduledFT = std::move(scheduledFT),
+         setupParameters = std::move(setupParameters)]() mutable {
+          stateMachine->connectClient(
+              std::move(scheduledFT), std::move(setupParameters));
+        });
   } else {
     stateMachine_->connectClient(
         std::move(transport), std::move(setupParameters));

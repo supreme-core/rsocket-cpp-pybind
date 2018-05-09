@@ -39,4 +39,4 @@ struct Fixture {
   std::vector<std::shared_ptr<RSocketClient>> clients;
   const Options options;
 };
-}
+} // namespace rsocket

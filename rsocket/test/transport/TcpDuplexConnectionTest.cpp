@@ -5,9 +5,9 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <gtest/gtest.h>
 
+#include "rsocket/test/transport/DuplexConnectionTest.h"
 #include "rsocket/transports/tcp/TcpConnectionAcceptor.h"
 #include "rsocket/transports/tcp/TcpConnectionFactory.h"
-#include "rsocket/test/transport/DuplexConnectionTest.h"
 
 namespace rsocket {
 namespace tests {
@@ -43,13 +43,13 @@ makeSingleClientServer(
   int16_t port = server->listeningPort().value();
 
   auto client = std::make_unique<TcpConnectionFactory>(
-      *clientEvb,
-      SocketAddress("localhost", port, true));
-  client->connect().then(
-      [&clientConnection](
-          ConnectionFactory::ConnectedDuplexConnection connection) {
+      *clientEvb, SocketAddress("localhost", port, true));
+  client->connect()
+      .then([&clientConnection](
+                ConnectionFactory::ConnectedDuplexConnection connection) {
         clientConnection = std::move(connection.connection);
-      }).wait();
+      })
+      .wait();
 
   serverPromise.getSemiFuture().wait();
   return std::make_pair(std::move(server), std::move(client));
@@ -58,7 +58,7 @@ makeSingleClientServer(
 TEST(TcpDuplexConnection, MultipleSetInputGetOutputCalls) {
   folly::ScopedEventBaseThread worker;
   std::unique_ptr<DuplexConnection> serverConnection, clientConnection;
-  EventBase *serverEvb = nullptr;
+  EventBase* serverEvb = nullptr;
   auto keepAlive = makeSingleClientServer(
       serverConnection, &serverEvb, clientConnection, worker.getEventBase());
   makeMultipleSetInputGetOutputCalls(
@@ -71,7 +71,7 @@ TEST(TcpDuplexConnection, MultipleSetInputGetOutputCalls) {
 TEST(TcpDuplexConnection, InputAndOutputIsUntied) {
   folly::ScopedEventBaseThread worker;
   std::unique_ptr<DuplexConnection> serverConnection, clientConnection;
-  EventBase *serverEvb = nullptr;
+  EventBase* serverEvb = nullptr;
   auto keepAlive = makeSingleClientServer(
       serverConnection, &serverEvb, clientConnection, worker.getEventBase());
   verifyInputAndOutputIsUntied(
@@ -84,7 +84,7 @@ TEST(TcpDuplexConnection, InputAndOutputIsUntied) {
 TEST(TcpDuplexConnection, ConnectionAndSubscribersAreUntied) {
   folly::ScopedEventBaseThread worker;
   std::unique_ptr<DuplexConnection> serverConnection, clientConnection;
-  EventBase *serverEvb = nullptr;
+  EventBase* serverEvb = nullptr;
   auto keepAlive = makeSingleClientServer(
       serverConnection, &serverEvb, clientConnection, worker.getEventBase());
   verifyClosingInputAndOutputDoesntCloseConnection(

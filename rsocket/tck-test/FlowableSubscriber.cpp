@@ -72,5 +72,5 @@ void FlowableSubscriber::onError(folly::exception_wrapper ex) noexcept {
   terminatedCV_.notify_one();
 }
 
-} // tck
-} // reactivesocket
+} // namespace tck
+} // namespace rsocket

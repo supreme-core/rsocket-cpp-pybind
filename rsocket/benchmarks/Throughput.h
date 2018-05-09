@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "rsocket/benchmarks/Latch.h"
 #include "rsocket/RSocketResponder.h"
+#include "rsocket/benchmarks/Latch.h"
 
 namespace rsocket {
 
@@ -72,4 +72,4 @@ class BoundedSubscriber : public yarpl::flowable::BaseSubscriber<Payload> {
   size_t requested_{0};
   std::atomic<size_t> received_{0};
 };
-}
+} // namespace rsocket

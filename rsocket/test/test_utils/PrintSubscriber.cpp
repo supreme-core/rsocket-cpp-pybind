@@ -28,4 +28,4 @@ void PrintSubscriber::onComplete() noexcept {
 void PrintSubscriber::onError(folly::exception_wrapper ex) noexcept {
   LOG(INFO) << "PrintSubscriber " << this << " onError " << ex;
 }
-}
+} // namespace rsocket

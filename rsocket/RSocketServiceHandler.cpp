@@ -29,7 +29,7 @@ std::shared_ptr<RSocketServiceHandler> RSocketServiceHandler::create(
         const SetupParameters& setupParameters) override {
       try {
         return RSocketConnectionParams(onNewSetupFn_(setupParameters));
-      } catch(const std::exception& e) {
+      } catch (const std::exception& e) {
         return folly::Unexpected<RSocketException>(
             ConnectionException(e.what()));
       }
@@ -40,4 +40,4 @@ std::shared_ptr<RSocketServiceHandler> RSocketServiceHandler::create(
   };
   return std::make_shared<ServiceHandler>(std::move(onNewSetupFn));
 }
-}
+} // namespace rsocket

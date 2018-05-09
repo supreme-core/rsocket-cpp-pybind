@@ -7,14 +7,13 @@ namespace rsocket {
 bool SwappableEventBase::runInEventBaseThread(CbFunc cb) {
   const std::lock_guard<std::mutex> l(hasSebDtored_->l_);
 
-  if(this->isSwapping()) {
+  if (this->isSwapping()) {
     queued_.push_back(std::move(cb));
     return false;
   }
 
-  return eb_->runInEventBaseThread([eb = eb_, cb_ = std::move(cb)]() mutable {
-    return cb_(*eb);
-  });
+  return eb_->runInEventBaseThread(
+      [eb = eb_, cb_ = std::move(cb)]() mutable { return cb_(*eb); });
 }
 
 void SwappableEventBase::setEventBase(folly::EventBase& newEb) {
@@ -22,13 +21,13 @@ void SwappableEventBase::setEventBase(folly::EventBase& newEb) {
 
   auto const alreadySwapping = this->isSwapping();
   nextEb_ = &newEb;
-  if(alreadySwapping) {
+  if (alreadySwapping) {
     return;
   }
 
   eb_->runInEventBaseThread([this, hasSebDtored = hasSebDtored_]() {
     const std::lock_guard<std::mutex> lInner(hasSebDtored->l_);
-    if(hasSebDtored->destroyed_) {
+    if (hasSebDtored->destroyed_) {
       // SEB was destroyed, any queued callbacks were appended to the old eb_
       return;
     }
@@ -38,10 +37,9 @@ void SwappableEventBase::setEventBase(folly::EventBase& newEb) {
 
     // enqueue tasks that were being buffered while this was waiting
     // for the previous EB to drain
-    for(auto& cb : queued_) {
-      eb_->runInEventBaseThread([cb = std::move(cb), eb = eb_]() mutable {
-        return cb(*eb);
-      });
+    for (auto& cb : queued_) {
+      eb_->runInEventBaseThread(
+          [cb = std::move(cb), eb = eb_]() mutable { return cb(*eb); });
     }
 
     queued_.clear();
@@ -56,10 +54,9 @@ SwappableEventBase::~SwappableEventBase() {
   const std::lock_guard<std::mutex> l(hasSebDtored_->l_);
 
   hasSebDtored_->destroyed_ = true;
-  for(auto& cb : queued_) {
-    eb_->runInEventBaseThread([cb = std::move(cb), eb = eb_]() mutable {
-      return cb(*eb);
-    });
+  for (auto& cb : queued_) {
+    eb_->runInEventBaseThread(
+        [cb = std::move(cb), eb = eb_]() mutable { return cb(*eb); });
   }
   queued_.clear();
 }

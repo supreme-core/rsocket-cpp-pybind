@@ -4,15 +4,15 @@
 
 #include <gmock/gmock.h>
 
-#include <folly/io/IOBuf.h>
 #include <folly/ExceptionWrapper.h>
+#include <folly/io/IOBuf.h>
 
 #include "rsocket/framing/FrameProcessor.h"
 
 namespace rsocket {
 
 class MockFrameProcessor : public FrameProcessor {
-public:
+ public:
   void processFrame(std::unique_ptr<folly::IOBuf> buf) override {
     processFrame_(buf);
   }
@@ -25,4 +25,4 @@ public:
   MOCK_METHOD1(onTerminal_, void(folly::exception_wrapper));
 };
 
-}
+} // namespace rsocket
