@@ -247,4 +247,27 @@ TEST_F(RSocketStateMachineTest, RespondRequest) {
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }
 
+TEST_F(RSocketStateMachineTest, StreamImmediateCancel) {
+  auto connection = std::make_unique<StrictMock<MockDuplexConnection>>();
+  // Setup frame and request stream frame
+  EXPECT_CALL(*connection, send_(_)).Times(2);
+
+  auto stateMachine =
+      createClient(std::move(connection), std::make_shared<RSocketResponder>());
+
+  auto subscriber = std::make_shared<StrictMock<MockSubscriber<Payload>>>();
+  EXPECT_CALL(*subscriber, onSubscribe_(_))
+      .WillOnce(Invoke(
+          [](std::shared_ptr<yarpl::flowable::Subscription> subscription) {
+            subscription->cancel();
+          }));
+
+  stateMachine->requestStream(Payload{}, subscriber);
+
+  auto& streams = getStreams(*stateMachine);
+  ASSERT_EQ(0, streams.size());
+
+  stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
+}
+
 } // namespace rsocket
