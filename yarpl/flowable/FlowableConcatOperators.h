@@ -89,8 +89,9 @@ class ConcatWithOperator : public FlowableOperator<T, T> {
           }
         }
       } else {
-        downSubscriber_->onComplete();
-        downSubscriber_.reset();
+        if (auto downSubscriber = std::exchange(downSubscriber_, nullptr)) {
+          downSubscriber->onComplete();
+        }
         upSubscriber_.reset();
       }
     }
