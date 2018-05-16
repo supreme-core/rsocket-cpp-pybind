@@ -402,8 +402,7 @@ void RSocketStateMachine::requestStream(
   auto const streamId = getNextStreamId();
   auto stateMachine = std::make_shared<StreamRequester>(
       shared_from_this(), streamId, std::move(request));
-  const auto result = streams_.emplace(
-      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  auto const result = streams_.emplace(streamId, StreamStateElem{stateMachine});
   DCHECK(result.second);
   stateMachine->subscribe(std::move(responseSink));
 }
@@ -426,8 +425,7 @@ RSocketStateMachine::requestChannel(
     stateMachine =
         std::make_shared<ChannelRequester>(shared_from_this(), streamId);
   }
-  const auto result = streams_.emplace(
-      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  auto const result = streams_.emplace(streamId, StreamStateElem{stateMachine});
   DCHECK(result.second);
   stateMachine->subscribe(std::move(responseSink));
   return stateMachine;
@@ -443,8 +441,7 @@ void RSocketStateMachine::requestResponse(
   auto const streamId = getNextStreamId();
   auto stateMachine = std::make_shared<RequestResponseRequester>(
       shared_from_this(), streamId, std::move(request));
-  const auto result = streams_.emplace(
-      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  auto const result = streams_.emplace(streamId, StreamStateElem{stateMachine});
   DCHECK(result.second);
   stateMachine->subscribe(std::move(responseSink));
 }
@@ -590,9 +587,8 @@ void RSocketStateMachine::onResumeOk(ResumePosition resumePosition) {
             shared_from_this(), streamId, Payload());
         // Set requested to true (since cold resumption)
         stateMachine->setRequested(streamResumeInfo.consumerAllowance);
-        const auto result = streams_.emplace(
-            streamId,
-            std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+        auto const result =
+            streams_.emplace(streamId, StreamStateElem{stateMachine});
         DCHECK(result.second);
         stateMachine->subscribe(
             std::make_shared<ScheduledSubscriptionSubscriber<Payload>>(
@@ -997,8 +993,7 @@ void RSocketStateMachine::setupRequestChannel(
     Payload payload) {
   auto stateMachine = std::make_shared<ChannelResponder>(
       shared_from_this(), streamId, requestN);
-  const auto result = streams_.emplace(
-      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  auto const result = streams_.emplace(streamId, StreamStateElem{stateMachine});
   DCHECK(result.second);
   const auto requestSink = requestResponder_->handleRequestChannel(
       std::move(payload), streamId, stateMachine);
@@ -1011,8 +1006,7 @@ void RSocketStateMachine::setupRequestStream(
     Payload payload) {
   auto stateMachine =
       std::make_shared<StreamResponder>(shared_from_this(), streamId, requestN);
-  const auto result = streams_.emplace(
-      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  auto const result = streams_.emplace(streamId, StreamStateElem{stateMachine});
   DCHECK(result.second);
   requestResponder_->handleRequestStream(
       std::move(payload), streamId, stateMachine);
@@ -1023,8 +1017,7 @@ void RSocketStateMachine::setupRequestResponse(
     Payload payload) {
   auto stateMachine =
       std::make_shared<RequestResponseResponder>(shared_from_this(), streamId);
-  const auto result = streams_.emplace(
-      streamId, std::static_pointer_cast<StreamStateMachineBase>(stateMachine));
+  auto const result = streams_.emplace(streamId, StreamStateElem{stateMachine});
   DCHECK(result.second);
   requestResponder_->handleRequestResponse(
       std::move(payload), streamId, stateMachine);
