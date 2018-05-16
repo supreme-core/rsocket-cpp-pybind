@@ -872,10 +872,7 @@ void RSocketStateMachine::handleUnknownStream(
 
     const auto it = streamFragments_.find(streamId);
     if (it == streamFragments_.end()) {
-      auto const msg = folly::sformat(
-          "Expected payload frame in stream {} to be in fragment cache",
-          streamId);
-      closeWithError(Frame_ERROR::connectionError(msg));
+      // Stream may be already closed
       return;
     }
 
@@ -1169,6 +1166,7 @@ void RSocketStateMachine::writeNewStream(
 
 void RSocketStateMachine::onStreamClosed(StreamId streamId) {
   streams_.erase(streamId);
+  streamFragments_.erase(streamId);
   resumeManager_->onStreamClosed(streamId);
 }
 

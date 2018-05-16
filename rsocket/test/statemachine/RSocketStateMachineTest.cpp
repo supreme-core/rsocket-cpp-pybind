@@ -7,6 +7,7 @@
 #include <yarpl/test_utils/Mocks.h>
 
 #include "rsocket/RSocketResponder.h"
+#include "rsocket/framing/FrameSerializer_v1_0.h"
 #include "rsocket/framing/FrameTransportImpl.h"
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/ChannelRequester.h"
@@ -122,6 +123,43 @@ TEST_F(RSocketStateMachineTest, RequestStream) {
   // This line causes: subscriber.onComplete()
   streams.at(1).stateMachine->endStream(StreamCompletionSignal::CANCEL);
 
+  stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
+}
+
+TEST_F(RSocketStateMachineTest, RequestStream_EarlyClose) {
+  auto connection = std::make_unique<StrictMock<MockDuplexConnection>>();
+  // Setup frame, two request stream frames, one extra frame
+  EXPECT_CALL(*connection, send_(_)).Times(3);
+
+  auto stateMachine =
+      createClient(std::move(connection), std::make_shared<RSocketResponder>());
+
+  auto subscriber = std::make_shared<StrictMock<MockSubscriber<Payload>>>();
+  EXPECT_CALL(*subscriber, onSubscribe_(_)).Times(2);
+  EXPECT_CALL(*subscriber, onComplete_());
+
+  stateMachine->requestStream(Payload{}, subscriber);
+
+  // Second stream
+  stateMachine->requestStream(Payload{}, subscriber);
+
+  auto& streams = getStreams(*stateMachine);
+  ASSERT_EQ(2, streams.size());
+
+  // Close the stream
+  auto writer = std::dynamic_pointer_cast<StreamsWriter>(stateMachine);
+  writer->onStreamClosed(1);
+
+  // Push more data to the closed stream
+  auto processor = std::dynamic_pointer_cast<FrameProcessor>(stateMachine);
+  FrameSerializerV1_0 serializer;
+  processor->processFrame(
+      serializer.serializeOut(Frame_PAYLOAD(1, FrameFlags::COMPLETE, {})));
+
+  // Second stream should still be valid
+  ASSERT_EQ(1, streams.size());
+
+  streams.at(3).stateMachine->endStream(StreamCompletionSignal::CANCEL);
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }
 
