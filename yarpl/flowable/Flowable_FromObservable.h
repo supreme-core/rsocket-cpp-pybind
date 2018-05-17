@@ -35,6 +35,7 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
     observable_ = std::move(observable);
     subscriber_ = std::move(subscriber);
     subscriber_->onSubscribe(this->ref_from_this(this));
+    observable_->subscribe(this->ref_from_this(this));
   }
 
   BackpressureStrategyBase() = default;
@@ -48,7 +49,6 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
   void setTestSubscriber(std::shared_ptr<flowable::Subscriber<T>> subscriber) {
     subscriber_ = std::move(subscriber);
     subscriber_->onSubscribe(this->ref_from_this(this));
-    started_ = true;
   }
 
   void request(int64_t n) override {
@@ -66,13 +66,6 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
     // will remove all references to this class and we need to keep this
     // instance around to finish this method
     auto thisPtr = this->ref_from_this(this);
-
-    if (!started_.exchange(true)) {
-      observable_->subscribe(this->ref_from_this(this));
-
-      // the credits might have changed since subscribe
-      r = requested_.load();
-    }
 
     if (r > 0) {
       onCreditsAvailable(r);
@@ -139,7 +132,6 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
  private:
   std::shared_ptr<observable::Observable<T>> observable_;
   std::shared_ptr<flowable::Subscriber<T>> subscriber_;
-  std::atomic_bool started_{false};
   std::atomic<int64_t> requested_{0};
 };
 
