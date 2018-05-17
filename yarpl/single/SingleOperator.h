@@ -158,10 +158,12 @@ class MapOperator : public SingleOperator<U, D> {
   using Super = SingleOperator<U, D>;
   using OperatorSubscription =
       typename Super::template Subscription<ThisOperatorT>;
+  static_assert(std::is_same<std::decay_t<F>, F>::value, "undecayed");
 
  public:
-  MapOperator(std::shared_ptr<Single<U>> upstream, F function)
-      : Super(std::move(upstream)), function_(std::move(function)) {}
+  template <typename Func>
+  MapOperator(std::shared_ptr<Single<U>> upstream, Func&& function)
+      : Super(std::move(upstream)), function_(std::forward<Func>(function)) {}
 
   void subscribe(std::shared_ptr<SingleObserver<D>> observer) override {
     Super::upstream_->subscribe(
@@ -194,9 +196,14 @@ class MapOperator : public SingleOperator<U, D> {
 
 template <typename T, typename OnSubscribe>
 class FromPublisherOperator : public Single<T> {
+  static_assert(
+      std::is_same<std::decay_t<OnSubscribe>, OnSubscribe>::value,
+      "undecayed");
+
  public:
-  explicit FromPublisherOperator(OnSubscribe function)
-      : function_(std::move(function)) {}
+  template <typename F>
+  explicit FromPublisherOperator(F&& function)
+      : function_(std::forward<F>(function)) {}
 
   void subscribe(std::shared_ptr<SingleObserver<T>> observer) override {
     function_(std::move(observer));
@@ -208,9 +215,14 @@ class FromPublisherOperator : public Single<T> {
 
 template <typename OnSubscribe>
 class SingleVoidFromPublisherOperator : public Single<void> {
+  static_assert(
+      std::is_same<std::decay_t<OnSubscribe>, OnSubscribe>::value,
+      "undecayed");
+
  public:
-  explicit SingleVoidFromPublisherOperator(OnSubscribe&& function)
-      : function_(std::move(function)) {}
+  template <typename F>
+  explicit SingleVoidFromPublisherOperator(F&& function)
+      : function_(std::forward<F>(function)) {}
 
   void subscribe(std::shared_ptr<SingleObserverBase<void>> observer) override {
     function_(std::move(observer));

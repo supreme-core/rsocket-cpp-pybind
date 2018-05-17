@@ -10,8 +10,13 @@ namespace details {
 
 template <typename T, typename ObservableFactory>
 class DeferObservable : public Observable<T> {
+  static_assert(
+      std::is_same<std::decay_t<ObservableFactory>, ObservableFactory>::value,
+      "undecayed");
+
  public:
-  DeferObservable(ObservableFactory factory) : factory_(std::move(factory)) {}
+  template <typename F>
+  explicit DeferObservable(F&& factory) : factory_(std::forward<F>(factory)) {}
 
   virtual std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<T>> observer) {

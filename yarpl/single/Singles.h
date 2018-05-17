@@ -28,11 +28,12 @@ class Singles {
       typename T,
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe,
+          OnSubscribe&&,
           std::shared_ptr<SingleObserver<T>>>::value>::type>
-  static std::shared_ptr<Single<T>> create(OnSubscribe function) {
-    return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
-        std::move(function));
+  static std::shared_ptr<Single<T>> create(OnSubscribe&& function) {
+    return std::make_shared<
+        FromPublisherOperator<T, std::decay_t<OnSubscribe>>>(
+        std::forward<OnSubscribe>(function));
   }
 
   template <typename T>
@@ -55,8 +56,8 @@ class Singles {
   }
 
   template <typename T, typename TGenerator>
-  static std::shared_ptr<Single<T>> fromGenerator(TGenerator generator) {
-    auto lambda = [generator = std::move(generator)](
+  static std::shared_ptr<Single<T>> fromGenerator(TGenerator&& generator) {
+    auto lambda = [generator = std::forward<TGenerator>(generator)](
                       std::shared_ptr<SingleObserver<T>> observer) mutable {
       observer->onSubscribe(SingleSubscriptions::empty());
       observer->onSuccess(generator());

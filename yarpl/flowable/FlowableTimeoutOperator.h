@@ -22,19 +22,23 @@ namespace details {
 template <typename T, typename ExceptionGenerator>
 class TimeoutOperator : public FlowableOperator<T, T> {
   using Super = FlowableOperator<T, T>;
+  static_assert(
+      std::is_same<std::decay_t<ExceptionGenerator>, ExceptionGenerator>::value,
+      "undecayed");
 
  public:
+  template <typename F>
   TimeoutOperator(
       std::shared_ptr<Flowable<T>> upstream,
       folly::EventBase& timerEvb,
       std::chrono::milliseconds timeout,
       std::chrono::milliseconds initTimeout,
-      ExceptionGenerator&& exnGen)
+      F&& exnGen)
       : upstream_(std::move(upstream)),
         timerEvb_(timerEvb),
         timeout_(timeout),
         initTimeout_(initTimeout),
-        exnGen_(std::forward<ExceptionGenerator>(exnGen)) {}
+        exnGen_(std::forward<F>(exnGen)) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     auto subscription = std::make_shared<TimeoutSubscription>(
@@ -132,7 +136,7 @@ class TimeoutOperator : public FlowableOperator<T, T> {
   folly::EventBase& timerEvb_;
   std::chrono::milliseconds timeout_;
   std::chrono::milliseconds initTimeout_;
-  std::decay_t<ExceptionGenerator> exnGen_;
+  ExceptionGenerator exnGen_;
 };
 
 } // namespace details

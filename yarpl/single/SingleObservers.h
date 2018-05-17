@@ -24,13 +24,15 @@ class SingleObservers {
       typename Success,
       typename Error = void (*)(folly::exception_wrapper)>
   using EnableIfCompatible = typename std::enable_if<
-      folly::is_invocable<Success, T>::value &&
-      folly::is_invocable<Error, folly::exception_wrapper>::value>::type;
+      folly::is_invocable<std::decay_t<Success>&, T>::value &&
+      folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+          value>::type;
 
  public:
   template <typename T, typename Next, typename = EnableIfCompatible<T, Next>>
-  static auto create(Next next) {
-    return std::make_shared<Base<T, Next>>(std::move(next));
+  static auto create(Next&& next) {
+    return std::make_shared<Base<T, std::decay_t<Next>>>(
+        std::forward<Next>(next));
   }
 
   template <
@@ -38,9 +40,10 @@ class SingleObservers {
       typename Success,
       typename Error,
       typename = EnableIfCompatible<T, Success, Error>>
-  static auto create(Success next, Error error) {
-    return std::make_shared<WithError<T, Success, Error>>(
-        std::move(next), std::move(error));
+  static auto create(Success&& next, Error&& error) {
+    return std::make_shared<
+        WithError<T, std::decay_t<Success>, std::decay_t<Error>>>(
+        std::forward<Success>(next), std::forward<Error>(error));
   }
 
   template <typename T>
@@ -51,8 +54,11 @@ class SingleObservers {
  private:
   template <typename T, typename Next>
   class Base : public SingleObserverBase<T> {
+    static_assert(std::is_same<std::decay_t<Next>, Next>::value, "undecayed");
+
    public:
-    explicit Base(Next next) : next_(std::move(next)) {}
+    template <typename FNext>
+    explicit Base(FNext&& next) : next_(std::forward<FNext>(next)) {}
 
     void onSuccess(T value) override {
       next_(std::move(value));
@@ -66,9 +72,13 @@ class SingleObservers {
 
   template <typename T, typename Success, typename Error>
   class WithError : public Base<T, Success> {
+    static_assert(std::is_same<std::decay_t<Error>, Error>::value, "undecayed");
+
    public:
-    WithError(Success next, Error error)
-        : Base<T, Success>(std::move(next)), error_(std::move(error)) {}
+    template <typename FSuccess, typename FError>
+    WithError(FSuccess&& success, FError&& error)
+        : Base<T, Success>(std::forward<FSuccess>(success)),
+          error_(std::forward<FError>(error)) {}
 
     void onError(folly::exception_wrapper error) override {
       error_(error);

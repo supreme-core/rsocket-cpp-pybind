@@ -24,33 +24,35 @@ class Subscriber : boost::noncopyable {
 
   template <
       typename Next,
-      typename =
-          typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Next>&, T>::value>::type>
   static std::shared_ptr<Subscriber<T>> create(
-      Next next,
+      Next&& next,
       int64_t batch = credits::kNoFlowControl);
 
   template <
       typename Next,
       typename Error,
       typename = typename std::enable_if<
-          folly::is_invocable<Next, T>::value &&
-          folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
+          folly::is_invocable<std::decay_t<Next>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value>::type>
   static std::shared_ptr<Subscriber<T>>
-  create(Next next, Error error, int64_t batch = credits::kNoFlowControl);
+  create(Next&& next, Error&& error, int64_t batch = credits::kNoFlowControl);
 
   template <
       typename Next,
       typename Error,
       typename Complete,
       typename = typename std::enable_if<
-          folly::is_invocable<Next, T>::value &&
-          folly::is_invocable<Error, folly::exception_wrapper>::value &&
-          folly::is_invocable<Complete>::value>::type>
+          folly::is_invocable<std::decay_t<Next>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value &&
+          folly::is_invocable<std::decay_t<Complete>&>::value>::type>
   static std::shared_ptr<Subscriber<T>> create(
-      Next next,
-      Error error,
-      Complete complete,
+      Next&& next,
+      Error&& error,
+      Complete&& complete,
       int64_t batch = credits::kNoFlowControl);
 
   static std::shared_ptr<Subscriber<T>> create() {
@@ -194,9 +196,12 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
 namespace details {
 template <typename T, typename Next>
 class Base : public BaseSubscriber<T> {
+  static_assert(std::is_same<std::decay_t<Next>, Next>::value, "undecayed");
+
  public:
-  Base(Next next, int64_t batch)
-      : next_(std::move(next)), batch_(batch), pending_(0) {}
+  template <typename FNext>
+  Base(FNext&& next, int64_t batch)
+      : next_(std::forward<FNext>(next)), batch_(batch), pending_(0) {}
 
   void onSubscribeImpl() override final {
     pending_ = batch_;
@@ -232,9 +237,13 @@ class Base : public BaseSubscriber<T> {
 
 template <typename T, typename Next, typename Error>
 class WithError : public Base<T, Next> {
+  static_assert(std::is_same<std::decay_t<Error>, Error>::value, "undecayed");
+
  public:
-  WithError(Next next, Error error, int64_t batch)
-      : Base<T, Next>(std::move(next), batch), error_(std::move(error)) {}
+  template <typename FNext, typename FError>
+  WithError(FNext&& next, FError&& error, int64_t batch)
+      : Base<T, Next>(std::forward<FNext>(next), batch),
+        error_(std::forward<FError>(error)) {}
 
   void onErrorImpl(folly::exception_wrapper error) override final {
     try {
@@ -250,10 +259,22 @@ class WithError : public Base<T, Next> {
 
 template <typename T, typename Next, typename Error, typename Complete>
 class WithErrorAndComplete : public WithError<T, Next, Error> {
+  static_assert(
+      std::is_same<std::decay_t<Complete>, Complete>::value,
+      "undecayed");
+
  public:
-  WithErrorAndComplete(Next next, Error error, Complete complete, int64_t batch)
-      : WithError<T, Next, Error>(std::move(next), std::move(error), batch),
-        complete_(std::move(complete)) {}
+  template <typename FNext, typename FError, typename FComplete>
+  WithErrorAndComplete(
+      FNext&& next,
+      FError&& error,
+      FComplete&& complete,
+      int64_t batch)
+      : WithError<T, Next, Error>(
+            std::forward<FNext>(next),
+            std::forward<FError>(error),
+            batch),
+        complete_(std::forward<FComplete>(complete)) {}
 
   void onCompleteImpl() override final {
     try {
@@ -270,28 +291,38 @@ class WithErrorAndComplete : public WithError<T, Next, Error> {
 
 template <typename T>
 template <typename Next, typename>
-std::shared_ptr<Subscriber<T>> Subscriber<T>::create(Next next, int64_t batch) {
-  return std::make_shared<details::Base<T, Next>>(std::move(next), batch);
+std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
+    Next&& next,
+    int64_t batch) {
+  return std::make_shared<details::Base<T, std::decay_t<Next>>>(
+      std::forward<Next>(next), batch);
 }
 
 template <typename T>
 template <typename Next, typename Error, typename>
 std::shared_ptr<Subscriber<T>>
-Subscriber<T>::create(Next next, Error error, int64_t batch) {
-  return std::make_shared<details::WithError<T, Next, Error>>(
-      std::move(next), std::move(error), batch);
+Subscriber<T>::create(Next&& next, Error&& error, int64_t batch) {
+  return std::make_shared<
+      details::WithError<T, std::decay_t<Next>, std::decay_t<Error>>>(
+      std::forward<Next>(next), std::forward<Error>(error), batch);
 }
 
 template <typename T>
 template <typename Next, typename Error, typename Complete, typename>
 std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
-    Next next,
-    Error error,
-    Complete complete,
+    Next&& next,
+    Error&& error,
+    Complete&& complete,
     int64_t batch) {
-  return std::make_shared<
-      details::WithErrorAndComplete<T, Next, Error, Complete>>(
-      std::move(next), std::move(error), std::move(complete), batch);
+  return std::make_shared<details::WithErrorAndComplete<
+      T,
+      std::decay_t<Next>,
+      std::decay_t<Error>,
+      std::decay_t<Complete>>>(
+      std::forward<Next>(next),
+      std::forward<Error>(error),
+      std::forward<Complete>(complete),
+      batch);
 }
 
 } // namespace flowable

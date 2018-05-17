@@ -21,19 +21,20 @@ class Observable<void> {
       int64_t count);
 
   template <typename T>
-  static std::shared_ptr<Observable<T>> just(T value) {
-    return Observable<T>::just(std::move(value));
+  static std::shared_ptr<Observable<T>> just(T&& value) {
+    return Observable<folly::remove_cvref_t<T>>::just(std::forward<T>(value));
   }
 
   template <typename T>
   static std::shared_ptr<Observable<T>> justN(std::initializer_list<T> list) {
-    return Observable<T>::justN(std::move(list));
+    return Observable<folly::remove_cvref_t<T>>::justN(std::move(list));
   }
 
   // this will generate an observable which can be subscribed to only once
   template <typename T>
-  static std::shared_ptr<Observable<T>> justOnce(T value) {
-    return Observable<T>::justOnce(std::move(value));
+  static std::shared_ptr<Observable<T>> justOnce(T&& value) {
+    return Observable<folly::remove_cvref_t<T>>::justOnce(
+        std::forward<T>(value));
   }
 
  private:

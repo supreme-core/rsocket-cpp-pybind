@@ -10,8 +10,13 @@ namespace details {
 
 template <typename T, typename FlowableFactory>
 class DeferFlowable : public Flowable<T> {
+  static_assert(
+      std::is_same<std::decay_t<FlowableFactory>, FlowableFactory>::value,
+      "undecayed");
+
  public:
-  DeferFlowable(FlowableFactory factory) : factory_(std::move(factory)) {}
+  template <typename F>
+  explicit DeferFlowable(F&& factory) : factory_(std::forward<F>(factory)) {}
 
   virtual void subscribe(std::shared_ptr<Subscriber<T>> subscriber) {
     std::shared_ptr<Flowable<T>> flowable;

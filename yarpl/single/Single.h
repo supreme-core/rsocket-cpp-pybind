@@ -26,10 +26,10 @@ class Single : public yarpl::enable_get_ref {
    */
   template <
       typename Success,
-      typename =
-          typename std::enable_if<folly::is_invocable<Success, T>::value>::type>
-  void subscribe(Success next) {
-    subscribe(SingleObservers::create<T>(std::move(next)));
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Success>&, T>::value>::type>
+  void subscribe(Success&& next) {
+    subscribe(SingleObservers::create<T>(std::forward<Success>(next)));
   }
 
   /**
@@ -39,10 +39,12 @@ class Single : public yarpl::enable_get_ref {
       typename Success,
       typename Error,
       typename = typename std::enable_if<
-          folly::is_invocable<Success, T>::value &&
-          folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
+          folly::is_invocable<std::decay_t<Success>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value>::type>
   void subscribe(Success next, Error error) {
-    subscribe(SingleObservers::create<T>(std::move(next), std::move(error)));
+    subscribe(SingleObservers::create<T>(
+        std::forward<Success>(next), std::forward<Error>(error)));
   }
 
   /**
@@ -52,12 +54,12 @@ class Single : public yarpl::enable_get_ref {
    */
   template <
       typename Success,
-      typename =
-          typename std::enable_if<folly::is_invocable<Success, T>::value>::type>
-  void subscribeBlocking(Success next) {
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Success>&, T>::value>::type>
+  void subscribeBlocking(Success&& next) {
     auto waiting_ = std::make_shared<folly::Baton<>>();
     subscribe(
-        SingleObservers::create<T>([next = std::move(next), waiting_](T t) {
+        SingleObservers::create<T>([next = std::forward(next), waiting_](T t) {
           next(std::move(t));
           waiting_->post();
         }));
@@ -68,12 +70,12 @@ class Single : public yarpl::enable_get_ref {
   template <
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe,
+          std::decay_t<OnSubscribe>&,
           std::shared_ptr<SingleObserver<T>>>::value>::type>
-  static std::shared_ptr<Single<T>> create(OnSubscribe);
+  static std::shared_ptr<Single<T>> create(OnSubscribe&&);
 
   template <typename Function>
-  auto map(Function function);
+  auto map(Function&& function);
 };
 
 template <>
@@ -89,12 +91,13 @@ class Single<void> {
    */
   template <
       typename Success,
-      typename =
-          typename std::enable_if<folly::is_invocable<Success>::value>::type>
-  void subscribe(Success s) {
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Success>&>::value>::type>
+  void subscribe(Success&& s) {
     class SuccessSingleObserver : public SingleObserverBase<void> {
      public:
-      SuccessSingleObserver(Success success) : success_{std::move(success)} {}
+      explicit SuccessSingleObserver(Success&& success)
+          : success_{std::forward<Success>(success)} {}
 
       void onSubscribe(
           std::shared_ptr<SingleSubscription> subscription) override {
@@ -112,18 +115,19 @@ class Single<void> {
       }
 
      private:
-      Success success_;
+      std::decay_t<Success> success_;
     };
 
-    subscribe(std::make_shared<SuccessSingleObserver>(std::move(s)));
+    subscribe(
+        std::make_shared<SuccessSingleObserver>(std::forward<Success>(s)));
   }
 
   template <
       typename OnSubscribe,
       typename = typename std::enable_if<folly::is_invocable<
-          OnSubscribe,
+          std::decay_t<OnSubscribe>&,
           std::shared_ptr<SingleObserverBase<void>>>::value>::type>
-  static auto create(OnSubscribe);
+  static auto create(OnSubscribe&&);
 };
 
 } // namespace single
@@ -136,23 +140,24 @@ namespace single {
 
 template <typename T>
 template <typename OnSubscribe, typename>
-std::shared_ptr<Single<T>> Single<T>::create(OnSubscribe function) {
-  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
-      std::move(function));
+std::shared_ptr<Single<T>> Single<T>::create(OnSubscribe&& function) {
+  return std::make_shared<FromPublisherOperator<T, std::decay_t<OnSubscribe>>>(
+      std::forward<OnSubscribe>(function));
 }
 
 template <typename OnSubscribe, typename>
-auto Single<void>::create(OnSubscribe function) {
-  return std::make_shared<SingleVoidFromPublisherOperator<OnSubscribe>>(
+auto Single<void>::create(OnSubscribe&& function) {
+  return std::make_shared<
+      SingleVoidFromPublisherOperator<std::decay_t<OnSubscribe>>>(
       std::forward<OnSubscribe>(function));
 }
 
 template <typename T>
 template <typename Function>
-auto Single<T>::map(Function function) {
+auto Single<T>::map(Function&& function) {
   using D = typename std::result_of<Function(T)>::type;
-  return std::make_shared<MapOperator<T, D, Function>>(
-      this->ref_from_this(this), std::move(function));
+  return std::make_shared<MapOperator<T, D, std::decay_t<Function>>>(
+      this->ref_from_this(this), std::forward<Function>(function));
 }
 
 } // namespace single

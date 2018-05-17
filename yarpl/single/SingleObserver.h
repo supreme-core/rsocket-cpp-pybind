@@ -21,12 +21,12 @@ class SingleObserver : public yarpl::enable_get_ref {
   virtual void onError(folly::exception_wrapper) = 0;
 
   template <typename Success>
-  static std::shared_ptr<SingleObserver<T>> create(Success success);
+  static std::shared_ptr<SingleObserver<T>> create(Success&& success);
 
   template <typename Success, typename Error>
   static std::shared_ptr<SingleObserver<T>> create(
-      Success success,
-      Error error);
+      Success&& success,
+      Error&& error);
 };
 
 template <typename T>
@@ -128,22 +128,23 @@ class SimpleSingleObserver : public SingleObserver<T> {
 
 template <typename T>
 template <typename Success>
-std::shared_ptr<SingleObserver<T>> SingleObserver<T>::create(Success success) {
+std::shared_ptr<SingleObserver<T>> SingleObserver<T>::create(
+    Success&& success) {
   static_assert(
       folly::is_invocable<Success, T>::value,
       "Input `success` should be invocable with a parameter of `T`.");
   return std::make_shared<SimpleSingleObserver<
       T,
-      Success,
+      std::decay_t<Success>,
       folly::Function<void(folly::exception_wrapper)>>>(
-      std::move(success), [](folly::exception_wrapper) {});
+      std::forward<Success>(success), [](folly::exception_wrapper) {});
 }
 
 template <typename T>
 template <typename Success, typename Error>
 std::shared_ptr<SingleObserver<T>> SingleObserver<T>::create(
-    Success success,
-    Error error) {
+    Success&& success,
+    Error&& error) {
   static_assert(
       folly::is_invocable<Success, T>::value,
       "Input `success` should be invocable with a parameter of `T`.");
@@ -152,8 +153,9 @@ std::shared_ptr<SingleObserver<T>> SingleObserver<T>::create(
       "Input `error` should be invocable with a parameter of "
       "`folly::exception_wrapper`.");
 
-  return std::make_shared<SimpleSingleObserver<T, Success, Error>>(
-      std::move(success), std::move(error));
+  return std::make_shared<
+      SimpleSingleObserver<T, std::decay_t<Success>, std::decay_t<Error>>>(
+      std::forward<Success>(success), std::forward<Error>(error));
 }
 
 } // namespace single

@@ -10,6 +10,50 @@ using namespace testing;
 
 namespace {
 
+TEST(FlowableSubscriberTest, CreateSubscriber) {
+  int calls{0};
+  struct Functor {
+    explicit Functor(int& calls) : calls_(calls) {}
+    // If we update the template definition of the Subscriber,
+    // then we should comment out this method and observe the compiler output
+    // with and without the change.
+    void operator()(int) & {
+      ++calls_;
+    }
+    void operator()(int) && {
+      FAIL() << "onNext lambda should be stored as l-value";
+    }
+    void operator()(std::string) const& {
+      ++calls_;
+    }
+    void operator()(std::string) const&& {
+      FAIL() << "onNext lambda should be stored as l-value";
+    }
+    int& calls_;
+  };
+  auto s1 = Subscriber<int>::create(Functor(calls));
+  s1->onSubscribe(yarpl::flowable::Subscription::create());
+  s1->onNext(1);
+  EXPECT_EQ(1, calls);
+
+  auto s2 = Subscriber<long>::create(Functor(calls));
+  s2->onSubscribe(yarpl::flowable::Subscription::create());
+  s2->onNext((long)1);
+  EXPECT_EQ(2, calls);
+
+  auto s3 = Subscriber<std::string>::create(Functor(calls));
+  s3->onSubscribe(yarpl::flowable::Subscription::create());
+  s3->onNext("test");
+  EXPECT_EQ(3, calls);
+
+  // by reference
+  auto f = Functor(calls);
+  auto s4 = Subscriber<int>::create(f);
+  s4->onSubscribe(yarpl::flowable::Subscription::create());
+  s4->onNext(1);
+  EXPECT_EQ(4, calls);
+}
+
 TEST(FlowableSubscriberTest, TestBasicFunctionality) {
   Sequence subscriber_seq;
   auto subscriber = std::make_shared<StrictMock<MockBaseSubscriber<int>>>();

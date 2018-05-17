@@ -249,8 +249,13 @@ class TrackingSubscriber : public Subscriber<T> {
 
 template <typename T, typename Emitter>
 class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
+  static_assert(
+      std::is_same<std::decay_t<Emitter>, Emitter>::value,
+      "undecayed");
+
  public:
-  explicit EmitterWrapper(Emitter emitter) : emitter_(std::move(emitter)) {}
+  template <typename F>
+  explicit EmitterWrapper(F&& emitter) : emitter_(std::forward<F>(emitter)) {}
 
   void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
     auto ef = std::make_shared<EmiterSubscription<T>>(

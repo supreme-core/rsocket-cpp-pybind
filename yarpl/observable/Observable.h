@@ -32,9 +32,10 @@ class Observable : public yarpl::enable_get_ref {
   }
 
   static std::shared_ptr<Observable<T>> error(folly::exception_wrapper ex) {
-    auto lambda = [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) {
-      observer->onError(std::move(ex));
-    };
+    auto lambda =
+        [ex = std::move(ex)](std::shared_ptr<Observer<T>> observer) mutable {
+          observer->onError(std::move(ex));
+        };
     return Observable<T>::create(std::move(lambda));
   }
 
@@ -48,7 +49,7 @@ class Observable : public yarpl::enable_get_ref {
   template <typename Ex>
   static std::shared_ptr<Observable<T>> error(Ex& ex, std::exception_ptr ptr) {
     auto lambda = [ew = folly::exception_wrapper(std::move(ptr), ex)](
-                      std::shared_ptr<Observer<T>> observer) {
+                      std::shared_ptr<Observer<T>> observer) mutable {
       observer->onError(std::move(ew));
     };
     return Observable<T>::create(std::move(lambda));
@@ -75,8 +76,8 @@ class Observable : public yarpl::enable_get_ref {
       typename ObservableFactory,
       typename = typename std::enable_if<folly::is_invocable_r<
           std::shared_ptr<Observable<T>>,
-          ObservableFactory>::value>::type>
-  static std::shared_ptr<Observable<T>> defer(ObservableFactory);
+          std::decay_t<ObservableFactory>&>::value>::type>
+  static std::shared_ptr<Observable<T>> defer(ObservableFactory&&);
 
   static std::shared_ptr<Observable<T>> justN(std::initializer_list<T> list) {
     auto lambda = [v = std::vector<T>(std::move(list))](
@@ -109,7 +110,7 @@ class Observable : public yarpl::enable_get_ref {
   }
 
   template <typename OnSubscribe>
-  static std::shared_ptr<Observable<T>> create(OnSubscribe);
+  static std::shared_ptr<Observable<T>> create(OnSubscribe&&);
 
   virtual std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<T>>) = 0;
@@ -119,10 +120,10 @@ class Observable : public yarpl::enable_get_ref {
    */
   template <
       typename Next,
-      typename =
-          typename std::enable_if<folly::is_invocable<Next, T>::value>::type>
-  std::shared_ptr<Subscription> subscribe(Next next) {
-    return subscribe(Observer<T>::create(std::move(next)));
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Next>&, T>::value>::type>
+  std::shared_ptr<Subscription> subscribe(Next&& next) {
+    return subscribe(Observer<T>::create(std::forward<Next>(next)));
   }
 
   /**
@@ -132,10 +133,12 @@ class Observable : public yarpl::enable_get_ref {
       typename Next,
       typename Error,
       typename = typename std::enable_if<
-          folly::is_invocable<Next, T>::value &&
-          folly::is_invocable<Error, folly::exception_wrapper>::value>::type>
-  std::shared_ptr<Subscription> subscribe(Next next, Error error) {
-    return subscribe(Observer<T>::create(std::move(next), std::move(error)));
+          folly::is_invocable<std::decay_t<Next>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value>::type>
+  std::shared_ptr<Subscription> subscribe(Next&& next, Error&& error) {
+    return subscribe(Observer<T>::create(
+        std::forward<Next>(next), std::forward<Error>(error)));
   }
 
   /**
@@ -146,13 +149,16 @@ class Observable : public yarpl::enable_get_ref {
       typename Error,
       typename Complete,
       typename = typename std::enable_if<
-          folly::is_invocable<Next, T>::value &&
-          folly::is_invocable<Error, folly::exception_wrapper>::value &&
-          folly::is_invocable<Complete>::value>::type>
+          folly::is_invocable<std::decay_t<Next>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value &&
+          folly::is_invocable<std::decay_t<Complete>&>::value>::type>
   std::shared_ptr<Subscription>
-  subscribe(Next next, Error error, Complete complete) {
+  subscribe(Next&& next, Error&& error, Complete&& complete) {
     return subscribe(Observer<T>::create(
-        std::move(next), std::move(error), std::move(complete)));
+        std::forward<Next>(next),
+        std::forward<Error>(error),
+        std::forward<Complete>(complete)));
   }
 
   std::shared_ptr<Subscription> subscribe() {
@@ -162,15 +168,15 @@ class Observable : public yarpl::enable_get_ref {
   template <
       typename Function,
       typename R = typename std::result_of<Function(T)>::type>
-  std::shared_ptr<Observable<R>> map(Function function);
+  std::shared_ptr<Observable<R>> map(Function&& function);
 
   template <typename Function>
-  std::shared_ptr<Observable<T>> filter(Function function);
+  std::shared_ptr<Observable<T>> filter(Function&& function);
 
   template <
       typename Function,
       typename R = typename std::result_of<Function(T, T)>::type>
-  std::shared_ptr<Observable<R>> reduce(Function function);
+  std::shared_ptr<Observable<R>> reduce(Function&& function);
 
   std::shared_ptr<Observable<T>> take(int64_t);
 
@@ -199,57 +205,58 @@ class Observable : public yarpl::enable_get_ref {
   // function is invoked when onComplete occurs.
   template <
       typename Function,
-      typename =
-          typename std::enable_if<folly::is_invocable<Function>::value>::type>
-  std::shared_ptr<Observable<T>> doOnSubscribe(Function function);
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Function>&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnSubscribe(Function&& function);
 
   // function is invoked when onNext occurs.
   template <
       typename Function,
       typename = typename std::enable_if<
-          folly::is_invocable<Function, const T&>::value>::type>
-  std::shared_ptr<Observable<T>> doOnNext(Function function);
+          folly::is_invocable<std::decay_t<Function>&, const T&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnNext(Function&& function);
 
   // function is invoked when onError occurs.
   template <
       typename Function,
-      typename = typename std::enable_if<
-          folly::is_invocable<Function, folly::exception_wrapper&>::value>::
-          type>
-  std::shared_ptr<Observable<T>> doOnError(Function function);
+      typename = typename std::enable_if<folly::is_invocable<
+          std::decay_t<Function>&,
+          folly::exception_wrapper&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnError(Function&& function);
 
   // function is invoked when onComplete occurs.
   template <
       typename Function,
-      typename =
-          typename std::enable_if<folly::is_invocable<Function>::value>::type>
-  std::shared_ptr<Observable<T>> doOnComplete(Function function);
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Function>&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnComplete(Function&& function);
 
   // function is invoked when either onComplete or onError occurs.
   template <
       typename Function,
-      typename =
-          typename std::enable_if<folly::is_invocable<Function>::value>::type>
-  std::shared_ptr<Observable<T>> doOnTerminate(Function function);
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Function>&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnTerminate(Function&& function);
 
   // the function is invoked for each of onNext, onCompleted, onError
   template <
       typename Function,
-      typename =
-          typename std::enable_if<folly::is_invocable<Function>::value>::type>
-  std::shared_ptr<Observable<T>> doOnEach(Function function);
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Function>&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnEach(Function&& function);
 
   // the callbacks will be invoked of each of the signals
   template <
       typename OnNextFunc,
       typename OnCompleteFunc,
       typename = typename std::enable_if<
-          folly::is_invocable<OnNextFunc, const T&>::value>::type,
+          folly::is_invocable<std::decay_t<OnNextFunc>&, const T&>::value>::
+          type,
       typename = typename std::enable_if<
-          folly::is_invocable<OnCompleteFunc>::value>::type>
+          folly::is_invocable<std::decay_t<OnCompleteFunc>&>::value>::type>
   std::shared_ptr<Observable<T>> doOn(
-      OnNextFunc onNext,
-      OnCompleteFunc onComplete);
+      OnNextFunc&& onNext,
+      OnCompleteFunc&& onComplete);
 
   // the callbacks will be invoked of each of the signals
   template <
@@ -257,21 +264,22 @@ class Observable : public yarpl::enable_get_ref {
       typename OnCompleteFunc,
       typename OnErrorFunc,
       typename = typename std::enable_if<
-          folly::is_invocable<OnNextFunc, const T&>::value>::type,
+          folly::is_invocable<std::decay_t<OnNextFunc>&, const T&>::value>::
+          type,
       typename = typename std::enable_if<
-          folly::is_invocable<OnCompleteFunc>::value>::type,
-      typename = typename std::enable_if<
-          folly::is_invocable<OnErrorFunc, folly::exception_wrapper&>::value>::
-          type>
+          folly::is_invocable<std::decay_t<OnCompleteFunc>&>::value>::type,
+      typename = typename std::enable_if<folly::is_invocable<
+          std::decay_t<OnErrorFunc>&,
+          folly::exception_wrapper&>::value>::type>
   std::shared_ptr<Observable<T>>
-  doOn(OnNextFunc onNext, OnCompleteFunc onComplete, OnErrorFunc onError);
+  doOn(OnNextFunc&& onNext, OnCompleteFunc&& onComplete, OnErrorFunc&& onError);
 
   // function is invoked when cancel is called.
   template <
       typename Function,
-      typename =
-          typename std::enable_if<folly::is_invocable<Function>::value>::type>
-  std::shared_ptr<Observable<T>> doOnCancel(Function function);
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Function>&>::value>::type>
+  std::shared_ptr<Observable<T>> doOnCancel(Function&& function);
 
   /**
    * Convert from Observable to Flowable with a given BackpressureStrategy.
@@ -294,41 +302,43 @@ namespace observable {
 
 template <typename T>
 template <typename OnSubscribe>
-std::shared_ptr<Observable<T>> Observable<T>::create(OnSubscribe function) {
+std::shared_ptr<Observable<T>> Observable<T>::create(OnSubscribe&& function) {
   static_assert(
-      folly::is_invocable<OnSubscribe, std::shared_ptr<Observer<T>>>::value,
+      folly::is_invocable<OnSubscribe&&, std::shared_ptr<Observer<T>>>::value,
       "OnSubscribe must have type `void(std::shared_ptr<Observer<T>>)`");
 
-  return std::make_shared<FromPublisherOperator<T, OnSubscribe>>(
-      std::move(function));
+  return std::make_shared<FromPublisherOperator<T, std::decay_t<OnSubscribe>>>(
+      std::forward<OnSubscribe>(function));
 }
 
 template <typename T>
 template <typename ObservableFactory, typename>
-std::shared_ptr<Observable<T>> Observable<T>::defer(ObservableFactory factory) {
-  return std::make_shared<details::DeferObservable<T, ObservableFactory>>(
-      std::move(factory));
+std::shared_ptr<Observable<T>> Observable<T>::defer(
+    ObservableFactory&& factory) {
+  return std::make_shared<
+      details::DeferObservable<T, std::decay_t<ObservableFactory>>>(
+      std::forward<ObservableFactory>(factory));
 }
 
 template <typename T>
 template <typename Function, typename R>
-std::shared_ptr<Observable<R>> Observable<T>::map(Function function) {
-  return std::make_shared<MapOperator<T, R, Function>>(
-      this->ref_from_this(this), std::move(function));
+std::shared_ptr<Observable<R>> Observable<T>::map(Function&& function) {
+  return std::make_shared<MapOperator<T, R, std::decay_t<Function>>>(
+      this->ref_from_this(this), std::forward<Function>(function));
 }
 
 template <typename T>
 template <typename Function>
-std::shared_ptr<Observable<T>> Observable<T>::filter(Function function) {
-  return std::make_shared<FilterOperator<T, Function>>(
-      this->ref_from_this(this), std::move(function));
+std::shared_ptr<Observable<T>> Observable<T>::filter(Function&& function) {
+  return std::make_shared<FilterOperator<T, std::decay_t<Function>>>(
+      this->ref_from_this(this), std::forward<Function>(function));
 }
 
 template <typename T>
 template <typename Function, typename R>
-std::shared_ptr<Observable<R>> Observable<T>::reduce(Function function) {
-  return std::make_shared<ReduceOperator<T, R, Function>>(
-      this->ref_from_this(this), std::move(function));
+std::shared_ptr<Observable<R>> Observable<T>::reduce(Function&& function) {
+  return std::make_shared<ReduceOperator<T, R, std::decay_t<Function>>>(
+      this->ref_from_this(this), std::forward<Function>(function));
 }
 
 template <typename T>
@@ -355,10 +365,11 @@ std::shared_ptr<Observable<T>> Observable<T>::subscribeOn(
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnSubscribe(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnSubscribe(
+    Function&& function) {
   return details::createDoOperator(
       ref_from_this(this),
-      std::move(function),
+      std::forward<Function>(function),
       [](const T&) {},
       [](const auto&) {},
       [] {},
@@ -374,11 +385,11 @@ std::shared_ptr<Observable<T>> Observable<T>::concatWith(
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnNext(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnNext(Function&& function) {
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
-      std::move(function),
+      std::forward<Function>(function),
       [](const auto&) {},
       [] {},
       [] {}); // onCancel
@@ -386,32 +397,35 @@ std::shared_ptr<Observable<T>> Observable<T>::doOnNext(Function function) {
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnError(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnError(Function&& function) {
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
       [](const T&) {},
-      std::move(function),
+      std::forward<Function>(function),
       [] {},
       [] {}); // onCancel
 }
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnComplete(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnComplete(
+    Function&& function) {
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
       [](const T&) {},
       [](const auto&) {},
-      std::move(function),
+      std::forward<Function>(function),
       [] {}); // onCancel
 }
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnTerminate(Function function) {
-  auto sharedFunction = std::make_shared<Function>(std::move(function));
+std::shared_ptr<Observable<T>> Observable<T>::doOnTerminate(
+    Function&& function) {
+  auto sharedFunction = std::make_shared<std::decay_t<Function>>(
+      std::forward<Function>(function));
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
@@ -423,8 +437,9 @@ std::shared_ptr<Observable<T>> Observable<T>::doOnTerminate(Function function) {
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnEach(Function function) {
-  auto sharedFunction = std::make_shared<Function>(std::move(function));
+std::shared_ptr<Observable<T>> Observable<T>::doOnEach(Function&& function) {
+  auto sharedFunction = std::make_shared<std::decay_t<Function>>(
+      std::forward<Function>(function));
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
@@ -437,14 +452,14 @@ std::shared_ptr<Observable<T>> Observable<T>::doOnEach(Function function) {
 template <typename T>
 template <typename OnNextFunc, typename OnCompleteFunc, typename, typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOn(
-    OnNextFunc onNext,
-    OnCompleteFunc onComplete) {
+    OnNextFunc&& onNext,
+    OnCompleteFunc&& onComplete) {
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
-      std::move(onNext),
+      std::forward<OnNextFunc>(onNext),
       [](const auto&) {},
-      std::move(onComplete),
+      std::forward<OnCompleteFunc>(onComplete),
       [] {}); // onCancel
 }
 
@@ -457,28 +472,28 @@ template <
     typename,
     typename>
 std::shared_ptr<Observable<T>> Observable<T>::doOn(
-    OnNextFunc onNext,
-    OnCompleteFunc onComplete,
-    OnErrorFunc onError) {
+    OnNextFunc&& onNext,
+    OnCompleteFunc&& onComplete,
+    OnErrorFunc&& onError) {
   return details::createDoOperator(
       ref_from_this(this),
       [] {},
-      std::move(onNext),
-      std::move(onError),
-      std::move(onComplete),
+      std::forward<OnNextFunc>(onNext),
+      std::forward<OnErrorFunc>(onError),
+      std::forward<OnCompleteFunc>(onComplete),
       [] {}); // onCancel
 }
 
 template <typename T>
 template <typename Function, typename>
-std::shared_ptr<Observable<T>> Observable<T>::doOnCancel(Function function) {
+std::shared_ptr<Observable<T>> Observable<T>::doOnCancel(Function&& function) {
   return details::createDoOperator(
       ref_from_this(this),
       [] {}, // onSubscribe
       [](const auto&) {}, // onNext
       [](const auto&) {}, // onError
       [] {}, // onComplete
-      std::move(function)); // onCancel
+      std::forward<Function>(function)); // onCancel
 }
 
 template <typename T>

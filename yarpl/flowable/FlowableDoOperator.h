@@ -16,23 +16,48 @@ template <
     typename OnCancelFunc>
 class DoOperator : public FlowableOperator<U, U> {
   using Super = FlowableOperator<U, U>;
+  static_assert(
+      std::is_same<std::decay_t<OnSubscribeFunc>, OnSubscribeFunc>::value,
+      "undecayed");
+  static_assert(
+      std::is_same<std::decay_t<OnNextFunc>, OnNextFunc>::value,
+      "undecayed");
+  static_assert(
+      std::is_same<std::decay_t<OnErrorFunc>, OnErrorFunc>::value,
+      "undecayed");
+  static_assert(
+      std::is_same<std::decay_t<OnCompleteFunc>, OnCompleteFunc>::value,
+      "undecayed");
+  static_assert(
+      std::is_same<std::decay_t<OnRequestFunc>, OnRequestFunc>::value,
+      "undecayed");
+  static_assert(
+      std::is_same<std::decay_t<OnCancelFunc>, OnCancelFunc>::value,
+      "undecayed");
 
  public:
+  template <
+      typename FSubscribe,
+      typename FNext,
+      typename FError,
+      typename FComplete,
+      typename FRequest,
+      typename FCancel>
   DoOperator(
       std::shared_ptr<Flowable<U>> upstream,
-      OnSubscribeFunc onSubscribeFunc,
-      OnNextFunc onNextFunc,
-      OnErrorFunc onErrorFunc,
-      OnCompleteFunc onCompleteFunc,
-      OnRequestFunc onRequestFunc,
-      OnCancelFunc onCancelFunc)
+      FSubscribe&& onSubscribeFunc,
+      FNext&& onNextFunc,
+      FError&& onErrorFunc,
+      FComplete&& onCompleteFunc,
+      FRequest&& onRequestFunc,
+      FCancel&& onCancelFunc)
       : upstream_(std::move(upstream)),
-        onSubscribeFunc_(std::move(onSubscribeFunc)),
-        onNextFunc_(std::move(onNextFunc)),
-        onErrorFunc_(std::move(onErrorFunc)),
-        onCompleteFunc_(std::move(onCompleteFunc)),
-        onRequestFunc_(std::move(onRequestFunc)),
-        onCancelFunc_(std::move(onCancelFunc)) {}
+        onSubscribeFunc_(std::forward<FSubscribe>(onSubscribeFunc)),
+        onNextFunc_(std::forward<FNext>(onNextFunc)),
+        onErrorFunc_(std::forward<FError>(onErrorFunc)),
+        onCompleteFunc_(std::forward<FComplete>(onCompleteFunc)),
+        onRequestFunc_(std::forward<FRequest>(onRequestFunc)),
+        onCancelFunc_(std::forward<FCancel>(onCancelFunc)) {}
 
   void subscribe(std::shared_ptr<Subscriber<U>> subscriber) override {
     auto subscription = std::make_shared<DoSubscription>(
@@ -112,27 +137,27 @@ template <
     typename OnCancelFunc>
 inline auto createDoOperator(
     std::shared_ptr<Flowable<U>> upstream,
-    OnSubscribeFunc onSubscribeFunc,
-    OnNextFunc onNextFunc,
-    OnErrorFunc onErrorFunc,
-    OnCompleteFunc onCompleteFunc,
-    OnRequestFunc onRequestFunc,
-    OnCancelFunc onCancelFunc) {
+    OnSubscribeFunc&& onSubscribeFunc,
+    OnNextFunc&& onNextFunc,
+    OnErrorFunc&& onErrorFunc,
+    OnCompleteFunc&& onCompleteFunc,
+    OnRequestFunc&& onRequestFunc,
+    OnCancelFunc&& onCancelFunc) {
   return std::make_shared<DoOperator<
       U,
-      OnSubscribeFunc,
-      OnNextFunc,
-      OnErrorFunc,
-      OnCompleteFunc,
-      OnRequestFunc,
-      OnCancelFunc>>(
+      std::decay_t<OnSubscribeFunc>,
+      std::decay_t<OnNextFunc>,
+      std::decay_t<OnErrorFunc>,
+      std::decay_t<OnCompleteFunc>,
+      std::decay_t<OnRequestFunc>,
+      std::decay_t<OnCancelFunc>>>(
       std::move(upstream),
-      std::move(onSubscribeFunc),
-      std::move(onNextFunc),
-      std::move(onErrorFunc),
-      std::move(onCompleteFunc),
-      std::move(onRequestFunc),
-      std::move(onCancelFunc));
+      std::forward<OnSubscribeFunc>(onSubscribeFunc),
+      std::forward<OnNextFunc>(onNextFunc),
+      std::forward<OnErrorFunc>(onErrorFunc),
+      std::forward<OnCompleteFunc>(onCompleteFunc),
+      std::forward<OnRequestFunc>(onRequestFunc),
+      std::forward<OnCancelFunc>(onCancelFunc));
 }
 } // namespace details
 } // namespace flowable

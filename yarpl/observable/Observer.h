@@ -123,8 +123,11 @@ namespace details {
 
 template <typename T, typename Next>
 class Base : public Observer<T> {
+  static_assert(std::is_same<std::decay_t<Next>, Next>::value, "undecayed");
+
  public:
-  explicit Base(Next next) : next_(std::move(next)) {}
+  template <typename FNext>
+  explicit Base(FNext&& next) : next_(std::forward<FNext>(next)) {}
 
   void onNext(T value) override {
     next_(std::move(value));
@@ -136,9 +139,13 @@ class Base : public Observer<T> {
 
 template <typename T, typename Next, typename Error>
 class WithError : public Base<T, Next> {
+  static_assert(std::is_same<std::decay_t<Error>, Error>::value, "undecayed");
+
  public:
-  WithError(Next next, Error error)
-      : Base<T, Next>(std::move(next)), error_(std::move(error)) {}
+  template <typename FNext, typename FError>
+  WithError(FNext&& next, FError&& error)
+      : Base<T, Next>(std::forward<FNext>(next)),
+        error_(std::forward<FError>(error)) {}
 
   void onError(folly::exception_wrapper error) override {
     error_(std::move(error));
@@ -150,9 +157,16 @@ class WithError : public Base<T, Next> {
 
 template <typename T, typename Next, typename Error, typename Complete>
 class WithErrorAndComplete : public WithError<T, Next, Error> {
+  static_assert(
+      std::is_same<std::decay_t<Complete>, Complete>::value,
+      "undecayed");
+
  public:
-  WithErrorAndComplete(Next next, Error error, Complete complete)
-      : WithError<T, Next, Error>(std::move(next), std::move(error)),
+  template <typename FNext, typename FError, typename FComplete>
+  WithErrorAndComplete(FNext&& next, FError&& error, FComplete&& complete)
+      : WithError<T, Next, Error>(
+            std::forward<FNext>(next),
+            std::forward<FError>(error)),
         complete_(std::move(complete)) {}
 
   void onComplete() override {

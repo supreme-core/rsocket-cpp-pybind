@@ -153,10 +153,13 @@ template <
         typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
 class MapOperator : public ObservableOperator<U, D> {
   using Super = ObservableOperator<U, D>;
+  static_assert(std::is_same<std::decay_t<F>, F>::value, "undecayed");
 
  public:
-  MapOperator(std::shared_ptr<Observable<U>> upstream, F function)
-      : upstream_(std::move(upstream)), function_(std::move(function)) {}
+  template <typename Func>
+  MapOperator(std::shared_ptr<Observable<U>> upstream, Func&& function)
+      : upstream_(std::move(upstream)),
+        function_(std::forward<Func>(function)) {}
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<D>> observer) override {
@@ -202,10 +205,13 @@ template <
         typename std::enable_if<folly::is_invocable_r<bool, F, U>::value>::type>
 class FilterOperator : public ObservableOperator<U, U> {
   using Super = ObservableOperator<U, U>;
+  static_assert(std::is_same<std::decay_t<F>, F>::value, "undecayed");
 
  public:
-  FilterOperator(std::shared_ptr<Observable<U>> upstream, F function)
-      : upstream_(std::move(upstream)), function_(std::move(function)) {}
+  template <typename Func>
+  FilterOperator(std::shared_ptr<Observable<U>> upstream, Func&& function)
+      : upstream_(std::move(upstream)),
+        function_(std::forward<Func>(function)) {}
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<U>> observer) override {
@@ -250,10 +256,13 @@ template <
         typename std::enable_if<folly::is_invocable_r<U, F, D, U>::value>::type>
 class ReduceOperator : public ObservableOperator<U, D> {
   using Super = ObservableOperator<U, D>;
+  static_assert(std::is_same<std::decay_t<F>, F>::value, "undecayed");
 
  public:
-  ReduceOperator(std::shared_ptr<Observable<U>> upstream, F function)
-      : upstream_(std::move(upstream)), function_(std::move(function)) {}
+  template <typename Func>
+  ReduceOperator(std::shared_ptr<Observable<U>> upstream, Func&& function)
+      : upstream_(std::move(upstream)),
+        function_(std::forward<Func>(function)) {}
 
   std::shared_ptr<Subscription> subscribe(
       std::shared_ptr<Observer<D>> subscriber) override {
@@ -478,9 +487,14 @@ class SubscribeOnOperator : public ObservableOperator<T, T> {
 
 template <typename T, typename OnSubscribe>
 class FromPublisherOperator : public Observable<T> {
+  static_assert(
+      std::is_same<std::decay_t<OnSubscribe>, OnSubscribe>::value,
+      "undecayed");
+
  public:
-  explicit FromPublisherOperator(OnSubscribe function)
-      : function_(std::move(function)) {}
+  template <typename F>
+  explicit FromPublisherOperator(F&& function)
+      : function_(std::forward<F>(function)) {}
 
  private:
   class PublisherObserver : public Observer<T> {
