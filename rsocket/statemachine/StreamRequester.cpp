@@ -10,43 +10,34 @@ void StreamRequester::setRequested(size_t n) {
   addImplicitAllowance(n);
 }
 
-void StreamRequester::request(int64_t n) noexcept {
-  if (n == 0) {
+void StreamRequester::request(int64_t signedN) {
+  if (signedN <= 0) {
     return;
   }
 
-  if (!requested_) {
-    requested_ = true;
+  const size_t n = signedN;
 
-    const auto initialN =
-        n > Frame_REQUEST_N::kMaxRequestN ? Frame_REQUEST_N::kMaxRequestN : n;
-    const auto remainingN = n > Frame_REQUEST_N::kMaxRequestN
-        ? n - Frame_REQUEST_N::kMaxRequestN
-        : 0;
-
-    // Send as much as possible with the initial request.
-    CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
-
-    // We must inform ConsumerBase about an implicit allowance we have
-    // requested from the remote end.
-    addImplicitAllowance(initialN);
-    newStream(
-        StreamType::STREAM,
-        static_cast<uint32_t>(initialN),
-        std::move(initialPayload_));
-
-    // Pump the remaining allowance into the ConsumerBase _after_ sending the
-    // initial request.
-    if (remainingN) {
-      generateRequest(remainingN);
-    }
+  if (requested_) {
+    generateRequest(n);
     return;
   }
 
-  generateRequest(n);
+  requested_ = true;
+
+  // We must inform ConsumerBase about an implicit allowance we have requested
+  // from the remote end.
+  auto const initial = std::min<uint32_t>(n, Frame_REQUEST_N::kMaxRequestN);
+  addImplicitAllowance(initial);
+  newStream(StreamType::STREAM, initial, std::move(initialPayload_));
+
+  // Pump the remaining allowance into the ConsumerBase _after_ sending the
+  // initial request.
+  if (n > initial) {
+    generateRequest(n - initial);
+  }
 }
 
-void StreamRequester::cancel() noexcept {
+void StreamRequester::cancel() {
   VLOG(5) << "StreamRequester::cancel(requested_=" << requested_ << ")";
   cancelConsumer();
   if (requested_) {
@@ -59,18 +50,20 @@ void StreamRequester::handlePayload(
     Payload&& payload,
     bool complete,
     bool next) {
-  CHECK(requested_);
-  processPayload(std::move(payload), next);
+  if (!requested_) {
+    handleError(std::runtime_error{"Haven't sent REQUEST_STREAM yet"});
+    return;
+  }
 
+  processPayload(std::move(payload), next);
   if (complete) {
     completeConsumer();
     removeFromWriter();
   }
 }
 
-void StreamRequester::handleError(folly::exception_wrapper errorPayload) {
-  CHECK(requested_);
-  errorConsumer(std::move(errorPayload));
+void StreamRequester::handleError(folly::exception_wrapper ew) {
+  errorConsumer(std::move(ew));
   removeFromWriter();
 }
 

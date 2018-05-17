@@ -66,22 +66,23 @@ size_t ConsumerBase::getConsumerAllowance() const {
 }
 
 void ConsumerBase::processPayload(Payload&& payload, bool onNext) {
-  if (payload || onNext) {
-    // Frames carry application-level payloads are taken into account when
-    // figuring out flow control allowance.
-    if (allowance_.tryConsume(1) && activeRequests_.tryConsume(1)) {
-      sendRequests();
-      if (consumingSubscriber_) {
-        consumingSubscriber_->onNext(std::move(payload));
-      } else {
-        LOG(ERROR)
-            << "consuming subscriber is missing, might be a race condition on "
-               " cancel/onNext.";
-      }
-    } else {
-      handleFlowControlError();
-      return;
-    }
+  if (!payload && !onNext) {
+    return;
+  }
+
+  // Frames carrying application-level payloads are taken into account when
+  // figuring out flow control allowance.
+  if (!allowance_.tryConsume(1) || !activeRequests_.tryConsume(1)) {
+    handleFlowControlError();
+    return;
+  }
+
+  sendRequests();
+  if (consumingSubscriber_) {
+    consumingSubscriber_->onNext(std::move(payload));
+  } else {
+    LOG(ERROR) << "Consuming subscriber is missing, might be a race on "
+               << "cancel/onNext";
   }
 }
 
