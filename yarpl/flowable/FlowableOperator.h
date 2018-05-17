@@ -814,6 +814,11 @@ class FlatMapOperator : public FlowableOperator<T, R> {
           : flatMapSubscription_(std::move(subscription)) {}
 
       void onSubscribeImpl() final {
+        auto fmsb = yarpl::atomic_load(&flatMapSubscription_);
+        if (!fmsb || fmsb->clearAllSubscribers_) {
+          BaseSubscriber<R>::cancel();
+          return;
+        }
 #ifndef NDEBUG
         if (auto fms = yarpl::atomic_load(&flatMapSubscription_)) {
           auto l = fms->lists.wlock();
