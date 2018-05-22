@@ -19,7 +19,7 @@ enum class StreamCompletionSignal;
 /// A class that represents a flow-control-aware consumer of data.
 class ConsumerBase : public StreamStateMachineBase,
                      public yarpl::flowable::Subscription,
-                     public yarpl::enable_get_ref {
+                     public std::enable_shared_from_this<ConsumerBase> {
  public:
   using StreamStateMachineBase::StreamStateMachineBase;
 
@@ -77,4 +77,5 @@ class ConsumerBase : public StreamStateMachineBase,
 
   State state_{State::RESPONDING};
 };
+
 } // namespace rsocket

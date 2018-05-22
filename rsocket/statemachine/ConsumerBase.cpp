@@ -24,7 +24,7 @@ void ConsumerBase::subscribe(
 
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_ = std::move(subscriber);
-  consumingSubscriber_->onSubscribe(this->ref_from_this(this));
+  consumingSubscriber_->onSubscribe(shared_from_this());
 }
 
 // TODO: this is probably buggy and misused and not needed (when
