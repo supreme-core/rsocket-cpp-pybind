@@ -666,14 +666,8 @@ void RSocketStateMachine::handleConnectionFrame(
 
 std::shared_ptr<StreamStateMachineBase>
 RSocketStateMachine::getStreamStateMachine(StreamId streamId) {
-  const auto&& it = streams_.find(streamId);
-  if (it == streams_.end()) {
-    return nullptr;
-  }
-  // we are purposely making a copy of the reference here to avoid problems with
-  // lifetime of the stateMachine when a terminating signal is delivered which
-  // will cause the stateMachine to be destroyed while in one of its methods
-  return it->second.stateMachine;
+  auto const it = streams_.find(streamId);
+  return it != streams_.end() ? it->second.stateMachine : nullptr;
 }
 
 void RSocketStateMachine::onStreamRequestN(
@@ -705,7 +699,7 @@ void RSocketStateMachine::onStreamPayload(
     bool flagsFollows,
     bool flagsComplete,
     bool flagsNext) {
-  const auto&& it = streams_.find(streamId);
+  auto const it = streams_.find(streamId);
   if (it == streams_.end()) {
     return;
   }
@@ -741,8 +735,7 @@ void RSocketStateMachine::handleStreamFrame(
     StreamId streamId,
     FrameType frameType,
     std::unique_ptr<folly::IOBuf> serializedFrame) {
-  const auto it = streams_.find(streamId);
-  if (it == streams_.end()) {
+  if (streams_.count(streamId) == 0) {
     handleUnknownStream(streamId, frameType, std::move(serializedFrame));
     return;
   }
@@ -1171,12 +1164,9 @@ bool RSocketStateMachine::ensureOrAutodetectFrameSerializer(
 }
 
 size_t RSocketStateMachine::getConsumerAllowance(StreamId streamId) const {
-  size_t consumerAllowance = 0;
-  const auto it = streams_.find(streamId);
-  if (it != streams_.end()) {
-    consumerAllowance = it->second.stateMachine->getConsumerAllowance();
-  }
-  return consumerAllowance;
+  auto const it = streams_.find(streamId);
+  return it != streams_.end() ? it->second.stateMachine->getConsumerAllowance()
+                              : 0;
 }
 
 void RSocketStateMachine::registerCloseCallback(
@@ -1227,7 +1217,7 @@ StreamId RSocketStateMachine::getNextStreamId() {
     throw std::runtime_error{"Ran out of stream IDs"};
   }
 
-  CHECK(streams_.find(streamId) == streams_.end())
+  CHECK_EQ(0, streams_.count(streamId))
       << "Next stream ID already exists in the streams map";
 
   nextStreamId_ += 2;

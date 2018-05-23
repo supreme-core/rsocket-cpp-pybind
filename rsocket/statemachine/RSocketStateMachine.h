@@ -177,8 +177,7 @@ class RSocketStateMachine final
       bool flagsComplete,
       bool flagsNext);
 
-  std::shared_ptr<StreamStateMachineBase> getStreamStateMachine(
-      StreamId streamId);
+  std::shared_ptr<StreamStateMachineBase> getStreamStateMachine(StreamId);
 
   void connect(std::shared_ptr<FrameTransport>);
 
