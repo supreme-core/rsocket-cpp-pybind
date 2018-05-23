@@ -12,6 +12,7 @@
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/ChannelRequester.h"
 #include "rsocket/statemachine/ChannelResponder.h"
+#include "rsocket/statemachine/RSocketStateMachine.h"
 #include "rsocket/statemachine/RequestResponseResponder.h"
 #include "rsocket/test/test_utils/MockDuplexConnection.h"
 #include "rsocket/test/test_utils/MockStreamsWriter.h"

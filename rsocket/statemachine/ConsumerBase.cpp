@@ -6,13 +6,7 @@
 
 #include <glog/logging.h>
 
-#include "rsocket/Payload.h"
-#include "yarpl/flowable/Subscription.h"
-
 namespace rsocket {
-
-using namespace yarpl;
-using namespace yarpl::flowable;
 
 void ConsumerBase::subscribe(
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) {
@@ -27,8 +21,6 @@ void ConsumerBase::subscribe(
   consumingSubscriber_->onSubscribe(shared_from_this());
 }
 
-// TODO: this is probably buggy and misused and not needed (when
-// completeConsumer exists)
 void ConsumerBase::cancelConsumer() {
   state_ = State::CLOSED;
   VLOG(5) << "ConsumerBase::cancelConsumer()";
