@@ -288,8 +288,8 @@ TEST_F(RSocketStateMachineTest, RespondRequest) {
 
 TEST_F(RSocketStateMachineTest, StreamImmediateCancel) {
   auto connection = std::make_unique<StrictMock<MockDuplexConnection>>();
-  // Setup frame and request stream frame
-  EXPECT_CALL(*connection, send_(_)).Times(2);
+  // Only send a SETUP frame.  A REQUEST_STREAM frame should never be sent.
+  EXPECT_CALL(*connection, send_(_));
 
   auto stateMachine =
       createClient(std::move(connection), std::make_shared<RSocketResponder>());
