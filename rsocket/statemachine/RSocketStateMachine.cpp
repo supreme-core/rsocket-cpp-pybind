@@ -446,32 +446,12 @@ void RSocketStateMachine::requestResponse(
   stateMachine->subscribe(std::move(responseSink));
 }
 
-bool RSocketStateMachine::endStreamInternal(
-    StreamId streamId,
-    StreamCompletionSignal signal) {
-  VLOG(6) << "endStreamInternal";
-  const auto it = streams_.find(streamId);
-  if (it == streams_.end()) {
-    // Unsubscribe handshake initiated by the connection, we're done.
-    return false;
-  }
-
-  // Remove from the map before notifying the stateMachine.
-  auto streamElem = std::move(it->second);
-  streams_.erase(it);
-  streamElem.stateMachine->endStream(signal);
-  return true;
-}
-
 void RSocketStateMachine::closeStreams(StreamCompletionSignal signal) {
-  // Close all streams.
   while (!streams_.empty()) {
-    const auto oldSize = streams_.size();
-    const auto result = endStreamInternal(streams_.begin()->first, signal);
-    // TODO(stupaq): what kind of a user action could violate these
-    // assertions?
-    DCHECK(result);
-    DCHECK_EQ(streams_.size(), oldSize - 1);
+    auto it = streams_.begin();
+    auto streamElem = std::move(it->second);
+    streams_.erase(it);
+    streamElem.stateMachine->endStream(signal);
   }
 }
 

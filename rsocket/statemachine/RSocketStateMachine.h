@@ -236,12 +236,6 @@ class RSocketStateMachine final
     return false;
   }
 
-  /// Performs the same actions as ::endStream without propagating closure
-  /// signal to the underlying connection.
-  ///
-  /// The call is idempotent and returns false iff a stream has not been found.
-  bool endStreamInternal(StreamId streamId, StreamCompletionSignal signal);
-
   // FrameProcessor.
   void processFrame(std::unique_ptr<folly::IOBuf>) override;
   void onTerminal(folly::exception_wrapper) override;
