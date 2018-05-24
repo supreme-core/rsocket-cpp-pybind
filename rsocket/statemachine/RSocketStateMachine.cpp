@@ -26,25 +26,27 @@
 #include "rsocket/statemachine/StreamResponder.h"
 #include "rsocket/statemachine/StreamStateMachineBase.h"
 
-#include "yarpl/flowable/Flowable.h"
-#include "yarpl/single/Singles.h"
+#include "yarpl/flowable/Subscription.h"
+#include "yarpl/single/SingleSubscriptions.h"
 
 namespace rsocket {
 
 namespace {
-void subscribeToErrorFlowable(
-    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
-  yarpl::flowable::Flowable<Payload>::error(
-      std::runtime_error("state machine is disconnected/closed"))
-      ->subscribe(std::move(responseSink));
+
+void disconnectError(
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> subscriber) {
+  std::runtime_error exn{"RSocket connection is disconnected or closed"};
+  subscriber->onSubscribe(yarpl::flowable::Subscription::create());
+  subscriber->onError(std::move(exn));
 }
 
-void subscribeToErrorSingle(
-    std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink) {
-  yarpl::single::Singles::error<Payload>(
-      std::runtime_error("state machine is disconnected/closed"))
-      ->subscribe(std::move(responseSink));
+void disconnectError(
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> observer) {
+  std::runtime_error exn{"RSocket connection is disconnected or closed"};
+  observer->onSubscribe(yarpl::single::SingleSubscriptions::empty());
+  observer->onError(std::move(exn));
 }
+
 } // namespace
 
 RSocketStateMachine::RSocketStateMachine(
@@ -395,7 +397,7 @@ void RSocketStateMachine::requestStream(
     Payload request,
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
   if (isDisconnected()) {
-    subscribeToErrorFlowable(std::move(responseSink));
+    disconnectError(std::move(responseSink));
     return;
   }
 
@@ -413,9 +415,10 @@ RSocketStateMachine::requestChannel(
     bool hasInitialRequest,
     std::shared_ptr<yarpl::flowable::Subscriber<Payload>> responseSink) {
   if (isDisconnected()) {
-    subscribeToErrorFlowable(std::move(responseSink));
+    disconnectError(std::move(responseSink));
     return nullptr;
   }
+
   auto const streamId = getNextStreamId();
   std::shared_ptr<ChannelRequester> stateMachine;
   if (hasInitialRequest) {
@@ -435,9 +438,10 @@ void RSocketStateMachine::requestResponse(
     Payload request,
     std::shared_ptr<yarpl::single::SingleObserver<Payload>> responseSink) {
   if (isDisconnected()) {
-    subscribeToErrorSingle(std::move(responseSink));
+    disconnectError(std::move(responseSink));
     return;
   }
+
   auto const streamId = getNextStreamId();
   auto stateMachine = std::make_shared<RequestResponseRequester>(
       shared_from_this(), streamId, std::move(request));
