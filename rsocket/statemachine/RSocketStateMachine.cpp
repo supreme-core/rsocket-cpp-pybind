@@ -169,7 +169,8 @@ void RSocketStateMachine::connectClient(
   setResumable(params.resumable);
 
   Frame_SETUP frame(
-      params.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY,
+      (params.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY) |
+          (params.payload.metadata ? FrameFlags::METADATA : FrameFlags::EMPTY),
       version.major,
       version.minor,
       getKeepaliveTime(),
