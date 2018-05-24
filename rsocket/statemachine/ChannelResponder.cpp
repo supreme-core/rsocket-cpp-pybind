@@ -10,7 +10,6 @@ void ChannelResponder::onSubscribe(
 }
 
 void ChannelResponder::onNext(Payload response) {
-  checkPublisherOnNext();
   if (!publisherClosed()) {
     writePayload(std::move(response));
   }

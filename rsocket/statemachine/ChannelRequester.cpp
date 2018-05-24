@@ -20,7 +20,6 @@ void ChannelRequester::onNext(Payload request) {
     return;
   }
 
-  checkPublisherOnNext();
   if (!publisherClosed()) {
     writePayload(std::move(request));
   }

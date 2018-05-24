@@ -5,18 +5,17 @@
 namespace rsocket {
 
 void StreamResponder::onSubscribe(
-    std::shared_ptr<yarpl::flowable::Subscription> subscription) noexcept {
+    std::shared_ptr<yarpl::flowable::Subscription> subscription) {
   publisherSubscribe(std::move(subscription));
 }
 
-void StreamResponder::onNext(Payload response) noexcept {
-  checkPublisherOnNext();
+void StreamResponder::onNext(Payload response) {
   if (!publisherClosed()) {
     writePayload(std::move(response));
   }
 }
 
-void StreamResponder::onComplete() noexcept {
+void StreamResponder::onComplete() {
   if (!publisherClosed()) {
     publisherComplete();
     writeComplete();
@@ -24,7 +23,7 @@ void StreamResponder::onComplete() noexcept {
   }
 }
 
-void StreamResponder::onError(folly::exception_wrapper ex) noexcept {
+void StreamResponder::onError(folly::exception_wrapper ex) {
   if (!publisherClosed()) {
     publisherComplete();
     writeApplicationError(ex.get_exception()->what());
@@ -37,7 +36,7 @@ void StreamResponder::endStream(StreamCompletionSignal) {
 }
 
 void StreamResponder::handleCancel() {
-  endStream(StreamCompletionSignal::CANCEL);
+  terminatePublisher();
   removeFromWriter();
 }
 
