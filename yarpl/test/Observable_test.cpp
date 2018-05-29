@@ -315,7 +315,13 @@ TEST(Observable, toFlowableDropWithCancel) {
 }
 
 TEST(Observable, toFlowableErrorStrategy) {
-  auto a = Observable<>::range(1, 10);
+  auto a = Observable<int64_t>::createEx([](auto observer, auto subscription) {
+    int64_t i = 1;
+    for (; !subscription->isCancelled() && i <= 10; ++i) {
+      observer->onNext(i);
+    }
+    EXPECT_EQ(7, i);
+  });
   auto f = a->toFlowable(BackpressureStrategy::ERROR);
 
   std::vector<int64_t> v;

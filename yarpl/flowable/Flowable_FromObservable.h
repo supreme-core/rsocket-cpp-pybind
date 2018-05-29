@@ -129,6 +129,17 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
     observable_.reset();
   }
 
+  void downstreamOnErrorAndCancel(folly::exception_wrapper error) {
+    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
+      return;
+    }
+    auto subscriber = std::move(subscriber_);
+    subscriber->onError(std::move(error));
+
+    observable_.reset();
+    observable::Observer<T>::subscription()->cancel();
+  }
+
  private:
   std::shared_ptr<observable::Observable<T>> observable_;
   std::shared_ptr<flowable::Subscriber<T>> subscriber_;
@@ -151,8 +162,7 @@ class ErrorBackpressureStrategy : public BackpressureStrategyBase<T> {
   void onCreditsAvailable(int64_t /*credits*/) override {}
 
   void onNextWithoutCredits(T /*t*/) override {
-    Super::downstreamOnError(flowable::MissingBackpressureException());
-    Super::cancel();
+    Super::downstreamOnErrorAndCancel(flowable::MissingBackpressureException());
   }
 };
 
