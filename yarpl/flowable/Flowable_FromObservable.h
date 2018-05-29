@@ -168,6 +168,13 @@ class ErrorBackpressureStrategy : public BackpressureStrategyBase<T> {
 
 template <typename T>
 class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
+ public:
+  static constexpr size_t kNoLimit = 0;
+
+  explicit BufferBackpressureStrategy(size_t bufferSizeLimit = kNoLimit)
+      : bufferSizeLimit_(bufferSizeLimit) {}
+
+ private:
   using Super = BackpressureStrategyBase<T>;
 
   void onComplete() override {
@@ -185,7 +192,14 @@ class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
   //
 
   void onNextWithoutCredits(T t) override {
-    buffer_->push_back(std::move(t));
+    {
+      auto buffer = buffer_.wlock();
+      if (bufferSizeLimit_ == kNoLimit || buffer->size() < bufferSizeLimit_) {
+        buffer->push_back(std::move(t));
+        return;
+      }
+    }
+    Super::downstreamOnErrorAndCancel(flowable::MissingBackpressureException());
   }
 
   void onCreditsAvailable(int64_t credits) override {
@@ -203,6 +217,7 @@ class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
 
   folly::Synchronized<std::deque<T>> buffer_;
   std::atomic<bool> completed_{false};
+  const size_t bufferSizeLimit_;
 };
 
 template <typename T>
