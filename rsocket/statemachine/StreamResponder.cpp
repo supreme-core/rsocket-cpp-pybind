@@ -10,38 +10,53 @@ void StreamResponder::onSubscribe(
 }
 
 void StreamResponder::onNext(Payload response) {
-  if (!publisherClosed()) {
-    writePayload(std::move(response));
+  if (publisherClosed()) {
+    return;
   }
+  writePayload(std::move(response));
 }
 
 void StreamResponder::onComplete() {
-  if (!publisherClosed()) {
-    publisherComplete();
-    writeComplete();
-    removeFromWriter();
+  if (publisherClosed()) {
+    return;
   }
+  publisherComplete();
+  writeComplete();
+  removeFromWriter();
 }
 
-void StreamResponder::onError(folly::exception_wrapper ex) {
-  if (!publisherClosed()) {
-    publisherComplete();
-    writeApplicationError(ex.get_exception()->what());
-    removeFromWriter();
+void StreamResponder::onError(folly::exception_wrapper ew) {
+  if (publisherClosed()) {
+    return;
   }
-}
-
-void StreamResponder::endStream(StreamCompletionSignal) {
-  terminatePublisher();
-}
-
-void StreamResponder::handleCancel() {
-  terminatePublisher();
+  publisherComplete();
+  writeApplicationError(ew.get_exception()->what());
   removeFromWriter();
 }
 
 void StreamResponder::handleRequestN(uint32_t n) {
   processRequestN(n);
+}
+
+void StreamResponder::handleError(folly::exception_wrapper) {
+  handleCancel();
+}
+
+void StreamResponder::handleCancel() {
+  if (publisherClosed()) {
+    return;
+  }
+  terminatePublisher();
+  removeFromWriter();
+}
+
+void StreamResponder::endStream(StreamCompletionSignal signal) {
+  if (publisherClosed()) {
+    return;
+  }
+  terminatePublisher();
+  writeApplicationError(to_string(signal));
+  removeFromWriter();
 }
 
 } // namespace rsocket
