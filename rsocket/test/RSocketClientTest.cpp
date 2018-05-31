@@ -23,7 +23,7 @@ TEST(RSocketClient, ConnectFails) {
       RSocket::createConnectedClient(std::make_unique<TcpConnectionFactory>(
           *worker.getEventBase(), std::move(address)));
 
-  client.then([&](auto&) { FAIL() << "the test needs to fail"; })
+  client.then([&](auto&&) { FAIL() << "the test needs to fail"; })
       .onError([&](const std::exception&) {
         LOG(INFO) << "connection failed as expected";
       })
