@@ -231,8 +231,8 @@ TEST_F(RSocketStateMachineTest, RequestResponse) {
 TEST_F(RSocketStateMachineTest, RespondStream) {
   auto connection = std::make_unique<StrictMock<MockDuplexConnection>>();
   int requestCount = 5;
-  // + the cancel frame when the stateMachine gets destroyed
-  EXPECT_CALL(*connection, send_(_)).Times(requestCount + 1);
+  // Payload frames plus a SETUP frame and an ERROR frame
+  EXPECT_CALL(*connection, send_(_)).Times(requestCount + 2);
 
   int sendCount = 0;
   auto responder = std::make_shared<StrictMock<ResponderMock>>();
