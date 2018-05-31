@@ -36,7 +36,7 @@ void FrameTransportImpl::connect() {
     // will create a hard reference for that case and keep the object alive
     // until setInput method returns
     auto connectionCopy = connection_;
-    connectionCopy->setInput(this->ref_from_this(this));
+    connectionCopy->setInput(shared_from_this());
   }
 }
 

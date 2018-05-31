@@ -84,7 +84,7 @@ void FramedReader::parseFrames() {
   }
 
   // Delivering onNext can trigger termination and destroy this instance.
-  const auto thisPtr = this->ref_from_this(this);
+  auto const self = shared_from_this();
 
   dispatchingFrames_ = true;
 
@@ -163,7 +163,7 @@ void FramedReader::setInput(
   CHECK(!inner_)
       << "Must cancel original input to FramedReader before setting a new one";
   inner_ = std::move(inner);
-  inner_->onSubscribe(this->ref_from_this(this));
+  inner_->onSubscribe(shared_from_this());
 }
 
 bool FramedReader::ensureOrAutodetectProtocolVersion() {

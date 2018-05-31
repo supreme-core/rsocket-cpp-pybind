@@ -13,7 +13,7 @@ namespace rsocket {
 
 class FramedReader : public DuplexConnection::DuplexSubscriber,
                      public yarpl::flowable::Subscription,
-                     public yarpl::enable_get_ref {
+                     public std::enable_shared_from_this<FramedReader> {
  public:
   explicit FramedReader(std::shared_ptr<ProtocolVersion> version)
       : version_{std::move(version)} {}

@@ -11,9 +11,10 @@ namespace rsocket {
 
 /// Implementation of stream stateMachine that represents a RequestResponse
 /// requester
-class RequestResponseRequester : public StreamStateMachineBase,
-                                 public yarpl::single::SingleSubscription,
-                                 public yarpl::enable_get_ref {
+class RequestResponseRequester
+    : public StreamStateMachineBase,
+      public yarpl::single::SingleSubscription,
+      public std::enable_shared_from_this<RequestResponseRequester> {
  public:
   RequestResponseRequester(
       std::shared_ptr<StreamsWriter> writer,

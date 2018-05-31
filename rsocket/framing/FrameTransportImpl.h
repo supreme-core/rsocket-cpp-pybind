@@ -13,10 +13,11 @@ namespace rsocket {
 
 class FrameProcessor;
 
-class FrameTransportImpl : public FrameTransport,
-                           /// Registered as an input in the DuplexConnection.
-                           public DuplexConnection::Subscriber,
-                           public yarpl::enable_get_ref {
+class FrameTransportImpl
+    : public FrameTransport,
+      /// Registered as an input in the DuplexConnection.
+      public DuplexConnection::Subscriber,
+      public std::enable_shared_from_this<FrameTransportImpl> {
  public:
   explicit FrameTransportImpl(std::unique_ptr<DuplexConnection> connection);
   ~FrameTransportImpl();

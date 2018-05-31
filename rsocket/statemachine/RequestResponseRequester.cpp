@@ -15,7 +15,7 @@ void RequestResponseRequester::subscribe(
   DCHECK(state_ != State::CLOSED);
   DCHECK(!consumingSubscriber_);
   consumingSubscriber_ = std::move(subscriber);
-  consumingSubscriber_->onSubscribe(this->ref_from_this(this));
+  consumingSubscriber_->onSubscribe(shared_from_this());
 
   if (state_ == State::NEW) {
     state_ = State::REQUESTED;
