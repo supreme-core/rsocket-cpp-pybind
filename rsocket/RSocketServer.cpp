@@ -49,7 +49,7 @@ void RSocketServer::shutdownAndWait() {
     closingFutures.push_back(acceptor.close());
   }
 
-  folly::collectAll(closingFutures).get();
+  folly::collectAllSemiFuture(closingFutures).get();
 
   // Close off all outstanding connections.
   connectionSet_->shutdownAndWait();
