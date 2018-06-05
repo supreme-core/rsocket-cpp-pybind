@@ -172,7 +172,7 @@ class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
   static constexpr size_t kNoLimit = 0;
 
   explicit BufferBackpressureStrategy(size_t bufferSizeLimit = kNoLimit)
-      : bufferSizeLimit_(bufferSizeLimit) {}
+      : buffer_(folly::in_place, bufferSizeLimit) {}
 
  private:
   using Super = BackpressureStrategyBase<T>;
@@ -187,27 +187,39 @@ class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
     }
   }
 
+  void onNext(T t) override {
+    {
+      auto buffer = buffer_.wlock();
+      if (!buffer->empty()) {
+        if (buffer->push(std::move(t))) {
+          return;
+        }
+        buffer.unlock();
+        Super::downstreamOnErrorAndCancel(
+            flowable::MissingBackpressureException());
+        return;
+      }
+    }
+    BackpressureStrategyBase<T>::onNext(std::move(t));
+  }
+
   //
   // onError signal is delivered immediately by design
   //
 
   void onNextWithoutCredits(T t) override {
-    {
-      auto buffer = buffer_.wlock();
-      if (bufferSizeLimit_ == kNoLimit || buffer->size() < bufferSizeLimit_) {
-        buffer->push_back(std::move(t));
-        return;
-      }
+    if (buffer_.wlock()->push(std::move(t))) {
+      return;
     }
     Super::downstreamOnErrorAndCancel(flowable::MissingBackpressureException());
   }
 
   void onCreditsAvailable(int64_t credits) override {
     DCHECK(credits > 0);
-    auto&& lockedBuffer = buffer_.wlock();
+    auto lockedBuffer = buffer_.wlock();
     while (credits-- > 0 && !lockedBuffer->empty()) {
       Super::downstreamOnNext(std::move(lockedBuffer->front()));
-      lockedBuffer->pop_front();
+      lockedBuffer->pop();
     }
 
     if (lockedBuffer->empty() && completed_) {
@@ -215,9 +227,37 @@ class BufferBackpressureStrategy : public BackpressureStrategyBase<T> {
     }
   }
 
-  folly::Synchronized<std::deque<T>> buffer_;
+  struct Buffer {
+   public:
+    explicit Buffer(size_t sizeLimit) : sizeLimit_(sizeLimit) {}
+
+    bool empty() const {
+      return buffer_.empty();
+    }
+
+    bool push(T&& value) {
+      if (sizeLimit_ != kNoLimit && buffer_.size() >= sizeLimit_) {
+        return false;
+      }
+      buffer_.push(std::move(value));
+      return true;
+    }
+
+    T& front() {
+      return buffer_.front();
+    }
+
+    void pop() {
+      buffer_.pop();
+    }
+
+   private:
+    const size_t sizeLimit_;
+    std::queue<T> buffer_;
+  };
+
+  folly::Synchronized<Buffer> buffer_;
   std::atomic<bool> completed_{false};
-  const size_t bufferSizeLimit_;
 };
 
 template <typename T>

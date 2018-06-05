@@ -417,6 +417,59 @@ TEST(Observable, toFlowableBufferStrategyLimit) {
   EXPECT_TRUE(subscription->isCancelled());
 }
 
+TEST(Observable, toFlowableBufferStrategyStress) {
+  std::shared_ptr<Observer<int64_t>> observer;
+  auto a = Observable<int64_t>::createEx(
+      [&](auto o, auto) { observer = std::move(o); });
+  auto f = a->toFlowable(BackpressureStrategy::BUFFER);
+
+  std::vector<int64_t> v;
+  std::atomic<int64_t> tokens{0};
+
+  auto subscriber =
+      std::make_shared<testing::StrictMock<MockSubscriber<int64_t>>>(0);
+
+  EXPECT_CALL(*subscriber, onSubscribe_(_));
+  EXPECT_CALL(*subscriber, onNext_(_))
+      .WillRepeatedly(Invoke([&](int64_t value) { v.push_back(value); }));
+  EXPECT_CALL(*subscriber, onComplete_());
+
+  f->subscribe(subscriber);
+  EXPECT_TRUE(observer);
+
+  constexpr size_t kNumElements = 100000;
+
+  std::thread nextThread([&] {
+    for (size_t i = 0; i < kNumElements; ++i) {
+      while (tokens.load() < -5) {
+        std::this_thread::yield();
+      }
+
+      observer->onNext(i);
+      --tokens;
+    }
+    observer->onComplete();
+  });
+
+  std::thread requestThread([&] {
+    for (size_t i = 0; i < kNumElements; ++i) {
+      while (tokens.load() > 5) {
+        std::this_thread::yield();
+      }
+
+      subscriber->subscription()->request(1);
+      ++tokens;
+    }
+  });
+
+  nextThread.join();
+  requestThread.join();
+
+  for (size_t i = 0; i < kNumElements; ++i) {
+    CHECK_EQ(i, v[i]);
+  }
+}
+
 TEST(Observable, toFlowableLatestStrategy) {
   auto a = Observable<>::range(1, 10);
   auto f = a->toFlowable(BackpressureStrategy::LATEST);
