@@ -81,12 +81,9 @@ TcpConnectionFactory::TcpConnectionFactory(
     : eventBase_(&eventBase),
       address_(std::move(address)),
       sslContext_(std::move(sslContext)) {
-  VLOG(1) << "Constructing TcpConnectionFactory";
 }
 
-TcpConnectionFactory::~TcpConnectionFactory() {
-  VLOG(1) << "Destroying TcpConnectionFactory";
-}
+TcpConnectionFactory::~TcpConnectionFactory() = default;
 
 folly::Future<ConnectionFactory::ConnectedDuplexConnection>
 TcpConnectionFactory::connect() {
