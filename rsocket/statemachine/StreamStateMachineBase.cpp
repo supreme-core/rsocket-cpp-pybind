@@ -1,17 +1,11 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "rsocket/statemachine/StreamStateMachineBase.h"
-
 #include <folly/io/IOBuf.h>
-
 #include "rsocket/statemachine/RSocketStateMachine.h"
 #include "rsocket/statemachine/StreamsWriter.h"
 
 namespace rsocket {
-
-void StreamStateMachineBase::handlePayload(Payload&&, bool, bool) {
-  VLOG(4) << "Unexpected handlePayload";
-}
 
 void StreamStateMachineBase::handleRequestN(uint32_t) {
   VLOG(4) << "Unexpected handleRequestN";
@@ -70,4 +64,20 @@ void StreamStateMachineBase::removeFromWriter() {
   // TODO: set writer_ to nullptr
 }
 
+std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
+StreamStateMachineBase::onNewStreamReady(
+    StreamType streamType,
+    Payload payload,
+    std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) {
+  return writer_->onNewStreamReady(
+      streamId_, streamType, std::move(payload), std::move(response));
+}
+
+void StreamStateMachineBase::onNewStreamReady(
+    StreamType streamType,
+    Payload payload,
+    std::shared_ptr<yarpl::single::SingleObserver<Payload>> response) {
+  writer_->onNewStreamReady(
+      streamId_, streamType, std::move(payload), std::move(response));
+}
 } // namespace rsocket

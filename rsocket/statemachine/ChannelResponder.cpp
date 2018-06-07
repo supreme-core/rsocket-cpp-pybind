@@ -44,11 +44,34 @@ void ChannelResponder::cancel() {
 
 void ChannelResponder::handlePayload(
     Payload&& payload,
-    bool complete,
-    bool next) {
-  processPayload(std::move(payload), next);
+    bool flagsComplete,
+    bool flagsNext,
+    bool flagsFollows) {
+  payloadFragments_.addPayload(std::move(payload), flagsNext, flagsComplete);
 
-  if (complete) {
+  if (flagsFollows) {
+    // there will be more fragments to come
+    return;
+  }
+
+  bool finalFlagsComplete, finalFlagsNext;
+  Payload finalPayload;
+
+  std::tie(finalPayload, finalFlagsNext, finalFlagsComplete) =
+      payloadFragments_.consumePayloadAndFlags();
+
+  if (newStream_) {
+    newStream_ = false;
+    auto channelOutputSubscriber = onNewStreamReady(
+        StreamType::CHANNEL,
+        std::move(finalPayload),
+        std::static_pointer_cast<ChannelResponder>(shared_from_this()));
+    subscribe(std::move(channelOutputSubscriber));
+  } else {
+    processPayload(std::move(finalPayload), finalFlagsNext);
+  }
+
+  if (finalFlagsComplete) {
     completeConsumer();
     tryCompleteChannel();
   }

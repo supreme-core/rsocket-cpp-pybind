@@ -188,12 +188,4 @@ StreamType getStreamType(FrameType frameType) {
     LOG(FATAL) << "Unknown open stream frame : " << frameType;
   }
 }
-
-bool isNewStreamFrame(FrameType frameType) {
-  return frameType == FrameType::REQUEST_CHANNEL ||
-      frameType == FrameType::REQUEST_STREAM ||
-      frameType == FrameType::REQUEST_RESPONSE ||
-      frameType == FrameType::REQUEST_FNF;
-}
-
 } // namespace rsocket

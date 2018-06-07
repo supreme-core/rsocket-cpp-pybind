@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <folly/ExceptionWrapper.h>
-#include <cstddef>
-
 #include "rsocket/Payload.h"
 #include "rsocket/internal/Allowance.h"
 #include "rsocket/statemachine/StreamStateMachineBase.h"
@@ -39,6 +36,10 @@ class ConsumerBase : public StreamStateMachineBase,
 
  protected:
   void processPayload(Payload&&, bool onNext);
+
+  // returns true if the stream is completed
+  bool
+  processFragmentedPayload(Payload&&, bool next, bool complete, bool follows);
 
   void cancelConsumer();
   void completeConsumer();

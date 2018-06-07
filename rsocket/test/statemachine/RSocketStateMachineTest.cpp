@@ -5,7 +5,6 @@
 #include <yarpl/single/SingleSubscriptions.h>
 #include <yarpl/single/Singles.h>
 #include <yarpl/test_utils/Mocks.h>
-
 #include "rsocket/RSocketResponder.h"
 #include "rsocket/framing/FrameSerializer_v1_0.h"
 #include "rsocket/framing/FrameTransportImpl.h"
@@ -85,8 +84,8 @@ class RSocketStateMachineTest : public Test {
     return stateMachine;
   }
 
-  const std::unordered_map<StreamId, StreamStateElem>& getStreams(
-      RSocketStateMachine& stateMachine) {
+  const std::unordered_map<StreamId, std::shared_ptr<StreamStateMachineBase>>&
+  getStreams(RSocketStateMachine& stateMachine) {
     return stateMachine.streams_;
   }
 
@@ -95,7 +94,8 @@ class RSocketStateMachineTest : public Test {
       StreamId streamId,
       uint32_t requestN,
       Payload payload) {
-    stateMachine.setupRequestStream(streamId, requestN, std::move(payload));
+    stateMachine.setupRequestStream(
+        streamId, requestN, std::move(payload), false);
   }
 
   void setupRequestChannel(
@@ -103,21 +103,22 @@ class RSocketStateMachineTest : public Test {
       StreamId streamId,
       uint32_t requestN,
       Payload payload) {
-    stateMachine.setupRequestChannel(streamId, requestN, std::move(payload));
+    stateMachine.setupRequestChannel(
+        streamId, requestN, std::move(payload), false, true, false);
   }
 
   void setupRequestResponse(
       RSocketStateMachine& stateMachine,
       StreamId streamId,
       Payload payload) {
-    stateMachine.setupRequestResponse(streamId, std::move(payload));
+    stateMachine.setupRequestResponse(streamId, std::move(payload), false);
   }
 
   void setupFireAndForget(
       RSocketStateMachine& stateMachine,
       StreamId streamId,
       Payload payload) {
-    stateMachine.setupFireAndForget(streamId, std::move(payload));
+    stateMachine.setupFireAndForget(streamId, std::move(payload), false);
   }
 };
 
@@ -139,7 +140,7 @@ TEST_F(RSocketStateMachineTest, RequestStream) {
   ASSERT_EQ(1, streams.size());
 
   // This line causes: subscriber.onComplete()
-  streams.at(1).stateMachine->endStream(StreamCompletionSignal::CANCEL);
+  streams.at(1)->endStream(StreamCompletionSignal::CANCEL);
 
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }
@@ -177,7 +178,7 @@ TEST_F(RSocketStateMachineTest, RequestStream_EarlyClose) {
   // Second stream should still be valid
   ASSERT_EQ(1, streams.size());
 
-  streams.at(3).stateMachine->endStream(StreamCompletionSignal::CANCEL);
+  streams.at(3)->endStream(StreamCompletionSignal::CANCEL);
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }
 
@@ -202,7 +203,7 @@ TEST_F(RSocketStateMachineTest, RequestChannel) {
   ASSERT_EQ(1, streams.size());
 
   // This line causes: in.onComplete() and outSubscription.cancel()
-  streams.at(1).stateMachine->endStream(StreamCompletionSignal::CANCEL);
+  streams.at(1)->endStream(StreamCompletionSignal::CANCEL);
 
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }
@@ -222,8 +223,7 @@ TEST_F(RSocketStateMachineTest, RequestResponse) {
   ASSERT_EQ(1, streams.size());
 
   // This line closes the stream
-  streams.at(1).stateMachine->handlePayload(
-      Payload{"test", "123"}, true, false);
+  streams.at(1)->handlePayload(Payload{"test", "123"}, true, false, false);
 
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }

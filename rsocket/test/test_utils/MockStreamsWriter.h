@@ -35,6 +35,24 @@ class MockStreamsWriterImpl : public StreamsWriterImpl {
     return *stats_;
   }
 
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) override {
+    // ignoring...
+    return nullptr;
+  }
+
+  void onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> response)
+      override {
+    // ignoring...
+  }
+
   using StreamsWriterImpl::sendPendingFrames;
 
   bool shouldQueue_{false};
@@ -94,6 +112,24 @@ class MockStreamsWriter : public StreamsWriter {
     if (delegateToImpl_) {
       impl_.writeError(std::move(error));
     }
+  }
+
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) override {
+    // ignoring...
+    return nullptr;
+  }
+
+  void onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> response)
+      override {
+    // ignoring...
   }
 
  protected:

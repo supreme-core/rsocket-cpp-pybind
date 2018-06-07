@@ -2,18 +2,15 @@
 
 #pragma once
 
-#include "yarpl/Refcounted.h"
-#include "yarpl/single/SingleSubscription.h"
-
 #include <folly/ExceptionWrapper.h>
-
 #include <glog/logging.h>
+#include "yarpl/single/SingleSubscription.h"
 
 namespace yarpl {
 namespace single {
 
 template <typename T>
-class SingleObserver : public yarpl::enable_get_ref {
+class SingleObserver {
  public:
   virtual ~SingleObserver() = default;
   virtual void onSubscribe(std::shared_ptr<SingleSubscription>) = 0;

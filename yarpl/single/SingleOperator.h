@@ -37,7 +37,8 @@ class SingleOperator : public Single<D> {
   /// the user-supplied observer being the last of the pipeline stages.
   template <typename Operator>
   class Subscription : public ::yarpl::single::SingleSubscription,
-                       public SingleObserver<U> {
+                       public SingleObserver<U>,
+                       public yarpl::enable_get_ref {
    protected:
     Subscription(
         std::shared_ptr<Operator> single,

@@ -3,9 +3,10 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
-#include <memory>
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/StreamFragmentAccumulator.h"
+#include "yarpl/Flowable.h"
+#include "yarpl/Single.h"
 
 namespace folly {
 class IOBuf;
@@ -28,7 +29,11 @@ class StreamStateMachineBase {
       : writer_(std::move(writer)), streamId_(streamId) {}
   virtual ~StreamStateMachineBase() = default;
 
-  virtual void handlePayload(Payload&& payload, bool complete, bool flagsNext);
+  virtual void handlePayload(
+      Payload&& payload,
+      bool complete,
+      bool flagsNext,
+      bool flagsFollows) = 0;
   virtual void handleRequestN(uint32_t n);
   virtual void handleError(folly::exception_wrapper errorPayload);
   virtual void handleCancel();
@@ -62,22 +67,24 @@ class StreamStateMachineBase {
 
   void removeFromWriter();
 
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> onNewStreamReady(
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response);
+
+  void onNewStreamReady(
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> response);
+
   /// A partially-owning pointer to the connection, the stream runs on.
   /// It is declared as const to allow only ctor to initialize it for thread
   /// safety of the dtor.
   const std::shared_ptr<StreamsWriter> writer_;
+  StreamFragmentAccumulator payloadFragments_;
+
+ private:
   const StreamId streamId_;
-};
-
-struct StreamStateElem {
-  StreamStateElem(std::shared_ptr<StreamStateMachineBase> sm)
-      : stateMachine(std::move(sm)) {}
-
-  StreamStateElem(StreamStateElem const&) = delete;
-  StreamStateElem(StreamStateElem&&) = default;
-
-  StreamFragmentAccumulator fragmentAccumulator;
-  std::shared_ptr<StreamStateMachineBase> stateMachine;
 };
 
 } // namespace rsocket

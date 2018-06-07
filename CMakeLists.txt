@@ -288,6 +288,8 @@ add_library(
   rsocket/statemachine/ChannelResponder.h
   rsocket/statemachine/ConsumerBase.cpp
   rsocket/statemachine/ConsumerBase.h
+  rsocket/statemachine/FireAndForgetResponder.cpp
+  rsocket/statemachine/FireAndForgetResponder.h
   rsocket/statemachine/PublisherBase.cpp
   rsocket/statemachine/PublisherBase.h
   rsocket/statemachine/RSocketStateMachine.cpp
@@ -302,6 +304,7 @@ add_library(
   rsocket/statemachine/StreamResponder.h
   rsocket/statemachine/StreamStateMachineBase.cpp
   rsocket/statemachine/StreamStateMachineBase.h
+  rsocket/statemachine/StreamFragmentAccumulator.cpp
   rsocket/statemachine/StreamFragmentAccumulator.h
   rsocket/statemachine/StreamsWriter.h
   rsocket/statemachine/StreamsWriter.cpp

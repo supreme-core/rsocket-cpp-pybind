@@ -26,7 +26,7 @@ void StreamRequester::request(int64_t signedN) {
 
   // We must inform ConsumerBase about an implicit allowance we have requested
   // from the remote end.
-  auto const initial = std::min<uint32_t>(n, Frame_REQUEST_N::kMaxRequestN);
+  auto const initial = std::min<uint32_t>(n, kMaxRequestN);
   addImplicitAllowance(initial);
   newStream(StreamType::STREAM, initial, std::move(initialPayload_));
 
@@ -52,14 +52,16 @@ void StreamRequester::cancel() {
 void StreamRequester::handlePayload(
     Payload&& payload,
     bool complete,
-    bool next) {
+    bool next,
+    bool follows) {
   if (!requested_) {
     handleError(std::runtime_error{"Haven't sent REQUEST_STREAM yet"});
     return;
   }
+  bool finalComplete =
+      processFragmentedPayload(std::move(payload), next, complete, follows);
 
-  processPayload(std::move(payload), next);
-  if (complete) {
+  if (finalComplete) {
     completeConsumer();
     removeFromWriter();
   }

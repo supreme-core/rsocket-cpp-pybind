@@ -87,27 +87,33 @@ void RequestResponseRequester::handleError(
 
 void RequestResponseRequester::handlePayload(
     Payload&& payload,
-    bool complete,
-    bool flagsNext) {
-  switch (state_) {
-    case State::NEW:
-      // Cannot receive a frame before sending the initial request.
-      CHECK(false);
-      break;
-    case State::REQUESTED:
-      state_ = State::CLOSED;
-      break;
-    case State::CLOSED:
-      // should not be receiving frames when closed
-      // if we ended up here, we broke some internal invariant of the class
-      CHECK(false);
-      break;
+    bool /*flagsComplete*/,
+    bool flagsNext,
+    bool flagsFollows) {
+  // (State::NEW) Cannot receive a frame before sending the initial request.
+  // (State::CLOSED) should not be receiving frames when closed
+  // if we fail here, we broke some internal invariant of the class
+  CHECK(state_ == State::REQUESTED);
+
+  payloadFragments_.addPayload(std::move(payload), flagsNext, false);
+
+  if (flagsFollows) {
+    // there will be more fragments to come
+    return;
   }
 
-  if (payload || flagsNext) {
-    consumingSubscriber_->onSuccess(std::move(payload));
+  bool finalFlagsNext, finalFlagsComplete;
+  Payload finalPayload;
+
+  std::tie(finalPayload, finalFlagsNext, finalFlagsComplete) =
+      payloadFragments_.consumePayloadAndFlags();
+
+  state_ = State::CLOSED;
+
+  if (finalPayload || finalFlagsNext) {
+    consumingSubscriber_->onSuccess(std::move(finalPayload));
     consumingSubscriber_ = nullptr;
-  } else if (!complete) {
+  } else if (!finalFlagsComplete) {
     writeInvalidError("Payload, NEXT or COMPLETE flag expected");
     endStream(StreamCompletionSignal::ERROR);
   }

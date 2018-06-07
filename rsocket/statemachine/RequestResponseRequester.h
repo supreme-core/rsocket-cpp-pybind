@@ -29,7 +29,11 @@ class RequestResponseRequester
  private:
   void cancel() noexcept override;
 
-  void handlePayload(Payload&& payload, bool complete, bool flagsNext) override;
+  void handlePayload(
+      Payload&& payload,
+      bool flagsComplete,
+      bool flagsNext,
+      bool flagsFollows) override;
   void handleError(folly::exception_wrapper errorPayload) override;
 
   void endStream(StreamCompletionSignal signal) override;

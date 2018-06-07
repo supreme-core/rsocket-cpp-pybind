@@ -7,7 +7,6 @@
 #include <yarpl/single/SingleObserver.h>
 #include <deque>
 #include <memory>
-
 #include "rsocket/ColdResumeHandler.h"
 #include "rsocket/DuplexConnection.h"
 #include "rsocket/Payload.h"
@@ -246,12 +245,22 @@ class RSocketStateMachine final
   template <typename FrameType>
   void handleInitialFollowsFrame(StreamId, FrameType&&);
 
+  void setupRequestStream(
+      StreamId streamId,
+      uint32_t requestN,
+      Payload payload,
+      bool flagsFollows);
+  void setupRequestChannel(
+      StreamId streamId,
+      uint32_t requestN,
+      Payload payload,
+      bool flagsComplete,
+      bool flagsNext,
+      bool flagsFollows);
   void
-  setupRequestStream(StreamId streamId, uint32_t requestN, Payload payload);
+  setupRequestResponse(StreamId streamId, Payload payload, bool flagsFollows);
   void
-  setupRequestChannel(StreamId streamId, uint32_t requestN, Payload payload);
-  void setupRequestResponse(StreamId streamId, Payload payload);
-  void setupFireAndForget(StreamId streamId, Payload payload);
+  setupFireAndForget(StreamId streamId, Payload payload, bool flagsFollows);
 
   void closeStreams(StreamCompletionSignal);
   void closeFrameTransport(folly::exception_wrapper);
@@ -266,6 +275,18 @@ class RSocketStateMachine final
       StreamType streamType,
       uint32_t initialRequestN,
       Payload payload) override;
+
+  std::shared_ptr<yarpl::flowable::Subscriber<Payload>> onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) override;
+  void onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> response)
+      override;
 
   void onStreamClosed(StreamId) override;
 
@@ -296,13 +317,9 @@ class RSocketStateMachine final
 
   std::shared_ptr<RSocketStats> stats_;
 
-  /// Accumulates the REQUEST payloads for new incoming streams which haven't
-  ///  been seen before (and therefore have no backing state machine in
-  /// streamState_ yet), and are fragmented
-  std::unordered_map<StreamId, StreamFragmentAccumulator> streamFragments_;
-
   /// Map of all individual stream state machines.
-  std::unordered_map<StreamId, StreamStateElem> streams_;
+  std::unordered_map<StreamId, std::shared_ptr<StreamStateMachineBase>>
+      streams_;
   StreamId nextStreamId_;
   StreamId lastPeerStreamId_{0};
 
@@ -322,7 +339,7 @@ class RSocketStateMachine final
 
   CloseCallback* closeCallback_{nullptr};
 
-  friend class rsocket::RSocketStateMachineTest;
+  friend class RSocketStateMachineTest;
 };
 
 } // namespace rsocket

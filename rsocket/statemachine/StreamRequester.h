@@ -21,8 +21,12 @@ class StreamRequester : public ConsumerBase {
   void request(int64_t) override;
   void cancel() override;
 
-  void handlePayload(Payload&&, bool, bool) override;
-  void handleError(folly::exception_wrapper) override;
+  void handlePayload(
+      Payload&& payload,
+      bool flagsComplete,
+      bool flagsNext,
+      bool flagsFollows) override;
+  void handleError(folly::exception_wrapper errorPayload) override;
 
  private:
   /// Payload to be sent with the first request.

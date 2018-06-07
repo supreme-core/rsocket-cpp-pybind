@@ -78,6 +78,27 @@ void ConsumerBase::processPayload(Payload&& payload, bool onNext) {
   }
 }
 
+bool ConsumerBase::processFragmentedPayload(
+    Payload&& payload,
+    bool flagsNext,
+    bool flagsComplete,
+    bool flagsFollows) {
+  payloadFragments_.addPayload(std::move(payload), flagsNext, flagsComplete);
+
+  if (flagsFollows) {
+    // there will be more fragments to come
+    return false;
+  }
+
+  bool finalFlagsComplete, finalFlagsNext;
+  Payload finalPayload;
+
+  std::tie(finalPayload, finalFlagsNext, finalFlagsComplete) =
+      payloadFragments_.consumePayloadAndFlags();
+  processPayload(std::move(finalPayload), finalFlagsNext);
+  return finalFlagsComplete;
+}
+
 void ConsumerBase::completeConsumer() {
   state_ = State::CLOSED;
   VLOG(5) << "ConsumerBase::completeConsumer()";
@@ -95,8 +116,7 @@ void ConsumerBase::errorConsumer(folly::exception_wrapper ex) {
 }
 
 void ConsumerBase::sendRequests() {
-  auto toSync =
-      std::min<size_t>(pendingAllowance_.get(), Frame_REQUEST_N::kMaxRequestN);
+  auto toSync = std::min<size_t>(pendingAllowance_.get(), kMaxRequestN);
   auto actives = activeRequests_.get();
   if (actives < (toSync + 1) / 2) {
     toSync = toSync - actives;

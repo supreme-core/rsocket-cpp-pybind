@@ -4,6 +4,8 @@
 
 #include <deque>
 
+#include <yarpl/Flowable.h>
+#include <yarpl/Single.h>
 #include "rsocket/Payload.h"
 #include "rsocket/framing/Frame.h"
 #include "rsocket/framing/FrameType.h"
@@ -32,6 +34,18 @@ class StreamsWriter {
   virtual void writeError(Frame_ERROR&&) = 0;
 
   virtual void onStreamClosed(StreamId) = 0;
+
+  virtual std::shared_ptr<yarpl::flowable::Subscriber<Payload>>
+  onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::flowable::Subscriber<Payload>> response) = 0;
+  virtual void onNewStreamReady(
+      StreamId streamId,
+      StreamType streamType,
+      Payload payload,
+      std::shared_ptr<yarpl::single::SingleObserver<Payload>> response) = 0;
 };
 
 class StreamsWriterImpl : public StreamsWriter {

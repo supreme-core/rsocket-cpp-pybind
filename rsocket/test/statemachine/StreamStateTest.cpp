@@ -3,7 +3,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <yarpl/test_utils/Mocks.h>
-
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/ChannelRequester.h"
 #include "rsocket/statemachine/ChannelResponder.h"
@@ -14,16 +13,24 @@ using namespace rsocket;
 using namespace testing;
 using namespace yarpl::mocks;
 
+class TestStreamStateMachineBase : public StreamStateMachineBase {
+ public:
+  using StreamStateMachineBase::StreamStateMachineBase;
+  void handlePayload(Payload&&, bool, bool, bool) override {
+    // ignore...
+  }
+};
+
 // @see github.com/rsocket/rsocket/blob/master/Protocol.md#request-channel
 TEST(StreamState, NewStateMachineBase) {
   auto writer = std::make_shared<StrictMock<MockStreamsWriter>>();
   EXPECT_CALL(*writer, onStreamClosed(_));
 
-  StreamStateMachineBase ssm(writer, 1u);
+  TestStreamStateMachineBase ssm(writer, 1u);
   ssm.getConsumerAllowance();
   ssm.handleCancel();
   ssm.handleError(std::runtime_error("test"));
-  ssm.handlePayload(Payload{}, false, true);
+  ssm.handlePayload(Payload{}, false, true, false);
   ssm.handleRequestN(1);
 }
 

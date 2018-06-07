@@ -42,6 +42,30 @@ void StreamResponder::handleError(folly::exception_wrapper) {
   handleCancel();
 }
 
+void StreamResponder::handlePayload(
+    Payload&& payload,
+    bool /*flagsComplete*/,
+    bool /*flagsNext*/,
+    bool flagsFollows) {
+  payloadFragments_.addPayloadIgnoreFlags(std::move(payload));
+
+  if (flagsFollows) {
+    // there will be more fragments to come
+    return;
+  }
+
+  Payload finalPayload = payloadFragments_.consumePayloadIgnoreFlags();
+
+  if (newStream_) {
+    newStream_ = false;
+    onNewStreamReady(
+        StreamType::STREAM, std::move(finalPayload), shared_from_this());
+  } else {
+    // per rsocket spec, ignore unexpected frame (payload) if it makes no sense
+    // in the semantic of the stream
+  }
+}
+
 void StreamResponder::handleCancel() {
   if (publisherClosed()) {
     return;

@@ -51,7 +51,7 @@ class Frame_REQUEST_N {
    *
    * n.b. this is less than size_t because of the Frame encoding restrictions.
    */
-  static constexpr int64_t kMaxRequestN = std::numeric_limits<int32_t>::max();
+  static constexpr int64_t kMaxRequestN = rsocket::kMaxRequestN;
 
   Frame_REQUEST_N() = default;
   Frame_REQUEST_N(StreamId streamId, uint32_t requestN)
@@ -422,5 +422,4 @@ std::ostream& operator<<(std::ostream&, const Frame_RESUME_OK&);
 /// @}
 
 StreamType getStreamType(FrameType frameType);
-bool isNewStreamFrame(FrameType frameType);
 } // namespace rsocket

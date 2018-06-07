@@ -11,8 +11,10 @@ namespace rsocket {
 
 /// Implementation of stream stateMachine that represents a RequestResponse
 /// responder
-class RequestResponseResponder : public StreamStateMachineBase,
-                                 public yarpl::single::SingleObserver<Payload> {
+class RequestResponseResponder
+    : public StreamStateMachineBase,
+      public yarpl::single::SingleObserver<Payload>,
+      public std::enable_shared_from_this<RequestResponseResponder> {
  public:
   RequestResponseResponder(
       std::shared_ptr<StreamsWriter> writer,
@@ -23,6 +25,11 @@ class RequestResponseResponder : public StreamStateMachineBase,
   void onSuccess(Payload) override;
   void onError(folly::exception_wrapper) override;
 
+  void handlePayload(
+      Payload&& payload,
+      bool flagsComplete,
+      bool flagsNext,
+      bool flagsFollows) override;
   void handleCancel() override;
 
   void endStream(StreamCompletionSignal) override;
@@ -30,12 +37,13 @@ class RequestResponseResponder : public StreamStateMachineBase,
  private:
   /// State of the Subscription responder.
   enum class State : uint8_t {
+    NEW,
     RESPONDING,
     CLOSED,
   };
 
   std::shared_ptr<yarpl::single::SingleSubscription> producingSubscription_;
-  State state_{State::RESPONDING};
+  State state_{State::NEW};
 };
 
 } // namespace rsocket

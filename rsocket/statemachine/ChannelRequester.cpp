@@ -78,12 +78,14 @@ void ChannelRequester::cancel() {
 
 void ChannelRequester::handlePayload(
     Payload&& payload,
-    bool complete,
-    bool next) {
+    bool flagsComplete,
+    bool flagsNext,
+    bool flagsFollows) {
   CHECK(requested_);
-  processPayload(std::move(payload), next);
+  bool finalComplete = processFragmentedPayload(
+      std::move(payload), flagsNext, flagsComplete, flagsFollows);
 
-  if (complete) {
+  if (finalComplete) {
     completeConsumer();
     tryCompleteChannel();
   }
@@ -114,12 +116,11 @@ void ChannelRequester::endStream(StreamCompletionSignal signal) {
 void ChannelRequester::initStream(Payload&& request) {
   requested_ = true;
 
-  const size_t initialN =
-      initialResponseAllowance_.consumeUpTo(Frame_REQUEST_N::kMaxRequestN);
+  const size_t initialN = initialResponseAllowance_.consumeUpTo(kMaxRequestN);
   const size_t remainingN = initialResponseAllowance_.consumeAll();
 
   // Send as much as possible with the initial request.
-  CHECK_GE(Frame_REQUEST_N::kMaxRequestN, initialN);
+  CHECK_GE(kMaxRequestN, initialN);
   newStream(
       StreamType::CHANNEL, static_cast<uint32_t>(initialN), std::move(request));
   // We must inform ConsumerBase about an implicit allowance we have

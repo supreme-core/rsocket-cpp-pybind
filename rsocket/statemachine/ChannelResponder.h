@@ -28,7 +28,12 @@ class ChannelResponder : public ConsumerBase,
   void request(int64_t) override;
   void cancel() override;
 
-  void handlePayload(Payload&& payload, bool complete, bool next) override;
+  void handlePayload(
+      Payload&& payload,
+      bool flagsComplete,
+      bool flagsNext,
+      bool flagsFollows) override;
+
   void handleRequestN(uint32_t) override;
   void handleError(folly::exception_wrapper) override;
   void handleCancel() override;
@@ -37,6 +42,8 @@ class ChannelResponder : public ConsumerBase,
 
  private:
   void tryCompleteChannel();
+
+  bool newStream_{true};
 };
 
 } // namespace rsocket
