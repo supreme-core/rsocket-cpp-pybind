@@ -157,26 +157,49 @@ class RSocketStateMachine final
 
  private:
   // connection scope signals
-  void onKeepAlive(
+  void onKeepAliveFrame(
       ResumePosition resumePosition,
       std::unique_ptr<folly::IOBuf> data,
       bool keepAliveRespond);
-  void onMetadataPush(std::unique_ptr<folly::IOBuf> metadata);
-  void onResumeOk(ResumePosition resumePosition);
-  void onError(ErrorCode errorCode, Payload payload);
+  void onMetadataPushFrame(std::unique_ptr<folly::IOBuf> metadata);
+  void onResumeOkFrame(ResumePosition resumePosition);
+  void onErrorFrame(StreamId streamId, ErrorCode errorCode, Payload payload);
 
   // stream scope signals
-  void onStreamRequestN(StreamId streamId, uint32_t requestN);
-  void onStreamCancel(StreamId streamId);
-  void onStreamError(StreamId streamId, Payload payload);
-  void onStreamPayload(
+  void onRequestNFrame(StreamId streamId, uint32_t requestN);
+  void onCancelFrame(StreamId streamId);
+  void onPayloadFrame(
       StreamId streamId,
       Payload payload,
       bool flagsFollows,
       bool flagsComplete,
       bool flagsNext);
 
-  std::shared_ptr<StreamStateMachineBase> getStreamStateMachine(StreamId);
+  void onRequestStreamFrame(
+      StreamId streamId,
+      uint32_t requestN,
+      Payload payload,
+      bool flagsFollows);
+  void onRequestChannelFrame(
+      StreamId streamId,
+      uint32_t requestN,
+      Payload payload,
+      bool flagsComplete,
+      bool flagsNext,
+      bool flagsFollows);
+  void
+  onRequestResponseFrame(StreamId streamId, Payload payload, bool flagsFollows);
+  void
+  onFireAndForgetFrame(StreamId streamId, Payload payload, bool flagsFollows);
+  void onSetupFrame();
+  void onResumeFrame();
+  void onReservedFrame();
+  void onLeaseFrame();
+  void onExtFrame();
+  void onUnexpectedFrame(StreamId streamId);
+
+  std::shared_ptr<StreamStateMachineBase> getStreamStateMachine(
+      StreamId streamId);
 
   void connect(std::shared_ptr<FrameTransport>);
 
@@ -238,29 +261,7 @@ class RSocketStateMachine final
   void processFrame(std::unique_ptr<folly::IOBuf>) override;
   void onTerminal(folly::exception_wrapper) override;
 
-  void handleConnectionFrame(FrameType, std::unique_ptr<folly::IOBuf>);
-  void handleStreamFrame(StreamId, FrameType, std::unique_ptr<folly::IOBuf>);
-  void handleUnknownStream(StreamId, FrameType, std::unique_ptr<folly::IOBuf>);
-
-  template <typename FrameType>
-  void handleInitialFollowsFrame(StreamId, FrameType&&);
-
-  void setupRequestStream(
-      StreamId streamId,
-      uint32_t requestN,
-      Payload payload,
-      bool flagsFollows);
-  void setupRequestChannel(
-      StreamId streamId,
-      uint32_t requestN,
-      Payload payload,
-      bool flagsComplete,
-      bool flagsNext,
-      bool flagsFollows);
-  void
-  setupRequestResponse(StreamId streamId, Payload payload, bool flagsFollows);
-  void
-  setupFireAndForget(StreamId streamId, Payload payload, bool flagsFollows);
+  void handleFrame(StreamId, FrameType, std::unique_ptr<folly::IOBuf>);
 
   void closeStreams(StreamCompletionSignal);
   void closeFrameTransport(folly::exception_wrapper);
@@ -291,6 +292,7 @@ class RSocketStateMachine final
   void onStreamClosed(StreamId) override;
 
   bool ensureOrAutodetectFrameSerializer(const folly::IOBuf& firstFrame);
+  bool ensureNotInResumption();
 
   size_t getConsumerAllowance(StreamId) const;
 
@@ -298,6 +300,7 @@ class RSocketStateMachine final
       ProtocolVersion version,
       const std::shared_ptr<FrameTransport>& transport);
 
+  bool isNewStreamId(StreamId streamId);
   bool registerNewPeerStreamId(StreamId streamId);
   StreamId getNextStreamId();
 

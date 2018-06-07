@@ -94,7 +94,7 @@ class RSocketStateMachineTest : public Test {
       StreamId streamId,
       uint32_t requestN,
       Payload payload) {
-    stateMachine.setupRequestStream(
+    stateMachine.onRequestStreamFrame(
         streamId, requestN, std::move(payload), false);
   }
 
@@ -103,7 +103,7 @@ class RSocketStateMachineTest : public Test {
       StreamId streamId,
       uint32_t requestN,
       Payload payload) {
-    stateMachine.setupRequestChannel(
+    stateMachine.onRequestChannelFrame(
         streamId, requestN, std::move(payload), false, true, false);
   }
 
@@ -111,14 +111,14 @@ class RSocketStateMachineTest : public Test {
       RSocketStateMachine& stateMachine,
       StreamId streamId,
       Payload payload) {
-    stateMachine.setupRequestResponse(streamId, std::move(payload), false);
+    stateMachine.onRequestResponseFrame(streamId, std::move(payload), false);
   }
 
   void setupFireAndForget(
       RSocketStateMachine& stateMachine,
       StreamId streamId,
       Payload payload) {
-    stateMachine.setupFireAndForget(streamId, std::move(payload), false);
+    stateMachine.onFireAndForgetFrame(streamId, std::move(payload), false);
   }
 };
 

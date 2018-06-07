@@ -53,5 +53,7 @@ class RSocketStats {
   virtual void resumeFailedNoState() {}
   virtual void keepaliveSent() {}
   virtual void keepaliveReceived() {}
+  virtual void unknownFrameReceived() {
+  } // TODO(lehecka): add to all implementations
 };
 } // namespace rsocket
