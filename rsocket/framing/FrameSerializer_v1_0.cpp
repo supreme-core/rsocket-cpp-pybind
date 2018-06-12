@@ -83,9 +83,8 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV1_0::deserializeMetadataFrom(
   metadataLength |= static_cast<uint32_t>(cur.read<uint8_t>() << 8);
   metadataLength |= cur.read<uint8_t>();
 
-  if (metadataLength > kMaxMetadataLength) {
-    throw std::runtime_error("Metadata is too big to deserialize");
-  }
+  CHECK_LE(metadataLength, kMaxMetadataLength)
+      << "Read out the 24-bit integer incorrectly somehow";
 
   std::unique_ptr<folly::IOBuf> metadata;
   cur.clone(metadata, metadataLength);

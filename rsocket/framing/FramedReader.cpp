@@ -4,7 +4,6 @@
 
 #include <folly/io/Cursor.h>
 
-#include "rsocket/framing/FrameSerializer_v0_1.h"
 #include "rsocket/framing/FrameSerializer_v1_0.h"
 
 namespace rsocket {
@@ -13,23 +12,19 @@ using namespace yarpl::flowable;
 
 namespace {
 
-constexpr size_t kFrameLengthFieldLengthV0_1 = sizeof(int32_t);
 constexpr size_t kFrameLengthFieldLengthV1_0 = 3;
 
 /// Get the byte size of the frame length field in an RSocket frame.
 size_t frameSizeFieldLength(ProtocolVersion version) {
   DCHECK_NE(version, ProtocolVersion::Unknown);
-  return version < FrameSerializerV1_0::Version ? kFrameLengthFieldLengthV0_1
-                                                : kFrameLengthFieldLengthV1_0;
+  return kFrameLengthFieldLengthV1_0;
 }
 
 /// Get the minimum size for a valid RSocket frame (including its frame length
 /// field).
 size_t minimalFrameLength(ProtocolVersion version) {
   DCHECK_NE(version, ProtocolVersion::Unknown);
-  return version < FrameSerializerV1_0::Version
-      ? FrameSerializerV0::kFrameHeaderSize + frameSizeFieldLength(version)
-      : FrameSerializerV1_0::kFrameHeaderSize;
+  return FrameSerializerV1_0::kFrameHeaderSize;
 }
 
 /// Compute the length of the entire frame (including its frame length field),
@@ -171,15 +166,13 @@ bool FramedReader::ensureOrAutodetectProtocolVersion() {
     return true;
   }
 
-  const auto minBytesNeeded = std::max(
-      FrameSerializerV0_1::kMinBytesNeededForAutodetection,
-      FrameSerializerV1_0::kMinBytesNeededForAutodetection);
+  const auto minBytesNeeded =
+      FrameSerializerV1_0::kMinBytesNeededForAutodetection;
   DCHECK_GT(minBytesNeeded, 0);
   if (payloadQueue_.chainLength() < minBytesNeeded) {
     return false;
   }
 
-  DCHECK_GT(minBytesNeeded, kFrameLengthFieldLengthV0_1);
   DCHECK_GT(minBytesNeeded, kFrameLengthFieldLengthV1_0);
 
   auto const& firstFrame = *payloadQueue_.front();
@@ -188,13 +181,6 @@ bool FramedReader::ensureOrAutodetectProtocolVersion() {
       firstFrame, kFrameLengthFieldLengthV1_0);
   if (detectedV1 != ProtocolVersion::Unknown) {
     *version_ = FrameSerializerV1_0::Version;
-    return true;
-  }
-
-  const auto detectedV0 = FrameSerializerV0_1::detectProtocolVersion(
-      firstFrame, kFrameLengthFieldLengthV0_1);
-  if (detectedV0 != ProtocolVersion::Unknown) {
-    *version_ = FrameSerializerV0_1::Version;
     return true;
   }
 

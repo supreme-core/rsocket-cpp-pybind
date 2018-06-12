@@ -2,21 +2,13 @@
 
 #include "rsocket/framing/FrameSerializer.h"
 
-#include <folly/Conv.h>
-
-#include "rsocket/framing/FrameSerializer_v0.h"
-#include "rsocket/framing/FrameSerializer_v0_1.h"
 #include "rsocket/framing/FrameSerializer_v1_0.h"
 
 namespace rsocket {
 
 std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
     const ProtocolVersion& protocolVersion) {
-  if (protocolVersion == FrameSerializerV0::Version) {
-    return std::make_unique<FrameSerializerV0>();
-  } else if (protocolVersion == FrameSerializerV0_1::Version) {
-    return std::make_unique<FrameSerializerV0_1>();
-  } else if (protocolVersion == FrameSerializerV1_0::Version) {
+  if (protocolVersion == FrameSerializerV1_0::Version) {
     return std::make_unique<FrameSerializerV1_0>();
   }
 
@@ -29,9 +21,6 @@ std::unique_ptr<FrameSerializer> FrameSerializer::createFrameSerializer(
 std::unique_ptr<FrameSerializer> FrameSerializer::createAutodetectedSerializer(
     const folly::IOBuf& firstFrame) {
   auto detectedVersion = FrameSerializerV1_0::detectProtocolVersion(firstFrame);
-  if (detectedVersion == ProtocolVersion::Unknown) {
-    detectedVersion = FrameSerializerV0_1::detectProtocolVersion(firstFrame);
-  }
   return createFrameSerializer(detectedVersion);
 }
 

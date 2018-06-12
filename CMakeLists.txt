@@ -240,10 +240,6 @@ add_library(
   rsocket/framing/FrameProcessor.h
   rsocket/framing/FrameSerializer.cpp
   rsocket/framing/FrameSerializer.h
-  rsocket/framing/FrameSerializer_v0.cpp
-  rsocket/framing/FrameSerializer_v0.h
-  rsocket/framing/FrameSerializer_v0_1.cpp
-  rsocket/framing/FrameSerializer_v0_1.h
   rsocket/framing/FrameSerializer_v1_0.cpp
   rsocket/framing/FrameSerializer_v1_0.h
   rsocket/framing/FrameTransport.h

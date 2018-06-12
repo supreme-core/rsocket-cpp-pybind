@@ -1,11 +1,13 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "rsocket/Payload.h"
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
+
 #include <gtest/gtest.h>
+
+#include "rsocket/Payload.h"
 #include "rsocket/framing/Frame.h"
-#include "rsocket/framing/FrameSerializer_v0_1.h"
+#include "rsocket/framing/FrameSerializer_v1_0.h"
 
 using namespace ::testing;
 using namespace ::rsocket;
@@ -22,17 +24,6 @@ TEST(PayloadTest, Clear) {
 
   p.clear();
   ASSERT_FALSE(p);
-}
-
-TEST(PayloadTest, GiantMetadata) {
-  constexpr auto metadataSize = std::numeric_limits<uint32_t>::max();
-
-  auto metadata = folly::IOBuf::wrapBuffer(&metadataSize, sizeof(metadataSize));
-  folly::io::Cursor cur(metadata.get());
-
-  EXPECT_THROW(
-      FrameSerializerV0_1::deserializeMetadataFrom(cur, FrameFlags::METADATA),
-      std::runtime_error);
 }
 
 TEST(PayloadTest, Clone) {
