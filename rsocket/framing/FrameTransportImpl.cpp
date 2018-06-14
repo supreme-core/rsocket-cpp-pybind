@@ -76,8 +76,9 @@ void FrameTransportImpl::onSubscribe(
 }
 
 void FrameTransportImpl::onNext(std::unique_ptr<folly::IOBuf> frame) {
-  CHECK(frameProcessor_);
-  frameProcessor_->processFrame(std::move(frame));
+  if (frameProcessor_) {
+    frameProcessor_->processFrame(std::move(frame));
+  }
 }
 
 void FrameTransportImpl::terminateProcessor(folly::exception_wrapper ex) {
