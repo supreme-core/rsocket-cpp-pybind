@@ -35,8 +35,7 @@ class FrameSerializerV1_0 : public FrameSerializer {
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_CANCEL&&) const override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_PAYLOAD&&) const override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_ERROR&&) const override;
-  std::unique_ptr<folly::IOBuf> serializeOut(Frame_KEEPALIVE&&, bool)
-      const override;
+  std::unique_ptr<folly::IOBuf> serializeOut(Frame_KEEPALIVE&&) const override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_SETUP&&) const override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_LEASE&&) const override;
   std::unique_ptr<folly::IOBuf> serializeOut(Frame_RESUME&&) const override;
@@ -60,7 +59,7 @@ class FrameSerializerV1_0 : public FrameSerializer {
       const override;
   bool deserializeFrom(Frame_ERROR&, std::unique_ptr<folly::IOBuf>)
       const override;
-  bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>, bool)
+  bool deserializeFrom(Frame_KEEPALIVE&, std::unique_ptr<folly::IOBuf>)
       const override;
   bool deserializeFrom(Frame_SETUP&, std::unique_ptr<folly::IOBuf>)
       const override;

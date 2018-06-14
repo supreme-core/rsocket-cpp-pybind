@@ -245,18 +245,6 @@ class RSocketStateMachine final
     return false;
   }
 
-  template <typename TFrame>
-  bool deserializeFrameOrError(
-      bool resumable,
-      TFrame& frame,
-      std::unique_ptr<folly::IOBuf> buf) {
-    if (frameSerializer_->deserializeFrom(frame, std::move(buf), resumable)) {
-      return true;
-    }
-    closeWithError(Frame_ERROR::connectionError("Invalid frame"));
-    return false;
-  }
-
   // FrameProcessor.
   void processFrame(std::unique_ptr<folly::IOBuf>) override;
   void onTerminal(folly::exception_wrapper) override;

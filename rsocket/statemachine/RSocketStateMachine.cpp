@@ -639,7 +639,7 @@ void RSocketStateMachine::handleFrame(
   switch (frameType) {
     case FrameType::KEEPALIVE: {
       Frame_KEEPALIVE frame;
-      if (!deserializeFrameOrError(isResumable_, frame, std::move(payload))) {
+      if (!deserializeFrameOrError(frame, std::move(payload))) {
         return;
       }
       VLOG(3) << mode_ << " In: " << frame;
@@ -972,8 +972,7 @@ void RSocketStateMachine::sendKeepalive(
   Frame_KEEPALIVE pingFrame(
       flags, resumeManager_->impliedPosition(), std::move(data));
   VLOG(3) << mode_ << " Out: " << pingFrame;
-  outputFrameOrEnqueue(
-      frameSerializer_->serializeOut(std::move(pingFrame), isResumable_));
+  outputFrameOrEnqueue(frameSerializer_->serializeOut(std::move(pingFrame)));
   stats_->keepaliveSent();
 }
 

@@ -270,8 +270,7 @@ std::unique_ptr<folly::IOBuf> FrameSerializerV1_0::serializeOut(
 }
 
 std::unique_ptr<folly::IOBuf> FrameSerializerV1_0::serializeOut(
-    Frame_KEEPALIVE&& frame,
-    bool /*resumeable*/) const {
+    Frame_KEEPALIVE&& frame) const {
   auto queue = createBufferQueue(kFrameHeaderSize + sizeof(int64_t));
   folly::io::QueueAppender appender(&queue, /* do not grow */ 0);
   serializeHeaderInto(appender, frame.header_);
@@ -481,8 +480,7 @@ bool FrameSerializerV1_0::deserializeFrom(
 
 bool FrameSerializerV1_0::deserializeFrom(
     Frame_KEEPALIVE& frame,
-    std::unique_ptr<folly::IOBuf> in,
-    bool /*resumable*/) const {
+    std::unique_ptr<folly::IOBuf> in) const {
   folly::io::Cursor cur(in.get());
   try {
     deserializeHeaderFrom(cur, frame.header_);

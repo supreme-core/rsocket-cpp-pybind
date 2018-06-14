@@ -11,22 +11,6 @@
 using namespace ::testing;
 using namespace ::rsocket;
 
-// TODO(stupaq): tests with malformed frames
-
-template <typename Frame, typename... Args>
-Frame reserialize_resume(bool resumable, Args... args) {
-  Frame givenFrame, newFrame;
-  givenFrame = Frame(std::forward<Args>(args)...);
-  auto frameSerializer =
-      FrameSerializer::createFrameSerializer(ProtocolVersion::Latest);
-
-  EXPECT_TRUE(frameSerializer->deserializeFrom(
-      newFrame,
-      frameSerializer->serializeOut(std::move(givenFrame), resumable),
-      resumable));
-  return newFrame;
-}
-
 template <typename Frame, typename... Args>
 Frame reserialize(Args... args) {
   Frame givenFrame = Frame(std::forward<Args>(args)...);
@@ -135,27 +119,12 @@ TEST(FrameTest, Frame_ERROR) {
   EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.payload_.data));
 }
 
-TEST(FrameTest, Frame_KEEPALIVE_resume) {
-  uint32_t streamId = 0;
-  ResumePosition position = 101;
-  auto flags = FrameFlags::KEEPALIVE_RESPOND;
-  auto data = folly::IOBuf::copyBuffer("424242");
-  auto frame =
-      reserialize_resume<Frame_KEEPALIVE>(true, flags, position, data->clone());
-
-  expectHeader(
-      FrameType::KEEPALIVE, FrameFlags::KEEPALIVE_RESPOND, streamId, frame);
-  EXPECT_EQ(position, frame.position_);
-  EXPECT_TRUE(folly::IOBufEqualTo()(*data, *frame.data_));
-}
-
 TEST(FrameTest, Frame_KEEPALIVE) {
   uint32_t streamId = 0;
   ResumePosition position = 101;
   auto flags = FrameFlags::KEEPALIVE_RESPOND;
   auto data = folly::IOBuf::copyBuffer("424242");
-  auto frame = reserialize_resume<Frame_KEEPALIVE>(
-      false, flags, position, data->clone());
+  auto frame = reserialize<Frame_KEEPALIVE>(flags, position, data->clone());
 
   expectHeader(
       FrameType::KEEPALIVE, FrameFlags::KEEPALIVE_RESPOND, streamId, frame);
