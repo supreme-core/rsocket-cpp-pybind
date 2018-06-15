@@ -41,15 +41,15 @@ class FrameTransportImpl
 
   bool isConnectionFramed() const override;
 
- private:
-  void connect();
-
   // Subscriber.
 
   void onSubscribe(std::shared_ptr<yarpl::flowable::Subscription>) override;
   void onNext(std::unique_ptr<folly::IOBuf>) override;
   void onComplete() override;
   void onError(folly::exception_wrapper) override;
+
+ private:
+  void connect();
 
   /// Terminates the FrameProcessor.  Will queue up the exception if no
   /// processor is set, overwriting any previously queued exception.
@@ -61,4 +61,5 @@ class FrameTransportImpl
   std::shared_ptr<DuplexConnection::Subscriber> connectionOutput_;
   std::shared_ptr<yarpl::flowable::Subscription> connectionInputSub_;
 };
+
 } // namespace rsocket

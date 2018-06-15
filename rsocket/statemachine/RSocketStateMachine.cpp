@@ -243,11 +243,10 @@ void RSocketStateMachine::connect(std::shared_ptr<FrameTransport> transport) {
     connectionEvents_->onConnected();
   }
 
-  // Keep a reference to this, as processing frames might close this
-  // instance.
-  const auto copyThis = shared_from_this();
-  frameTransport_->setFrameProcessor(copyThis);
-  stats_->socketConnected();
+  // Keep a reference to stats, as processing frames might close this instance.
+  auto const stats = stats_;
+  frameTransport_->setFrameProcessor(shared_from_this());
+  stats->socketConnected();
 }
 
 void RSocketStateMachine::sendPendingFrames() {
@@ -467,10 +466,6 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
     VLOG(4) << "StateMachine has been closed.  Discarding incoming frame";
     return;
   }
-
-  // Necessary in case the only stream state machine closes itself, and takes
-  // the RSocketStateMachine with it.
-  const auto self = shared_from_this();
 
   if (!ensureOrAutodetectFrameSerializer(*frame)) {
     constexpr auto msg = "Cannot detect protocol version";

@@ -1,5 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
+#include "rsocket/statemachine/RSocketStateMachine.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <yarpl/single/SingleSubscriptions.h>
@@ -11,7 +12,6 @@
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/ChannelRequester.h"
 #include "rsocket/statemachine/ChannelResponder.h"
-#include "rsocket/statemachine/RSocketStateMachine.h"
 #include "rsocket/statemachine/RequestResponseResponder.h"
 #include "rsocket/test/test_utils/MockDuplexConnection.h"
 #include "rsocket/test/test_utils/MockStreamsWriter.h"
@@ -324,6 +324,38 @@ TEST_F(RSocketStateMachineTest, StreamImmediateCancel) {
   ASSERT_EQ(0, streams.size());
 
   stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
+}
+
+TEST_F(RSocketStateMachineTest, TransportOnNextClose) {
+  auto connection = std::make_unique<StrictMock<MockDuplexConnection>>();
+  // Only SETUP frame gets sent.
+  EXPECT_CALL(*connection, setInput_(_));
+  EXPECT_CALL(*connection, isFramed());
+  EXPECT_CALL(*connection, send_(_));
+
+  auto transport = std::make_shared<FrameTransportImpl>(std::move(connection));
+  auto stateMachine = std::make_shared<RSocketStateMachine>(
+      std::make_shared<StrictMock<ResponderMock>>(),
+      nullptr,
+      RSocketMode::CLIENT,
+      nullptr,
+      nullptr,
+      ResumeManager::makeEmpty(),
+      nullptr);
+
+  SetupParameters params;
+  params.resumable = false;
+  stateMachine->connectClient(transport, std::move(params));
+
+  auto rawTransport = transport.get();
+
+  // Leak the cycle.
+  stateMachine.reset();
+  transport.reset();
+
+  FrameSerializerV1_0 serializer;
+  auto buf = serializer.serializeOut(Frame_ERROR::connectionError("Hah!"));
+  rawTransport->onNext(std::move(buf));
 }
 
 } // namespace rsocket

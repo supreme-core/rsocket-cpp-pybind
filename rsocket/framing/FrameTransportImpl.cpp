@@ -76,8 +76,9 @@ void FrameTransportImpl::onSubscribe(
 }
 
 void FrameTransportImpl::onNext(std::unique_ptr<folly::IOBuf> frame) {
-  if (frameProcessor_) {
-    frameProcessor_->processFrame(std::move(frame));
+  // Copy in case frame processing calls through to close().
+  if (auto const processor = frameProcessor_) {
+    processor->processFrame(std::move(frame));
   }
 }
 
