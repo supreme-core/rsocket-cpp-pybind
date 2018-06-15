@@ -66,8 +66,7 @@ void RequestResponseRequester::endStream(StreamCompletionSignal signal) {
   }
 }
 
-void RequestResponseRequester::handleError(
-    folly::exception_wrapper errorPayload) {
+void RequestResponseRequester::handleError(Payload errorPayload) {
   switch (state_) {
     case State::NEW:
       // Cannot receive a frame before sending the initial request.
@@ -76,7 +75,7 @@ void RequestResponseRequester::handleError(
     case State::REQUESTED:
       state_ = State::CLOSED;
       if (auto subscriber = std::move(consumingSubscriber_)) {
-        subscriber->onError(errorPayload);
+        subscriber->onError(ErrorWithPayload(std::move(errorPayload)));
       }
       removeFromWriter();
       break;

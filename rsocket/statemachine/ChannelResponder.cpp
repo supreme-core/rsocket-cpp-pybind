@@ -81,8 +81,8 @@ void ChannelResponder::handleRequestN(uint32_t n) {
   processRequestN(n);
 }
 
-void ChannelResponder::handleError(folly::exception_wrapper ex) {
-  errorConsumer(std::move(ex));
+void ChannelResponder::handleError(Payload errorPayload) {
+  errorConsumer(std::move(errorPayload));
   terminatePublisher();
 }
 

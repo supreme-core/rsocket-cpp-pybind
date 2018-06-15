@@ -107,11 +107,11 @@ void ConsumerBase::completeConsumer() {
   }
 }
 
-void ConsumerBase::errorConsumer(folly::exception_wrapper ex) {
+void ConsumerBase::errorConsumer(Payload errorPayload) {
   state_ = State::CLOSED;
   VLOG(5) << "ConsumerBase::errorConsumer()";
   if (auto subscriber = std::move(consumingSubscriber_)) {
-    subscriber->onError(std::move(ex));
+    subscriber->onError(ErrorWithPayload(std::move(errorPayload)));
   }
 }
 

@@ -35,7 +35,7 @@ class ChannelResponder : public ConsumerBase,
       bool flagsFollows) override;
 
   void handleRequestN(uint32_t) override;
-  void handleError(folly::exception_wrapper) override;
+  void handleError(Payload) override;
   void handleCancel() override;
 
   void endStream(StreamCompletionSignal) override;

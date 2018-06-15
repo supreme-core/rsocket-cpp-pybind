@@ -34,7 +34,7 @@ class RequestResponseRequester
       bool flagsComplete,
       bool flagsNext,
       bool flagsFollows) override;
-  void handleError(folly::exception_wrapper errorPayload) override;
+  void handleError(Payload errorPayload) override;
 
   void endStream(StreamCompletionSignal signal) override;
 

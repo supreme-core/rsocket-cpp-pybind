@@ -78,4 +78,29 @@ Payload Payload::clone() const {
   return out;
 }
 
+ErrorWithPayload::ErrorWithPayload(Payload&& payload)
+    : payload(std::move(payload)) {}
+
+ErrorWithPayload::ErrorWithPayload(const ErrorWithPayload& oth) {
+  payload = oth.payload.clone();
+}
+
+ErrorWithPayload& ErrorWithPayload::operator=(const ErrorWithPayload& oth) {
+  payload = oth.payload.clone();
+  return *this;
+}
+
+const char* ErrorWithPayload::what() const noexcept {
+  if (!whatString_) {
+    whatString_ = std::make_unique<std::string>(payload.cloneDataToString());
+  }
+  return whatString_->c_str();
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const ErrorWithPayload& errorWithPayload) {
+  return os << "rsocket::ErrorWithPayload: " << errorWithPayload.payload;
+}
+
 } // namespace rsocket

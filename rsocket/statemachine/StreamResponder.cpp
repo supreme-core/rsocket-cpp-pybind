@@ -38,7 +38,7 @@ void StreamResponder::handleRequestN(uint32_t n) {
   processRequestN(n);
 }
 
-void StreamResponder::handleError(folly::exception_wrapper) {
+void StreamResponder::handleError(Payload) {
   handleCancel();
 }
 

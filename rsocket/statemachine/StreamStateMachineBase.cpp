@@ -11,7 +11,7 @@ void StreamStateMachineBase::handleRequestN(uint32_t) {
   VLOG(4) << "Unexpected handleRequestN";
 }
 
-void StreamStateMachineBase::handleError(folly::exception_wrapper) {
+void StreamStateMachineBase::handleError(Payload) {
   endStream(StreamCompletionSignal::ERROR);
   removeFromWriter();
 }

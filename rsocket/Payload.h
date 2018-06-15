@@ -39,6 +39,24 @@ struct Payload {
   std::unique_ptr<folly::IOBuf> metadata;
 };
 
-std::ostream& operator<<(std::ostream& os, const Payload& payload);
+struct ErrorWithPayload : public std::exception {
+  explicit ErrorWithPayload(Payload&& payload);
+
+  // folly::ExceptionWrapper requires exceptions to have copy constructors
+  ErrorWithPayload(const ErrorWithPayload& oth);
+  ErrorWithPayload& operator=(const ErrorWithPayload&);
+  ErrorWithPayload(ErrorWithPayload&&) = default;
+  ErrorWithPayload& operator=(ErrorWithPayload&&) = default;
+
+  const char* what() const noexcept override;
+
+  Payload payload;
+
+ private:
+  mutable std::unique_ptr<std::string> whatString_;
+};
+
+std::ostream& operator<<(std::ostream& os, const Payload&);
+std::ostream& operator<<(std::ostream& os, const ErrorWithPayload&);
 
 } // namespace rsocket
