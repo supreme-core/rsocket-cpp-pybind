@@ -198,8 +198,18 @@ class Flowable : public yarpl::enable_get_ref {
 
   template <
       typename Function,
-      typename R = typename std::result_of<Function(T)>::type>
-  std::shared_ptr<Flowable<R>> map(Function&& function);
+      typename ErrorFunction =
+          folly::Function<folly::exception_wrapper(folly::exception_wrapper)>,
+      typename R = typename std::result_of<Function(T)>::type,
+      typename = typename std::enable_if<folly::is_invocable_r<
+          folly::exception_wrapper,
+          std::decay_t<ErrorFunction>&,
+          folly::exception_wrapper&&>::value>::type>
+  std::shared_ptr<Flowable<R>> map(
+      Function&& function,
+      ErrorFunction&& errormapFunc = [](folly::exception_wrapper&& ew) {
+        return std::move(ew);
+      });
 
   template <
       typename Function,
@@ -477,10 +487,15 @@ std::shared_ptr<Flowable<T>> Flowable<T>::defer(FlowableFactory&& factory) {
 }
 
 template <typename T>
-template <typename Function, typename R>
-std::shared_ptr<Flowable<R>> Flowable<T>::map(Function&& function) {
-  return std::make_shared<MapOperator<T, R, std::decay_t<Function>>>(
-      this->ref_from_this(this), std::forward<Function>(function));
+template <typename Function, typename ErrorFunction, typename R, typename>
+std::shared_ptr<Flowable<R>> Flowable<T>::map(
+    Function&& function,
+    ErrorFunction&& errorFunction) {
+  return std::make_shared<
+      MapOperator<T, R, std::decay_t<Function>, std::decay_t<ErrorFunction>>>(
+      this->ref_from_this(this),
+      std::forward<Function>(function),
+      std::forward<ErrorFunction>(errorFunction));
 }
 
 template <typename T>

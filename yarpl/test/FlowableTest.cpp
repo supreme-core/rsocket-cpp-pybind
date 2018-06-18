@@ -1230,3 +1230,17 @@ TEST(FlowableTest, Timeout_SameThread) {
   EXPECT_EQ(subscriber->values(), std::vector<int64_t>({1}));
   EXPECT_TRUE(subscriber->isError());
 }
+
+TEST(FlowableTest, SwapException) {
+  auto flowable = Flowable<int64_t>::error(std::runtime_error("private"));
+  flowable = flowable->map(
+      [](auto&& a) { return a; },
+      [](auto) { return std::runtime_error("public"); });
+
+  auto subscriber = std::make_shared<TestSubscriber<int64_t>>();
+  flowable->subscribe(subscriber);
+
+  EXPECT_EQ(subscriber->values(), std::vector<int64_t>({}));
+  EXPECT_TRUE(subscriber->isError());
+  EXPECT_EQ(subscriber->getErrorMsg(), "public");
+}

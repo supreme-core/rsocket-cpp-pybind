@@ -127,17 +127,26 @@ template <
     typename U,
     typename D,
     typename F,
-    typename =
-        typename std::enable_if<folly::is_invocable_r<D, F, U>::value>::type>
+    typename EF,
+    typename = typename std::enable_if<
+        folly::is_invocable_r<D, F, U>::value &&
+        folly::is_invocable_r<
+            folly::exception_wrapper,
+            EF,
+            folly::exception_wrapper&&>::value>::type>
 class MapOperator : public FlowableOperator<U, D> {
   using Super = FlowableOperator<U, D>;
   static_assert(std::is_same<std::decay_t<F>, F>::value, "undecayed");
 
  public:
-  template <typename Func>
-  MapOperator(std::shared_ptr<Flowable<U>> upstream, Func&& function)
+  template <typename Func, typename ErrorFunc>
+  MapOperator(
+      std::shared_ptr<Flowable<U>> upstream,
+      Func&& function,
+      ErrorFunc&& errFunction)
       : upstream_(std::move(upstream)),
-        function_(std::forward<Func>(function)) {}
+        function_(std::forward<Func>(function)),
+        errFunction_(std::move(errFunction)) {}
 
   void subscribe(std::shared_ptr<Subscriber<D>> subscriber) override {
     upstream_->subscribe(std::make_shared<Subscription>(
@@ -163,6 +172,15 @@ class MapOperator : public FlowableOperator<U, D> {
       }
     }
 
+    void onErrorImpl(folly::exception_wrapper ew) override {
+      try {
+        SuperSubscription::onErrorImpl(flowable_->errFunction_(std::move(ew)));
+      } catch (const std::exception& exn) {
+        this->terminateErr(
+            folly::exception_wrapper{std::current_exception(), exn});
+      }
+    }
+
     void onTerminateImpl() override {
       flowable_.reset();
       SuperSubscription::onTerminateImpl();
@@ -174,6 +192,7 @@ class MapOperator : public FlowableOperator<U, D> {
 
   std::shared_ptr<Flowable<U>> upstream_;
   F function_;
+  EF errFunction_;
 };
 
 template <
