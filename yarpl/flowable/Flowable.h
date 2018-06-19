@@ -199,7 +199,7 @@ class Flowable : public yarpl::enable_get_ref {
   template <
       typename Function,
       typename ErrorFunction =
-          folly::Function<folly::exception_wrapper(folly::exception_wrapper)>,
+          folly::Function<folly::exception_wrapper(folly::exception_wrapper&&)>,
       typename R = typename std::result_of<Function(T)>::type,
       typename = typename std::enable_if<folly::is_invocable_r<
           folly::exception_wrapper,
