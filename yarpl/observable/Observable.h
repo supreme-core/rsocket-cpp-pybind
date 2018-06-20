@@ -7,8 +7,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "yarpl/utils/type_traits.h"
-
 #include "yarpl/Refcounted.h"
 #include "yarpl/observable/Observer.h"
 #include "yarpl/observable/Subscription.h"

@@ -10,7 +10,6 @@
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/utils/credits.h"
-#include "yarpl/utils/type_traits.h"
 
 namespace yarpl {
 

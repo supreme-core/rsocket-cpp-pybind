@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "yarpl/utils/type_traits.h"
-
 #include "yarpl/single/SingleObserver.h"
 
 #include <folly/functional/Invoke.h>

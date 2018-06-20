@@ -9,7 +9,6 @@
 #include "yarpl/single/SingleObserver.h"
 #include "yarpl/single/SingleObservers.h"
 #include "yarpl/single/SingleSubscription.h"
-#include "yarpl/utils/type_traits.h"
 
 namespace yarpl {
 namespace single {
