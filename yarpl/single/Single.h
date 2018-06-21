@@ -154,7 +154,7 @@ auto Single<void>::create(OnSubscribe&& function) {
 template <typename T>
 template <typename Function>
 auto Single<T>::map(Function&& function) {
-  using D = typename std::result_of<Function(T)>::type;
+  using D = typename folly::invoke_result_t<Function, T>;
   return std::make_shared<MapOperator<T, D, std::decay_t<Function>>>(
       this->ref_from_this(this), std::forward<Function>(function));
 }
