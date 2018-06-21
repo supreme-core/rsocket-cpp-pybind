@@ -11,7 +11,7 @@ void StreamStateMachineBase::handleRequestN(uint32_t) {
   VLOG(4) << "Unexpected handleRequestN";
 }
 
-void StreamStateMachineBase::handleError(Payload) {
+void StreamStateMachineBase::handleError(folly::exception_wrapper) {
   endStream(StreamCompletionSignal::ERROR);
   removeFromWriter();
 }
@@ -53,6 +53,11 @@ void StreamStateMachineBase::writeComplete() {
 
 void StreamStateMachineBase::writeApplicationError(folly::StringPiece msg) {
   writer_->writeError(Frame_ERROR::applicationError(streamId_, msg));
+}
+
+void StreamStateMachineBase::writeApplicationError(Payload&& payload) {
+  writer_->writeError(
+      Frame_ERROR::applicationError(streamId_, std::move(payload)));
 }
 
 void StreamStateMachineBase::writeInvalidError(folly::StringPiece msg) {

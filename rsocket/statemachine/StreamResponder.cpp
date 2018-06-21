@@ -30,7 +30,11 @@ void StreamResponder::onError(folly::exception_wrapper ew) {
     return;
   }
   publisherComplete();
-  writeApplicationError(ew.get_exception()->what());
+  if (!ew.with_exception([this](rsocket::ErrorWithPayload& err) {
+        writeApplicationError(std::move(err.payload));
+      })) {
+    writeApplicationError(ew.get_exception()->what());
+  }
   removeFromWriter();
 }
 
@@ -38,7 +42,7 @@ void StreamResponder::handleRequestN(uint32_t n) {
   processRequestN(n);
 }
 
-void StreamResponder::handleError(Payload) {
+void StreamResponder::handleError(folly::exception_wrapper) {
   handleCancel();
 }
 

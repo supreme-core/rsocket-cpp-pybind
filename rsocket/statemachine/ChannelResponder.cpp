@@ -27,7 +27,11 @@ void ChannelResponder::onError(folly::exception_wrapper ex) {
   if (!publisherClosed()) {
     publisherComplete();
     endStream(StreamCompletionSignal::ERROR);
-    writeApplicationError(ex.get_exception()->what());
+    if (!ex.with_exception([this](rsocket::ErrorWithPayload& err) {
+          writeApplicationError(std::move(err.payload));
+        })) {
+      writeApplicationError(ex.get_exception()->what());
+    }
     tryCompleteChannel();
   }
 }
@@ -81,8 +85,8 @@ void ChannelResponder::handleRequestN(uint32_t n) {
   processRequestN(n);
 }
 
-void ChannelResponder::handleError(Payload errorPayload) {
-  errorConsumer(std::move(errorPayload));
+void ChannelResponder::handleError(folly::exception_wrapper ew) {
+  errorConsumer(std::move(ew));
   terminatePublisher();
 }
 
