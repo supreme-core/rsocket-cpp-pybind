@@ -16,38 +16,11 @@
 
 #include <memory>
 
+#include <folly/io/IOBuf.h>
+
 #include "yarpl/flowable/Subscriber.h"
 
-namespace folly {
-class IOBuf;
-}
-
 namespace rsocket {
-
-using std::shared_ptr;
-
-class DuplexSubscriber
-    : public yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>> {
- public:
-  void onSubscribe(
-      std::shared_ptr<yarpl::flowable::Subscription> sub) override {
-    subscription_ = sub;
-  }
-  void onComplete() override {
-    subscription_.reset();
-  }
-  void onError(folly::exception_wrapper) override {
-    subscription_.reset();
-  }
-
- protected:
-  std::shared_ptr<yarpl::flowable::Subscription> subscription() {
-    return subscription_;
-  }
-
- private:
-  std::shared_ptr<yarpl::flowable::Subscription> subscription_;
-};
 
 /// Represents a connection of the underlying protocol, on top of which the
 /// RSocket protocol is layered.  The underlying protocol MUST provide an
@@ -67,7 +40,6 @@ class DuplexSubscriber
 class DuplexConnection {
  public:
   using Subscriber = yarpl::flowable::Subscriber<std::unique_ptr<folly::IOBuf>>;
-  using DuplexSubscriber = rsocket::DuplexSubscriber;
 
   virtual ~DuplexConnection() = default;
 
@@ -87,4 +59,5 @@ class DuplexConnection {
     return false;
   }
 };
+
 } // namespace rsocket

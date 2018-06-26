@@ -42,7 +42,6 @@ struct FuzzerConnectionAcceptor : rsocket::ConnectionAcceptor {
 
 struct FuzzerDuplexConnection : rsocket::DuplexConnection {
   using Subscriber = rsocket::DuplexConnection::Subscriber;
-  using DuplexSubscriber = rsocket::DuplexConnection::DuplexSubscriber;
 
   FuzzerDuplexConnection() {}
 

@@ -74,8 +74,8 @@ size_t FramedReader::readFrameLength() const {
 }
 
 void FramedReader::onSubscribe(std::shared_ptr<Subscription> subscription) {
-  DuplexConnection::DuplexSubscriber::onSubscribe(subscription);
-  subscription->request(std::numeric_limits<int64_t>::max());
+  subscription_ = std::move(subscription);
+  subscription_->request(std::numeric_limits<int64_t>::max());
 }
 
 void FramedReader::onNext(std::unique_ptr<folly::IOBuf> payload) {
@@ -139,7 +139,7 @@ void FramedReader::parseFrames() {
 
 void FramedReader::onComplete() {
   payloadQueue_.move();
-  DuplexConnection::DuplexSubscriber::onComplete();
+  auto subscription = std::move(subscription_);
   if (auto subscriber = std::move(inner_)) {
     // After this call the instance can be destroyed!
     subscriber->onComplete();
@@ -148,7 +148,7 @@ void FramedReader::onComplete() {
 
 void FramedReader::onError(folly::exception_wrapper ex) {
   payloadQueue_.move();
-  DuplexConnection::DuplexSubscriber::onError({});
+  auto subscription = std::move(subscription_);
   if (auto subscriber = std::move(inner_)) {
     // After this call the instance can be destroyed!
     subscriber->onError(std::move(ex));
@@ -204,12 +204,13 @@ void FramedReader::error(std::string errorMsg) {
   VLOG(1) << "error: " << errorMsg;
 
   payloadQueue_.move();
-  if (DuplexConnection::DuplexSubscriber::subscription()) {
-    DuplexConnection::DuplexSubscriber::subscription()->cancel();
+  if (auto subscription = std::move(subscription_)) {
+    subscription->cancel();
   }
   if (auto subscriber = std::move(inner_)) {
     // After this call the instance can be destroyed!
     subscriber->onError(std::runtime_error{std::move(errorMsg)});
   }
 }
+
 } // namespace rsocket

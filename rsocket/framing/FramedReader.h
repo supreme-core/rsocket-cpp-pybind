@@ -23,7 +23,7 @@
 
 namespace rsocket {
 
-class FramedReader : public DuplexConnection::DuplexSubscriber,
+class FramedReader : public DuplexConnection::Subscriber,
                      public yarpl::flowable::Subscription,
                      public std::enable_shared_from_this<FramedReader> {
  public:
@@ -54,6 +54,7 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
 
   size_t readFrameLength() const;
 
+  std::shared_ptr<yarpl::flowable::Subscription> subscription_;
   std::shared_ptr<DuplexConnection::Subscriber> inner_;
 
   Allowance allowance_;
@@ -62,4 +63,5 @@ class FramedReader : public DuplexConnection::DuplexSubscriber,
   folly::IOBufQueue payloadQueue_{folly::IOBufQueue::cacheChainLength()};
   const std::shared_ptr<ProtocolVersion> version_;
 };
+
 } // namespace rsocket
