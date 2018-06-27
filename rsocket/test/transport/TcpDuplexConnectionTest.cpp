@@ -41,9 +41,12 @@ makeSingleClientServer(
     EventBase* clientEvb) {
   Promise<Unit> serverPromise;
 
-  TcpConnectionAcceptor::Options options(
-      0 /*port*/, 1 /*threads*/, 0 /*backlog*/);
-  auto server = std::make_unique<TcpConnectionAcceptor>(options);
+  TcpConnectionAcceptor::Options options;
+  options.port = 0;
+  options.threads = 1;
+  options.backlog = 0;
+
+  auto server = std::make_unique<TcpConnectionAcceptor>(std::move(options));
   server->start(
       [&serverPromise, &serverConnection, &serverEvb](
           std::unique_ptr<DuplexConnection> connection, EventBase& eventBase) {

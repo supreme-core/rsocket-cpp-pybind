@@ -15,12 +15,9 @@
 #pragma once
 
 #include <folly/io/async/AsyncServerSocket.h>
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "rsocket/ConnectionAcceptor.h"
-
-namespace folly {
-class ScopedEventBaseThread;
-}
 
 namespace rsocket {
 
@@ -32,28 +29,18 @@ namespace rsocket {
 class TcpConnectionAcceptor : public ConnectionAcceptor {
  public:
   struct Options {
-    explicit Options(
-        uint16_t port_ = 8080,
-        size_t threads_ = 2,
-        int backlog_ = 10)
-        : address("::", port_), threads(threads_), backlog(backlog_) {}
-
     /// Address to listen on
-    folly::SocketAddress address;
+    folly::SocketAddress address{"::", 8080};
 
     /// Number of worker threads processing requests.
-    size_t threads;
+    size_t threads{2};
 
     /// Number of connections to buffer before accept handlers process them.
-    int backlog;
+    int backlog{10};
   };
-
-  //////////////////////////////////////////////////////////////////////////////
 
   explicit TcpConnectionAcceptor(Options);
   ~TcpConnectionAcceptor();
-
-  //////////////////////////////////////////////////////////////////////////////
 
   // ConnectionAcceptor overrides.
 
@@ -75,6 +62,9 @@ class TcpConnectionAcceptor : public ConnectionAcceptor {
  private:
   class SocketCallback;
 
+  /// Options this acceptor has been configured with.
+  const Options options_;
+
   /// The thread driving the AsyncServerSocket.
   std::unique_ptr<folly::ScopedEventBaseThread> serverThread_;
 
@@ -87,8 +77,6 @@ class TcpConnectionAcceptor : public ConnectionAcceptor {
 
   /// The socket listening for new connections.
   folly::AsyncServerSocket::UniquePtr serverSocket_;
-
-  /// Options this acceptor has been configured with.
-  Options options_;
 };
+
 } // namespace rsocket
