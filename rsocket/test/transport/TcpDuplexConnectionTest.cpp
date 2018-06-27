@@ -42,7 +42,7 @@ makeSingleClientServer(
   Promise<Unit> serverPromise;
 
   TcpConnectionAcceptor::Options options;
-  options.port = 0;
+  options.address = folly::SocketAddress{"::", 0};
   options.threads = 1;
   options.backlog = 0;
 
