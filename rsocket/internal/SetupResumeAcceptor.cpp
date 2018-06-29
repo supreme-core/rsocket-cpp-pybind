@@ -58,7 +58,7 @@ class SetupResumeAcceptor::OneFrameSubscriber final
 
   void onSubscribeImpl() override {
     DCHECK(acceptor_.inOwnerThread());
-    this->request(std::numeric_limits<int32_t>::max());
+    this->request(1);
   }
 
   void onNextImpl(std::unique_ptr<folly::IOBuf> buf) override {
