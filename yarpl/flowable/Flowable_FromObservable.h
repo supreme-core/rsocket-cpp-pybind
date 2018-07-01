@@ -45,8 +45,9 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
       std::shared_ptr<observable::Observable<T>> observable,
       std::shared_ptr<flowable::Subscriber<T>> subscriber) override {
     observable_ = std::move(observable);
-    subscriber_ = std::move(subscriber);
-    subscriber_->onSubscribe(this->ref_from_this(this));
+    subscriberWeak_ = subscriber;
+    subscriber_ = subscriber;
+    subscriber->onSubscribe(this->ref_from_this(this));
     observable_->subscribe(this->ref_from_this(this));
   }
 
@@ -59,8 +60,9 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
 
   // only for testing purposes
   void setTestSubscriber(std::shared_ptr<flowable::Subscriber<T>> subscriber) {
-    subscriber_ = std::move(subscriber);
-    subscriber_->onSubscribe(this->ref_from_this(this));
+    subscriberWeak_ = subscriber;
+    subscriber_ = subscriber;
+    subscriber->onSubscribe(this->ref_from_this(this));
   }
 
   void request(int64_t n) override {
@@ -85,18 +87,15 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
   }
 
   void cancel() override {
-    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
-      return;
+    if (auto subscriber = subscriber_.exchange(nullptr)) {
+      observable::Observer<T>::subscription()->cancel();
+      observable_.reset();
     }
-    observable::Observer<T>::subscription()->cancel();
-    credits::cancel(&requested_);
-    subscriber_ = nullptr;
-    observable_.reset();
   }
 
   // Observer override
   void onNext(T t) override {
-    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
+    if (subscriberWeak_.expired()) {
       return;
     }
     if (requested_ > 0) {
@@ -118,43 +117,40 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
 
   virtual void downstreamOnNext(T t) {
     credits::consume(&requested_, 1);
-    subscriber_->onNext(std::move(t));
+    if (auto subscriber = subscriberWeak_.lock()) {
+      subscriber->onNext(std::move(t));
+    }
   }
 
   void downstreamOnComplete() {
-    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
-      return;
+    if (auto subscriber = subscriber_.exchange(nullptr)) {
+      subscriber->onComplete();
+      observable::Observer<T>::onComplete();
+      observable_.reset();
     }
-    auto subscriber = std::move(subscriber_);
-    subscriber->onComplete();
-    observable::Observer<T>::onComplete();
-    observable_.reset();
   }
 
   void downstreamOnError(folly::exception_wrapper error) {
-    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
-      return;
+    if (auto subscriber = subscriber_.exchange(nullptr)) {
+      subscriber->onError(std::move(error));
+      observable::Observer<T>::onError(folly::exception_wrapper());
+      observable_.reset();
     }
-    auto subscriber = std::move(subscriber_);
-    subscriber->onError(std::move(error));
-    observable::Observer<T>::onError(folly::exception_wrapper());
-    observable_.reset();
   }
 
   void downstreamOnErrorAndCancel(folly::exception_wrapper error) {
-    if (observable::Observer<T>::isUnsubscribedOrTerminated()) {
-      return;
-    }
-    auto subscriber = std::move(subscriber_);
-    subscriber->onError(std::move(error));
+    if (auto subscriber = subscriber_.exchange(nullptr)) {
+      subscriber->onError(std::move(error));
 
-    observable_.reset();
-    observable::Observer<T>::subscription()->cancel();
+      observable_.reset();
+      observable::Observer<T>::subscription()->cancel();
+    }
   }
 
  private:
   std::shared_ptr<observable::Observable<T>> observable_;
-  std::shared_ptr<flowable::Subscriber<T>> subscriber_;
+  folly::Synchronized<std::shared_ptr<flowable::Subscriber<T>>> subscriber_;
+  std::weak_ptr<flowable::Subscriber<T>> subscriberWeak_;
   std::atomic<int64_t> requested_{0};
 };
 
