@@ -45,7 +45,7 @@ TEST(WarmResumptionTest, SuccessfulResumption) {
   auto result =
       client->disconnect(std::runtime_error("Test triggered disconnect"))
           .then([&] { return client->resume(); });
-  EXPECT_NO_THROW(result.get());
+  EXPECT_NO_THROW(std::move(result).get());
   ts->request(3);
   ts->awaitTerminalEvent();
   ts->assertSuccess();
@@ -163,7 +163,7 @@ TEST(WarmResumptionTest, DifferentEvb) {
   auto result =
       client->disconnect(std::runtime_error("Test triggered disconnect"))
           .then([&] { return client->resume(); });
-  EXPECT_NO_THROW(result.get());
+  EXPECT_NO_THROW(std::move(result).get());
   ts->request(3);
   ts->awaitTerminalEvent();
   ts->assertSuccess();
