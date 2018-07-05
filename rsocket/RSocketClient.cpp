@@ -171,42 +171,38 @@ folly::Future<folly::Unit> RSocketClient::disconnect(
 void RSocketClient::fromConnection(
     std::unique_ptr<DuplexConnection> connection,
     folly::EventBase& transportEvb,
-    SetupParameters setupParameters) {
+    SetupParameters params) {
   if (!evb_) {
     // If no EventBase is given for the stateMachine, then use the transport's
     // EventBase to drive the stateMachine.
     evb_ = &transportEvb;
   }
   createState();
-  std::unique_ptr<DuplexConnection> framedConnection;
+
+  std::unique_ptr<DuplexConnection> framed;
   if (connection->isFramed()) {
-    framedConnection = std::move(connection);
+    framed = std::move(connection);
   } else {
-    framedConnection = std::make_unique<FramedDuplexConnection>(
-        std::move(connection), setupParameters.protocolVersion);
+    framed = std::make_unique<FramedDuplexConnection>(
+        std::move(connection), params.protocolVersion);
   }
-  auto transport =
-      std::make_shared<FrameTransportImpl>(std::move(framedConnection));
-  if (evb_ != &transportEvb) {
-    // If the StateMachine EventBase is different from the transport
-    // EventBase, then use ScheduledFrameTransport and ScheduledFrameProcessor
-    // to ensure the RSocketStateMachine and Transport live on the desired
-    // EventBases
-    auto scheduledFT = std::make_shared<ScheduledFrameTransport>(
-        std::move(transport),
-        &transportEvb, /* Transport EventBase */
-        evb_); /* StateMachine EventBase */
-    evb_->runInEventBaseThread(
-        [stateMachine = stateMachine_,
-         scheduledFT = std::move(scheduledFT),
-         setupParameters = std::move(setupParameters)]() mutable {
-          stateMachine->connectClient(
-              std::move(scheduledFT), std::move(setupParameters));
-        });
-  } else {
-    stateMachine_->connectClient(
-        std::move(transport), std::move(setupParameters));
+  auto transport = std::make_shared<FrameTransportImpl>(std::move(framed));
+
+  if (evb_ == &transportEvb) {
+    stateMachine_->connectClient(std::move(transport), std::move(params));
+    return;
   }
+
+  // If the StateMachine EventBase is different from the transport EventBase,
+  // then use ScheduledFrameTransport and ScheduledFrameProcessor to ensure the
+  // RSocketStateMachine and Transport live on the desired EventBases.
+  auto scheduledFT = std::make_shared<ScheduledFrameTransport>(
+      std::move(transport), &transportEvb, evb_);
+  evb_->runInEventBaseThread([stateMachine = stateMachine_,
+                              scheduledFT = std::move(scheduledFT),
+                              params = std::move(params)]() mutable {
+    stateMachine->connectClient(std::move(scheduledFT), std::move(params));
+  });
 }
 
 void RSocketClient::createState() {

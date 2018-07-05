@@ -62,8 +62,8 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
         // and since there is no guarantee that the Future returned from the
         // connectionFactory::connect method is executed on the event base, we
         // have to ensure it by using folly::via
-        auto* transportEvb = &connection.eventBase;
-        return via(
+        auto transportEvb = &connection.eventBase;
+        return folly::via(
             transportEvb,
             [connection = std::move(connection),
              createRSC = std::move(createRSC)]() mutable {
@@ -102,7 +102,7 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createResumedClient(
 std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
     std::unique_ptr<DuplexConnection> connection,
     folly::EventBase& transportEvb,
-    SetupParameters setupParameters,
+    SetupParameters params,
     std::shared_ptr<ConnectionFactory> connectionFactory,
     std::shared_ptr<RSocketResponder> responder,
     std::chrono::milliseconds keepaliveInterval,
@@ -111,13 +111,10 @@ std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
     std::shared_ptr<ResumeManager> resumeManager,
     std::shared_ptr<ColdResumeHandler> coldResumeHandler,
     folly::EventBase* stateMachineEvb) {
-  // TODO: remove this stupid limitation
-  CHECK(transportEvb.isInEventBaseThread());
-
-  auto c = std::unique_ptr<RSocketClient>(new RSocketClient(
+  auto client = std::unique_ptr<RSocketClient>(new RSocketClient(
       std::move(connectionFactory),
-      setupParameters.protocolVersion,
-      setupParameters.token,
+      params.protocolVersion,
+      params.token,
       std::move(responder),
       keepaliveInterval,
       std::move(stats),
@@ -125,9 +122,9 @@ std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
       std::move(resumeManager),
       std::move(coldResumeHandler),
       stateMachineEvb));
-  c->fromConnection(
-      std::move(connection), transportEvb, std::move(setupParameters));
-  return c;
+  client->fromConnection(
+      std::move(connection), transportEvb, std::move(params));
+  return client;
 }
 
 std::unique_ptr<RSocketServer> RSocket::createServer(
@@ -136,4 +133,5 @@ std::unique_ptr<RSocketServer> RSocket::createServer(
   return std::make_unique<RSocketServer>(
       std::move(connectionAcceptor), std::move(stats));
 }
+
 } // namespace rsocket

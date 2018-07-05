@@ -56,8 +56,8 @@ class RSocket {
       ProtocolVersion protocolVersion = ProtocolVersion::Latest,
       folly::EventBase* stateMachineEvb = nullptr);
 
-  // Creates a RSocketClient from an existing DuplexConnection
-  // keepaliveInterval of 0 will result in no keepAlives
+  // Creates a RSocketClient from an existing DuplexConnection.  A keepalive
+  // interval of 0 will result in no keepalives.
   static std::unique_ptr<RSocketClient> createClientFromConnection(
       std::unique_ptr<DuplexConnection> connection,
       folly::EventBase& transportEvb,
@@ -67,11 +67,9 @@ class RSocket {
           std::make_shared<RSocketResponder>(),
       std::chrono::milliseconds keepaliveInterval = kDefaultKeepaliveInterval,
       std::shared_ptr<RSocketStats> stats = RSocketStats::noop(),
-      std::shared_ptr<RSocketConnectionEvents> connectionEvents =
-          std::shared_ptr<RSocketConnectionEvents>(),
+      std::shared_ptr<RSocketConnectionEvents> connectionEvents = nullptr,
       std::shared_ptr<ResumeManager> resumeManager = ResumeManager::makeEmpty(),
-      std::shared_ptr<ColdResumeHandler> coldResumeHandler =
-          std::shared_ptr<ColdResumeHandler>(),
+      std::shared_ptr<ColdResumeHandler> coldResumeHandler = nullptr,
       folly::EventBase* stateMachineEvb = nullptr);
 
   // A convenience function to create RSocketServer
