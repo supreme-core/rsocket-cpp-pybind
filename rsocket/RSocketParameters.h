@@ -14,11 +14,13 @@
 
 #pragma once
 
-#include <folly/io/IOBuf.h>
+#include <functional>
+#include <iosfwd>
 #include <string>
+#include <vector>
+
 #include "rsocket/Payload.h"
-#include "rsocket/framing/FrameSerializer.h"
-#include "rsocket/internal/Common.h"
+#include "rsocket/framing/Frame.h"
 
 namespace rsocket {
 
@@ -27,8 +29,8 @@ using OnRSocketResume =
 
 class RSocketParameters {
  public:
-  RSocketParameters(bool _resumable, ProtocolVersion _protocolVersion)
-      : resumable(_resumable), protocolVersion(std::move(_protocolVersion)) {}
+  RSocketParameters(bool resume, ProtocolVersion version)
+      : resumable{resume}, protocolVersion{std::move(version)} {}
 
   bool resumable;
   ProtocolVersion protocolVersion;
@@ -37,18 +39,18 @@ class RSocketParameters {
 class SetupParameters : public RSocketParameters {
  public:
   explicit SetupParameters(
-      std::string _metadataMimeType = "text/plain",
-      std::string _dataMimeType = "text/plain",
-      Payload _payload = Payload(),
-      bool _resumable = false,
-      const ResumeIdentificationToken& _token =
+      std::string metadataMime = "text/plain",
+      std::string dataMime = "text/plain",
+      Payload buf = Payload(),
+      bool resume = false,
+      ResumeIdentificationToken resumeToken =
           ResumeIdentificationToken::generateNew(),
-      ProtocolVersion _protocolVersion = ProtocolVersion::Latest)
-      : RSocketParameters(_resumable, _protocolVersion),
-        metadataMimeType(std::move(_metadataMimeType)),
-        dataMimeType(std::move(_dataMimeType)),
-        payload(std::move(_payload)),
-        token(_token) {}
+      ProtocolVersion version = ProtocolVersion::Latest)
+      : RSocketParameters(resume, version),
+        metadataMimeType(std::move(metadataMime)),
+        dataMimeType(std::move(dataMime)),
+        payload(std::move(buf)),
+        token(resumeToken) {}
 
   std::string metadataMimeType;
   std::string dataMimeType;
@@ -61,14 +63,14 @@ std::ostream& operator<<(std::ostream&, const SetupParameters&);
 class ResumeParameters : public RSocketParameters {
  public:
   ResumeParameters(
-      ResumeIdentificationToken _token,
-      ResumePosition _serverPosition,
-      ResumePosition _clientPosition,
-      ProtocolVersion _protocolVersion)
-      : RSocketParameters(true, _protocolVersion),
-        token(std::move(_token)),
-        serverPosition(_serverPosition),
-        clientPosition(_clientPosition) {}
+      ResumeIdentificationToken resumeToken,
+      ResumePosition serverPos,
+      ResumePosition clientPos,
+      ProtocolVersion version)
+      : RSocketParameters(true, version),
+        token(std::move(resumeToken)),
+        serverPosition(serverPos),
+        clientPosition(clientPos) {}
 
   ResumeIdentificationToken token;
   ResumePosition serverPosition;

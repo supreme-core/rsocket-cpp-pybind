@@ -253,6 +253,8 @@ add_library(
   rsocket/framing/FramedReader.h
   rsocket/framing/ProtocolVersion.cpp
   rsocket/framing/ProtocolVersion.h
+  rsocket/framing/ResumeIdentificationToken.cpp
+  rsocket/framing/ResumeIdentificationToken.h
   rsocket/framing/ScheduledFrameProcessor.cpp
   rsocket/framing/ScheduledFrameProcessor.h
   rsocket/framing/ScheduledFrameTransport.cpp

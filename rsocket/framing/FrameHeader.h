@@ -18,10 +18,13 @@
 
 #include "rsocket/framing/FrameFlags.h"
 #include "rsocket/framing/FrameType.h"
-#include "rsocket/internal/Common.h"
 
 namespace rsocket {
 
+/// A unique identifier of a stream.
+using StreamId = uint32_t;
+
+/// Header that begins every RSocket frame.
 class FrameHeader {
  public:
   FrameHeader() {}

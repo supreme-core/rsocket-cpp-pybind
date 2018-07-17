@@ -16,6 +16,7 @@
 
 #include <folly/io/async/EventBase.h>
 
+#include "rsocket/framing/FrameSerializer.h"
 #include "rsocket/framing/FrameTransportImpl.h"
 #include "rsocket/internal/SetupResumeAcceptor.h"
 #include "rsocket/test/test_utils/MockDuplexConnection.h"

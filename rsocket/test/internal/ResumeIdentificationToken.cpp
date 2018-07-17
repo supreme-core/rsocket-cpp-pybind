@@ -14,7 +14,8 @@
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
-#include "rsocket/internal/Common.h"
+
+#include "rsocket/framing/ResumeIdentificationToken.h"
 
 using namespace testing;
 using namespace rsocket;

@@ -27,7 +27,7 @@
 #include "rsocket/framing/FrameHeader.h"
 #include "rsocket/framing/FrameType.h"
 #include "rsocket/framing/ProtocolVersion.h"
-#include "rsocket/internal/Common.h"
+#include "rsocket/framing/ResumeIdentificationToken.h"
 
 namespace folly {
 template <typename V>
@@ -48,6 +48,9 @@ void checkFlags(const Payload&, FrameFlags);
 
 } // namespace detail
 
+using ResumePosition = int64_t;
+constexpr ResumePosition kUnspecifiedResumePosition = -1;
+
 /// Frames do not form hierarchy, as we never perform type erasure on a frame.
 /// We use inheritance only to save code duplication.
 ///
@@ -63,7 +66,7 @@ class Frame_REQUEST_N {
    *
    * n.b. this is less than size_t because of the Frame encoding restrictions.
    */
-  static constexpr int64_t kMaxRequestN = rsocket::kMaxRequestN;
+  static constexpr int64_t kMaxRequestN = std::numeric_limits<int32_t>::max();
 
   Frame_REQUEST_N() = default;
   Frame_REQUEST_N(StreamId streamId, uint32_t requestN)
@@ -432,7 +435,5 @@ class Frame_RESUME_OK {
   ResumePosition position_{};
 };
 std::ostream& operator<<(std::ostream&, const Frame_RESUME_OK&);
-/// @}
 
-StreamType getStreamType(FrameType frameType);
 } // namespace rsocket

@@ -15,6 +15,8 @@
 #pragma once
 
 #include <folly/ExceptionWrapper.h>
+
+#include "rsocket/framing/FrameHeader.h"
 #include "rsocket/internal/Common.h"
 #include "rsocket/statemachine/StreamFragmentAccumulator.h"
 #include "yarpl/Flowable.h"

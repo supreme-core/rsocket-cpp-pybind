@@ -17,6 +17,7 @@
 #include <folly/io/Cursor.h>
 
 #include "rsocket/framing/FrameSerializer_v1_0.h"
+#include "rsocket/internal/Common.h"
 
 namespace rsocket {
 

@@ -17,6 +17,7 @@
 #include "yarpl/Flowable.h"
 
 #include "rsocket/Payload.h"
+#include "rsocket/framing/FrameHeader.h"
 #include "rsocket/internal/Common.h"
 
 namespace rsocket {
@@ -51,4 +52,5 @@ class ColdResumeHandler {
       std::string streamToken,
       size_t consumerAllowance);
 };
+
 } // namespace rsocket
