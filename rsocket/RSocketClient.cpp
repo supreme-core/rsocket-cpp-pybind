@@ -69,10 +69,12 @@ folly::Future<folly::Unit> RSocketClient::resume() {
       << "The client was likely created without ConnectionFactory. Can't "
       << "resume";
 
-  return connectionFactory_->connect().then(
-      [this](ConnectionFactory::ConnectedDuplexConnection connection) mutable {
-        return resumeFromConnection(std::move(connection));
-      });
+  return connectionFactory_->connect(ResumeStatus::RESUMING)
+      .then(
+          [this](
+              ConnectionFactory::ConnectedDuplexConnection connection) mutable {
+            return resumeFromConnection(std::move(connection));
+          });
 }
 
 folly::Future<folly::Unit> RSocketClient::resumeFromConnection(

@@ -24,6 +24,8 @@ class EventBase;
 
 namespace rsocket {
 
+enum class ResumeStatus { NEW_SESSION, RESUMING };
+
 /**
  * Common interface for a client to create connections and turn them into
  * DuplexConnections.
@@ -56,6 +58,7 @@ class ConnectionFactory {
    *
    * Resource creation depends on the particular implementation.
    */
-  virtual folly::Future<ConnectedDuplexConnection> connect() = 0;
+  virtual folly::Future<ConnectedDuplexConnection> connect(
+      ResumeStatus resume) = 0;
 };
 } // namespace rsocket

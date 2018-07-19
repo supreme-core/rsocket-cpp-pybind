@@ -55,9 +55,10 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
             stateMachineEvb);
       };
 
-  return connectionFactory->connect().then(
-      [createRSC = std::move(createRSC)](
-          ConnectionFactory::ConnectedDuplexConnection connection) mutable {
+  return connectionFactory->connect(ResumeStatus::NEW_SESSION)
+      .then([createRSC = std::move(createRSC)](
+                ConnectionFactory::ConnectedDuplexConnection
+                    connection) mutable {
         // fromConnection method must be called from the transport eventBase
         // and since there is no guarantee that the Future returned from the
         // connectionFactory::connect method is executed on the event base, we

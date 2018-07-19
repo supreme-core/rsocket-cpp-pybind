@@ -47,7 +47,8 @@ class TcpConnectionFactory : public ConnectionFactory {
    *
    * Each call to connect() creates a new AsyncSocket.
    */
-  folly::Future<ConnectedDuplexConnection> connect() override;
+  folly::Future<ConnectedDuplexConnection> connect(
+      ResumeStatus resume) override;
 
   static std::unique_ptr<DuplexConnection> createDuplexConnectionFromSocket(
       folly::AsyncTransportWrapper::UniquePtr socket,

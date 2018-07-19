@@ -111,7 +111,7 @@ TEST(RSocketClientServer, ServerGetsGarbage) {
   auto factory =
       std::make_shared<TcpConnectionFactory>(*worker.getEventBase(), address);
 
-  auto result = factory->connect().get();
+  auto result = factory->connect(ResumeStatus::NEW_SESSION).get();
   auto connection = std::move(result.connection);
   auto evb = &result.eventBase;
 

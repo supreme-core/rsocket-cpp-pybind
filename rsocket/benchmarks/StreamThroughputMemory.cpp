@@ -136,7 +136,8 @@ class Factory : public ConnectionFactory {
     server_->start([responder](const SetupParameters&) { return responder; });
   }
 
-  folly::Future<ConnectedDuplexConnection> connect() override {
+  folly::Future<ConnectedDuplexConnection> connect(
+      ResumeStatus /* unused */) override {
     return folly::via(worker_.getEventBase(), [this] {
       return ConnectedDuplexConnection{std::move(connection_),
                                        *worker_.getEventBase()};
