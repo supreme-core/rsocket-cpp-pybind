@@ -98,7 +98,7 @@ TcpConnectionFactory::TcpConnectionFactory(
 TcpConnectionFactory::~TcpConnectionFactory() = default;
 
 folly::Future<ConnectionFactory::ConnectedDuplexConnection>
-TcpConnectionFactory::connect(ResumeStatus /* unused */) {
+TcpConnectionFactory::connect(ProtocolVersion, ResumeStatus /* unused */) {
   folly::Promise<ConnectionFactory::ConnectedDuplexConnection> connectPromise;
   auto connectFuture = connectPromise.getFuture();
 

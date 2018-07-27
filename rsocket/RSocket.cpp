@@ -28,7 +28,7 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
     folly::EventBase* stateMachineEvb) {
   CHECK(resumeManager)
       << "provide ResumeManager::makeEmpty() instead of nullptr";
-
+  auto protocolVersion = setupParameters.protocolVersion;
   auto createRSC =
       [connectionFactory,
        setupParameters = std::move(setupParameters),
@@ -55,22 +55,22 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
             stateMachineEvb);
       };
 
-  return connectionFactory->connect(ResumeStatus::NEW_SESSION)
-      .then([createRSC = std::move(createRSC)](
-                ConnectionFactory::ConnectedDuplexConnection
-                    connection) mutable {
-        // fromConnection method must be called from the transport eventBase
-        // and since there is no guarantee that the Future returned from the
-        // connectionFactory::connect method is executed on the event base, we
-        // have to ensure it by using folly::via
-        auto transportEvb = &connection.eventBase;
-        return folly::via(
-            transportEvb,
-            [connection = std::move(connection),
-             createRSC = std::move(createRSC)]() mutable {
-              return createRSC(std::move(connection));
-            });
-      });
+  return connectionFactory->connect(protocolVersion, ResumeStatus::NEW_SESSION)
+      .then(
+          [createRSC = std::move(createRSC)](
+              ConnectionFactory::ConnectedDuplexConnection connection) mutable {
+            // fromConnection method must be called from the transport eventBase
+            // and since there is no guarantee that the Future returned from the
+            // connectionFactory::connect method is executed on the event base,
+            // we have to ensure it by using folly::via
+            auto transportEvb = &connection.eventBase;
+            return folly::via(
+                transportEvb,
+                [connection = std::move(connection),
+                 createRSC = std::move(createRSC)]() mutable {
+                  return createRSC(std::move(connection));
+                });
+          });
 }
 
 folly::Future<std::unique_ptr<RSocketClient>> RSocket::createResumedClient(
