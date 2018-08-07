@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include "rsocket/RSocketServiceHandler.h"
 
 namespace rsocket {
