@@ -92,13 +92,12 @@ TcpConnectionFactory::TcpConnectionFactory(
     std::shared_ptr<folly::SSLContext> sslContext)
     : eventBase_(&eventBase),
       address_(std::move(address)),
-      sslContext_(std::move(sslContext)) {
-}
+      sslContext_(std::move(sslContext)) {}
 
 TcpConnectionFactory::~TcpConnectionFactory() = default;
 
 folly::Future<ConnectionFactory::ConnectedDuplexConnection>
-TcpConnectionFactory::connect(ProtocolVersion, ResumeStatus /* unused */) {
+TcpConnectionFactory::connect(ResumeStatus /* unused */) {
   folly::Promise<ConnectionFactory::ConnectedDuplexConnection> connectPromise;
   auto connectFuture = connectPromise.getFuture();
 

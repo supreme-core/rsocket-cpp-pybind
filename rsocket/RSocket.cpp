@@ -28,7 +28,7 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
     folly::EventBase* stateMachineEvb) {
   CHECK(resumeManager)
       << "provide ResumeManager::makeEmpty() instead of nullptr";
-  auto protocolVersion = setupParameters.protocolVersion;
+
   auto createRSC =
       [connectionFactory,
        setupParameters = std::move(setupParameters),
@@ -55,7 +55,7 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
             stateMachineEvb);
       };
 
-  return connectionFactory->connect(protocolVersion, ResumeStatus::NEW_SESSION)
+  return connectionFactory->connect(ResumeStatus::NEW_SESSION)
       .then(
           [createRSC = std::move(createRSC)](
               ConnectionFactory::ConnectedDuplexConnection connection) mutable {

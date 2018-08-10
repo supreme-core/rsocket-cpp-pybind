@@ -74,7 +74,7 @@ folly::Future<folly::Unit> RSocketClient::resume() {
       << "The client was likely created without ConnectionFactory. Can't "
       << "resume";
 
-  return connectionFactory_->connect(protocolVersion_, ResumeStatus::RESUMING)
+  return connectionFactory_->connect(ResumeStatus::RESUMING)
       .then(
           [this](
               ConnectionFactory::ConnectedDuplexConnection connection) mutable {

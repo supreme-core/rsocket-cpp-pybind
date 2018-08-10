@@ -37,9 +37,6 @@ typedef Range<const char*> StringPiece;
 
 namespace rsocket {
 
-/// A unique identifier of a stream.
-using StreamId = uint32_t;
-
 constexpr std::chrono::seconds kDefaultKeepaliveInterval{5};
 
 constexpr int64_t kMaxRequestN = std::numeric_limits<int32_t>::max();

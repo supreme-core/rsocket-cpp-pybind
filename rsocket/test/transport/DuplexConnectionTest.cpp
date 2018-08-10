@@ -36,12 +36,12 @@ void makeMultipleSetInputGetOutputCalls(
       // Set another subscriber and receive messages
       clientConnection->setInput(clientSubscriber);
       // Get another subscriber and send messages
-      clientConnection->send(folly::IOBuf::copyBuffer("0123456"));
+      clientConnection->send(folly::IOBuf::copyBuffer("01234"));
     });
     serverSubscriber->awaitFrames(1);
 
     serverEvb->runInEventBaseThreadAndWait(
-        [&] { serverConnection->send(folly::IOBuf::copyBuffer("6543210")); });
+        [&] { serverConnection->send(folly::IOBuf::copyBuffer("43210")); });
     clientSubscriber->awaitFrames(1);
 
     clientEvb->runInEventBaseThreadAndWait(
@@ -84,7 +84,7 @@ void verifyInputAndOutputIsUntied(
 
   clientEvb->runInEventBaseThreadAndWait([&] {
     clientConnection->setInput(clientSubscriber);
-    clientConnection->send(folly::IOBuf::copyBuffer("0123456"));
+    clientConnection->send(folly::IOBuf::copyBuffer("01234"));
   });
   serverSubscriber->awaitFrames(1);
 
@@ -95,7 +95,7 @@ void verifyInputAndOutputIsUntied(
       auto deleteSubscriber = std::move(clientSubscriber);
     }
     // Output is still active
-    clientConnection->send(folly::IOBuf::copyBuffer("0123456"));
+    clientConnection->send(folly::IOBuf::copyBuffer("01234"));
   });
   serverSubscriber->awaitFrames(1);
 
@@ -107,13 +107,13 @@ void verifyInputAndOutputIsUntied(
   clientEvb->runInEventBaseThreadAndWait([&] {
     // Set new input subscriber
     clientConnection->setInput(clientSubscriber);
-    clientConnection->send(folly::IOBuf::copyBuffer("0123456"));
+    clientConnection->send(folly::IOBuf::copyBuffer("01234"));
   });
   serverSubscriber->awaitFrames(1);
 
   // Still sending message from server to the client.
   serverEvb->runInEventBaseThreadAndWait(
-      [&] { serverConnection->send(folly::IOBuf::copyBuffer("6543210")); });
+      [&] { serverConnection->send(folly::IOBuf::copyBuffer("43210")); });
   clientSubscriber->awaitFrames(1);
 
   // Cleanup
@@ -181,13 +181,13 @@ void verifyClosingInputAndOutputDoesntCloseConnection(
 
   clientEvb->runInEventBaseThreadAndWait([&] {
     clientConnection->setInput(clientSubscriber);
-    clientConnection->send(folly::IOBuf::copyBuffer("0123456"));
+    clientConnection->send(folly::IOBuf::copyBuffer("01234"));
   });
   serverSubscriber->awaitFrames(1);
 
   // Wait till client is ready before sending message from server.
   serverEvb->runInEventBaseThreadAndWait(
-      [&] { serverConnection->send(folly::IOBuf::copyBuffer("6543210")); });
+      [&] { serverConnection->send(folly::IOBuf::copyBuffer("43210")); });
   clientSubscriber->awaitFrames(1);
 
   // Cleanup

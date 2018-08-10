@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "rsocket/framing/FrameSerializer.h"
+
 #include "rsocket/framing/FrameSerializer_v1_0.h"
 
 namespace rsocket {
@@ -47,18 +48,6 @@ folly::IOBufQueue FrameSerializer::createBufferQueue(size_t bufferSize) const {
   folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
   queue.append(std::move(buf));
   return queue;
-}
-
-folly::Optional<StreamId> FrameSerializer::peekStreamId(
-    const ProtocolVersion& protocolVersion,
-    const folly::IOBuf& frame) {
-  if (protocolVersion == FrameSerializerV1_0::Version) {
-    return FrameSerializerV1_0().peekStreamId(frame);
-  }
-
-  auto* msg = "unknown protocol version";
-  DCHECK(false) << msg;
-  throw std::runtime_error(msg);
 }
 
 } // namespace rsocket

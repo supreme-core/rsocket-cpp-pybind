@@ -137,7 +137,6 @@ class Factory : public ConnectionFactory {
   }
 
   folly::Future<ConnectedDuplexConnection> connect(
-      ProtocolVersion,
       ResumeStatus /* unused */) override {
     return folly::via(worker_.getEventBase(), [this] {
       return ConnectedDuplexConnection{std::move(connection_),
