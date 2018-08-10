@@ -48,6 +48,9 @@ class RSocketClient {
   // Returns the RSocketRequester associated with the RSocketClient.
   const std::shared_ptr<RSocketRequester>& getRequester() const;
 
+  // Returns if this client is currently disconnected
+  bool isDisconnected() const;
+
   // Resumes the client's connection.  If the client was previously connected
   // this will attempt a warm-resumption.  Otherwise this will attempt a
   // cold-resumption.

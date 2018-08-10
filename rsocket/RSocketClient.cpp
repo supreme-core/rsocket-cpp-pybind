@@ -64,6 +64,11 @@ const std::shared_ptr<RSocketRequester>& RSocketClient::getRequester() const {
   return requester_;
 }
 
+// Returns if this client is currently disconnected
+bool RSocketClient::isDisconnected() const {
+  return stateMachine_->isDisconnected();
+}
+
 folly::Future<folly::Unit> RSocketClient::resume() {
   CHECK(connectionFactory_)
       << "The client was likely created without ConnectionFactory. Can't "
