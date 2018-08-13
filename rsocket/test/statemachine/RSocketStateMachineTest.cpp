@@ -18,6 +18,7 @@
 #include <yarpl/single/SingleSubscriptions.h>
 #include <yarpl/single/Singles.h>
 #include <yarpl/test_utils/Mocks.h>
+#include "rsocket/RSocketConnectionEvents.h"
 #include "rsocket/RSocketResponder.h"
 #include "rsocket/framing/FrameSerializer_v1_0.h"
 #include "rsocket/framing/FrameTransportImpl.h"
@@ -68,6 +69,11 @@ class ResponderMock : public RSocketResponder {
   }
 };
 
+struct ConnectionEventsMock : public RSocketConnectionEvents {
+  MOCK_METHOD1(onDisconnected, void(const folly::exception_wrapper&));
+  MOCK_METHOD0(onStreamsPaused, void());
+};
+
 class RSocketStateMachineTest : public Test {
  public:
   auto createClient(
@@ -92,6 +98,37 @@ class RSocketStateMachineTest : public Test {
     setupParameters.resumable = false; // Not resumable!
     stateMachine->connectClient(
         std::move(transport), std::move(setupParameters));
+
+    return stateMachine;
+  }
+
+  auto createServer(
+      std::unique_ptr<MockDuplexConnection> connection,
+      std::shared_ptr<RSocketResponder> responder,
+      folly::Optional<ResumeIdentificationToken> resumeToken = folly::none,
+      std::shared_ptr<RSocketConnectionEvents> connectionEvents = nullptr) {
+    auto transport =
+        std::make_shared<FrameTransportImpl>(std::move(connection));
+
+    auto stateMachine = std::make_shared<RSocketStateMachine>(
+        std::move(responder),
+        nullptr,
+        RSocketMode::SERVER,
+        nullptr,
+        std::move(connectionEvents),
+        ResumeManager::makeEmpty(),
+        nullptr);
+
+    if (resumeToken) {
+      SetupParameters setupParameters;
+      setupParameters.resumable = true;
+      setupParameters.token = *resumeToken;
+      stateMachine->connectServer(std::move(transport), setupParameters);
+    } else {
+      SetupParameters setupParameters;
+      setupParameters.resumable = false;
+      stateMachine->connectServer(std::move(transport), setupParameters);
+    }
 
     return stateMachine;
   }
@@ -368,6 +405,27 @@ TEST_F(RSocketStateMachineTest, TransportOnNextClose) {
   FrameSerializerV1_0 serializer;
   auto buf = serializer.serializeOut(Frame_ERROR::connectionError("Hah!"));
   rawTransport->onNext(std::move(buf));
+}
+
+TEST_F(RSocketStateMachineTest, ResumeWithCurrentConnection) {
+  auto resumeToken = ResumeIdentificationToken::generateNew();
+
+  auto eventsMock = std::make_shared<ConnectionEventsMock>();
+  auto stateMachine = createServer(
+      std::make_unique<NiceMock<MockDuplexConnection>>(),
+      std::make_shared<RSocketResponder>(),
+      resumeToken,
+      eventsMock);
+
+  EXPECT_CALL(*eventsMock, onDisconnected(_)).Times(0);
+  EXPECT_CALL(*eventsMock, onStreamsPaused()).Times(0);
+
+  ResumeParameters resumeParams{resumeToken, 0, 0, ProtocolVersion::Latest};
+  auto transport = std::make_shared<FrameTransportImpl>(
+      std::make_unique<NiceMock<MockDuplexConnection>>());
+  stateMachine->resumeServer(transport, resumeParams);
+
+  stateMachine->close({}, StreamCompletionSignal::CONNECTION_END);
 }
 
 } // namespace rsocket

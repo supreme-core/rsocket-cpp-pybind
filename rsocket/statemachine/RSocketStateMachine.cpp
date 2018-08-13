@@ -154,8 +154,11 @@ bool RSocketStateMachine::resumeServer(
   const int64_t serverDelta =
       resumeManager_->lastSentPosition() - resumeParams.serverPosition;
 
-  std::runtime_error exn{"Connection being resumed, dropping old connection"};
-  disconnect(std::move(exn));
+  if (frameTransport) {
+    stats_->socketDisconnected();
+  }
+  closeFrameTransport(
+      std::runtime_error{"Connection being resumed, dropping old connection"});
   setProtocolVersionOrThrow(resumeParams.protocolVersion, frameTransport);
   connect(std::move(frameTransport));
 
