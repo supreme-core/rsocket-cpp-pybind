@@ -17,6 +17,7 @@
 #include <folly/Function.h>
 #include <folly/futures/Future.h>
 #include "rsocket/DuplexConnection.h"
+#include "rsocket/framing/ProtocolVersion.h"
 
 namespace folly {
 class EventBase;
@@ -59,6 +60,7 @@ class ConnectionFactory {
    * Resource creation depends on the particular implementation.
    */
   virtual folly::Future<ConnectedDuplexConnection> connect(
+      ProtocolVersion,
       ResumeStatus resume) = 0;
 };
 } // namespace rsocket

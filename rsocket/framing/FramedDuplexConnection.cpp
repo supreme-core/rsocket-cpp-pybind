@@ -13,10 +13,7 @@
 // limitations under the License.
 
 #include "rsocket/framing/FramedDuplexConnection.h"
-
 #include <folly/io/Cursor.h>
-
-#include "rsocket/framing/FrameSerializer.h"
 #include "rsocket/framing/FrameSerializer_v1_0.h"
 #include "rsocket/framing/FramedReader.h"
 
