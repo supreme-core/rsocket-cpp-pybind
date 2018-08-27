@@ -53,8 +53,10 @@ void KeepaliveTimer::sendKeepalive() {
     localPtr->disconnectOrCloseWithError(
         Frame_ERROR::connectionError("no response to keepalive"));
   } else {
-    connection_->sendKeepalive();
+    // this must happen before sendKeepalive as it can potentially result in
+    // stop() being called
     pending_ = true;
+    connection_->sendKeepalive();
     schedule();
   }
 }
