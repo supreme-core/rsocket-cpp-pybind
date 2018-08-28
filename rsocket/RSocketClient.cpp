@@ -75,7 +75,7 @@ folly::Future<folly::Unit> RSocketClient::resume() {
       << "resume";
 
   return connectionFactory_->connect(protocolVersion_, ResumeStatus::RESUMING)
-      .then(
+      .thenValue(
           [this](
               ConnectionFactory::ConnectedDuplexConnection connection) mutable {
             return resumeFromConnection(std::move(connection));
