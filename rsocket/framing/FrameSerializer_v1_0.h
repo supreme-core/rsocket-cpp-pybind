@@ -31,7 +31,9 @@ class FrameSerializerV1_0 : public FrameSerializer {
       size_t skipBytes = 0);
 
   FrameType peekFrameType(const folly::IOBuf& in) const override;
-  folly::Optional<StreamId> peekStreamId(const folly::IOBuf& in) const override;
+  folly::Optional<StreamId> peekStreamId(
+      const folly::IOBuf& in,
+      bool skipFrameLengthBytes) const override;
 
   std::unique_ptr<folly::IOBuf> serializeOut(
       Frame_REQUEST_STREAM&&) const override;

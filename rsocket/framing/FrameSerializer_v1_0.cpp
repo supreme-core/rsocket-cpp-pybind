@@ -189,9 +189,13 @@ FrameType FrameSerializerV1_0::peekFrameType(const folly::IOBuf& in) const {
 }
 
 folly::Optional<StreamId> FrameSerializerV1_0::peekStreamId(
-    const folly::IOBuf& in) const {
+    const folly::IOBuf& in,
+    bool skipFrameLengthBytes) const {
   folly::io::Cursor cur(&in);
   try {
+    if (skipFrameLengthBytes) {
+      cur.skip(3); // skip 3 bytes for frame length
+    }
     auto streamId = cur.readBE<int32_t>();
     if (streamId < 0) {
       return folly::none;

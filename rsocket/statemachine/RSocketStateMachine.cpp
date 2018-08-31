@@ -491,7 +491,7 @@ void RSocketStateMachine::processFrame(std::unique_ptr<folly::IOBuf> frame) {
   const auto frameType = frameSerializer_->peekFrameType(*frame);
   stats_->frameRead(frameType);
 
-  const auto optStreamId = frameSerializer_->peekStreamId(*frame);
+  const auto optStreamId = frameSerializer_->peekStreamId(*frame, false);
   if (!optStreamId) {
     constexpr auto msg = "Cannot decode stream ID";
     closeWithError(Frame_ERROR::connectionError(msg));
@@ -1075,7 +1075,7 @@ void RSocketStateMachine::outputFrame(std::unique_ptr<folly::IOBuf> frame) {
   stats_->frameWritten(frameType);
 
   if (isResumable_) {
-    auto streamIdPtr = frameSerializer_->peekStreamId(*frame);
+    auto streamIdPtr = frameSerializer_->peekStreamId(*frame, false);
     CHECK(streamIdPtr) << "Error in serialized frame.";
     resumeManager_->trackSentFrame(
         *frame, frameType, *streamIdPtr, getConsumerAllowance(*streamIdPtr));

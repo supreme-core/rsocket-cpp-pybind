@@ -37,11 +37,13 @@ class FrameSerializer {
 
   static folly::Optional<StreamId> peekStreamId(
       const ProtocolVersion& protocolVersion,
-      const folly::IOBuf& frame);
+      const folly::IOBuf& frame,
+      bool skipFrameLengthBytes);
 
   virtual FrameType peekFrameType(const folly::IOBuf& in) const = 0;
   virtual folly::Optional<StreamId> peekStreamId(
-      const folly::IOBuf& in) const = 0;
+      const folly::IOBuf& in,
+      bool skipFrameLengthBytes) const = 0;
 
   virtual std::unique_ptr<folly::IOBuf> serializeOut(
       Frame_REQUEST_STREAM&&) const = 0;

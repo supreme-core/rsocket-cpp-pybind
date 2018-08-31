@@ -51,9 +51,10 @@ folly::IOBufQueue FrameSerializer::createBufferQueue(size_t bufferSize) const {
 
 folly::Optional<StreamId> FrameSerializer::peekStreamId(
     const ProtocolVersion& protocolVersion,
-    const folly::IOBuf& frame) {
+    const folly::IOBuf& frame,
+    bool skipFrameLengthBytes) {
   if (protocolVersion == FrameSerializerV1_0::Version) {
-    return FrameSerializerV1_0().peekStreamId(frame);
+    return FrameSerializerV1_0().peekStreamId(frame, skipFrameLengthBytes);
   }
 
   auto* msg = "unknown protocol version";
