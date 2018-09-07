@@ -60,8 +60,8 @@ makeSingleClientServer(
   auto client = std::make_unique<TcpConnectionFactory>(
       *clientEvb, SocketAddress("localhost", port, true));
   client->connect(ProtocolVersion::Latest, ResumeStatus::NEW_SESSION)
-      .then([&clientConnection](
-                ConnectionFactory::ConnectedDuplexConnection connection) {
+      .thenValue([&clientConnection](
+                     ConnectionFactory::ConnectedDuplexConnection connection) {
         clientConnection = std::move(connection.connection);
       })
       .wait();

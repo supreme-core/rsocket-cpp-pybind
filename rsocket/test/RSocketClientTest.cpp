@@ -36,7 +36,7 @@ TEST(RSocketClient, ConnectFails) {
           *worker.getEventBase(), std::move(address)));
 
   std::move(client)
-      .then([&](auto&&) { FAIL() << "the test needs to fail"; })
+      .thenValue([&](auto&&) { FAIL() << "the test needs to fail"; })
       .onError([&](const std::exception&) {
         LOG(INFO) << "connection failed as expected";
       })

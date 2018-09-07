@@ -58,10 +58,11 @@ TEST(RSocketClientServer, ConnectManyAsync) {
     auto clientFuture =
         makeClientAsync(
             workers[workerId].getEventBase(), *server->listeningPort())
-            .then([&executed](std::shared_ptr<rsocket::RSocketClient> client) {
-              ++executed;
-              return client;
-            })
+            .thenValue(
+                [&executed](std::shared_ptr<rsocket::RSocketClient> client) {
+                  ++executed;
+                  return client;
+                })
             .onError([&](folly::exception_wrapper ex) {
               LOG(ERROR) << "error: " << ex.what();
               ++executed;
