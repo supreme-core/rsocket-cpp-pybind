@@ -177,7 +177,7 @@ TEST(RequestStreamTest, RequestOnDisconnectedClient) {
           });
 
   wait_for_on_error.timed_wait(std::chrono::milliseconds(100));
-  ASSERT(did_call_on_error);
+  ASSERT_TRUE(did_call_on_error);
 }
 
 class TestHandlerResponder : public rsocket::RSocketResponder {
