@@ -15,6 +15,7 @@
 #include <folly/futures/Future.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/io/async/ssl/SSLErrors.h>
 #include <gtest/gtest.h>
 
 #include "rsocket/test/transport/DuplexConnectionTest.h"
@@ -107,6 +108,26 @@ TEST(TcpDuplexConnection, ConnectionAndSubscribersAreUntied) {
       serverEvb,
       std::move(clientConnection),
       worker.getEventBase());
+}
+
+TEST(TcpDuplexConnection, ExceptionWrapperTest) {
+  folly::AsyncSocketException socketException(
+      folly::AsyncSocketException::AsyncSocketExceptionType::INVALID_STATE,
+      "test",
+      10);
+  folly::SSLException sslException(5, 10, 15, 20);
+
+  const folly::AsyncSocketException& socketExceptionRef = sslException;
+
+  folly::exception_wrapper ex1(socketException);
+  folly::exception_wrapper ex2(sslException);
+
+  // Slicing error:
+  // folly::exception_wrapper ex3(socketExceptionRef);
+
+  // Fixed version:
+  folly::exception_wrapper ex3(
+      std::make_exception_ptr(socketExceptionRef), socketExceptionRef);
 }
 
 } // namespace tests
