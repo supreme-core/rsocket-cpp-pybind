@@ -56,7 +56,7 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createConnectedClient(
       };
 
   return connectionFactory->connect(protocolVersion, ResumeStatus::NEW_SESSION)
-      .then(
+      .thenValue(
           [createRSC = std::move(createRSC)](
               ConnectionFactory::ConnectedDuplexConnection connection) mutable {
             // fromConnection method must be called from the transport eventBase
@@ -96,8 +96,10 @@ folly::Future<std::unique_ptr<RSocketClient>> RSocket::createResumedClient(
       std::move(coldResumeHandler),
       stateMachineEvb);
 
-  return c->resume().then([client = std::unique_ptr<RSocketClient>(
-                               c)]() mutable { return std::move(client); });
+  return c->resume().thenValue(
+      [client = std::unique_ptr<RSocketClient>(c)](auto&&) mutable {
+        return std::move(client);
+      });
 }
 
 std::unique_ptr<RSocketClient> RSocket::createClientFromConnection(
