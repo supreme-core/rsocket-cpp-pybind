@@ -34,6 +34,10 @@ class RSocketServerState {
     return rSocketRequester_;
   }
 
+  folly::EventBase* eventBase() {
+    return &eventBase_;
+  }
+
   friend class RSocketServer;
 
  private:
