@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
 
   client->resume()
       .via(worker2.getEventBase())
-      .then([subscriber1] {
+      .thenValue([subscriber1](folly::Unit) {
         // continue with the old client.
         subscriber1->request(3);
         while (subscriber1->rcvdCount() < 10) {
