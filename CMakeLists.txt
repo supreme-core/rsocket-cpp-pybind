@@ -114,6 +114,7 @@ if (DEFINED ASAN_FLAGS)
 endif ()
 
 option(BUILD_BENCHMARKS "Build benchmarks" ON)
+option(BUILD_EXAMPLES "Build examples" ON)
 
 enable_testing()
 
@@ -457,6 +458,7 @@ endif ()
 # Examples
 ########################################
 
+if (BUILD_EXAMPLES)
 add_library(
   reactivesocket_examples_util
   rsocket/examples/util/ExampleSubscriber.cpp
@@ -685,6 +687,8 @@ target_link_libraries(
   yarpl
   ${GFLAGS_LIBRARY}
   ${GLOG_LIBRARY})
+
+endif () # BUILD_EXAMPLES
 
 ########################################
 # End Examples
