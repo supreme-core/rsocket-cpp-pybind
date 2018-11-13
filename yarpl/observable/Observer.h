@@ -37,6 +37,10 @@ class Observer : public yarpl::enable_get_ref {
       return;
     }
 
+    if (cancelled_) {
+      subscription->cancel();
+    }
+
     subscription_ = std::move(subscription);
   }
 
@@ -81,13 +85,12 @@ class Observer : public yarpl::enable_get_ref {
   }
 
  protected:
-  Subscription* subscription() {
-    return subscription_.operator->();
-  }
-
   void unsubscribe() {
-    CHECK(subscription_);
-    subscription_->cancel();
+    if (subscription_) {
+      subscription_->cancel();
+    } else {
+      cancelled_ = true;
+    }
   }
 
  public:
@@ -129,6 +132,7 @@ class Observer : public yarpl::enable_get_ref {
 
  private:
   std::shared_ptr<Subscription> subscription_;
+  bool cancelled_{false};
 };
 
 namespace details {

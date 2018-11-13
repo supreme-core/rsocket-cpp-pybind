@@ -88,7 +88,7 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
 
   void cancel() override {
     if (auto subscriber = subscriber_.exchange(nullptr)) {
-      observable::Observer<T>::subscription()->cancel();
+      observable::Observer<T>::unsubscribe();
       observable_.reset();
     }
   }
@@ -143,7 +143,7 @@ class BackpressureStrategyBase : public IBackpressureStrategy<T>,
       subscriber->onError(std::move(error));
 
       observable_.reset();
-      observable::Observer<T>::subscription()->cancel();
+      observable::Observer<T>::unsubscribe();
     }
   }
 
