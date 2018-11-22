@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "yarpl/observable/ObservableOperator.h"
+
 namespace yarpl {
 namespace observable {
 namespace details {

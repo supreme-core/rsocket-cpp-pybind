@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "yarpl/flowable/FlowableOperator.h"
+
 namespace yarpl {
 namespace flowable {
 namespace details {

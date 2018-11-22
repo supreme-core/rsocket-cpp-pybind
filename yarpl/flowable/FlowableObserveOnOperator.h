@@ -1,5 +1,7 @@
 #pragma once
 
+#include "yarpl/flowable/Flowable.h"
+
 namespace yarpl {
 namespace flowable {
 namespace detail {

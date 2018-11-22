@@ -108,8 +108,10 @@ inline StringPair payload_to_stringpair(Payload p) {
 } // namespace tests
 } // namespace rsocket
 
-inline std::ostream& operator<<(
+namespace std {
+inline ostream& operator<<(
     std::ostream& os,
     rsocket::tests::StringPair const& payload) {
   return os << "('" << payload.first << "', '" << payload.second << "')";
 }
+} // namespace std

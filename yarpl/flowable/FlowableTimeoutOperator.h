@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <stdexcept>
+
+#include "yarpl/flowable/FlowableOperator.h"
+
 namespace yarpl {
 class TimeoutException : public std::runtime_error {
  public:
