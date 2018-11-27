@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <string>
 
 namespace rsocket {
