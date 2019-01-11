@@ -87,7 +87,7 @@ class TimeoutOperator : public FlowableOperator<T, T> {
     void onSubscribeImpl() override {
       DCHECK(timerEvb_.isInEventBaseThread());
       if (initTimeout_.count() > 0) {
-        nextTime_ = getCurTime() + initTimeout_;
+        nextTime_ = std::chrono::steady_clock::now() + initTimeout_;
         timerEvb_.timer().scheduleTimeout(this, initTimeout_);
       } else {
         nextTime_ = std::chrono::steady_clock::time_point::max();
@@ -101,7 +101,7 @@ class TimeoutOperator : public FlowableOperator<T, T> {
       if (flowable_) {
         if (nextTime_ != std::chrono::steady_clock::time_point::max()) {
           cancelTimeout(); // cancel timer before calling onNext
-          auto currentTime = getCurTime();
+          auto currentTime = std::chrono::steady_clock::now();
           if (currentTime > nextTime_) {
             timeoutExpired();
             return;
@@ -112,7 +112,7 @@ class TimeoutOperator : public FlowableOperator<T, T> {
         SuperSub::subscriberOnNext(std::move(value));
 
         if (timeout_.count() > 0) {
-          nextTime_ = getCurTime() + timeout_;
+          nextTime_ = std::chrono::steady_clock::now() + timeout_;
           timerEvb_.timer().scheduleTimeout(this, timeout_);
         }
       }
