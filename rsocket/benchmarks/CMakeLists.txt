@@ -9,7 +9,7 @@ function(benchmark NAME FILE)
     ReactiveSocket
     Folly::follybenchmark
     ${GFLAGS_LIBRARY}
-    ${GLOG_LIBRARY})
+    glog::glog)
 endfunction()
 
 benchmark(baselines_tcp BaselinesTcp.cpp)
