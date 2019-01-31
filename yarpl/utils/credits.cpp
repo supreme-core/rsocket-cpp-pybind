@@ -82,6 +82,14 @@ bool cancel(std::atomic<int64_t>* current) {
 int64_t consume(std::atomic<int64_t>* current, int64_t n) {
   for (;;) {
     auto r = current->load();
+    // if already "infinite"
+    if (r == kNoFlowControl) {
+      return kNoFlowControl;
+    }
+    // if already "cancelled"
+    if (r == kCanceled) {
+      return kCanceled;
+    }
     if (n <= 0) {
       // do nothing, return existing unmodified value
       return r;

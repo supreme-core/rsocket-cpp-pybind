@@ -88,6 +88,14 @@ TEST(Credits, cancel3) {
   ASSERT_TRUE(isCancelled(&rn));
 }
 
+TEST(Credits, cancel4) {
+  std::atomic<std::int64_t> rn{9999};
+  cancel(&rn);
+  // it should stay cancelled once cancelled
+  consume(&rn, 1);
+  ASSERT_TRUE(isCancelled(&rn));
+}
+
 TEST(Credits, isInfinite) {
   std::atomic<std::int64_t> rn{0};
   add(&rn, INT64_MAX);
