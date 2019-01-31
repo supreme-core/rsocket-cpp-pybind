@@ -172,12 +172,10 @@ find_library(DOUBLE-CONVERSION double-conversion)
 
 find_package(OpenSSL REQUIRED)
 
+find_package(Gflags REQUIRED)
+
 # find glog::glog to satisfy the folly dep.
 find_package(Glog REQUIRED)
-find_path(GFLAGS_INCLUDE_DIR gflags/gflags.h)
-find_library(GFLAGS_LIBRARY gflags)
-
-message("gflags include_dir <${GFLAGS_INCLUDE_DIR}> lib <${GFLAGS_LIBRARY}>")
 
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 
@@ -310,7 +308,7 @@ target_include_directories(
 
 
 target_link_libraries(ReactiveSocket
-    PUBLIC yarpl ${GFLAGS_LIBRARY} glog::glog
+    PUBLIC yarpl glog::glog gflags
     INTERFACE ${EXTRA_LINK_FLAGS})
 
 target_compile_options(
@@ -382,8 +380,8 @@ target_link_libraries(
   yarpl
   yarpl-test-utils
   ${GMOCK_LIBS}
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 target_include_directories(tests PUBLIC "${PROJECT_SOURCE_DIR}/yarpl/test/")
 target_compile_options(
@@ -403,8 +401,8 @@ target_link_libraries(
   frame_fuzzer
   ReactiveSocket
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_dependencies(frame_fuzzer gmock ReactiveSocket)
 
@@ -439,8 +437,8 @@ target_link_libraries(
   tckclient
   ReactiveSocket
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   tckserver
@@ -454,9 +452,9 @@ target_link_libraries(
   tckserver
   ReactiveSocket
   yarpl
-  ${GFLAGS_LIBRARY}
   ${GMOCK_LIBS}
   glog::glog
+  gflags
   ${DOUBLE-CONVERSION})
 
 # Download the latest TCK drivers JAR.
@@ -486,8 +484,8 @@ target_link_libraries(
   reactivesocket_examples_util
   yarpl
   ReactiveSocket
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 # request-response-hello-world
 
@@ -501,8 +499,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_request-response-hello-world-client
@@ -514,8 +512,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 # fire-and-forget-hello-world
 
@@ -529,8 +527,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_fire-and-forget-hello-world-client
@@ -542,8 +540,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 
 # stream-hello-world
@@ -558,8 +556,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_stream-hello-world-client
@@ -571,8 +569,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 # channel-hello-world
 
@@ -586,8 +584,10 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
+
+
 
 add_executable(
   example_channel-hello-world-client
@@ -599,8 +599,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 # stream-observable-to-flowable
 
@@ -614,8 +614,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_observable-to-flowable-client
@@ -627,8 +627,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 # conditional-request-handling
 
@@ -646,8 +646,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_conditional-request-handling-client
@@ -659,8 +659,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 # warm-resumption
 
@@ -674,8 +674,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_warm-resumption-client
@@ -687,8 +687,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 add_executable(
   example_cold-resumption-client
@@ -700,8 +700,8 @@ target_link_libraries(
   ReactiveSocket
   reactivesocket_examples_util
   yarpl
-  ${GFLAGS_LIBRARY}
-  glog::glog)
+  glog::glog
+  gflags)
 
 endif () # BUILD_EXAMPLES
 

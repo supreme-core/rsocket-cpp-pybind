@@ -8,8 +8,8 @@ function(benchmark NAME FILE)
     fixture
     ReactiveSocket
     Folly::follybenchmark
-    ${GFLAGS_LIBRARY}
-    glog::glog)
+    glog::glog
+    gflags)
 endfunction()
 
 benchmark(baselines_tcp BaselinesTcp.cpp)

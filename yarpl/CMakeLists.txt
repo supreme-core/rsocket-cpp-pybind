@@ -42,16 +42,14 @@ endif()
 # Using NDEBUG in Release builds.
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
 
-find_path(GLOG_INCLUDE_DIR glog/logging.h)
-find_library(GLOG_LIBRARY glog)
+find_package(Gflags REQUIRED)
+find_package(Glog REQUIRED)
 
 IF(NOT FOLLY_VERSION)
   include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/InstallFolly.cmake)
 ENDIF()
 
-message("glog include_dir <${GLOG_INCLUDE_DIR}> lib <${GLOG_LIBRARY}>")
-
-include_directories(SYSTEM ${GLOG_INCLUDE_DIR})
+include_directories(SYSTEM ${GFLAGS_INCLUDE_DIR})
 
 # library source
 add_library(
@@ -113,7 +111,7 @@ message("yarpl source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_link_libraries(
   yarpl
-  PUBLIC Folly::folly ${GLOG_LIBRARY}
+  PUBLIC Folly::folly glog::glog gflags
   INTERFACE ${EXTRA_LINK_FLAGS})
 
 include(CMakePackageConfigHelpers)
@@ -169,7 +167,8 @@ if (BUILD_TESTS)
     yarpl-tests
     yarpl
     yarpl-test-utils
-    ${GLOG_LIBRARY}
+    glog::glog
+    gflags
 
     # Inherited from rsocket-cpp CMake.
     ${GMOCK_LIBS})
