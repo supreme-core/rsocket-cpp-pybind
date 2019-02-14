@@ -777,7 +777,7 @@ class InfiniteAsyncTestOperator : public ObservableOperator<int, int> {
     using SuperSub = typename Super::OperatorSubscription;
 
    public:
-    ~TestSubscription() {
+    ~TestSubscription() override {
       t_.join();
     }
 
