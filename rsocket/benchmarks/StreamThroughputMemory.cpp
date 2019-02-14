@@ -44,7 +44,7 @@ class DirectDuplexConnection : public DuplexConnection {
   DirectDuplexConnection(std::shared_ptr<State> state, folly::EventBase& evb)
       : state_{std::move(state)}, evb_{evb} {}
 
-  ~DirectDuplexConnection() {
+  ~DirectDuplexConnection() override {
     *state_->destroyed.wlock() = true;
   }
 

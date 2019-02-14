@@ -31,7 +31,7 @@ class MockConnectionAutomaton : public FrameSink {
  public:
   // MOCK_METHOD doesn't take functions with unique_ptr args.
   // A workaround for sendKeepalive method.
-  virtual void sendKeepalive(std::unique_ptr<folly::IOBuf> b) override {
+  void sendKeepalive(std::unique_ptr<folly::IOBuf> b) override {
     sendKeepalive_(b);
   }
   MOCK_METHOD1(sendKeepalive_, void(std::unique_ptr<folly::IOBuf>&));

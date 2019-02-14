@@ -35,7 +35,7 @@ class TcpReaderWriter : public folly::AsyncTransportWrapper::WriteCallback,
       std::shared_ptr<RSocketStats> stats)
       : socket_(std::move(socket)), stats_(std::move(stats)) {}
 
-  ~TcpReaderWriter() {
+  ~TcpReaderWriter() override {
     CHECK(isClosed());
     DCHECK(!inputSubscriber_);
   }

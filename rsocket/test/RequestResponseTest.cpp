@@ -219,7 +219,7 @@ struct LargePayloadReqRespHandler : public rsocket::RSocketResponder {
 
   std::shared_ptr<yarpl::single::Single<Payload>> handleRequestResponse(
       Payload payload,
-      StreamId) {
+      StreamId) override {
     RSocketPayloadUtils::checkSameStrings(
         payload.data, data, "data received in payload");
     RSocketPayloadUtils::checkSameStrings(

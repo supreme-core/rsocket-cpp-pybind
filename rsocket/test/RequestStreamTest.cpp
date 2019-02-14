@@ -254,7 +254,7 @@ struct LargePayloadStreamHandler : public rsocket::RSocketResponder {
 
   std::shared_ptr<yarpl::flowable::Flowable<Payload>> handleRequestStream(
       Payload initialPayload,
-      StreamId) {
+      StreamId) override {
     RSocketPayloadUtils::checkSameStrings(
         initialPayload.data, data, "data received in initial payload");
     RSocketPayloadUtils::checkSameStrings(

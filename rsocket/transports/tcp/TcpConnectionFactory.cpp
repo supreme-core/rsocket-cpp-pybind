@@ -62,7 +62,7 @@ class ConnectCallback : public folly::AsyncSocket::ConnectCallback {
     socket_->connect(this, address_);
   }
 
-  ~ConnectCallback() {
+  ~ConnectCallback() override {
     VLOG(2) << "Destroying ConnectCallback";
   }
 

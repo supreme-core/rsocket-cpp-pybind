@@ -117,7 +117,7 @@ struct DisconnectedResponder : public rsocket::RSocketResponder {
     CHECK(false);
   }
 
-  ~DisconnectedResponder() {}
+  ~DisconnectedResponder() override {}
 };
 } // namespace
 
