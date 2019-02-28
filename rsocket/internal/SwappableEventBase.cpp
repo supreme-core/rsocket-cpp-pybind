@@ -24,8 +24,10 @@ bool SwappableEventBase::runInEventBaseThread(CbFunc cb) {
     return false;
   }
 
-  return eb_->runInEventBaseThread(
+  eb_->runInEventBaseThread(
       [eb = eb_, cb_ = std::move(cb)]() mutable { return cb_(*eb); });
+
+  return true;
 }
 
 void SwappableEventBase::setEventBase(folly::EventBase& newEb) {
