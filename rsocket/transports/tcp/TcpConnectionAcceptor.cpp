@@ -35,7 +35,7 @@ class TcpConnectionAcceptor::SocketCallback
     VLOG(2) << "Accepting TCP connection from " << address << " on FD " << fd;
 
     folly::AsyncTransportWrapper::UniquePtr socket(
-        new folly::AsyncSocket(eventBase(), fd));
+        new folly::AsyncSocket(eventBase(), folly::NetworkSocket::fromFd(fd)));
 
     auto connection = std::make_unique<TcpDuplexConnection>(std::move(socket));
     onAccept_(std::move(connection), *eventBase());
