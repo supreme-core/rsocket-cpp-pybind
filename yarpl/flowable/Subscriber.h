@@ -18,6 +18,7 @@
 #include <folly/ExceptionWrapper.h>
 #include <folly/functional/Invoke.h>
 #include <glog/logging.h>
+#include "yarpl/Disposable.h"
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscription.h"
 #include "yarpl/utils/credits.h"
@@ -80,6 +81,13 @@ class Subscriber : boost::noncopyable {
     return std::make_shared<NullSubscriber>();
   }
 };
+
+namespace details {
+
+template <typename T>
+class BaseSubscriberDisposable;
+
+} // namespace details
 
 #define KEEP_REF_TO_THIS()              \
   std::shared_ptr<BaseSubscriber> self; \
@@ -196,6 +204,12 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
   virtual void onTerminateImpl() {}
 
  private:
+  bool isTerminated() {
+    return !yarpl::atomic_load(&subscription_);
+  }
+
+  friend class ::yarpl::flowable::details::BaseSubscriberDisposable<T>;
+
   // keeps a reference alive to the subscription
   AtomicReference<Subscription> subscription_;
 
@@ -206,8 +220,70 @@ class BaseSubscriber : public Subscriber<T>, public yarpl::enable_get_ref {
 };
 
 namespace details {
+
+template <typename T>
+class BaseSubscriberDisposable : public Disposable {
+ public:
+  BaseSubscriberDisposable(std::shared_ptr<BaseSubscriber<T>> subscriber)
+      : subscriber_(std::move(subscriber)) {}
+
+  void dispose() override {
+    if (auto sub = yarpl::atomic_exchange(&subscriber_, nullptr)) {
+      sub->cancel();
+    }
+  }
+
+  bool isDisposed() override {
+    if (auto sub = yarpl::atomic_load(&subscriber_)) {
+      return sub->isTerminated();
+    } else {
+      return true;
+    }
+  }
+
+ private:
+  AtomicReference<BaseSubscriber<T>> subscriber_;
+};
+
+template <typename T>
+class LambdaSubscriber : public BaseSubscriber<T> {
+ public:
+  template <
+      typename Next,
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Next>&, T>::value>::type>
+  static std::shared_ptr<LambdaSubscriber<T>> create(
+      Next&& next,
+      int64_t batch = credits::kNoFlowControl);
+
+  template <
+      typename Next,
+      typename Error,
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Next>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value>::type>
+  static std::shared_ptr<LambdaSubscriber<T>>
+  create(Next&& next, Error&& error, int64_t batch = credits::kNoFlowControl);
+
+  template <
+      typename Next,
+      typename Error,
+      typename Complete,
+      typename = typename std::enable_if<
+          folly::is_invocable<std::decay_t<Next>&, T>::value &&
+          folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
+              value &&
+          folly::is_invocable<std::decay_t<Complete>&>::value>::type>
+  static std::shared_ptr<LambdaSubscriber<T>> create(
+      Next&& next,
+      Error&& error,
+      Complete&& complete,
+      int64_t batch = credits::kNoFlowControl);
+};
+
 template <typename T, typename Next>
-class Base : public BaseSubscriber<T> {
+class Base : public LambdaSubscriber<T> {
   static_assert(std::is_same<std::decay_t<Next>, Next>::value, "undecayed");
 
  public:
@@ -299,11 +375,10 @@ class WithErrorAndComplete : public WithError<T, Next, Error> {
  private:
   Complete complete_;
 };
-} // namespace details
 
 template <typename T>
 template <typename Next, typename>
-std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
+std::shared_ptr<LambdaSubscriber<T>> LambdaSubscriber<T>::create(
     Next&& next,
     int64_t batch) {
   return std::make_shared<details::Base<T, std::decay_t<Next>>>(
@@ -312,10 +387,46 @@ std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
 
 template <typename T>
 template <typename Next, typename Error, typename>
-std::shared_ptr<Subscriber<T>>
-Subscriber<T>::create(Next&& next, Error&& error, int64_t batch) {
+std::shared_ptr<LambdaSubscriber<T>>
+LambdaSubscriber<T>::create(Next&& next, Error&& error, int64_t batch) {
   return std::make_shared<
       details::WithError<T, std::decay_t<Next>, std::decay_t<Error>>>(
+      std::forward<Next>(next), std::forward<Error>(error), batch);
+}
+
+template <typename T>
+template <typename Next, typename Error, typename Complete, typename>
+std::shared_ptr<LambdaSubscriber<T>> LambdaSubscriber<T>::create(
+    Next&& next,
+    Error&& error,
+    Complete&& complete,
+    int64_t batch) {
+  return std::make_shared<details::WithErrorAndComplete<
+      T,
+      std::decay_t<Next>,
+      std::decay_t<Error>,
+      std::decay_t<Complete>>>(
+      std::forward<Next>(next),
+      std::forward<Error>(error),
+      std::forward<Complete>(complete),
+      batch);
+}
+
+} // namespace details
+
+template <typename T>
+template <typename Next, typename>
+std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
+    Next&& next,
+    int64_t batch) {
+  return details::LambdaSubscriber<T>::create(std::forward<Next>(next), batch);
+}
+
+template <typename T>
+template <typename Next, typename Error, typename>
+std::shared_ptr<Subscriber<T>>
+Subscriber<T>::create(Next&& next, Error&& error, int64_t batch) {
+  return details::LambdaSubscriber<T>::create(
       std::forward<Next>(next), std::forward<Error>(error), batch);
 }
 
@@ -326,11 +437,7 @@ std::shared_ptr<Subscriber<T>> Subscriber<T>::create(
     Error&& error,
     Complete&& complete,
     int64_t batch) {
-  return std::make_shared<details::WithErrorAndComplete<
-      T,
-      std::decay_t<Next>,
-      std::decay_t<Error>,
-      std::decay_t<Complete>>>(
+  return details::LambdaSubscriber<T>::create(
       std::forward<Next>(next),
       std::forward<Error>(error),
       std::forward<Complete>(complete),

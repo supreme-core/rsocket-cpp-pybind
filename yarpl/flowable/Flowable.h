@@ -19,6 +19,7 @@
 #include <folly/io/async/HHWheelTimer.h>
 #include <glog/logging.h>
 #include <memory>
+#include "yarpl/Disposable.h"
 #include "yarpl/Refcounted.h"
 #include "yarpl/flowable/Subscriber.h"
 #include "yarpl/utils/credits.h"
@@ -61,8 +62,14 @@ class Flowable : public yarpl::enable_get_ref {
       typename Next,
       typename = typename std::enable_if<
           folly::is_invocable<std::decay_t<Next>&, T>::value>::type>
-  void subscribe(Next&& next, int64_t batch = credits::kNoFlowControl) {
-    subscribe(Subscriber<T>::create(std::forward<Next>(next), batch));
+  std::unique_ptr<Disposable> subscribe(
+      Next&& next,
+      int64_t batch = credits::kNoFlowControl) {
+    auto subscriber =
+        details::LambdaSubscriber<T>::create(std::forward<Next>(next), batch);
+    subscribe(subscriber);
+    return std::make_unique<details::BaseSubscriberDisposable<T>>(
+        std::move(subscriber));
   }
 
   /**
@@ -77,12 +84,15 @@ class Flowable : public yarpl::enable_get_ref {
           folly::is_invocable<std::decay_t<Next>&, T>::value &&
           folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
               value>::type>
-  void subscribe(
+  std::unique_ptr<Disposable> subscribe(
       Next&& next,
       Error&& error,
       int64_t batch = credits::kNoFlowControl) {
-    subscribe(Subscriber<T>::create(
-        std::forward<Next>(next), std::forward<Error>(error), batch));
+    auto subscriber = details::LambdaSubscriber<T>::create(
+        std::forward<Next>(next), std::forward<Error>(error), batch);
+    subscribe(subscriber);
+    return std::make_unique<details::BaseSubscriberDisposable<T>>(
+        std::move(subscriber));
   }
 
   /**
@@ -99,16 +109,19 @@ class Flowable : public yarpl::enable_get_ref {
           folly::is_invocable<std::decay_t<Error>&, folly::exception_wrapper>::
               value &&
           folly::is_invocable<std::decay_t<Complete>&>::value>::type>
-  void subscribe(
+  std::unique_ptr<Disposable> subscribe(
       Next&& next,
       Error&& error,
       Complete&& complete,
       int64_t batch = credits::kNoFlowControl) {
-    subscribe(Subscriber<T>::create(
+    auto subscriber = details::LambdaSubscriber<T>::create(
         std::forward<Next>(next),
         std::forward<Error>(error),
         std::forward<Complete>(complete),
-        batch));
+        batch);
+    subscribe(subscriber);
+    return std::make_unique<details::BaseSubscriberDisposable<T>>(
+        std::move(subscriber));
   }
 
   void subscribe() {
