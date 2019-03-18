@@ -34,7 +34,8 @@ class EmiterBase {
  public:
   virtual ~EmiterBase() = default;
 
-  virtual std::tuple<int64_t, bool> emit(Subscriber<T>&, int64_t) = 0;
+  virtual std::tuple<int64_t, bool> emit(std::shared_ptr<Subscriber<T>>,
+                                         int64_t) = 0;
 };
 
 /**
@@ -167,7 +168,7 @@ class EmiterSubscription final : public Subscription,
       int64_t emitted;
       bool done;
 
-      std::tie(emitted, done) = emiter_->emit(*this, current);
+      std::tie(emitted, done) = emiter_->emit(this_subscriber, current);
 
       while (true) {
         current = requested_.load(std::memory_order_relaxed);
@@ -276,9 +277,9 @@ class EmitterWrapper : public EmiterBase<T>, public Flowable<T> {
     ef->init();
   }
 
-  std::tuple<int64_t, bool> emit(Subscriber<T>& subscriber, int64_t requested)
-      override {
-    TrackingSubscriber<T> trackingSubscriber(subscriber, requested);
+  std::tuple<int64_t, bool> emit(std::shared_ptr<Subscriber<T>> subscriber,
+                                 int64_t requested) override {
+    TrackingSubscriber<T> trackingSubscriber(*subscriber, requested);
     emitter_(trackingSubscriber, requested);
     return trackingSubscriber.getResult();
   }
