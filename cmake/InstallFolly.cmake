@@ -1,3 +1,6 @@
+# Copyright (c) 2018, Facebook, Inc.
+# All rights reserved.
+#
 if (NOT FOLLY_INSTALL_DIR)
   set(FOLLY_INSTALL_DIR ${CMAKE_BINARY_DIR}/folly-install)
 endif ()

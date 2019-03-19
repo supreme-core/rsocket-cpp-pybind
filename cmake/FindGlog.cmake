@@ -1,3 +1,6 @@
+# Copyright (c) 2018, Facebook, Inc.
+# All rights reserved.
+#
 # - Try to find Glog
 # Once done, this will define
 #

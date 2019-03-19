@@ -1,5 +1,7 @@
 #!/bin/bash
-
+#
+# Copyright 2004-present Facebook. All Rights Reserved.
+#
 if [ "$#" -ne 4 ]; then
     echo "Illegal number of parameters - $#"
     exit 1

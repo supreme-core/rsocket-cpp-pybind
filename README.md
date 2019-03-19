@@ -25,3 +25,8 @@ cmake -DCMAKE_BUILD_TYPE=DEBUG ../
 make -j
 ./tests
 ```
+
+# License
+
+By contributing to rsocket-cpp, you agree that your contributions will be licensed
+under the LICENSE file in the root directory of this source tree.
