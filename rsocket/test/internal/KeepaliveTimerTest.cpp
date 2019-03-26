@@ -56,11 +56,11 @@ TEST(FollyKeepaliveTimerTest, StartStopWithResponse) {
 
   timer.start(connectionAutomaton);
 
-  timer.sendKeepalive();
+  timer.sendKeepalive(*connectionAutomaton);
 
   timer.keepaliveReceived();
 
-  timer.sendKeepalive();
+  timer.sendKeepalive(*connectionAutomaton);
 
   timer.stop();
 }
@@ -78,9 +78,9 @@ TEST(FollyKeepaliveTimerTest, NoResponse) {
 
   timer.start(connectionAutomaton);
 
-  timer.sendKeepalive();
+  timer.sendKeepalive(*connectionAutomaton);
 
-  timer.sendKeepalive();
+  timer.sendKeepalive(*connectionAutomaton);
 
   timer.stop();
 }
