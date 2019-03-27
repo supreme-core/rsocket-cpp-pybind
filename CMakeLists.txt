@@ -124,22 +124,28 @@ include(CTest)
 
 include(${CMAKE_SOURCE_DIR}/cmake/InstallFolly.cmake)
 
-# gmock
-ExternalProject_Add(
-  gmock
-  URL ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0.zip
-  INSTALL_COMMAND ""
-)
-
-ExternalProject_Get_Property(gmock source_dir)
-set(GMOCK_SOURCE_DIR ${source_dir})
-ExternalProject_Get_Property(gmock binary_dir)
-set(GMOCK_BINARY_DIR ${binary_dir})
-
-set(GMOCK_LIBS
-  ${GMOCK_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googlemock/${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX}
-  ${GMOCK_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googlemock/${CMAKE_STATIC_LIBRARY_PREFIX}gmock_main${CMAKE_STATIC_LIBRARY_SUFFIX}
+if(BUILD_TESTS)
+  # gmock
+  ExternalProject_Add(
+    gmock
+    URL ${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0.zip
+    INSTALL_COMMAND ""
   )
+
+  ExternalProject_Get_Property(gmock source_dir)
+  set(GMOCK_SOURCE_DIR ${source_dir})
+  ExternalProject_Get_Property(gmock binary_dir)
+  set(GMOCK_BINARY_DIR ${binary_dir})
+
+  set(GMOCK_LIBS
+    ${GMOCK_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googlemock/${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${GMOCK_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googlemock/${CMAKE_STATIC_LIBRARY_PREFIX}gmock_main${CMAKE_STATIC_LIBRARY_SUFFIX}
+  )
+
+  include_directories(${GMOCK_SOURCE_DIR}/googlemock/include)
+  include_directories(${GMOCK_SOURCE_DIR}/googletest/include)
+
+endif()
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -180,9 +186,6 @@ find_package(Glog REQUIRED)
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 
 include_directories(SYSTEM ${GFLAGS_INCLUDE_DIR})
-
-include_directories(${GMOCK_SOURCE_DIR}/googlemock/include)
-include_directories(${GMOCK_SOURCE_DIR}/googletest/include)
 
 add_subdirectory(yarpl)
 
@@ -416,56 +419,58 @@ endif()
 # TCK Drivers
 ########################################
 
-add_executable(
-  tckclient
-  rsocket/tck-test/client.cpp
-  rsocket/tck-test/TestFileParser.cpp
-  rsocket/tck-test/TestFileParser.h
-  rsocket/tck-test/FlowableSubscriber.cpp
-  rsocket/tck-test/FlowableSubscriber.h
-  rsocket/tck-test/SingleSubscriber.cpp
-  rsocket/tck-test/SingleSubscriber.h
-  rsocket/tck-test/TestSuite.cpp
-  rsocket/tck-test/TestSuite.h
-  rsocket/tck-test/TestInterpreter.cpp
-  rsocket/tck-test/TestInterpreter.h
-  rsocket/tck-test/TypedCommands.h
-  rsocket/tck-test/BaseSubscriber.cpp
-  rsocket/tck-test/BaseSubscriber.h)
+if(BUILD_TESTS)
+  add_executable(
+    tckclient
+    rsocket/tck-test/client.cpp
+    rsocket/tck-test/TestFileParser.cpp
+    rsocket/tck-test/TestFileParser.h
+    rsocket/tck-test/FlowableSubscriber.cpp
+    rsocket/tck-test/FlowableSubscriber.h
+    rsocket/tck-test/SingleSubscriber.cpp
+    rsocket/tck-test/SingleSubscriber.h
+    rsocket/tck-test/TestSuite.cpp
+    rsocket/tck-test/TestSuite.h
+    rsocket/tck-test/TestInterpreter.cpp
+    rsocket/tck-test/TestInterpreter.h
+    rsocket/tck-test/TypedCommands.h
+    rsocket/tck-test/BaseSubscriber.cpp
+    rsocket/tck-test/BaseSubscriber.h)
 
-target_link_libraries(
-  tckclient
-  ReactiveSocket
-  yarpl
-  glog::glog
-  gflags)
+  target_link_libraries(
+    tckclient
+    ReactiveSocket
+    yarpl
+    glog::glog
+    gflags)
 
-add_executable(
-  tckserver
-  rsocket/tck-test/server.cpp
-  rsocket/tck-test/MarbleProcessor.cpp
-  rsocket/tck-test/MarbleProcessor.h
-  rsocket/test/test_utils/StatsPrinter.cpp
-  rsocket/test/test_utils/StatsPrinter.h)
+  add_executable(
+    tckserver
+    rsocket/tck-test/server.cpp
+    rsocket/tck-test/MarbleProcessor.cpp
+    rsocket/tck-test/MarbleProcessor.h
+    rsocket/test/test_utils/StatsPrinter.cpp
+    rsocket/test/test_utils/StatsPrinter.h)
 
-target_link_libraries(
-  tckserver
-  ReactiveSocket
-  yarpl
-  ${GMOCK_LIBS}
-  glog::glog
-  gflags
-  ${DOUBLE-CONVERSION})
+  target_link_libraries(
+    tckserver
+    ReactiveSocket
+    yarpl
+    ${GMOCK_LIBS}
+    glog::glog
+    gflags
+    ${DOUBLE-CONVERSION})
 
 # Download the latest TCK drivers JAR.
-set(TCK_DRIVERS_JAR rsocket-tck-drivers-0.9.10.jar)
-if (NOT EXISTS ${CMAKE_SOURCE_DIR}/${TCK_DRIVERS_JAR})
-  join(TCK_DRIVERS_URL
-    "https://oss.jfrog.org/libs-release/io/rsocket/"
-    "rsocket-tck-drivers/0.9.10/${TCK_DRIVERS_JAR}")
-  message(STATUS "Downloading ${TCK_DRIVERS_URL}")
-  file(DOWNLOAD ${TCK_DRIVERS_URL} ${CMAKE_SOURCE_DIR}/${TCK_DRIVERS_JAR})
-endif ()
+  set(TCK_DRIVERS_JAR rsocket-tck-drivers-0.9.10.jar)
+  if (NOT EXISTS ${CMAKE_SOURCE_DIR}/${TCK_DRIVERS_JAR})
+    join(TCK_DRIVERS_URL
+      "https://oss.jfrog.org/libs-release/io/rsocket/"
+      "rsocket-tck-drivers/0.9.10/${TCK_DRIVERS_JAR}")
+    message(STATUS "Downloading ${TCK_DRIVERS_URL}")
+    file(DOWNLOAD ${TCK_DRIVERS_URL} ${CMAKE_SOURCE_DIR}/${TCK_DRIVERS_JAR})
+  endif ()
+endif()
 
 ########################################
 # Examples
