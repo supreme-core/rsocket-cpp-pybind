@@ -3,7 +3,12 @@ cmake_minimum_required(VERSION 3.2)
 project(ReactiveSocket)
 
 # CMake modules.
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH
+  "${CMAKE_SOURCE_DIR}/cmake/"
+  # For shipit-transformed builds
+  "${CMAKE_CURRENT_SOURCE_DIR}/build/fbcode_builder/CMake"
+  ${CMAKE_MODULE_PATH}
+)
 
 # Joins arguments and stores the result in ${var}.
 function(join var)
