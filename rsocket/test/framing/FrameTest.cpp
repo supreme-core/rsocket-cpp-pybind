@@ -81,14 +81,14 @@ TEST(FrameTest, Frame_REQUEST_N) {
   uint32_t requestN = 24;
   auto frame = reserialize<Frame_REQUEST_N>(streamId, requestN);
 
-  expectHeader(FrameType::REQUEST_N, FrameFlags::EMPTY, streamId, frame);
+  expectHeader(FrameType::REQUEST_N, FrameFlags::EMPTY_, streamId, frame);
   EXPECT_EQ(requestN, frame.requestN_);
 }
 
 TEST(FrameTest, Frame_CANCEL) {
   uint32_t streamId = 42;
   auto frame = reserialize<Frame_CANCEL>(streamId);
-  expectHeader(FrameType::CANCEL, FrameFlags::EMPTY, streamId, frame);
+  expectHeader(FrameType::CANCEL, FrameFlags::EMPTY_, streamId, frame);
 }
 
 TEST(FrameTest, Frame_PAYLOAD) {
@@ -151,7 +151,7 @@ TEST(FrameTest, Frame_KEEPALIVE) {
 }
 
 TEST(FrameTest, Frame_SETUP) {
-  FrameFlags flags = FrameFlags::EMPTY;
+  FrameFlags flags = FrameFlags::EMPTY_;
   uint16_t versionMajor = 4;
   uint16_t versionMinor = 5;
   uint32_t keepaliveTime = Frame_SETUP::kMaxKeepaliveTime;
@@ -182,7 +182,7 @@ TEST(FrameTest, Frame_SETUP) {
 }
 
 TEST(FrameTest, Frame_SETUP_resume) {
-  FrameFlags flags = FrameFlags::EMPTY | FrameFlags::RESUME_ENABLE;
+  FrameFlags flags = FrameFlags::EMPTY_ | FrameFlags::RESUME_ENABLE;
   uint16_t versionMajor = 0;
   uint16_t versionMinor = 0;
   uint32_t keepaliveTime = Frame_SETUP::kMaxKeepaliveTime;
@@ -212,7 +212,7 @@ TEST(FrameTest, Frame_SETUP_resume) {
 }
 
 TEST(FrameTest, Frame_LEASE) {
-  FrameFlags flags = FrameFlags::EMPTY;
+  FrameFlags flags = FrameFlags::EMPTY_;
   uint32_t ttl = Frame_LEASE::kMaxTtl;
   auto numberOfRequests = Frame_LEASE::kMaxNumRequests;
   auto frame = reserialize<Frame_LEASE>(ttl, numberOfRequests);
@@ -258,7 +258,7 @@ TEST(FrameTest, Frame_METADATA_PUSH) {
 }
 
 TEST(FrameTest, Frame_RESUME) {
-  FrameFlags flags = FrameFlags::EMPTY;
+  FrameFlags flags = FrameFlags::EMPTY_;
   uint16_t versionMajor = 4;
   uint16_t versionMinor = 5;
   ResumeIdentificationToken token = ResumeIdentificationToken::generateNew();
@@ -282,7 +282,7 @@ TEST(FrameTest, Frame_RESUME) {
 }
 
 TEST(FrameTest, Frame_RESUME_OK) {
-  FrameFlags flags = FrameFlags::EMPTY;
+  FrameFlags flags = FrameFlags::EMPTY_;
   ResumePosition position = 6;
   auto frame = reserialize<Frame_RESUME_OK>(position);
 

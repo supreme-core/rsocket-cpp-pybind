@@ -35,7 +35,7 @@ Frame_SETUP makeSetup() {
   auto version = ProtocolVersion::Latest;
 
   Frame_SETUP frame;
-  frame.header_ = FrameHeader{FrameType::SETUP, FrameFlags::EMPTY, 0};
+  frame.header_ = FrameHeader{FrameType::SETUP, FrameFlags::EMPTY_, 0};
   frame.versionMajor_ = version.major;
   frame.versionMinor_ = version.minor;
   frame.keepaliveTime_ = Frame_SETUP::kMaxKeepaliveTime;
@@ -52,7 +52,7 @@ Frame_SETUP makeSetup() {
  */
 Frame_RESUME makeResume() {
   Frame_RESUME frame;
-  frame.header_ = FrameHeader{FrameType::RESUME, FrameFlags::EMPTY, 0};
+  frame.header_ = FrameHeader{FrameType::RESUME, FrameFlags::EMPTY_, 0};
   frame.versionMajor_ = 1;
   frame.versionMinor_ = 0;
   frame.token_ = ResumeIdentificationToken::generateNew();

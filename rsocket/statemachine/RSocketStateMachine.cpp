@@ -186,8 +186,8 @@ void RSocketStateMachine::connectClient(
   setResumable(params.resumable);
 
   Frame_SETUP frame(
-      (params.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY) |
-          (params.payload.metadata ? FrameFlags::METADATA : FrameFlags::EMPTY),
+      (params.resumable ? FrameFlags::RESUME_ENABLE : FrameFlags::EMPTY_) |
+          (params.payload.metadata ? FrameFlags::METADATA : FrameFlags::EMPTY_),
       version.major,
       version.minor,
       getKeepaliveTime(),
@@ -522,7 +522,7 @@ void RSocketStateMachine::onKeepAliveFrame(
   resumeManager_->resetUpToPosition(resumePosition);
   if (mode_ == RSocketMode::SERVER) {
     if (keepAliveRespond) {
-      sendKeepalive(FrameFlags::EMPTY, std::move(data));
+      sendKeepalive(FrameFlags::EMPTY_, std::move(data));
     } else {
       closeWithError(Frame_ERROR::connectionError("keepalive without flag"));
     }
@@ -1058,7 +1058,7 @@ bool RSocketStateMachine::shouldQueue() {
 
 void RSocketStateMachine::fireAndForget(Payload request) {
   auto const streamId = getNextStreamId();
-  Frame_REQUEST_FNF frame{streamId, FrameFlags::EMPTY, std::move(request)};
+  Frame_REQUEST_FNF frame{streamId, FrameFlags::EMPTY_, std::move(request)};
   outputFrameOrEnqueue(frameSerializer_->serializeOut(std::move(frame)));
 }
 

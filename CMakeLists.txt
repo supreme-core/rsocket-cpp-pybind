@@ -157,16 +157,20 @@ set(CMAKE_CXX_STANDARD 14)
 include(CheckCXXCompilerFlag)
 
 # Common configuration for all build modes.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+if (NOT MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+endif()
 
 CHECK_CXX_COMPILER_FLAG(-Wnoexcept-type COMPILER_HAS_W_NOEXCEPT_TYPE)
 if (COMPILER_HAS_W_NOEXCEPT_TYPE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-noexcept-type")
 endif()
 
-set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Werror)
+if (NOT MSVC)
+  set(EXTRA_CXX_FLAGS ${EXTRA_CXX_FLAGS} -Werror)
+endif()
 
 if("${BUILD_TYPE_LOWER}" MATCHES "debug")
   message("debug mode was set")
