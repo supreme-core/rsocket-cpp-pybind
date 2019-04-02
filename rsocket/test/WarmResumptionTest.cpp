@@ -74,7 +74,7 @@ TEST(WarmResumptionTest, FailedResumption1) {
       .thenValue([&](auto&&) { return client->resume(); })
       .thenValue(
           [](auto&&) { FAIL() << "Resumption succeeded when it should not"; })
-      .onError([listeningPort, &worker](folly::exception_wrapper) {
+      .thenError([listeningPort, &worker](folly::exception_wrapper) {
         folly::ScopedEventBaseThread worker2;
         auto newClient =
             makeWarmResumableClient(worker2.getEventBase(), listeningPort);
@@ -122,8 +122,8 @@ TEST(WarmResumptionTest, FailedResumption2) {
       .thenValue([&](auto&&) { return client->resume(); })
       .thenValue(
           [](auto&&) { FAIL() << "Resumption succeeded when it should not"; })
-      .onError([listeningPort, newTs, &newClient, &worker2](
-                   folly::exception_wrapper) {
+      .thenError([listeningPort, newTs, &newClient, &worker2](
+                     folly::exception_wrapper) {
         newClient =
             makeWarmResumableClient(worker2.getEventBase(), listeningPort);
         newClient->getRequester()

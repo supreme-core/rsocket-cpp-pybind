@@ -63,7 +63,7 @@ TEST(RSocketClientServer, ConnectManyAsync) {
                   ++executed;
                   return client;
                 })
-            .onError([&](folly::exception_wrapper ex) {
+            .thenError([&](folly::exception_wrapper ex) {
               LOG(ERROR) << "error: " << ex.what();
               ++executed;
               return std::shared_ptr<RSocketClient>(nullptr);

@@ -37,9 +37,11 @@ TEST(RSocketClient, ConnectFails) {
 
   std::move(client)
       .thenValue([&](auto&&) { FAIL() << "the test needs to fail"; })
-      .onError([&](const std::exception&) {
-        LOG(INFO) << "connection failed as expected";
-      })
+      .thenError(
+          folly::tag_t<std::exception>{},
+          [&](const std::exception&) {
+            LOG(INFO) << "connection failed as expected";
+          })
       .get();
 }
 

@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
         }
         subscriber1->cancel();
       })
-      .onError([&](folly::exception_wrapper ex) {
+      .thenError([&](folly::exception_wrapper ex) {
         LOG(INFO) << "Resumption Failed: " << ex.what();
         try {
           ex.throw_exception();
