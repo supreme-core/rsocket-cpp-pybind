@@ -5,6 +5,8 @@ project(ReactiveSocket)
 # CMake modules.
 set(CMAKE_MODULE_PATH
   "${CMAKE_SOURCE_DIR}/cmake/"
+  # For in-fbsource builds
+  "${CMAKE_CURRENT_SOURCE_DIR}/../opensource/fbcode_builder/CMake"
   # For shipit-transformed builds
   "${CMAKE_CURRENT_SOURCE_DIR}/build/fbcode_builder/CMake"
   ${CMAKE_MODULE_PATH}
