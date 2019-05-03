@@ -134,7 +134,7 @@ std::unique_ptr<rsocket::RSocketClient> createResumedClient(
                  ProtocolVersion::Latest,
                  stateMachineEvb)
           .get();
-    } catch (RSocketException ex) {
+    } catch (const RSocketException& ex) {
       retries--;
       VLOG(1) << "Creation of resumed client failed. Exception " << ex.what()
               << ". Retries Left: " << retries;
