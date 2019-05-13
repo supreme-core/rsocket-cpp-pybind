@@ -112,6 +112,8 @@ class EmiterSubscription final : public Subscription,
 #endif
     if (subscriber_) {
       subscriber_->onNext(std::move(value));
+    } else {
+      DCHECK(requested_.load(std::memory_order_relaxed) == kCanceled);
     }
   }
 
@@ -122,6 +124,8 @@ class EmiterSubscription final : public Subscription,
 #endif
     if (subscriber_) {
       subscriber_->onComplete();
+    } else {
+      DCHECK(requested_.load(std::memory_order_relaxed) == kCanceled);
     }
   }
 
@@ -132,6 +136,8 @@ class EmiterSubscription final : public Subscription,
 #endif
     if (subscriber_) {
       subscriber_->onError(error);
+    } else {
+      DCHECK(requested_.load(std::memory_order_relaxed) == kCanceled);
     }
   }
 
