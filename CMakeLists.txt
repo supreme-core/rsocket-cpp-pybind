@@ -120,9 +120,9 @@ if (DEFINED ASAN_FLAGS)
   set(EXTRA_LINK_FLAGS ${EXTRA_LINK_FLAGS} ${ASAN_FLAGS})
 endif ()
 
-option(BUILD_BENCHMARKS "Build benchmarks" ON)
-option(BUILD_EXAMPLES "Build examples" ON)
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(BUILD_EXAMPLES "Build examples" OFF)
+option(BUILD_TESTS "Build tests" OFF)
 
 enable_testing()
 
